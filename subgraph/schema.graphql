@@ -1,0 +1,113 @@
+# Marketplace Entities
+
+type Seller @entity {
+  id: ID! # sellerId
+  owner: Bytes!
+  geohash: Bytes!
+  geohashPrefix: String! # First 4 chars for filtering
+  storefrontIpfs: String!
+  offersDelivery: Boolean!
+  offersPickup: Boolean!
+  deliveryRadiusKm: BigInt!
+  createdAt: BigInt!
+  active: Boolean!
+  listings: [Listing!]! @derivedFrom(field: "seller")
+  orders: [Order!]! @derivedFrom(field: "seller")
+  ambassador: Ambassador
+  totalSales: BigInt!
+  totalOrders: BigInt!
+}
+
+type Listing @entity {
+  id: ID! # listingId
+  seller: Seller!
+  metadataIpfs: String!
+  pricePerUnit: BigInt!
+  quantityAvailable: BigInt!
+  active: Boolean!
+  orders: [Order!]! @derivedFrom(field: "listing")
+  totalSold: BigInt!
+}
+
+type Order @entity {
+  id: ID! # orderId
+  listing: Listing!
+  seller: Seller!
+  buyer: Bytes!
+  quantity: BigInt!
+  totalPrice: BigInt!
+  isDelivery: Boolean!
+  status: OrderStatus!
+  createdAt: BigInt!
+  completedAt: BigInt
+  disputedAt: BigInt
+}
+
+enum OrderStatus {
+  Pending
+  Accepted
+  ReadyForPickup
+  OutForDelivery
+  Completed
+  Disputed
+  Refunded
+  Cancelled
+}
+
+# Ambassador Entities
+
+type Ambassador @entity {
+  id: ID! # ambassadorId
+  wallet: Bytes!
+  seniorAmbassador: Ambassador
+  juniorAmbassadors: [Ambassador!]! @derivedFrom(field: "seniorAmbassador")
+  totalEarned: BigInt!
+  recruitedSellers: [Seller!]! @derivedFrom(field: "ambassador")
+  recruitedSellersCount: BigInt!
+  recruitedAmbassadorsCount: BigInt!
+  createdAt: BigInt!
+  active: Boolean!
+  rewards: [AmbassadorReward!]! @derivedFrom(field: "ambassador")
+}
+
+type AmbassadorReward @entity {
+  id: ID! # txHash-logIndex
+  ambassador: Ambassador!
+  seller: Seller!
+  amount: BigInt!
+  seniorAmount: BigInt!
+  timestamp: BigInt!
+  txHash: Bytes!
+}
+
+# Token Entities
+
+type TokenHolder @entity {
+  id: ID! # address
+  balance: BigInt!
+  totalReceived: BigInt!
+  totalSent: BigInt!
+  transferCount: BigInt!
+}
+
+type Transfer @entity {
+  id: ID! # txHash-logIndex
+  from: Bytes!
+  to: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  txHash: Bytes!
+  blockNumber: BigInt!
+}
+
+# Aggregated Stats
+
+type MarketplaceStats @entity {
+  id: ID! # "global"
+  totalSellers: BigInt!
+  totalListings: BigInt!
+  totalOrders: BigInt!
+  totalVolume: BigInt!
+  totalAmbassadors: BigInt!
+  totalAmbassadorRewards: BigInt!
+}
