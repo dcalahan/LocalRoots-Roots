@@ -317,7 +317,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     // ============ Purchase Tests ============
 
-    function test_Purchase_SellerGets100Percent() public {
+    function test_Purchase_FundsHeldInEscrow() public {
         // Setup seller and listing
         vm.startPrank(seller1);
         marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
@@ -333,6 +333,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         uint256 buyerBalanceBefore = token.balanceOf(buyer1);
         uint256 sellerBalanceBefore = token.balanceOf(seller1);
+        uint256 marketplaceBalanceBefore = token.balanceOf(address(marketplace));
 
         uint256 orderId = marketplace.purchase(1, quantity, false);
         vm.stopPrank();
@@ -340,17 +341,95 @@ contract LocalRootsMarketplaceTest is Test {
         assertEq(orderId, 1);
         // Buyer pays exact price
         assertEq(token.balanceOf(buyer1), buyerBalanceBefore - expectedTotal);
-        // Seller receives 100% (no fees!) when treasury is funded
-        assertEq(token.balanceOf(seller1), sellerBalanceBefore + expectedTotal);
+        // Seller has NOT received funds yet (held in escrow)
+        assertEq(token.balanceOf(seller1), sellerBalanceBefore);
+        // Marketplace holds the funds
+        assertEq(token.balanceOf(address(marketplace)), marketplaceBalanceBefore + expectedTotal);
 
         // Check listing quantity decreased
         (, , , uint256 quantityAvailable, ) = marketplace.listings(1);
         assertEq(quantityAvailable, 95);
     }
 
-    function test_Purchase_SellerGets100PercentEvenWithEmptyTreasury() public {
+    function test_FundsNotReleasedUntilDisputeWindowExpires() public {
+        // Setup seller and listing
+        vm.startPrank(seller1);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
+        vm.stopPrank();
+
+        // Buyer purchases
+        vm.startPrank(buyer1);
+        token.approve(address(marketplace), type(uint256).max);
+        uint256 orderId = marketplace.purchase(1, 5, false);
+        vm.stopPrank();
+
+        uint256 expectedTotal = PRICE_PER_UNIT * 5;
+        uint256 sellerBalanceBefore = token.balanceOf(seller1);
+
+        // Seller accepts and provides proof
+        vm.startPrank(seller1);
+        marketplace.acceptOrder(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof-photo");
+        vm.stopPrank();
+
+        // Seller has NOT received funds yet (dispute window active)
+        assertEq(token.balanceOf(seller1), sellerBalanceBefore);
+        // Marketplace still holds funds
+        assertEq(token.balanceOf(address(marketplace)), expectedTotal);
+
+        // Check order has proof but funds NOT released
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(order.proofIpfs, "ipfs://proof-photo");
+        assertFalse(order.fundsReleased);
+        assertGt(order.proofUploadedAt, 0);
+    }
+
+    function test_SellerClaimsFundsAfterDisputeWindow() public {
+        // Setup seller and listing
+        vm.startPrank(seller1);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
+        vm.stopPrank();
+
+        // Buyer purchases
+        vm.startPrank(buyer1);
+        token.approve(address(marketplace), type(uint256).max);
+        uint256 orderId = marketplace.purchase(1, 5, false);
+        vm.stopPrank();
+
+        uint256 expectedTotal = PRICE_PER_UNIT * 5;
+        uint256 sellerBalanceBefore = token.balanceOf(seller1);
+
+        // Seller accepts and provides proof
+        vm.startPrank(seller1);
+        marketplace.acceptOrder(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof-photo");
+
+        // Try to claim immediately - should fail
+        vm.expectRevert("Dispute window not expired");
+        marketplace.claimFunds(orderId);
+
+        // Wait for dispute window to expire (2 days)
+        vm.warp(block.timestamp + 2 days + 1);
+
+        // Now seller can claim
+        marketplace.claimFunds(orderId);
+        vm.stopPrank();
+
+        // Seller now receives 100% of funds
+        assertEq(token.balanceOf(seller1), sellerBalanceBefore + expectedTotal);
+        // Marketplace no longer holds funds
+        assertEq(token.balanceOf(address(marketplace)), 0);
+
+        // Check funds released flag
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertTrue(order.fundsReleased);
+    }
+
+    function test_EscrowWorksWithEmptyTreasury() public {
         // Deploy fresh contracts with NO treasury funding
-        // to verify seller still gets 100%
+        // to verify escrow still works
         AmbassadorRewards freshAmbassador = new AmbassadorRewards(address(token));
         LocalRootsMarketplace freshMarketplace = new LocalRootsMarketplace(
             address(token),
@@ -374,12 +453,31 @@ contract LocalRootsMarketplaceTest is Test {
         uint256 buyerBalanceBefore = token.balanceOf(buyer1);
         uint256 sellerBalanceBefore = token.balanceOf(seller1);
 
-        freshMarketplace.purchase(1, quantity, false);
+        uint256 orderId = freshMarketplace.purchase(1, quantity, false);
         vm.stopPrank();
 
         // Buyer pays exact price
         assertEq(token.balanceOf(buyer1), buyerBalanceBefore - expectedTotal);
-        // Seller receives 100% - NO fees even when treasury is empty
+        // Funds in escrow, not with seller yet
+        assertEq(token.balanceOf(seller1), sellerBalanceBefore);
+        assertEq(token.balanceOf(address(freshMarketplace)), expectedTotal);
+
+        // Seller provides proof
+        vm.startPrank(seller1);
+        freshMarketplace.acceptOrder(orderId);
+        freshMarketplace.markReadyForPickup(orderId, "ipfs://proof");
+
+        // Funds still in escrow during dispute window
+        assertEq(token.balanceOf(seller1), sellerBalanceBefore);
+
+        // Wait for dispute window to expire
+        vm.warp(block.timestamp + 2 days + 1);
+
+        // Seller claims funds
+        freshMarketplace.claimFunds(orderId);
+        vm.stopPrank();
+
+        // Seller receives 100% after claim
         assertEq(token.balanceOf(seller1), sellerBalanceBefore + expectedTotal);
     }
 
@@ -394,8 +492,8 @@ contract LocalRootsMarketplaceTest is Test {
         uint256 orderId = marketplace.purchase(1, 5, true); // isDelivery = true
         vm.stopPrank();
 
-        (, , , , , bool isDelivery, , , , ) = marketplace.orders(orderId);
-        assertTrue(isDelivery);
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertTrue(order.isDelivery);
     }
 
     function test_RevertPurchase_InactiveListing() public {
@@ -475,9 +573,8 @@ contract LocalRootsMarketplaceTest is Test {
         vm.prank(seller1);
         marketplace.acceptOrder(orderId);
 
-        (, , , , , , LocalRootsMarketplace.OrderStatus status, , , ) =
-            marketplace.orders(orderId);
-        assertEq(uint8(status), uint8(LocalRootsMarketplace.OrderStatus.Accepted));
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.Accepted));
     }
 
     function test_MarkReadyForPickup() public {
@@ -485,12 +582,14 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markReadyForPickup(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof-pickup");
         vm.stopPrank();
 
-        (, , , , , , LocalRootsMarketplace.OrderStatus status, , , ) =
-            marketplace.orders(orderId);
-        assertEq(uint8(status), uint8(LocalRootsMarketplace.OrderStatus.ReadyForPickup));
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.ReadyForPickup));
+        assertEq(order.proofIpfs, "ipfs://proof-pickup");
+        assertGt(order.proofUploadedAt, 0);
+        assertFalse(order.fundsReleased); // Funds held until dispute window expires
     }
 
     function test_MarkOutForDelivery() public {
@@ -507,12 +606,14 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markOutForDelivery(orderId);
+        marketplace.markOutForDelivery(orderId, "ipfs://proof-delivery");
         vm.stopPrank();
 
-        (, , , , , , LocalRootsMarketplace.OrderStatus status, , , ) =
-            marketplace.orders(orderId);
-        assertEq(uint8(status), uint8(LocalRootsMarketplace.OrderStatus.OutForDelivery));
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.OutForDelivery));
+        assertEq(order.proofIpfs, "ipfs://proof-delivery");
+        assertGt(order.proofUploadedAt, 0);
+        assertFalse(order.fundsReleased); // Funds held until dispute window expires
     }
 
     function test_CompleteOrder() public {
@@ -520,16 +621,15 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markReadyForPickup(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
         vm.stopPrank();
 
         vm.prank(buyer1);
         marketplace.completeOrder(orderId);
 
-        (, , , , , , LocalRootsMarketplace.OrderStatus status, , uint256 completedAt, ) =
-            marketplace.orders(orderId);
-        assertEq(uint8(status), uint8(LocalRootsMarketplace.OrderStatus.Completed));
-        assertGt(completedAt, 0);
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.Completed));
+        assertGt(order.completedAt, 0);
     }
 
     function test_RevertComplete_NotBuyer() public {
@@ -537,10 +637,21 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markReadyForPickup(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
 
         vm.expectRevert("Not order buyer");
         marketplace.completeOrder(orderId);
+        vm.stopPrank();
+    }
+
+    function test_RevertMarkReadyForPickup_NoProof() public {
+        uint256 orderId = _createOrderFixture();
+
+        vm.startPrank(seller1);
+        marketplace.acceptOrder(orderId);
+
+        vm.expectRevert("Proof photo required");
+        marketplace.markReadyForPickup(orderId, "");
         vm.stopPrank();
     }
 
@@ -551,15 +662,14 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markReadyForPickup(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
         vm.stopPrank();
 
         vm.prank(buyer1);
         marketplace.raiseDispute(orderId);
 
-        (, , , , , , LocalRootsMarketplace.OrderStatus status, , , ) =
-            marketplace.orders(orderId);
-        assertEq(uint8(status), uint8(LocalRootsMarketplace.OrderStatus.Disputed));
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.Disputed));
     }
 
     function test_RaiseDisputeAfterCompletion() public {
@@ -567,7 +677,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markReadyForPickup(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
         vm.stopPrank();
 
         vm.startPrank(buyer1);
@@ -578,9 +688,8 @@ contract LocalRootsMarketplaceTest is Test {
         marketplace.raiseDispute(orderId);
         vm.stopPrank();
 
-        (, , , , , , LocalRootsMarketplace.OrderStatus status, , , ) =
-            marketplace.orders(orderId);
-        assertEq(uint8(status), uint8(LocalRootsMarketplace.OrderStatus.Disputed));
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.Disputed));
     }
 
     function test_RevertDispute_WindowExpired() public {
@@ -588,7 +697,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markReadyForPickup(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
         vm.stopPrank();
 
         vm.startPrank(buyer1);
@@ -606,11 +715,89 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(seller1);
         marketplace.acceptOrder(orderId);
-        marketplace.markReadyForPickup(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
 
         vm.expectRevert("Not order buyer");
         marketplace.raiseDispute(orderId);
         vm.stopPrank();
+    }
+
+    // ============ Refund Tests ============
+
+    function test_RefundBuyer() public {
+        uint256 orderId = _createOrderFixture();
+        uint256 expectedTotal = PRICE_PER_UNIT * 5;
+
+        // Buyer balance after purchase (funds in escrow)
+        uint256 buyerBalanceAfterPurchase = token.balanceOf(buyer1);
+
+        vm.prank(seller1);
+        marketplace.acceptOrder(orderId);
+
+        // Buyer disputes before seller provides proof (funds still in escrow)
+        vm.prank(buyer1);
+        marketplace.raiseDispute(orderId);
+
+        // Seller voluntarily refunds
+        vm.prank(seller1);
+        marketplace.refundBuyer(orderId);
+
+        // Buyer gets refund
+        assertEq(token.balanceOf(buyer1), buyerBalanceAfterPurchase + expectedTotal);
+
+        LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.Refunded));
+        assertTrue(order.fundsReleased);
+    }
+
+    function test_RevertRefund_NotDisputed() public {
+        uint256 orderId = _createOrderFixture();
+
+        vm.prank(seller1);
+        marketplace.acceptOrder(orderId);
+
+        vm.prank(seller1);
+        vm.expectRevert("Order not disputed");
+        marketplace.refundBuyer(orderId);
+    }
+
+    function test_RevertClaimFunds_OrderDisputed() public {
+        uint256 orderId = _createOrderFixture();
+
+        vm.startPrank(seller1);
+        marketplace.acceptOrder(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
+        vm.stopPrank();
+
+        // Buyer raises dispute before window expires
+        vm.prank(buyer1);
+        marketplace.raiseDispute(orderId);
+
+        // Even after dispute window expires, seller can't claim disputed order
+        // (Disputed status is not in allowed statuses list)
+        vm.warp(block.timestamp + 2 days + 1);
+        vm.prank(seller1);
+        vm.expectRevert("Invalid order status");
+        marketplace.claimFunds(orderId);
+    }
+
+    function test_RevertClaimFunds_DoubleClaim() public {
+        uint256 orderId = _createOrderFixture();
+
+        vm.startPrank(seller1);
+        marketplace.acceptOrder(orderId);
+        marketplace.markReadyForPickup(orderId, "ipfs://proof");
+        vm.stopPrank();
+
+        // Wait for dispute window to expire and claim
+        vm.warp(block.timestamp + 2 days + 1);
+        vm.prank(seller1);
+        marketplace.claimFunds(orderId);
+
+        // Try to claim again
+        vm.prank(seller1);
+        vm.expectRevert("Funds already released");
+        marketplace.claimFunds(orderId);
     }
 
     // ============ View Function Tests ============

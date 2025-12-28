@@ -35,3 +35,47 @@ body {
            focus:outline-none focus:ring-2 focus:ring-roots-primary focus:border-transparent;
   }
 }
+
+
+
+@layer base {
+  :root {
+    /* Local Roots brand colors mapped to shadcn variables */
+    /* Primary: #EB6851 (coral) - HSL: 10 80% 62% */
+    /* Secondary: #3EBFAC (teal) - HSL: 168 52% 50% */
+    /* Cream: #F5F0EE - HSL: 20 25% 95% */
+    --background: 20 25% 95%;
+    --foreground: 0 0% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+    --primary: 10 80% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 168 52% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 20 10% 94%;
+    --muted-foreground: 0 0% 51%;
+    --accent: 168 52% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 96%;
+    --ring: 10 80% 62%;
+    --chart-1: 10 80% 62%;
+    --chart-2: 168 52% 50%;
+    --chart-3: 0 0% 51%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}

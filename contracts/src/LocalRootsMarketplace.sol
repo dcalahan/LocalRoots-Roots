@@ -65,6 +65,9 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         uint256 createdAt;
         uint256 completedAt;
         bool rewardQueued;        // Whether ambassador reward was queued
+        string proofIpfs;         // IPFS hash of delivery/pickup proof photo
+        uint256 proofUploadedAt;  // When seller uploaded proof (starts dispute window)
+        bool fundsReleased;       // Whether escrowed funds have been released to seller
     }
 
     enum OrderStatus {
@@ -101,6 +104,8 @@ contract LocalRootsMarketplace is ReentrancyGuard {
     event OrderStatusChanged(uint256 indexed orderId, OrderStatus status);
     event DisputeRaised(uint256 indexed orderId, address indexed buyer);
     event RewardQueued(uint256 indexed orderId, uint256 indexed sellerId);
+    event FundsReleased(uint256 indexed orderId, address indexed seller, uint256 amount);
+    event FundsRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount);
 
     // ============ Constructor ============
 
@@ -238,7 +243,8 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
     /**
      * @notice Purchase items from a listing
-     * @dev Payment goes directly to seller. Ambassador rewards are queued at order completion.
+     * @dev Payment is held in escrow until seller provides delivery proof.
+     *      Ambassador rewards are queued at order completion.
      * @param _listingId Listing to purchase from
      * @param _quantity Quantity to purchase
      * @param _isDelivery Whether buyer wants delivery (vs pickup)
@@ -263,9 +269,8 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
         uint256 totalPrice = listing.pricePerUnit * _quantity;
 
-        // Seller always receives 100% - no fees deducted at purchase time
-        // Ambassador rewards are paid from treasury at order completion
-        rootsToken.safeTransferFrom(msg.sender, seller.owner, totalPrice);
+        // Hold funds in escrow (this contract) until seller provides delivery proof
+        rootsToken.safeTransferFrom(msg.sender, address(this), totalPrice);
 
         // Update listing quantity
         listing.quantityAvailable -= _quantity;
@@ -282,7 +287,10 @@ contract LocalRootsMarketplace is ReentrancyGuard {
             status: OrderStatus.Pending,
             createdAt: block.timestamp,
             completedAt: 0,
-            rewardQueued: false
+            rewardQueued: false,
+            proofIpfs: "",
+            proofUploadedAt: 0,
+            fundsReleased: false
         });
 
         emit OrderCreated(orderId, _listingId, msg.sender, _quantity);
@@ -303,28 +311,44 @@ contract LocalRootsMarketplace is ReentrancyGuard {
     }
 
     /**
-     * @notice Mark order as ready for pickup
+     * @notice Mark order as ready for pickup with proof photo
+     * @dev Starts 48-hour dispute window. Seller can claim funds after window expires.
+     * @param _orderId Order ID
+     * @param _proofIpfs IPFS hash of photo proof showing items ready for pickup
      */
-    function markReadyForPickup(uint256 _orderId) external {
+    function markReadyForPickup(uint256 _orderId, string calldata _proofIpfs) external {
+        require(bytes(_proofIpfs).length > 0, "Proof photo required");
+
         Order storage order = orders[_orderId];
         require(order.status == OrderStatus.Accepted, "Invalid order status");
         require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
         require(!order.isDelivery, "Order is for delivery");
 
+        order.proofIpfs = _proofIpfs;
+        order.proofUploadedAt = block.timestamp;
         order.status = OrderStatus.ReadyForPickup;
+
         emit OrderStatusChanged(_orderId, OrderStatus.ReadyForPickup);
     }
 
     /**
-     * @notice Mark order as out for delivery
+     * @notice Mark order as out for delivery with proof photo
+     * @dev Starts 48-hour dispute window. Seller can claim funds after window expires.
+     * @param _orderId Order ID
+     * @param _proofIpfs IPFS hash of photo proof showing delivery (e.g., items on porch)
      */
-    function markOutForDelivery(uint256 _orderId) external {
+    function markOutForDelivery(uint256 _orderId, string calldata _proofIpfs) external {
+        require(bytes(_proofIpfs).length > 0, "Proof photo required");
+
         Order storage order = orders[_orderId];
         require(order.status == OrderStatus.Accepted, "Invalid order status");
         require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
         require(order.isDelivery, "Order is for pickup");
 
+        order.proofIpfs = _proofIpfs;
+        order.proofUploadedAt = block.timestamp;
         order.status = OrderStatus.OutForDelivery;
+
         emit OrderStatusChanged(_orderId, OrderStatus.OutForDelivery);
     }
 
@@ -378,11 +402,14 @@ contract LocalRootsMarketplace is ReentrancyGuard {
     /**
      * @notice Raise a dispute (within dispute window)
      * @dev This triggers clawback of any pending ambassador rewards
+     *      Can dispute from Pending/Accepted (funds in escrow) or after delivery proof
      */
     function raiseDispute(uint256 _orderId) external {
         Order storage order = orders[_orderId];
         require(order.buyer == msg.sender, "Not order buyer");
         require(
+            order.status == OrderStatus.Pending ||
+            order.status == OrderStatus.Accepted ||
             order.status == OrderStatus.Completed ||
             order.status == OrderStatus.ReadyForPickup ||
             order.status == OrderStatus.OutForDelivery,
@@ -410,6 +437,72 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
         emit DisputeRaised(_orderId, msg.sender);
         emit OrderStatusChanged(_orderId, OrderStatus.Disputed);
+    }
+
+    // ============ Escrow Functions ============
+
+    /**
+     * @notice Seller claims escrowed funds after dispute window expires
+     * @dev Can only be called 48 hours after proof upload, if not disputed
+     * @param _orderId Order ID to claim funds for
+     */
+    function claimFunds(uint256 _orderId) external nonReentrant {
+        Order storage order = orders[_orderId];
+        require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
+        require(!order.fundsReleased, "Funds already released");
+        require(order.proofUploadedAt > 0, "No proof uploaded");
+        require(
+            order.status == OrderStatus.ReadyForPickup ||
+            order.status == OrderStatus.OutForDelivery ||
+            order.status == OrderStatus.Completed,
+            "Invalid order status"
+        );
+        require(order.status != OrderStatus.Disputed, "Order is disputed");
+        require(
+            block.timestamp >= order.proofUploadedAt + DISPUTE_WINDOW,
+            "Dispute window not expired"
+        );
+
+        _releaseFunds(_orderId);
+    }
+
+    /**
+     * @notice Internal function to release escrowed funds to seller
+     * @param _orderId Order ID to release funds for
+     */
+    function _releaseFunds(uint256 _orderId) internal {
+        Order storage order = orders[_orderId];
+        require(!order.fundsReleased, "Funds already released");
+
+        Seller storage seller = sellers[order.sellerId];
+        order.fundsReleased = true;
+
+        rootsToken.safeTransfer(seller.owner, order.totalPrice);
+
+        emit FundsReleased(_orderId, seller.owner, order.totalPrice);
+    }
+
+    /**
+     * @notice Refund buyer for a disputed order (admin only for now)
+     * @dev Can only refund orders where funds haven't been released yet
+     * @param _orderId Order ID to refund
+     */
+    function refundBuyer(uint256 _orderId) external nonReentrant {
+        Order storage order = orders[_orderId];
+        require(order.status == OrderStatus.Disputed, "Order not disputed");
+        require(!order.fundsReleased, "Funds already released");
+
+        // For now, only the seller can initiate a refund (voluntary)
+        // In future, this could be admin-controlled or through arbitration
+        require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
+
+        order.fundsReleased = true;
+        order.status = OrderStatus.Refunded;
+
+        rootsToken.safeTransfer(order.buyer, order.totalPrice);
+
+        emit FundsRefunded(_orderId, order.buyer, order.totalPrice);
+        emit OrderStatusChanged(_orderId, OrderStatus.Refunded);
     }
 
     // ============ View Functions ============
