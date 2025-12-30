@@ -1,10 +1,11 @@
 import { type Address } from 'viem';
 
 // Contract addresses on Base Sepolia
-export const MARKETPLACE_ADDRESS: Address = '0xe132403fB9998CdDe2E6Cf3eef3B55617ffe16aA';
+export const MARKETPLACE_ADDRESS: Address = '0xfC6Fdf32587F433d9638c4dC84e3A4Be2B3C8a77';
 export const ROOTS_TOKEN_ADDRESS: Address = '0x509dd8D46E66C6B6591c111551C6E6039941E63C';
-export const AMBASSADOR_REWARDS_ADDRESS: Address = '0x15B1b3b0f08d518005a36B8F41eaC7B6F3Ac8B22';
+export const AMBASSADOR_REWARDS_ADDRESS: Address = '0x6838063D4A7fBdDc62E3886e6306e3076267c29d';
 export const FOUNDER_VESTING_ADDRESS: Address = '0xFf9Ca7c9A3511D73E10aC58F72022Ab359854249';
+export const FORWARDER_ADDRESS: Address = '0x9e80a34E1aBDDC50ca2928b688b43C821FE1C2bc';
 
 // ABI with seller and buyer functions
 export const marketplaceAbi = [

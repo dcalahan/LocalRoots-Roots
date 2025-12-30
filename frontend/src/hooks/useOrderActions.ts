@@ -4,14 +4,17 @@ import { useState, useCallback } from 'react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
+import { useGaslessTransaction } from './useGaslessTransaction';
 
 /**
  * Hook for completing an order (buyer confirms receipt)
+ * Supports gasless transactions (default) - no ETH needed!
  */
 export function useCompleteOrder() {
   const { address, connector } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
+  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
 
   const [isCompleting, setIsCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,13 +22,13 @@ export function useCompleteOrder() {
 
   const isTestWallet = connector?.id === 'testWallet';
 
-  const completeOrder = useCallback(async (orderId: bigint): Promise<boolean> => {
+  const completeOrder = useCallback(async (orderId: bigint, useGasless: boolean = true): Promise<boolean> => {
     if (!address || !publicClient) {
       setError('Wallet not connected');
       return false;
     }
 
-    if (!isTestWallet && !walletClient) {
+    if (!isTestWallet && !useGasless && !walletClient) {
       setError('Wallet not connected');
       return false;
     }
@@ -46,6 +49,20 @@ export function useCompleteOrder() {
           args: [orderId],
           gas: 200000n,
         });
+      } else if (useGasless) {
+        console.log('[useCompleteOrder] Using gasless meta-transaction');
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'completeOrder',
+          args: [orderId],
+          gas: 200000n,
+        });
+        if (!txHash) {
+          setError(gaslessError || 'Gasless transaction failed');
+          return false;
+        }
+        hash = txHash;
       } else {
         hash = await walletClient!.writeContract({
           address: MARKETPLACE_ADDRESS,
@@ -66,7 +83,7 @@ export function useCompleteOrder() {
     } finally {
       setIsCompleting(false);
     }
-  }, [walletClient, address, publicClient, isTestWallet]);
+  }, [walletClient, address, publicClient, isTestWallet, executeGasless, gaslessError]);
 
   const reset = useCallback(() => {
     setError(null);
@@ -75,7 +92,7 @@ export function useCompleteOrder() {
 
   return {
     completeOrder,
-    isCompleting,
+    isCompleting: isCompleting || isGaslessLoading,
     error,
     isSuccess,
     reset,
@@ -84,11 +101,13 @@ export function useCompleteOrder() {
 
 /**
  * Hook for raising a dispute on an order
+ * Supports gasless transactions (default) - no ETH needed!
  */
 export function useRaiseDispute() {
   const { address, connector } = useAccount();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
+  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
 
   const [isDisputing, setIsDisputing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,13 +115,13 @@ export function useRaiseDispute() {
 
   const isTestWallet = connector?.id === 'testWallet';
 
-  const raiseDispute = useCallback(async (orderId: bigint): Promise<boolean> => {
+  const raiseDispute = useCallback(async (orderId: bigint, useGasless: boolean = true): Promise<boolean> => {
     if (!address || !publicClient) {
       setError('Wallet not connected');
       return false;
     }
 
-    if (!isTestWallet && !walletClient) {
+    if (!isTestWallet && !useGasless && !walletClient) {
       setError('Wallet not connected');
       return false;
     }
@@ -123,6 +142,20 @@ export function useRaiseDispute() {
           args: [orderId],
           gas: 200000n,
         });
+      } else if (useGasless) {
+        console.log('[useRaiseDispute] Using gasless meta-transaction');
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'raiseDispute',
+          args: [orderId],
+          gas: 200000n,
+        });
+        if (!txHash) {
+          setError(gaslessError || 'Gasless transaction failed');
+          return false;
+        }
+        hash = txHash;
       } else {
         hash = await walletClient!.writeContract({
           address: MARKETPLACE_ADDRESS,
@@ -143,7 +176,7 @@ export function useRaiseDispute() {
     } finally {
       setIsDisputing(false);
     }
-  }, [walletClient, address, publicClient, isTestWallet]);
+  }, [walletClient, address, publicClient, isTestWallet, executeGasless, gaslessError]);
 
   const reset = useCallback(() => {
     setError(null);
@@ -152,7 +185,7 @@ export function useRaiseDispute() {
 
   return {
     raiseDispute,
-    isDisputing,
+    isDisputing: isDisputing || isGaslessLoading,
     error,
     isSuccess,
     reset,

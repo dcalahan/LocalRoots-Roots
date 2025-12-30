@@ -1,32 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSwitchChain, useConnectorClient } from 'wagmi';
+import { useState } from 'react';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSwitchChain } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
-import { createPublicClient, http, type Hex } from 'viem';
+import { useGaslessTransaction } from './useGaslessTransaction';
+import type { Hex } from 'viem';
 
 interface CreateListingParams {
   metadataIpfs: string;
   pricePerUnit: bigint;
   quantityAvailable: number;
+  useGasless?: boolean; // Default true - no ETH needed
 }
 
 /**
  * Hook to create a new listing
- * Uses direct viem calls for test wallet, wagmi for regular wallets
+ * Supports gasless transactions (default) - no ETH needed!
  */
 export function useCreateListing() {
   const { chain, connector } = useAccount();
   const { switchChainAsync } = useSwitchChain();
+
+  // Gasless transaction support
+  const {
+    executeGasless,
+    isLoading: isGaslessLoading,
+    error: gaslessError,
+  } = useGaslessTransaction();
+
+  // State for gasless transactions
+  const [gaslessTxHash, setGaslessTxHash] = useState<Hex | null>(null);
 
   // State for test wallet direct transactions
   const [directTxHash, setDirectTxHash] = useState<Hex | null>(null);
   const [directError, setDirectError] = useState<Error | null>(null);
   const [isDirectWriting, setIsDirectWriting] = useState(false);
 
-  // Wagmi hooks for regular wallets
+  // Wagmi hooks for regular wallets (fallback)
   const {
     data: wagmiHash,
     writeContract,
@@ -35,8 +47,8 @@ export function useCreateListing() {
     reset: wagmiReset,
   } = useWriteContract();
 
-  // Use whichever hash is available
-  const hash = directTxHash || wagmiHash;
+  // Use whichever hash is available (priority: gasless > direct > wagmi)
+  const hash = gaslessTxHash || directTxHash || wagmiHash;
 
   const {
     isLoading: isConfirming,
@@ -47,10 +59,11 @@ export function useCreateListing() {
   });
 
   const isTestWallet = connector?.id === 'testWallet';
-  const isWriting = isDirectWriting || isWagmiWriting;
-  const writeError = directError || wagmiWriteError;
+  const isWriting = isGaslessLoading || isDirectWriting || isWagmiWriting;
+  const writeError = directError || wagmiWriteError || (gaslessError ? new Error(gaslessError) : null);
 
   const reset = () => {
+    setGaslessTxHash(null);
     setDirectTxHash(null);
     setDirectError(null);
     setIsDirectWriting(false);
@@ -58,22 +71,24 @@ export function useCreateListing() {
   };
 
   const createListing = async (params: CreateListingParams) => {
+    const useGasless = params.useGasless !== false; // Default to gasless
+
     console.log('[useCreateListing] Starting createListing with params:', {
       metadataIpfs: params.metadataIpfs.substring(0, 50) + '...',
       pricePerUnit: params.pricePerUnit.toString(),
       quantityAvailable: params.quantityAvailable,
+      useGasless,
     });
     console.log('[useCreateListing] Current chain:', chain?.id, 'Expected:', baseSepolia.id);
     console.log('[useCreateListing] Connector ID:', connector?.id);
     console.log('[useCreateListing] Is test wallet:', isTestWallet);
-    console.log('[useCreateListing] Test wallet available:', isTestWalletAvailable());
-    console.log('[useCreateListing] Will use direct method:', isTestWallet && isTestWalletAvailable());
 
-    // Clear any previous errors
+    // Clear any previous errors/state
     setDirectError(null);
+    setGaslessTxHash(null);
 
-    // Ensure we're on Base Sepolia (only for non-test wallets)
-    if (!isTestWallet && chain?.id !== baseSepolia.id) {
+    // Ensure we're on Base Sepolia (only for non-test/non-gasless wallets)
+    if (!isTestWallet && !useGasless && chain?.id !== baseSepolia.id) {
       console.log('[useCreateListing] Chain mismatch, attempting to switch...');
       try {
         await switchChainAsync({ chainId: baseSepolia.id });
@@ -84,7 +99,7 @@ export function useCreateListing() {
       }
     }
 
-    // Use direct viem method for test wallet
+    // Use direct viem method for test wallet (test wallets have ETH)
     if (isTestWallet && isTestWalletAvailable()) {
       console.log('[useCreateListing] Using direct test wallet transaction');
       setIsDirectWriting(true);
@@ -111,7 +126,33 @@ export function useCreateListing() {
       return;
     }
 
-    // Use wagmi for regular wallets
+    // Use gasless transaction by default (no ETH needed!)
+    if (useGasless) {
+      console.log('[useCreateListing] Using gasless meta-transaction');
+      try {
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'createListing',
+          args: [
+            params.metadataIpfs,
+            params.pricePerUnit,
+            BigInt(params.quantityAvailable),
+          ],
+          gas: 500000n,
+        });
+        if (txHash) {
+          console.log('[useCreateListing] Gasless transaction sent:', txHash);
+          setGaslessTxHash(txHash);
+        }
+      } catch (err) {
+        console.error('[useCreateListing] Gasless transaction failed:', err);
+        setDirectError(err instanceof Error ? err : new Error(String(err)));
+      }
+      return;
+    }
+
+    // Fallback: Use wagmi for direct transactions (requires ETH)
     console.log('[useCreateListing] Calling writeContract via wagmi...');
     writeContract({
       address: MARKETPLACE_ADDRESS,

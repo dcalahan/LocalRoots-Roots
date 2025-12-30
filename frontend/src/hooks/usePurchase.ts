@@ -6,6 +6,7 @@ import { decodeEventLog } from 'viem';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { useTokenApproval } from './useTokenApproval';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
+import { useGaslessTransaction } from './useGaslessTransaction';
 
 interface PurchaseParams {
   listingId: bigint;
@@ -13,6 +14,7 @@ interface PurchaseParams {
   isDelivery: boolean;
   totalPrice: bigint;
   buyerInfoIpfs: string; // IPFS hash of buyer's delivery info (required for delivery)
+  useGasless?: boolean; // Default true - no ETH needed for the purchase tx
 }
 
 interface PurchaseResult {
@@ -25,6 +27,7 @@ export function usePurchase() {
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
   const { approve, checkAllowance, isApproving } = useTokenApproval();
+  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
 
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,11 +35,14 @@ export function usePurchase() {
   const isTestWallet = connector?.id === 'testWallet';
 
   const purchase = useCallback(async (params: PurchaseParams): Promise<PurchaseResult | null> => {
+    const useGasless = params.useGasless !== false; // Default to gasless
+
     console.log('[usePurchase] Called with params:', {
       listingId: params.listingId.toString(),
       quantity: params.quantity.toString(),
       isDelivery: params.isDelivery,
       buyerInfoIpfs: params.buyerInfoIpfs,
+      useGasless,
     });
 
     if (!address || !publicClient) {
@@ -44,8 +50,8 @@ export function usePurchase() {
       return null;
     }
 
-    // For non-test wallets, we need the wallet client
-    if (!isTestWallet && !walletClient) {
+    // For non-test/non-gasless wallets, we need the wallet client
+    if (!isTestWallet && !useGasless && !walletClient) {
       setError('Wallet not connected');
       return null;
     }
@@ -55,6 +61,7 @@ export function usePurchase() {
 
     try {
       // Check and request approval if needed
+      // Note: Token approval still requires ETH for now - future improvement would use ERC20Permit
       const currentAllowance = await checkAllowance();
 
       if (currentAllowance < params.totalPrice) {
@@ -77,6 +84,21 @@ export function usePurchase() {
           args: [params.listingId, params.quantity, params.isDelivery, params.buyerInfoIpfs],
           gas: 500000n,
         });
+      } else if (useGasless) {
+        // Use gasless transaction
+        console.log('[usePurchase] Using gasless meta-transaction');
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'purchase',
+          args: [params.listingId, params.quantity, params.isDelivery, params.buyerInfoIpfs],
+          gas: 500000n,
+        });
+        if (!txHash) {
+          setError(gaslessError || 'Gasless transaction failed');
+          return null;
+        }
+        hash = txHash;
       } else {
         // Use wallet client for regular wallets
         hash = await walletClient!.writeContract({
@@ -123,11 +145,11 @@ export function usePurchase() {
     } finally {
       setIsPurchasing(false);
     }
-  }, [walletClient, address, publicClient, approve, checkAllowance, isTestWallet]);
+  }, [walletClient, address, publicClient, approve, checkAllowance, isTestWallet, executeGasless, gaslessError]);
 
   return {
     purchase,
-    isPurchasing: isPurchasing || isApproving,
+    isPurchasing: isPurchasing || isApproving || isGaslessLoading,
     error,
   };
 }

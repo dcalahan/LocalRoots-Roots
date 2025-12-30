@@ -6,6 +6,7 @@ import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace
 import { createFreshPublicClient } from '@/lib/viemClient';
 import { useSellerStatus } from './useSellerStatus';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
+import { useGaslessTransaction } from './useGaslessTransaction';
 import { getIpfsUrl } from '@/lib/pinata';
 import { OrderStatus } from '@/types/order';
 
@@ -216,24 +217,27 @@ export function useSellerOrders() {
   return { orders, isLoading, error, refetch: fetchOrders };
 }
 
-// Hook for accepting an order
+// Hook for accepting an order (gasless by default)
 export function useAcceptOrder() {
   const { connector } = useAccount();
   const { writeContract, data: wagmiHash, isPending: isWagmiPending, error: wagmiError } = useWriteContract();
+  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
+  const [gaslessHash, setGaslessHash] = useState<`0x${string}` | null>(null);
   const [directHash, setDirectHash] = useState<`0x${string}` | null>(null);
   const [directError, setDirectError] = useState<Error | null>(null);
   const [isDirectPending, setIsDirectPending] = useState(false);
 
-  const hash = directHash || wagmiHash;
+  const hash = gaslessHash || directHash || wagmiHash;
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const isTestWallet = connector?.id === 'testWallet';
-  const isPending = isDirectPending || isWagmiPending || isConfirming;
-  const error = directError || wagmiError;
+  const isPending = isGaslessLoading || isDirectPending || isWagmiPending || isConfirming;
+  const error = directError || wagmiError || (gaslessError ? new Error(gaslessError) : null);
 
   const acceptOrder = useCallback(
-    async (orderId: bigint) => {
+    async (orderId: bigint, useGasless: boolean = true) => {
       setDirectError(null);
+      setGaslessHash(null);
 
       if (isTestWallet && isTestWalletAvailable()) {
         setIsDirectPending(true);
@@ -254,6 +258,25 @@ export function useAcceptOrder() {
         return;
       }
 
+      // Use gasless by default
+      if (useGasless) {
+        try {
+          const txHash = await executeGasless({
+            to: MARKETPLACE_ADDRESS,
+            abi: marketplaceAbi,
+            functionName: 'acceptOrder',
+            args: [orderId],
+            gas: 100000n,
+          });
+          if (txHash) {
+            setGaslessHash(txHash);
+          }
+        } catch (err) {
+          setDirectError(err instanceof Error ? err : new Error(String(err)));
+        }
+        return;
+      }
+
       writeContract({
         address: MARKETPLACE_ADDRESS,
         abi: marketplaceAbi,
@@ -262,7 +285,7 @@ export function useAcceptOrder() {
         gas: 100000n,
       });
     },
-    [writeContract, isTestWallet]
+    [writeContract, executeGasless, isTestWallet]
   );
 
   return {
@@ -273,24 +296,27 @@ export function useAcceptOrder() {
   };
 }
 
-// Hook for marking order ready for pickup
+// Hook for marking order ready for pickup (gasless by default)
 export function useMarkReadyForPickup() {
   const { connector } = useAccount();
   const { writeContract, data: wagmiHash, isPending: isWagmiPending, error: wagmiError } = useWriteContract();
+  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
+  const [gaslessHash, setGaslessHash] = useState<`0x${string}` | null>(null);
   const [directHash, setDirectHash] = useState<`0x${string}` | null>(null);
   const [directError, setDirectError] = useState<Error | null>(null);
   const [isDirectPending, setIsDirectPending] = useState(false);
 
-  const hash = directHash || wagmiHash;
+  const hash = gaslessHash || directHash || wagmiHash;
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const isTestWallet = connector?.id === 'testWallet';
-  const isPending = isDirectPending || isWagmiPending || isConfirming;
-  const error = directError || wagmiError;
+  const isPending = isGaslessLoading || isDirectPending || isWagmiPending || isConfirming;
+  const error = directError || wagmiError || (gaslessError ? new Error(gaslessError) : null);
 
   const markReady = useCallback(
-    async (orderId: bigint, proofIpfs: string) => {
+    async (orderId: bigint, proofIpfs: string, useGasless: boolean = true) => {
       setDirectError(null);
+      setGaslessHash(null);
 
       if (isTestWallet && isTestWalletAvailable()) {
         setIsDirectPending(true);
@@ -311,6 +337,25 @@ export function useMarkReadyForPickup() {
         return;
       }
 
+      // Use gasless by default
+      if (useGasless) {
+        try {
+          const txHash = await executeGasless({
+            to: MARKETPLACE_ADDRESS,
+            abi: marketplaceAbi,
+            functionName: 'markReadyForPickup',
+            args: [orderId, proofIpfs],
+            gas: 300000n,
+          });
+          if (txHash) {
+            setGaslessHash(txHash);
+          }
+        } catch (err) {
+          setDirectError(err instanceof Error ? err : new Error(String(err)));
+        }
+        return;
+      }
+
       writeContract({
         address: MARKETPLACE_ADDRESS,
         abi: marketplaceAbi,
@@ -319,7 +364,7 @@ export function useMarkReadyForPickup() {
         gas: 300000n,
       });
     },
-    [writeContract, isTestWallet]
+    [writeContract, executeGasless, isTestWallet]
   );
 
   return {
@@ -330,24 +375,27 @@ export function useMarkReadyForPickup() {
   };
 }
 
-// Hook for marking order out for delivery
+// Hook for marking order out for delivery (gasless by default)
 export function useMarkOutForDelivery() {
   const { connector } = useAccount();
   const { writeContract, data: wagmiHash, isPending: isWagmiPending, error: wagmiError } = useWriteContract();
+  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
+  const [gaslessHash, setGaslessHash] = useState<`0x${string}` | null>(null);
   const [directHash, setDirectHash] = useState<`0x${string}` | null>(null);
   const [directError, setDirectError] = useState<Error | null>(null);
   const [isDirectPending, setIsDirectPending] = useState(false);
 
-  const hash = directHash || wagmiHash;
+  const hash = gaslessHash || directHash || wagmiHash;
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const isTestWallet = connector?.id === 'testWallet';
-  const isPending = isDirectPending || isWagmiPending || isConfirming;
-  const error = directError || wagmiError;
+  const isPending = isGaslessLoading || isDirectPending || isWagmiPending || isConfirming;
+  const error = directError || wagmiError || (gaslessError ? new Error(gaslessError) : null);
 
   const markOutForDelivery = useCallback(
-    async (orderId: bigint, proofIpfs: string) => {
+    async (orderId: bigint, proofIpfs: string, useGasless: boolean = true) => {
       setDirectError(null);
+      setGaslessHash(null);
 
       if (isTestWallet && isTestWalletAvailable()) {
         setIsDirectPending(true);
@@ -368,6 +416,25 @@ export function useMarkOutForDelivery() {
         return;
       }
 
+      // Use gasless by default
+      if (useGasless) {
+        try {
+          const txHash = await executeGasless({
+            to: MARKETPLACE_ADDRESS,
+            abi: marketplaceAbi,
+            functionName: 'markOutForDelivery',
+            args: [orderId, proofIpfs],
+            gas: 300000n,
+          });
+          if (txHash) {
+            setGaslessHash(txHash);
+          }
+        } catch (err) {
+          setDirectError(err instanceof Error ? err : new Error(String(err)));
+        }
+        return;
+      }
+
       writeContract({
         address: MARKETPLACE_ADDRESS,
         abi: marketplaceAbi,
@@ -376,7 +443,7 @@ export function useMarkOutForDelivery() {
         gas: 300000n,
       });
     },
-    [writeContract, isTestWallet]
+    [writeContract, executeGasless, isTestWallet]
   );
 
   return {

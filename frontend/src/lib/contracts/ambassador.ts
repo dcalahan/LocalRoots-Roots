@@ -1,7 +1,7 @@
 import { type Address } from 'viem';
 
 // Contract address on Base Sepolia
-export const AMBASSADOR_REWARDS_ADDRESS: Address = '0x1B089CD2eC0Fac80B60e35e4BD46f1245d879b45';
+export const AMBASSADOR_REWARDS_ADDRESS: Address = '0x6838063D4A7fBdDc62E3886e6306e3076267c29d';
 
 // ABI for ambassador functions
 export const ambassadorAbi = [
