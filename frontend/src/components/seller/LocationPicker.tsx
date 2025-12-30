@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { encodeLocation, decodeGeohash } from '@/lib/geohash';
 
 interface LocationPickerProps {
@@ -18,6 +19,8 @@ type LocationState = 'idle' | 'loading' | 'success' | 'error';
 export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPickerProps) {
   const [state, setState] = useState<LocationState>(initialGeohash ? 'success' : 'idle');
   const [error, setError] = useState<string | null>(null);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [showAddressInput, setShowAddressInput] = useState(false);
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -36,8 +39,9 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
 
   const getLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser');
+      setError('Geolocation is not supported by your browser. Please enter your address below.');
       setState('error');
+      setShowAddressInput(true);
       return;
     }
 
@@ -52,31 +56,74 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
         const locationData = { latitude, longitude, geohash };
         setLocation(locationData);
         setState('success');
+        setShowAddressInput(false);
         onLocationSelect(locationData);
       },
       (err) => {
-        let errorMessage = 'Unable to get your location';
+        let errorMessage = 'Unable to get your location. ';
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied. Please enable location access.';
+            errorMessage += 'Location permission denied.';
             break;
           case err.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable.';
+            errorMessage += 'Location information is unavailable.';
             break;
           case err.TIMEOUT:
-            errorMessage = 'Location request timed out.';
+            errorMessage += 'Location request timed out.';
             break;
         }
+        errorMessage += ' Please enter your address or zip code below.';
         setError(errorMessage);
         setState('error');
+        setShowAddressInput(true);
       },
       {
-        enableHighAccuracy: true,
+        enableHighAccuracy: false,
         timeout: 10000,
         maximumAge: 60000,
       }
     );
   }, [onLocationSelect]);
+
+  const searchAddress = useCallback(async () => {
+    if (!addressQuery.trim()) return;
+
+    setState('loading');
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}&countrycodes=us&limit=1`
+      );
+      const data = await response.json();
+
+      if (data.length === 0) {
+        setError('Address not found. Please try a different address or zip code.');
+        setState('error');
+        return;
+      }
+
+      const { lat, lon } = data[0];
+      const latitude = parseFloat(lat);
+      const longitude = parseFloat(lon);
+      const geohash = encodeLocation(latitude, longitude);
+
+      const locationData = { latitude, longitude, geohash };
+      setLocation(locationData);
+      setState('success');
+      onLocationSelect(locationData);
+    } catch {
+      setError('Failed to search address. Please try again.');
+      setState('error');
+    }
+  }, [addressQuery, onLocationSelect]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchAddress();
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -121,10 +168,42 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
             Location set
           </span>
         )}
+
+        {state === 'idle' && (
+          <button
+            type="button"
+            onClick={() => setShowAddressInput(true)}
+            className="text-sm text-roots-gray hover:text-roots-primary underline"
+          >
+            Or enter address
+          </button>
+        )}
       </div>
 
       {error && (
         <p className="text-sm text-red-600">{error}</p>
+      )}
+
+      {/* Manual address input */}
+      {showAddressInput && state !== 'success' && (
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            value={addressQuery}
+            onChange={(e) => setAddressQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter address or zip code"
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            onClick={searchAddress}
+            disabled={state === 'loading' || !addressQuery.trim()}
+            variant="outline"
+          >
+            Search
+          </Button>
+        </div>
       )}
 
       {location && (

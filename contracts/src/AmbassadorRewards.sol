@@ -7,18 +7,27 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title AmbassadorRewards
- * @notice Manages ambassador rewards with vesting, fraud protection, and circuit breakers
- * @dev Ambassadors earn 25% of sales from sellers they recruit (for 1 year)
+ * @notice Chain-based referral rewards for LocalRoots ambassadors
+ * @dev Compensation model:
+ *      - 25% of each sale goes to ambassador pool (from treasury)
+ *      - 80/20 split at each level (recruiter keeps 80%, passes 20% up)
+ *      - Chain walks up until State Founder (uplineId = 0)
+ *
+ *      Example for 4-level chain on $100 sale (25 ROOTS pool):
+ *        Block Ambassador (recruited seller): 20 ROOTS (80%)
+ *        Neighborhood Ambassador: 4 ROOTS (80% of 5)
+ *        City Ambassador: 0.8 ROOTS (80% of 1)
+ *        State Founder: 0.2 ROOTS (keeps remainder)
  *
  *      FRAUD PROTECTION:
  *      - Rewards vest over 7 days (can be clawed back if disputed)
  *      - Ambassador governance can vote to suspend bad actors
+ *      - Seller activation: 2 orders from 2 unique buyers required
  *
- *      CIRCUIT BREAKERS (Tier 1):
+ *      CIRCUIT BREAKERS:
  *      - Daily treasury outflow cap: 0.5% of initial treasury per day
  *      - Ambassador weekly cap: 10,000 ROOTS per ambassador per week
  *      - New ambassador cooldown: 24 hours before rewards activate
- *      - Seller activation: 2 orders from 2 unique buyers required
  */
 contract AmbassadorRewards is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -27,78 +36,89 @@ contract AmbassadorRewards is ReentrancyGuard {
 
     IERC20 public immutable rootsToken;
     address public marketplace;
+    address public admin;
 
-    // Core reward parameters
-    uint256 public constant AMBASSADOR_REWARD_BPS = 2500;     // 25% of sale
-    uint256 public constant SENIOR_CUT_BPS = 500;             // 5% to senior ambassador
-    uint256 public constant REWARD_DURATION = 365 days;       // 1 year per seller
-    uint256 public constant VESTING_PERIOD = 7 days;          // Rewards vest over 7 days
+    // Reward distribution parameters
+    uint256 public constant TOTAL_REWARD_BPS = 2500;      // 25% of sale to ambassador pool
+    uint256 public constant UPLINE_SHARE_BPS = 2000;      // 20% passed up at each level
+    uint256 public constant RECRUITER_KEEP_BPS = 8000;    // 80% kept by each level
+    uint256 public constant MAX_CHAIN_DEPTH = 10;         // Safety limit on chain walking
+
+    // Timing parameters
+    uint256 public constant REWARD_DURATION = 365 days;   // 1 year reward period per seller
+    uint256 public constant VESTING_PERIOD = 7 days;      // Rewards vest over 7 days
 
     // Governance parameters
-    uint256 public constant VOTE_DURATION = 3 days;           // Voting period for suspension
-    uint256 public constant MIN_VOTES_REQUIRED = 3;           // Minimum votes needed
+    uint256 public constant VOTE_DURATION = 3 days;
+    uint256 public constant MIN_VOTES_REQUIRED = 3;
 
     // Circuit breaker parameters
-    uint256 public constant DAILY_OUTFLOW_BPS = 50;           // 0.5% of initial treasury per day
+    uint256 public constant DAILY_OUTFLOW_BPS = 50;       // 0.5% of initial treasury per day
     uint256 public constant AMBASSADOR_WEEKLY_CAP = 10_000 * 10**18;  // 10,000 ROOTS per week
-    uint256 public constant AMBASSADOR_COOLDOWN = 24 hours;   // New ambassador wait period
-    uint256 public constant SELLER_MIN_ORDERS = 2;            // Min orders before rewards
-    uint256 public constant SELLER_MIN_UNIQUE_BUYERS = 2;     // Min unique buyers before rewards
+    uint256 public constant AMBASSADOR_COOLDOWN = 24 hours;
+    uint256 public constant SELLER_MIN_ORDERS = 2;
+    uint256 public constant SELLER_MIN_UNIQUE_BUYERS = 2;
 
     uint256 public nextAmbassadorId;
     uint256 public nextPendingRewardId;
     uint256 public nextFlagId;
 
     // Circuit breaker state
-    uint256 public initialTreasuryBalance;                    // Set on first deposit
+    uint256 public initialTreasuryBalance;
     bool public treasuryInitialized;
 
     // ============ Structs ============
 
     struct Ambassador {
         address wallet;
-        uint256 seniorAmbassadorId;    // 0 if top-level
+        uint256 uplineId;           // 0 = State Founder (top of chain)
         uint256 totalEarned;
-        uint256 totalPending;          // Pending vesting rewards
+        uint256 totalPending;
         uint256 recruitedSellers;
         uint256 recruitedAmbassadors;
         uint256 createdAt;
         bool active;
-        bool suspended;                // Suspended by governance vote
+        bool suspended;
+        bytes8 regionGeohash;       // For State Founders: the region they own (e.g., state prefix)
     }
 
     struct SellerRecruitment {
-        uint256 ambassadorId;
+        uint256 ambassadorId;       // Ambassador who recruited this seller
         uint256 recruitedAt;
         uint256 totalSalesVolume;
         uint256 totalRewardsPaid;
-        uint256 completedOrderCount;   // Number of completed orders
-        uint256 uniqueBuyerCount;      // Number of unique buyers
-        bool activated;                // Met activation threshold
+        uint256 completedOrderCount;
+        uint256 uniqueBuyerCount;
+        bool activated;             // Met activation threshold (2 orders, 2 unique buyers)
     }
 
     struct PendingReward {
         uint256 orderId;
         uint256 sellerId;
-        uint256 ambassadorId;
-        uint256 seniorAmbassadorId;
-        uint256 ambassadorAmount;
-        uint256 seniorAmount;
         uint256 queuedAt;
         uint256 vestingEndsAt;
+        uint256 totalAmount;        // Total pool for this sale
         bool claimed;
         bool clawedBack;
+        // Chain payouts stored separately
+    }
+
+    struct ChainPayout {
+        uint256 pendingRewardId;
+        uint256 ambassadorId;
+        uint256 amount;
+        bool claimed;
     }
 
     struct FraudFlag {
         uint256 targetAmbassadorId;
-        uint256 flaggedBy;             // Ambassador ID who raised the flag
+        uint256 flaggedBy;
         string reason;
         uint256 createdAt;
-        uint256 votesFor;              // Votes to suspend
-        uint256 votesAgainst;          // Votes against suspension
+        uint256 votesFor;
+        uint256 votesAgainst;
         bool resolved;
-        bool suspended;                // Result: was ambassador suspended?
+        bool suspended;
     }
 
     // ============ Mappings ============
@@ -108,25 +128,34 @@ contract AmbassadorRewards is ReentrancyGuard {
     mapping(uint256 => SellerRecruitment) public sellerRecruitments;
     mapping(uint256 => PendingReward) public pendingRewards;
     mapping(uint256 => FraudFlag) public fraudFlags;
-    mapping(uint256 => mapping(uint256 => bool)) public hasVoted; // flagId => ambassadorId => voted
-    mapping(uint256 => uint256[]) public ambassadorPendingRewards; // ambassadorId => pendingRewardIds
+    mapping(uint256 => mapping(uint256 => bool)) public hasVoted;
+
+    // Chain payouts for each pending reward
+    mapping(uint256 => ChainPayout[]) public rewardPayouts;  // pendingRewardId => payouts
+    mapping(uint256 => uint256[]) public ambassadorPendingRewards;  // ambassadorId => pendingRewardIds
 
     // Circuit breaker tracking
-    mapping(uint256 => uint256) public dailyOutflow;          // day => amount paid out
-    mapping(uint256 => mapping(uint256 => uint256)) public ambassadorWeeklyRewards; // ambassadorId => week => amount
-    mapping(uint256 => mapping(address => bool)) public sellerBuyers; // sellerId => buyer => hasPurchased
+    mapping(uint256 => uint256) public dailyOutflow;
+    mapping(uint256 => mapping(uint256 => uint256)) public ambassadorWeeklyRewards;
+    mapping(uint256 => mapping(address => bool)) public sellerBuyers;
 
     // ============ Events ============
 
-    event AmbassadorRegistered(uint256 indexed ambassadorId, address indexed wallet, uint256 seniorId);
+    event StateFounderRegistered(uint256 indexed ambassadorId, address indexed wallet, bytes8 regionGeohash);
+    event AmbassadorRegistered(uint256 indexed ambassadorId, address indexed wallet, uint256 indexed uplineId);
     event SellerRecruited(uint256 indexed sellerId, uint256 indexed ambassadorId);
     event SellerActivated(uint256 indexed sellerId, uint256 indexed ambassadorId);
     event RewardQueued(
         uint256 indexed pendingRewardId,
         uint256 indexed orderId,
+        uint256 totalAmount,
+        uint256 chainDepth
+    );
+    event ChainPayoutQueued(
+        uint256 indexed pendingRewardId,
         uint256 indexed ambassadorId,
         uint256 amount,
-        uint256 vestingEndsAt
+        uint256 level
     );
     event RewardClaimed(uint256 indexed pendingRewardId, uint256 indexed ambassadorId, uint256 amount);
     event RewardClawedBack(uint256 indexed pendingRewardId, uint256 indexed orderId, string reason);
@@ -134,7 +163,6 @@ contract AmbassadorRewards is ReentrancyGuard {
     event VoteCast(uint256 indexed flagId, uint256 indexed ambassadorId, bool voteToSuspend);
     event FraudFlagResolved(uint256 indexed flagId, uint256 indexed targetAmbassadorId, bool suspended);
     event AmbassadorSuspended(uint256 indexed ambassadorId);
-    event AmbassadorReinstated(uint256 indexed ambassadorId);
     event DailyCapReached(uint256 indexed day, uint256 amount);
     event WeeklyCapReached(uint256 indexed ambassadorId, uint256 indexed week, uint256 amount);
     event TreasuryInitialized(uint256 amount);
@@ -143,6 +171,11 @@ contract AmbassadorRewards is ReentrancyGuard {
 
     modifier onlyMarketplace() {
         require(msg.sender == marketplace, "Only marketplace");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only admin");
         _;
     }
 
@@ -159,6 +192,7 @@ contract AmbassadorRewards is ReentrancyGuard {
     constructor(address _rootsToken) {
         require(_rootsToken != address(0), "Invalid token address");
         rootsToken = IERC20(_rootsToken);
+        admin = msg.sender;
     }
 
     // ============ Admin Functions ============
@@ -169,10 +203,11 @@ contract AmbassadorRewards is ReentrancyGuard {
         marketplace = _marketplace;
     }
 
-    /**
-     * @notice Initialize treasury balance for daily cap calculation
-     * @dev Called once after initial funding
-     */
+    function setAdmin(address _newAdmin) external onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        admin = _newAdmin;
+    }
+
     function initializeTreasury() external {
         require(!treasuryInitialized, "Already initialized");
         uint256 balance = rootsToken.balanceOf(address(this));
@@ -184,35 +219,75 @@ contract AmbassadorRewards is ReentrancyGuard {
         emit TreasuryInitialized(balance);
     }
 
-    // ============ Ambassador Functions ============
+    // ============ State Founder Registration ============
 
-    function registerAmbassador(uint256 _seniorAmbassadorId) external returns (uint256 ambassadorId) {
-        require(ambassadorIdByWallet[msg.sender] == 0, "Already an ambassador");
-
-        if (_seniorAmbassadorId != 0) {
-            require(ambassadors[_seniorAmbassadorId].active, "Invalid senior ambassador");
-            require(!ambassadors[_seniorAmbassadorId].suspended, "Senior ambassador suspended");
-            ambassadors[_seniorAmbassadorId].recruitedAmbassadors++;
-        }
+    /**
+     * @notice Register a State Founder (top of chain, no upline)
+     * @dev Only admin can register State Founders
+     * @param _wallet Address of the State Founder
+     * @param _regionGeohash Geohash prefix for their region (e.g., first 2-3 chars for state)
+     */
+    function registerStateFounder(
+        address _wallet,
+        bytes8 _regionGeohash
+    ) external onlyAdmin returns (uint256 ambassadorId) {
+        require(ambassadorIdByWallet[_wallet] == 0, "Already an ambassador");
 
         ambassadorId = ++nextAmbassadorId;
 
         ambassadors[ambassadorId] = Ambassador({
-            wallet: msg.sender,
-            seniorAmbassadorId: _seniorAmbassadorId,
+            wallet: _wallet,
+            uplineId: 0,  // No upline = State Founder
             totalEarned: 0,
             totalPending: 0,
             recruitedSellers: 0,
             recruitedAmbassadors: 0,
             createdAt: block.timestamp,
             active: true,
-            suspended: false
+            suspended: false,
+            regionGeohash: _regionGeohash
+        });
+
+        ambassadorIdByWallet[_wallet] = ambassadorId;
+
+        emit StateFounderRegistered(ambassadorId, _wallet, _regionGeohash);
+    }
+
+    // ============ Ambassador Registration ============
+
+    /**
+     * @notice Register as an ambassador under an existing ambassador
+     * @param _uplineId The ambassador who recruited you (must be active)
+     */
+    function registerAmbassador(uint256 _uplineId) external returns (uint256 ambassadorId) {
+        require(ambassadorIdByWallet[msg.sender] == 0, "Already an ambassador");
+        require(_uplineId != 0, "Must have an upline (use registerStateFounder for founders)");
+        require(ambassadors[_uplineId].active, "Upline not active");
+        require(!ambassadors[_uplineId].suspended, "Upline suspended");
+
+        ambassadors[_uplineId].recruitedAmbassadors++;
+
+        ambassadorId = ++nextAmbassadorId;
+
+        ambassadors[ambassadorId] = Ambassador({
+            wallet: msg.sender,
+            uplineId: _uplineId,
+            totalEarned: 0,
+            totalPending: 0,
+            recruitedSellers: 0,
+            recruitedAmbassadors: 0,
+            createdAt: block.timestamp,
+            active: true,
+            suspended: false,
+            regionGeohash: bytes8(0)  // Only State Founders have regions
         });
 
         ambassadorIdByWallet[msg.sender] = ambassadorId;
 
-        emit AmbassadorRegistered(ambassadorId, msg.sender, _seniorAmbassadorId);
+        emit AmbassadorRegistered(ambassadorId, msg.sender, _uplineId);
     }
+
+    // ============ Seller Recruitment ============
 
     function recordSellerRecruitment(
         uint256 _sellerId,
@@ -239,10 +314,6 @@ contract AmbassadorRewards is ReentrancyGuard {
 
     // ============ Seller Activation (Circuit Breaker) ============
 
-    /**
-     * @notice Record a completed order for seller activation tracking
-     * @dev Called by marketplace when order is completed
-     */
     function recordCompletedOrder(
         uint256 _sellerId,
         address _buyer
@@ -250,18 +321,16 @@ contract AmbassadorRewards is ReentrancyGuard {
         SellerRecruitment storage recruitment = sellerRecruitments[_sellerId];
 
         if (recruitment.ambassadorId == 0) {
-            return; // Seller not recruited
+            return;
         }
 
         recruitment.completedOrderCount++;
 
-        // Track unique buyers
         if (!sellerBuyers[_sellerId][_buyer]) {
             sellerBuyers[_sellerId][_buyer] = true;
             recruitment.uniqueBuyerCount++;
         }
 
-        // Check activation threshold
         if (!recruitment.activated &&
             recruitment.completedOrderCount >= SELLER_MIN_ORDERS &&
             recruitment.uniqueBuyerCount >= SELLER_MIN_UNIQUE_BUYERS) {
@@ -270,15 +339,11 @@ contract AmbassadorRewards is ReentrancyGuard {
         }
     }
 
-    // ============ Reward Vesting Functions ============
+    // ============ Chain-Based Reward Distribution ============
 
     /**
-     * @notice Queue rewards for vesting (called when order is completed)
-     * @dev Includes circuit breaker checks:
-     *      - Ambassador must be past 24h cooldown
-     *      - Seller must be activated (2 orders, 2 unique buyers)
-     *      - Daily treasury outflow must not exceed 0.5%
-     *      - Ambassador weekly rewards must not exceed 10,000 ROOTS
+     * @notice Queue rewards with chain-based distribution
+     * @dev Walks up the ambassador chain, distributing 80/20 at each level
      */
     function queueReward(
         uint256 _orderId,
@@ -287,125 +352,150 @@ contract AmbassadorRewards is ReentrancyGuard {
     ) external onlyMarketplace nonReentrant returns (uint256 pendingRewardId) {
         SellerRecruitment storage recruitment = sellerRecruitments[_sellerId];
 
-        // Check if seller was recruited and still within reward period
+        // Check if seller was recruited
         if (recruitment.ambassadorId == 0) {
-            return 0; // Seller not recruited by ambassador
-        }
-
-        if (block.timestamp > recruitment.recruitedAt + REWARD_DURATION) {
-            return 0; // Reward period expired
-        }
-
-        // CIRCUIT BREAKER: Seller must be activated
-        if (!recruitment.activated) {
-            return 0; // Seller hasn't met activation threshold
-        }
-
-        Ambassador storage ambassador = ambassadors[recruitment.ambassadorId];
-        if (!ambassador.active || ambassador.suspended) {
             return 0;
         }
 
-        // CIRCUIT BREAKER: Ambassador cooldown (24 hours)
-        if (block.timestamp < ambassador.createdAt + AMBASSADOR_COOLDOWN) {
-            return 0; // Ambassador still in cooldown period
+        // Check reward period
+        if (block.timestamp > recruitment.recruitedAt + REWARD_DURATION) {
+            return 0;
         }
 
-        uint256 totalReward = (_saleAmount * AMBASSADOR_REWARD_BPS) / 10000;
+        // Seller must be activated
+        if (!recruitment.activated) {
+            return 0;
+        }
 
-        // CIRCUIT BREAKER: Daily treasury outflow cap
+        // Calculate total reward pool (25% of sale)
+        uint256 totalPool = (_saleAmount * TOTAL_REWARD_BPS) / 10000;
+
+        // Check daily cap
         uint256 currentDay = block.timestamp / 1 days;
-        uint256 dailyCap = (initialTreasuryBalance * DAILY_OUTFLOW_BPS) / 10000;
+        uint256 dailyCap = treasuryInitialized ? (initialTreasuryBalance * DAILY_OUTFLOW_BPS) / 10000 : type(uint256).max;
 
-        if (treasuryInitialized && dailyOutflow[currentDay] + totalReward > dailyCap) {
-            // Cap reached - reduce reward to remaining allowance
-            uint256 remaining = dailyCap > dailyOutflow[currentDay] ?
-                dailyCap - dailyOutflow[currentDay] : 0;
+        if (dailyOutflow[currentDay] + totalPool > dailyCap) {
+            uint256 remaining = dailyCap > dailyOutflow[currentDay] ? dailyCap - dailyOutflow[currentDay] : 0;
             if (remaining == 0) {
                 emit DailyCapReached(currentDay, dailyOutflow[currentDay]);
                 return 0;
             }
-            totalReward = remaining;
+            totalPool = remaining;
         }
 
-        // CIRCUIT BREAKER: Ambassador weekly cap
-        uint256 currentWeek = block.timestamp / 1 weeks;
-        uint256 ambassadorWeeklyTotal = ambassadorWeeklyRewards[recruitment.ambassadorId][currentWeek];
-
-        if (ambassadorWeeklyTotal + totalReward > AMBASSADOR_WEEKLY_CAP) {
-            uint256 remaining = AMBASSADOR_WEEKLY_CAP > ambassadorWeeklyTotal ?
-                AMBASSADOR_WEEKLY_CAP - ambassadorWeeklyTotal : 0;
-            if (remaining == 0) {
-                emit WeeklyCapReached(recruitment.ambassadorId, currentWeek, ambassadorWeeklyTotal);
-                return 0;
-            }
-            totalReward = remaining;
-        }
-
+        // Check contract balance
         uint256 contractBalance = rootsToken.balanceOf(address(this));
-        if (totalReward > contractBalance) {
-            totalReward = contractBalance;
+        if (totalPool > contractBalance) {
+            totalPool = contractBalance;
         }
 
-        if (totalReward == 0) {
+        if (totalPool == 0) {
             return 0;
         }
 
-        // Update circuit breaker tracking
-        dailyOutflow[currentDay] += totalReward;
-        ambassadorWeeklyRewards[recruitment.ambassadorId][currentWeek] += totalReward;
-
-        uint256 seniorReward = 0;
-        uint256 ambassadorReward = totalReward;
-        uint256 seniorId = 0;
-
-        // Calculate senior's cut if applicable
-        if (ambassador.seniorAmbassadorId != 0) {
-            Ambassador storage senior = ambassadors[ambassador.seniorAmbassadorId];
-            if (senior.active && !senior.suspended) {
-                // Senior must also be past cooldown
-                if (block.timestamp >= senior.createdAt + AMBASSADOR_COOLDOWN) {
-                    seniorReward = (totalReward * SENIOR_CUT_BPS) / AMBASSADOR_REWARD_BPS;
-                    ambassadorReward = totalReward - seniorReward;
-                    seniorId = ambassador.seniorAmbassadorId;
-                    senior.totalPending += seniorReward;
-
-                    // Track senior's weekly rewards too
-                    ambassadorWeeklyRewards[seniorId][currentWeek] += seniorReward;
-                }
-            }
-        }
-
-        ambassador.totalPending += ambassadorReward;
-
+        // Create pending reward
         pendingRewardId = ++nextPendingRewardId;
         uint256 vestingEnds = block.timestamp + VESTING_PERIOD;
 
         pendingRewards[pendingRewardId] = PendingReward({
             orderId: _orderId,
             sellerId: _sellerId,
-            ambassadorId: recruitment.ambassadorId,
-            seniorAmbassadorId: seniorId,
-            ambassadorAmount: ambassadorReward,
-            seniorAmount: seniorReward,
             queuedAt: block.timestamp,
             vestingEndsAt: vestingEnds,
+            totalAmount: totalPool,
             claimed: false,
             clawedBack: false
         });
 
-        ambassadorPendingRewards[recruitment.ambassadorId].push(pendingRewardId);
-        if (seniorId != 0) {
-            ambassadorPendingRewards[seniorId].push(pendingRewardId);
+        // Walk the chain and create payouts
+        uint256 remainingPool = totalPool;
+        uint256 currentAmbassadorId = recruitment.ambassadorId;
+        uint256 depth = 0;
+        uint256 currentWeek = block.timestamp / 1 weeks;
+
+        while (currentAmbassadorId != 0 && remainingPool > 0 && depth < MAX_CHAIN_DEPTH) {
+            Ambassador storage amb = ambassadors[currentAmbassadorId];
+
+            if (!amb.active || amb.suspended) {
+                // Skip suspended/inactive, move to upline
+                currentAmbassadorId = amb.uplineId;
+                depth++;
+                continue;
+            }
+
+            // Check ambassador cooldown
+            if (block.timestamp < amb.createdAt + AMBASSADOR_COOLDOWN) {
+                currentAmbassadorId = amb.uplineId;
+                depth++;
+                continue;
+            }
+
+            uint256 payout;
+            if (amb.uplineId == 0) {
+                // State Founder - keeps everything remaining
+                payout = remainingPool;
+            } else {
+                // Regular ambassador - keeps 80%, passes 20% up
+                payout = (remainingPool * RECRUITER_KEEP_BPS) / 10000;
+            }
+
+            // Check weekly cap for this ambassador
+            uint256 weeklyUsed = ambassadorWeeklyRewards[currentAmbassadorId][currentWeek];
+            if (weeklyUsed + payout > AMBASSADOR_WEEKLY_CAP) {
+                uint256 weeklyRemaining = AMBASSADOR_WEEKLY_CAP > weeklyUsed ? AMBASSADOR_WEEKLY_CAP - weeklyUsed : 0;
+                if (weeklyRemaining == 0) {
+                    emit WeeklyCapReached(currentAmbassadorId, currentWeek, weeklyUsed);
+                    // Skip this ambassador, but continue up chain with full remaining
+                    currentAmbassadorId = amb.uplineId;
+                    depth++;
+                    continue;
+                }
+                payout = weeklyRemaining;
+            }
+
+            // Record the payout
+            rewardPayouts[pendingRewardId].push(ChainPayout({
+                pendingRewardId: pendingRewardId,
+                ambassadorId: currentAmbassadorId,
+                amount: payout,
+                claimed: false
+            }));
+
+            // Update tracking
+            amb.totalPending += payout;
+            ambassadorWeeklyRewards[currentAmbassadorId][currentWeek] += payout;
+            ambassadorPendingRewards[currentAmbassadorId].push(pendingRewardId);
+
+            emit ChainPayoutQueued(pendingRewardId, currentAmbassadorId, payout, depth);
+
+            // Update remaining and move up chain
+            remainingPool -= payout;
+            currentAmbassadorId = amb.uplineId;
+            depth++;
         }
 
+        // Update daily outflow with actual distributed amount
+        uint256 distributed = totalPool - remainingPool;
+
+        // If no rewards were actually distributed (e.g., all ambassadors in cooldown), clean up
+        if (distributed == 0) {
+            delete pendingRewards[pendingRewardId];
+            nextPendingRewardId--;
+            return 0;
+        }
+
+        dailyOutflow[currentDay] += distributed;
         recruitment.totalSalesVolume += _saleAmount;
 
-        emit RewardQueued(pendingRewardId, _orderId, recruitment.ambassadorId, totalReward, vestingEnds);
+        emit RewardQueued(pendingRewardId, _orderId, distributed, depth);
+
+        return pendingRewardId;
     }
 
+    // ============ Claim Rewards ============
+
     /**
-     * @notice Claim all vested rewards
+     * @notice Claim all vested rewards for the caller
      */
     function claimVestedRewards() external nonReentrant {
         uint256 ambassadorId = ambassadorIdByWallet[msg.sender];
@@ -417,9 +507,10 @@ contract AmbassadorRewards is ReentrancyGuard {
         uint256 totalToClaim = 0;
 
         for (uint256 i = 0; i < rewardIds.length; i++) {
-            PendingReward storage reward = pendingRewards[rewardIds[i]];
+            uint256 rewardId = rewardIds[i];
+            PendingReward storage reward = pendingRewards[rewardId];
 
-            if (reward.claimed || reward.clawedBack) {
+            if (reward.clawedBack) {
                 continue;
             }
 
@@ -427,35 +518,22 @@ contract AmbassadorRewards is ReentrancyGuard {
                 continue;
             }
 
-            // Determine amount for this ambassador (could be primary or senior)
-            uint256 amount = 0;
-            if (reward.ambassadorId == ambassadorId) {
-                amount = reward.ambassadorAmount;
-            } else if (reward.seniorAmbassadorId == ambassadorId) {
-                amount = reward.seniorAmount;
-            }
+            // Find this ambassador's payout in the chain
+            ChainPayout[] storage payouts = rewardPayouts[rewardId];
+            for (uint256 j = 0; j < payouts.length; j++) {
+                if (payouts[j].ambassadorId == ambassadorId && !payouts[j].claimed) {
+                    totalToClaim += payouts[j].amount;
+                    payouts[j].claimed = true;
 
-            if (amount > 0) {
-                totalToClaim += amount;
+                    ambassador.totalPending -= payouts[j].amount;
+                    ambassador.totalEarned += payouts[j].amount;
 
-                // Mark as claimed only if this is the primary ambassador
-                // or if senior has already claimed their portion
-                if (reward.ambassadorId == ambassadorId) {
-                    if (reward.seniorAmount == 0 || reward.seniorAmbassadorId == 0) {
-                        reward.claimed = true;
-                    }
-                    ambassador.totalPending -= amount;
-                    ambassador.totalEarned += amount;
-
-                    // Update recruitment stats
+                    // Update seller recruitment stats
                     SellerRecruitment storage recruitment = sellerRecruitments[reward.sellerId];
-                    recruitment.totalRewardsPaid += reward.ambassadorAmount + reward.seniorAmount;
-                } else if (reward.seniorAmbassadorId == ambassadorId) {
-                    ambassador.totalPending -= amount;
-                    ambassador.totalEarned += amount;
-                }
+                    recruitment.totalRewardsPaid += payouts[j].amount;
 
-                emit RewardClaimed(rewardIds[i], ambassadorId, amount);
+                    emit RewardClaimed(rewardId, ambassadorId, payouts[j].amount);
+                }
             }
         }
 
@@ -463,24 +541,24 @@ contract AmbassadorRewards is ReentrancyGuard {
         rootsToken.safeTransfer(msg.sender, totalToClaim);
     }
 
+    // ============ Clawback ============
+
     /**
      * @notice Clawback pending reward for disputed order
-     * @dev Called by marketplace when order is disputed
      */
     function clawbackReward(uint256 _orderId, string calldata _reason) external onlyMarketplace {
-        // Find the pending reward for this order
         for (uint256 i = 1; i <= nextPendingRewardId; i++) {
             PendingReward storage reward = pendingRewards[i];
             if (reward.orderId == _orderId && !reward.claimed && !reward.clawedBack) {
                 reward.clawedBack = true;
 
-                // Reduce pending amounts
-                Ambassador storage ambassador = ambassadors[reward.ambassadorId];
-                ambassador.totalPending -= reward.ambassadorAmount;
-
-                if (reward.seniorAmbassadorId != 0) {
-                    Ambassador storage senior = ambassadors[reward.seniorAmbassadorId];
-                    senior.totalPending -= reward.seniorAmount;
+                // Reduce pending amounts for all in chain
+                ChainPayout[] storage payouts = rewardPayouts[i];
+                for (uint256 j = 0; j < payouts.length; j++) {
+                    if (!payouts[j].claimed) {
+                        Ambassador storage amb = ambassadors[payouts[j].ambassadorId];
+                        amb.totalPending -= payouts[j].amount;
+                    }
                 }
 
                 emit RewardClawedBack(i, _orderId, _reason);
@@ -491,11 +569,6 @@ contract AmbassadorRewards is ReentrancyGuard {
 
     // ============ Governance Functions ============
 
-    /**
-     * @notice Flag an ambassador for potential fraud
-     * @param _targetAmbassadorId Ambassador to flag
-     * @param _reason Description of suspected fraud
-     */
     function flagAmbassador(
         uint256 _targetAmbassadorId,
         string calldata _reason
@@ -512,7 +585,7 @@ contract AmbassadorRewards is ReentrancyGuard {
             flaggedBy: flaggedBy,
             reason: _reason,
             createdAt: block.timestamp,
-            votesFor: 1, // Flagger automatically votes for suspension
+            votesFor: 1,
             votesAgainst: 0,
             resolved: false,
             suspended: false
@@ -523,11 +596,6 @@ contract AmbassadorRewards is ReentrancyGuard {
         emit FraudFlagRaised(flagId, _targetAmbassadorId, flaggedBy);
     }
 
-    /**
-     * @notice Vote on a fraud flag
-     * @param _flagId Flag to vote on
-     * @param _voteToSuspend True to vote for suspension, false against
-     */
     function voteOnFlag(uint256 _flagId, bool _voteToSuspend) external onlyActiveAmbassador {
         uint256 ambassadorId = ambassadorIdByWallet[msg.sender];
         FraudFlag storage flag = fraudFlags[_flagId];
@@ -548,9 +616,6 @@ contract AmbassadorRewards is ReentrancyGuard {
         emit VoteCast(_flagId, ambassadorId, _voteToSuspend);
     }
 
-    /**
-     * @notice Resolve a fraud flag after voting period ends
-     */
     function resolveFlag(uint256 _flagId) external {
         FraudFlag storage flag = fraudFlags[_flagId];
 
@@ -561,48 +626,34 @@ contract AmbassadorRewards is ReentrancyGuard {
 
         uint256 totalVotes = flag.votesFor + flag.votesAgainst;
 
-        // Need minimum votes and majority to suspend
         if (totalVotes >= MIN_VOTES_REQUIRED && flag.votesFor > flag.votesAgainst) {
             flag.suspended = true;
             ambassadors[flag.targetAmbassadorId].suspended = true;
-
-            // Clawback all pending rewards for suspended ambassador
             _clawbackAllPending(flag.targetAmbassadorId);
-
             emit AmbassadorSuspended(flag.targetAmbassadorId);
         }
 
         emit FraudFlagResolved(_flagId, flag.targetAmbassadorId, flag.suspended);
     }
 
-    /**
-     * @notice Clawback all pending rewards for a suspended ambassador
-     */
     function _clawbackAllPending(uint256 _ambassadorId) internal {
         uint256[] storage rewardIds = ambassadorPendingRewards[_ambassadorId];
 
         for (uint256 i = 0; i < rewardIds.length; i++) {
             PendingReward storage reward = pendingRewards[rewardIds[i]];
-
-            if (!reward.claimed && !reward.clawedBack) {
-                if (reward.ambassadorId == _ambassadorId) {
-                    reward.clawedBack = true;
-                    ambassadors[_ambassadorId].totalPending -= reward.ambassadorAmount;
-                    emit RewardClawedBack(rewardIds[i], reward.orderId, "Ambassador suspended");
+            if (!reward.clawedBack) {
+                ChainPayout[] storage payouts = rewardPayouts[rewardIds[i]];
+                for (uint256 j = 0; j < payouts.length; j++) {
+                    if (payouts[j].ambassadorId == _ambassadorId && !payouts[j].claimed) {
+                        ambassadors[_ambassadorId].totalPending -= payouts[j].amount;
+                        emit RewardClawedBack(rewardIds[i], reward.orderId, "Ambassador suspended");
+                    }
                 }
             }
         }
     }
 
     // ============ View Functions ============
-
-    function hasSufficientTreasury(uint256 _rewardAmount) external view returns (bool) {
-        return rootsToken.balanceOf(address(this)) >= _rewardAmount;
-    }
-
-    function treasuryBalance() external view returns (uint256) {
-        return rootsToken.balanceOf(address(this));
-    }
 
     function getAmbassador(uint256 _ambassadorId) external view returns (Ambassador memory) {
         return ambassadors[_ambassadorId];
@@ -616,20 +667,27 @@ contract AmbassadorRewards is ReentrancyGuard {
         return pendingRewards[_pendingRewardId];
     }
 
-    function getFraudFlag(uint256 _flagId) external view returns (FraudFlag memory) {
-        return fraudFlags[_flagId];
+    function getRewardPayouts(uint256 _pendingRewardId) external view returns (ChainPayout[] memory) {
+        return rewardPayouts[_pendingRewardId];
     }
 
-    function isRewardPeriodActive(uint256 _sellerId) external view returns (bool) {
-        SellerRecruitment storage recruitment = sellerRecruitments[_sellerId];
-        if (recruitment.ambassadorId == 0) {
-            return false;
+    function getAmbassadorChain(uint256 _ambassadorId) external view returns (uint256[] memory) {
+        uint256[] memory chain = new uint256[](MAX_CHAIN_DEPTH);
+        uint256 current = _ambassadorId;
+        uint256 depth = 0;
+
+        while (current != 0 && depth < MAX_CHAIN_DEPTH) {
+            chain[depth] = current;
+            current = ambassadors[current].uplineId;
+            depth++;
         }
-        return block.timestamp <= recruitment.recruitedAt + REWARD_DURATION;
-    }
 
-    function getAmbassadorId(address _wallet) external view returns (uint256) {
-        return ambassadorIdByWallet[_wallet];
+        // Resize array to actual length
+        uint256[] memory result = new uint256[](depth);
+        for (uint256 i = 0; i < depth; i++) {
+            result[i] = chain[i];
+        }
+        return result;
     }
 
     function getClaimableRewards(uint256 _ambassadorId) external view returns (uint256) {
@@ -639,53 +697,25 @@ contract AmbassadorRewards is ReentrancyGuard {
         for (uint256 i = 0; i < rewardIds.length; i++) {
             PendingReward storage reward = pendingRewards[rewardIds[i]];
 
-            if (reward.claimed || reward.clawedBack) {
+            if (reward.clawedBack || block.timestamp < reward.vestingEndsAt) {
                 continue;
             }
 
-            if (block.timestamp < reward.vestingEndsAt) {
-                continue;
-            }
-
-            if (reward.ambassadorId == _ambassadorId) {
-                claimable += reward.ambassadorAmount;
-            } else if (reward.seniorAmbassadorId == _ambassadorId) {
-                claimable += reward.seniorAmount;
+            ChainPayout[] storage payouts = rewardPayouts[rewardIds[i]];
+            for (uint256 j = 0; j < payouts.length; j++) {
+                if (payouts[j].ambassadorId == _ambassadorId && !payouts[j].claimed) {
+                    claimable += payouts[j].amount;
+                }
             }
         }
 
         return claimable;
     }
 
-    function getPendingRewardIds(uint256 _ambassadorId) external view returns (uint256[] memory) {
-        return ambassadorPendingRewards[_ambassadorId];
+    function isSellerActivated(uint256 _sellerId) external view returns (bool) {
+        return sellerRecruitments[_sellerId].activated;
     }
 
-    /**
-     * @notice Get remaining daily outflow allowance
-     */
-    function getRemainingDailyAllowance() external view returns (uint256) {
-        if (!treasuryInitialized) {
-            return 0;
-        }
-        uint256 currentDay = block.timestamp / 1 days;
-        uint256 dailyCap = (initialTreasuryBalance * DAILY_OUTFLOW_BPS) / 10000;
-        uint256 used = dailyOutflow[currentDay];
-        return dailyCap > used ? dailyCap - used : 0;
-    }
-
-    /**
-     * @notice Get remaining weekly allowance for an ambassador
-     */
-    function getRemainingWeeklyAllowance(uint256 _ambassadorId) external view returns (uint256) {
-        uint256 currentWeek = block.timestamp / 1 weeks;
-        uint256 used = ambassadorWeeklyRewards[_ambassadorId][currentWeek];
-        return AMBASSADOR_WEEKLY_CAP > used ? AMBASSADOR_WEEKLY_CAP - used : 0;
-    }
-
-    /**
-     * @notice Check if ambassador is past cooldown period
-     */
     function isAmbassadorActive(uint256 _ambassadorId) external view returns (bool) {
         Ambassador storage amb = ambassadors[_ambassadorId];
         if (!amb.active || amb.suspended) {
@@ -694,15 +724,31 @@ contract AmbassadorRewards is ReentrancyGuard {
         return block.timestamp >= amb.createdAt + AMBASSADOR_COOLDOWN;
     }
 
-    /**
-     * @notice Check if seller is activated for rewards
-     */
-    function isSellerActivated(uint256 _sellerId) external view returns (bool) {
-        return sellerRecruitments[_sellerId].activated;
+    function getAmbassadorId(address _wallet) external view returns (uint256) {
+        return ambassadorIdByWallet[_wallet];
     }
 
-    // Keep old interface for backward compatibility (now deprecated)
-    function distributeRewards(uint256, uint256) external view onlyMarketplace {
-        revert("Use queueReward instead");
+    function getRemainingDailyAllowance() external view returns (uint256) {
+        if (!treasuryInitialized) {
+            return type(uint256).max;
+        }
+        uint256 currentDay = block.timestamp / 1 days;
+        uint256 dailyCap = (initialTreasuryBalance * DAILY_OUTFLOW_BPS) / 10000;
+        uint256 used = dailyOutflow[currentDay];
+        return dailyCap > used ? dailyCap - used : 0;
+    }
+
+    function getRemainingWeeklyAllowance(uint256 _ambassadorId) external view returns (uint256) {
+        uint256 currentWeek = block.timestamp / 1 weeks;
+        uint256 used = ambassadorWeeklyRewards[_ambassadorId][currentWeek];
+        return AMBASSADOR_WEEKLY_CAP > used ? AMBASSADOR_WEEKLY_CAP - used : 0;
+    }
+
+    function treasuryBalance() external view returns (uint256) {
+        return rootsToken.balanceOf(address(this));
+    }
+
+    function hasSufficientTreasury(uint256 _amount) external view returns (bool) {
+        return rootsToken.balanceOf(address(this)) >= _amount;
     }
 }

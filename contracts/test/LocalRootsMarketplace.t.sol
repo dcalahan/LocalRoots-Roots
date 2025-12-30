@@ -335,7 +335,7 @@ contract LocalRootsMarketplaceTest is Test {
         uint256 sellerBalanceBefore = token.balanceOf(seller1);
         uint256 marketplaceBalanceBefore = token.balanceOf(address(marketplace));
 
-        uint256 orderId = marketplace.purchase(1, quantity, false);
+        uint256 orderId = marketplace.purchase(1, quantity, false, "");
         vm.stopPrank();
 
         assertEq(orderId, 1);
@@ -361,7 +361,7 @@ contract LocalRootsMarketplaceTest is Test {
         // Buyer purchases
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, false);
+        uint256 orderId = marketplace.purchase(1, 5, false, "");
         vm.stopPrank();
 
         uint256 expectedTotal = PRICE_PER_UNIT * 5;
@@ -395,7 +395,7 @@ contract LocalRootsMarketplaceTest is Test {
         // Buyer purchases
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, false);
+        uint256 orderId = marketplace.purchase(1, 5, false, "");
         vm.stopPrank();
 
         uint256 expectedTotal = PRICE_PER_UNIT * 5;
@@ -453,7 +453,7 @@ contract LocalRootsMarketplaceTest is Test {
         uint256 buyerBalanceBefore = token.balanceOf(buyer1);
         uint256 sellerBalanceBefore = token.balanceOf(seller1);
 
-        uint256 orderId = freshMarketplace.purchase(1, quantity, false);
+        uint256 orderId = freshMarketplace.purchase(1, quantity, false, "");
         vm.stopPrank();
 
         // Buyer pays exact price
@@ -489,11 +489,12 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, true); // isDelivery = true
+        uint256 orderId = marketplace.purchase(1, 5, true, "ipfs://buyer-address"); // isDelivery = true
         vm.stopPrank();
 
         LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
         assertTrue(order.isDelivery);
+        assertEq(order.buyerInfoIpfs, "ipfs://buyer-address");
     }
 
     function test_RevertPurchase_InactiveListing() public {
@@ -507,7 +508,7 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Listing not active");
-        marketplace.purchase(1, 5, false);
+        marketplace.purchase(1, 5, false, "");
         vm.stopPrank();
     }
 
@@ -521,7 +522,7 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Insufficient quantity");
-        marketplace.purchase(1, 15, false);
+        marketplace.purchase(1, 15, false, "");
         vm.stopPrank();
     }
 
@@ -535,7 +536,7 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Seller does not offer delivery");
-        marketplace.purchase(1, 5, true);
+        marketplace.purchase(1, 5, true, "ipfs://buyer-address");
         vm.stopPrank();
     }
 
@@ -549,7 +550,21 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Seller does not offer pickup");
-        marketplace.purchase(1, 5, false);
+        marketplace.purchase(1, 5, false, "");
+        vm.stopPrank();
+    }
+
+    function test_RevertPurchase_DeliveryWithoutAddress() public {
+        vm.startPrank(seller1);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
+        vm.stopPrank();
+
+        vm.startPrank(buyer1);
+        token.approve(address(marketplace), type(uint256).max);
+
+        vm.expectRevert("Delivery address required");
+        marketplace.purchase(1, 5, true, ""); // delivery with empty address
         vm.stopPrank();
     }
 
@@ -563,7 +578,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        orderId = marketplace.purchase(1, 5, false);
+        orderId = marketplace.purchase(1, 5, false, "");
         vm.stopPrank();
     }
 
@@ -601,7 +616,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, true); // delivery
+        uint256 orderId = marketplace.purchase(1, 5, true, "ipfs://buyer-address"); // delivery
         vm.stopPrank();
 
         vm.startPrank(seller1);

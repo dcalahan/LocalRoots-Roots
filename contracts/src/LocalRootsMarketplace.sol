@@ -26,7 +26,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
     IERC20 public immutable rootsToken;
     address public ambassadorRewards;
 
-    uint256 public constant PLATFORM_FEE_BPS = 250; // 2.5% to ambassador rewards
+    // Note: No platform fees charged. Ambassador rewards come from treasury fund.
     uint256 public constant DISPUTE_WINDOW = 2 days;
 
     uint256 public nextSellerId;
@@ -68,6 +68,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         string proofIpfs;         // IPFS hash of delivery/pickup proof photo
         uint256 proofUploadedAt;  // When seller uploaded proof (starts dispute window)
         bool fundsReleased;       // Whether escrowed funds have been released to seller
+        string buyerInfoIpfs;     // IPFS hash of buyer's delivery address or contact info
     }
 
     enum OrderStatus {
@@ -248,11 +249,13 @@ contract LocalRootsMarketplace is ReentrancyGuard {
      * @param _listingId Listing to purchase from
      * @param _quantity Quantity to purchase
      * @param _isDelivery Whether buyer wants delivery (vs pickup)
+     * @param _buyerInfoIpfs IPFS hash of buyer's delivery address/contact info (required for delivery)
      */
     function purchase(
         uint256 _listingId,
         uint256 _quantity,
-        bool _isDelivery
+        bool _isDelivery,
+        string calldata _buyerInfoIpfs
     ) external nonReentrant returns (uint256 orderId) {
         Listing storage listing = listings[_listingId];
         require(listing.active, "Listing not active");
@@ -263,6 +266,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
         if (_isDelivery) {
             require(seller.offersDelivery, "Seller does not offer delivery");
+            require(bytes(_buyerInfoIpfs).length > 0, "Delivery address required");
         } else {
             require(seller.offersPickup, "Seller does not offer pickup");
         }
@@ -290,7 +294,8 @@ contract LocalRootsMarketplace is ReentrancyGuard {
             rewardQueued: false,
             proofIpfs: "",
             proofUploadedAt: 0,
-            fundsReleased: false
+            fundsReleased: false,
+            buyerInfoIpfs: _buyerInfoIpfs
         });
 
         emit OrderCreated(orderId, _listingId, msg.sender, _quantity);

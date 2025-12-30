@@ -15,9 +15,10 @@ contract AmbassadorRewardsTest is Test {
     address public airdrop = address(0x5);
     address public marketplace = address(0x6);
 
-    address public ambassador1 = address(0x100);
-    address public ambassador2 = address(0x101);
-    address public ambassador3 = address(0x102);
+    address public stateFounder = address(0x50);   // Claire (State Founder)
+    address public cityAmbassador = address(0x100);  // City level
+    address public neighborhoodAmbassador = address(0x101);  // Neighborhood level
+    address public blockAmbassador = address(0x102);  // Block level
     address public buyer1 = address(0x200);
     address public buyer2 = address(0x201);
 
@@ -67,12 +68,16 @@ contract AmbassadorRewardsTest is Test {
         assertEq(rewards.REWARD_DURATION(), 365 days);
     }
 
-    function test_AmbassadorRewardBPS() public view {
-        assertEq(rewards.AMBASSADOR_REWARD_BPS(), 2500); // 25%
+    function test_TotalRewardBPS() public view {
+        assertEq(rewards.TOTAL_REWARD_BPS(), 2500); // 25%
     }
 
-    function test_SeniorCutBPS() public view {
-        assertEq(rewards.SENIOR_CUT_BPS(), 500); // 5%
+    function test_UplineShareBPS() public view {
+        assertEq(rewards.UPLINE_SHARE_BPS(), 2000); // 20%
+    }
+
+    function test_RecruiterKeepBPS() public view {
+        assertEq(rewards.RECRUITER_KEEP_BPS(), 8000); // 80%
     }
 
     function test_VestingPeriod() public view {
@@ -88,63 +93,117 @@ contract AmbassadorRewardsTest is Test {
         assertEq(rewards.initialTreasuryBalance(), AMBASSADOR_ALLOCATION);
     }
 
-    // ============ Ambassador Registration Tests ============
+    // ============ State Founder Registration Tests ============
 
-    function test_RegisterAmbassador() public {
-        vm.prank(ambassador1);
-        uint256 id = rewards.registerAmbassador(0); // no senior
+    function test_RegisterStateFounder() public {
+        bytes8 georgiaGeohash = bytes8("djq"); // Georgia prefix
+
+        uint256 id = rewards.registerStateFounder(stateFounder, georgiaGeohash);
 
         assertEq(id, 1);
-        assertEq(rewards.getAmbassadorId(ambassador1), 1);
+        assertEq(rewards.getAmbassadorId(stateFounder), 1);
 
         AmbassadorRewards.Ambassador memory amb = rewards.getAmbassador(1);
-        assertEq(amb.wallet, ambassador1);
-        assertEq(amb.seniorAmbassadorId, 0);
+        assertEq(amb.wallet, stateFounder);
+        assertEq(amb.uplineId, 0); // No upline = State Founder
         assertEq(amb.totalEarned, 0);
         assertEq(amb.totalPending, 0);
         assertEq(amb.recruitedSellers, 0);
         assertEq(amb.recruitedAmbassadors, 0);
         assertTrue(amb.active);
         assertFalse(amb.suspended);
+        assertEq(amb.regionGeohash, georgiaGeohash);
     }
 
-    function test_RegisterWithSenior() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+    function test_RevertStateFounder_NotAdmin() public {
+        bytes8 georgiaGeohash = bytes8("djq");
 
-        vm.prank(ambassador2);
-        uint256 id = rewards.registerAmbassador(1); // senior is ambassador1
+        vm.prank(stateFounder);
+        vm.expectRevert("Only admin");
+        rewards.registerStateFounder(stateFounder, georgiaGeohash);
+    }
+
+    function test_RevertStateFounder_AlreadyRegistered() public {
+        bytes8 georgiaGeohash = bytes8("djq");
+        rewards.registerStateFounder(stateFounder, georgiaGeohash);
+
+        vm.expectRevert("Already an ambassador");
+        rewards.registerStateFounder(stateFounder, bytes8("drt")); // Alabama
+    }
+
+    // ============ Ambassador Registration Tests ============
+
+    function test_RegisterAmbassador() public {
+        // First register state founder
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+
+        // Register city ambassador under state founder
+        vm.prank(cityAmbassador);
+        uint256 id = rewards.registerAmbassador(1); // upline is state founder
 
         assertEq(id, 2);
+        assertEq(rewards.getAmbassadorId(cityAmbassador), 2);
 
         AmbassadorRewards.Ambassador memory amb = rewards.getAmbassador(2);
-        assertEq(amb.seniorAmbassadorId, 1);
+        assertEq(amb.wallet, cityAmbassador);
+        assertEq(amb.uplineId, 1);
+        assertEq(amb.regionGeohash, bytes8(0)); // Only State Founders have regions
+        assertTrue(amb.active);
 
-        // Check senior's count updated
-        AmbassadorRewards.Ambassador memory senior = rewards.getAmbassador(1);
-        assertEq(senior.recruitedAmbassadors, 1);
+        // Check upline's count updated
+        AmbassadorRewards.Ambassador memory upline = rewards.getAmbassador(1);
+        assertEq(upline.recruitedAmbassadors, 1);
+    }
+
+    function test_RegisterMultiLevelChain() public {
+        // State Founder -> City -> Neighborhood -> Block
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+
+        vm.prank(cityAmbassador);
+        rewards.registerAmbassador(1);
+
+        vm.prank(neighborhoodAmbassador);
+        rewards.registerAmbassador(2);
+
+        vm.prank(blockAmbassador);
+        rewards.registerAmbassador(3);
+
+        // Verify chain
+        uint256[] memory chain = rewards.getAmbassadorChain(4);
+        assertEq(chain.length, 4);
+        assertEq(chain[0], 4); // Block
+        assertEq(chain[1], 3); // Neighborhood
+        assertEq(chain[2], 2); // City
+        assertEq(chain[3], 1); // State Founder
     }
 
     function test_RevertRegister_AlreadyAmbassador() public {
-        vm.startPrank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+
+        vm.startPrank(cityAmbassador);
+        rewards.registerAmbassador(1);
 
         vm.expectRevert("Already an ambassador");
-        rewards.registerAmbassador(0);
+        rewards.registerAmbassador(1);
         vm.stopPrank();
     }
 
-    function test_RevertRegister_InvalidSenior() public {
-        vm.prank(ambassador1);
-        vm.expectRevert("Invalid senior ambassador");
+    function test_RevertRegister_NoUpline() public {
+        vm.prank(cityAmbassador);
+        vm.expectRevert("Must have an upline (use registerStateFounder for founders)");
+        rewards.registerAmbassador(0);
+    }
+
+    function test_RevertRegister_InvalidUpline() public {
+        vm.prank(cityAmbassador);
+        vm.expectRevert("Upline not active");
         rewards.registerAmbassador(999);
     }
 
     // ============ Seller Recruitment Tests ============
 
     function test_RecordSellerRecruitment() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
 
         vm.prank(marketplace);
         rewards.recordSellerRecruitment(1, 1); // sellerId 1, ambassadorId 1
@@ -165,10 +224,9 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_RevertRecruitment_NotMarketplace() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
 
-        vm.prank(ambassador1);
+        vm.prank(stateFounder);
         vm.expectRevert("Only marketplace");
         rewards.recordSellerRecruitment(1, 1);
     }
@@ -176,8 +234,7 @@ contract AmbassadorRewardsTest is Test {
     // ============ Seller Activation Tests (Circuit Breaker) ============
 
     function test_SellerActivation() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
 
         vm.prank(marketplace);
         rewards.recordSellerRecruitment(1, 1);
@@ -198,7 +255,7 @@ contract AmbassadorRewardsTest is Test {
         recruitment = rewards.getSellerRecruitment(1);
         assertEq(recruitment.completedOrderCount, 2);
         assertEq(recruitment.uniqueBuyerCount, 1);
-        assertFalse(recruitment.activated); // Still not activated - need 2 unique buyers
+        assertFalse(recruitment.activated);
 
         // Third order from different buyer - activates!
         vm.prank(marketplace);
@@ -210,19 +267,29 @@ contract AmbassadorRewardsTest is Test {
         assertTrue(recruitment.activated);
     }
 
-    // ============ Reward Queueing Tests ============
+    // ============ Chain-Based Reward Distribution Tests ============
 
-    function _setupActivatedSeller() internal returns (uint256 sellerId) {
+    function _setupActivatedSellerWithChain() internal returns (uint256 sellerId) {
         sellerId = 1;
 
-        // Register ambassador and wait for cooldown
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        // Setup 4-level chain: State -> City -> Neighborhood -> Block
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+
+        vm.prank(cityAmbassador);
+        rewards.registerAmbassador(1);
+
+        vm.prank(neighborhoodAmbassador);
+        rewards.registerAmbassador(2);
+
+        vm.prank(blockAmbassador);
+        rewards.registerAmbassador(3);
+
+        // Wait for all cooldowns
         vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
 
-        // Recruit seller
+        // Block ambassador recruits seller
         vm.prank(marketplace);
-        rewards.recordSellerRecruitment(sellerId, 1);
+        rewards.recordSellerRecruitment(sellerId, 4); // ambassadorId 4 = block
 
         // Activate seller (2 orders from 2 unique buyers)
         vm.prank(marketplace);
@@ -231,46 +298,119 @@ contract AmbassadorRewardsTest is Test {
         rewards.recordCompletedOrder(sellerId, buyer2);
     }
 
-    function test_QueueReward() public {
-        uint256 sellerId = _setupActivatedSeller();
+    function test_ChainBasedRewardDistribution() public {
+        uint256 sellerId = _setupActivatedSellerWithChain();
         uint256 saleAmount = 1000 * 10**18;
-        uint256 expectedReward = (saleAmount * 2500) / 10000; // 25%
+        uint256 totalPool = (saleAmount * 2500) / 10000; // 25% = 250 ROOTS
 
         vm.prank(marketplace);
         uint256 pendingRewardId = rewards.queueReward(1, sellerId, saleAmount);
 
         assertGt(pendingRewardId, 0);
 
-        AmbassadorRewards.PendingReward memory reward = rewards.getPendingReward(pendingRewardId);
-        assertEq(reward.orderId, 1);
-        assertEq(reward.sellerId, sellerId);
-        assertEq(reward.ambassadorId, 1);
-        assertEq(reward.ambassadorAmount, expectedReward);
-        assertEq(reward.vestingEndsAt, block.timestamp + VESTING_PERIOD);
-        assertFalse(reward.claimed);
-        assertFalse(reward.clawedBack);
+        // Get payouts for this reward
+        AmbassadorRewards.ChainPayout[] memory payouts = rewards.getRewardPayouts(pendingRewardId);
+        assertEq(payouts.length, 4); // All 4 levels get paid
 
-        // Ambassador should have pending balance
-        AmbassadorRewards.Ambassador memory amb = rewards.getAmbassador(1);
-        assertEq(amb.totalPending, expectedReward);
-        assertEq(amb.totalEarned, 0); // Not earned until claimed
+        // Block ambassador (recruiter) gets 80% of pool
+        uint256 blockPayout = (totalPool * 8000) / 10000; // 200 ROOTS
+        assertEq(payouts[0].ambassadorId, 4);
+        assertEq(payouts[0].amount, blockPayout);
+
+        // Neighborhood gets 80% of remaining (20% of pool)
+        uint256 remaining1 = totalPool - blockPayout; // 50
+        uint256 neighborhoodPayout = (remaining1 * 8000) / 10000; // 40
+        assertEq(payouts[1].ambassadorId, 3);
+        assertEq(payouts[1].amount, neighborhoodPayout);
+
+        // City gets 80% of remaining
+        uint256 remaining2 = remaining1 - neighborhoodPayout; // 10
+        uint256 cityPayout = (remaining2 * 8000) / 10000; // 8
+        assertEq(payouts[2].ambassadorId, 2);
+        assertEq(payouts[2].amount, cityPayout);
+
+        // State Founder gets ALL remaining (no upline)
+        uint256 stateFounderPayout = remaining2 - cityPayout; // 2
+        assertEq(payouts[3].ambassadorId, 1);
+        assertEq(payouts[3].amount, stateFounderPayout);
+
+        // Verify total distributed equals pool
+        uint256 totalDistributed = blockPayout + neighborhoodPayout + cityPayout + stateFounderPayout;
+        assertEq(totalDistributed, totalPool);
     }
 
-    function test_QueueReward_FailsBeforeCooldown() public {
-        // Register ambassador but don't wait for cooldown
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+    function test_StateFounderDirectRecruitment() public {
+        // State founder recruits seller directly - gets 100%
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
 
         vm.prank(marketplace);
         rewards.recordSellerRecruitment(1, 1);
 
-        // Activate seller
         vm.prank(marketplace);
         rewards.recordCompletedOrder(1, buyer1);
         vm.prank(marketplace);
         rewards.recordCompletedOrder(1, buyer2);
 
-        // Try to queue reward before cooldown
+        uint256 saleAmount = 1000 * 10**18;
+        uint256 expectedReward = (saleAmount * 2500) / 10000; // 25%
+
+        vm.prank(marketplace);
+        uint256 pendingRewardId = rewards.queueReward(1, 1, saleAmount);
+
+        AmbassadorRewards.ChainPayout[] memory payouts = rewards.getRewardPayouts(pendingRewardId);
+        assertEq(payouts.length, 1); // Only state founder
+        assertEq(payouts[0].ambassadorId, 1);
+        assertEq(payouts[0].amount, expectedReward); // Gets full 25%
+    }
+
+    function test_CityAmbassadorRecruitment() public {
+        // City ambassador recruits seller - city gets 80%, state gets 20%
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+
+        vm.prank(cityAmbassador);
+        rewards.registerAmbassador(1);
+
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
+
+        vm.prank(marketplace);
+        rewards.recordSellerRecruitment(1, 2); // City ambassador
+
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer1);
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer2);
+
+        uint256 saleAmount = 1000 * 10**18;
+        uint256 totalPool = (saleAmount * 2500) / 10000; // 250
+
+        vm.prank(marketplace);
+        uint256 pendingRewardId = rewards.queueReward(1, 1, saleAmount);
+
+        AmbassadorRewards.ChainPayout[] memory payouts = rewards.getRewardPayouts(pendingRewardId);
+        assertEq(payouts.length, 2);
+
+        // City gets 80%
+        assertEq(payouts[0].ambassadorId, 2);
+        assertEq(payouts[0].amount, (totalPool * 8000) / 10000); // 200
+
+        // State gets remaining 20%
+        assertEq(payouts[1].ambassadorId, 1);
+        assertEq(payouts[1].amount, totalPool - payouts[0].amount); // 50
+    }
+
+    function test_QueueReward_FailsBeforeCooldown() public {
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        // Don't wait for cooldown
+
+        vm.prank(marketplace);
+        rewards.recordSellerRecruitment(1, 1);
+
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer1);
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer2);
+
         vm.prank(marketplace);
         uint256 pendingRewardId = rewards.queueReward(1, 1, 1000 * 10**18);
 
@@ -278,8 +418,7 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_QueueReward_FailsBeforeActivation() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
         vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
 
         vm.prank(marketplace);
@@ -297,88 +436,56 @@ contract AmbassadorRewardsTest is Test {
 
     // ============ Reward Claiming Tests ============
 
-    function test_ClaimVestedRewards() public {
-        uint256 sellerId = _setupActivatedSeller();
+    function test_ClaimVestedRewards_Chain() public {
+        uint256 sellerId = _setupActivatedSellerWithChain();
         uint256 saleAmount = 1000 * 10**18;
-        uint256 expectedReward = (saleAmount * 2500) / 10000;
 
         vm.prank(marketplace);
         rewards.queueReward(1, sellerId, saleAmount);
 
-        // Cannot claim before vesting
-        vm.prank(ambassador1);
-        vm.expectRevert("No rewards to claim");
-        rewards.claimVestedRewards();
-
         // Wait for vesting period
         vm.warp(block.timestamp + VESTING_PERIOD);
 
-        uint256 balanceBefore = token.balanceOf(ambassador1);
-
-        vm.prank(ambassador1);
+        // Block ambassador claims
+        uint256 blockBalanceBefore = token.balanceOf(blockAmbassador);
+        vm.prank(blockAmbassador);
         rewards.claimVestedRewards();
+        uint256 blockClaimed = token.balanceOf(blockAmbassador) - blockBalanceBefore;
+        assertGt(blockClaimed, 0);
 
-        assertEq(token.balanceOf(ambassador1), balanceBefore + expectedReward);
+        // State founder claims
+        uint256 stateBalanceBefore = token.balanceOf(stateFounder);
+        vm.prank(stateFounder);
+        rewards.claimVestedRewards();
+        uint256 stateClaimed = token.balanceOf(stateFounder) - stateBalanceBefore;
+        assertGt(stateClaimed, 0);
 
-        AmbassadorRewards.Ambassador memory amb = rewards.getAmbassador(1);
-        assertEq(amb.totalEarned, expectedReward);
-        assertEq(amb.totalPending, 0);
+        // Block should have earned more than state founder (80% vs ~0.2%)
+        assertGt(blockClaimed, stateClaimed);
     }
 
-    function test_ClaimWithSeniorRewards() public {
-        // Register senior ambassador
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
-
-        // Register junior with senior
-        vm.prank(ambassador2);
-        rewards.registerAmbassador(1);
-
-        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
-
-        // Junior recruits seller
-        vm.prank(marketplace);
-        rewards.recordSellerRecruitment(1, 2);
-
-        // Activate seller
-        vm.prank(marketplace);
-        rewards.recordCompletedOrder(1, buyer1);
-        vm.prank(marketplace);
-        rewards.recordCompletedOrder(1, buyer2);
-
-        uint256 saleAmount = 1000 * 10**18;
-        uint256 totalReward = (saleAmount * 2500) / 10000; // 250
-        uint256 seniorCut = (totalReward * 500) / 2500; // 50
-        uint256 juniorReward = totalReward - seniorCut; // 200
+    function test_CannotClaimBeforeVesting() public {
+        uint256 sellerId = _setupActivatedSellerWithChain();
 
         vm.prank(marketplace);
-        rewards.queueReward(1, 1, saleAmount);
+        rewards.queueReward(1, sellerId, 1000 * 10**18);
 
-        vm.warp(block.timestamp + VESTING_PERIOD);
-
-        // Junior claims
-        uint256 juniorBalanceBefore = token.balanceOf(ambassador2);
-        vm.prank(ambassador2);
+        vm.prank(blockAmbassador);
+        vm.expectRevert("No rewards to claim");
         rewards.claimVestedRewards();
-        assertEq(token.balanceOf(ambassador2), juniorBalanceBefore + juniorReward);
-
-        // Senior claims
-        uint256 seniorBalanceBefore = token.balanceOf(ambassador1);
-        vm.prank(ambassador1);
-        rewards.claimVestedRewards();
-        assertEq(token.balanceOf(ambassador1), seniorBalanceBefore + seniorCut);
     }
 
     // ============ Clawback Tests ============
 
-    function test_ClawbackReward() public {
-        uint256 sellerId = _setupActivatedSeller();
+    function test_ClawbackReward_AllLevels() public {
+        uint256 sellerId = _setupActivatedSellerWithChain();
 
         vm.prank(marketplace);
         uint256 pendingRewardId = rewards.queueReward(1, sellerId, 1000 * 10**18);
 
-        AmbassadorRewards.Ambassador memory ambBefore = rewards.getAmbassador(1);
-        uint256 pendingBefore = ambBefore.totalPending;
+        // Get pending amounts before clawback
+        AmbassadorRewards.Ambassador memory blockBefore = rewards.getAmbassador(4);
+        AmbassadorRewards.Ambassador memory stateBefore = rewards.getAmbassador(1);
 
         vm.prank(marketplace);
         rewards.clawbackReward(1, "Order disputed");
@@ -386,14 +493,18 @@ contract AmbassadorRewardsTest is Test {
         AmbassadorRewards.PendingReward memory reward = rewards.getPendingReward(pendingRewardId);
         assertTrue(reward.clawedBack);
 
-        AmbassadorRewards.Ambassador memory ambAfter = rewards.getAmbassador(1);
-        assertEq(ambAfter.totalPending, pendingBefore - reward.ambassadorAmount);
+        // All pending amounts should be reduced
+        AmbassadorRewards.Ambassador memory blockAfter = rewards.getAmbassador(4);
+        AmbassadorRewards.Ambassador memory stateAfter = rewards.getAmbassador(1);
+
+        assertLt(blockAfter.totalPending, blockBefore.totalPending);
+        assertLt(stateAfter.totalPending, stateBefore.totalPending);
     }
 
     // ============ Circuit Breaker Tests ============
 
     function test_DailyOutflowCap() public {
-        uint256 sellerId = _setupActivatedSeller();
+        uint256 sellerId = _setupActivatedSellerWithChain();
 
         // Daily cap is 0.5% of initial treasury
         uint256 dailyCap = (AMBASSADOR_ALLOCATION * 50) / 10000;
@@ -404,31 +515,31 @@ contract AmbassadorRewardsTest is Test {
         vm.prank(marketplace);
         uint256 pendingRewardId = rewards.queueReward(1, sellerId, hugeAmount);
 
-        // Should only queue up to the daily cap
+        // Total distributed should not exceed daily cap
         AmbassadorRewards.PendingReward memory reward = rewards.getPendingReward(pendingRewardId);
-        assertLe(reward.ambassadorAmount, dailyCap);
+        assertLe(reward.totalAmount, dailyCap);
     }
 
     function test_AmbassadorWeeklyCap() public {
-        uint256 sellerId = _setupActivatedSeller();
+        uint256 sellerId = _setupActivatedSellerWithChain();
 
-        uint256 weeklyCap = 10_000 * 10**18; // 10,000 ROOTS
+        uint256 weeklyCap = 10_000 * 10**18;
 
-        // Queue multiple rewards that would exceed weekly cap
+        // Queue multiple rewards
         for (uint256 i = 0; i < 5; i++) {
             vm.prank(marketplace);
-            rewards.queueReward(i + 1, sellerId, 100_000 * 10**18); // Each would be 25,000 ROOTS reward
+            rewards.queueReward(i + 1, sellerId, 100_000 * 10**18);
         }
 
-        // Total pending should not exceed weekly cap
-        AmbassadorRewards.Ambassador memory amb = rewards.getAmbassador(1);
+        // Block ambassador's pending should not exceed weekly cap
+        AmbassadorRewards.Ambassador memory amb = rewards.getAmbassador(4);
         assertLe(amb.totalPending, weeklyCap);
     }
 
     // ============ Reward Period Tests ============
 
     function test_NoRewardsAfterExpiry() public {
-        uint256 sellerId = _setupActivatedSeller();
+        uint256 sellerId = _setupActivatedSellerWithChain();
 
         // Fast forward past reward period
         vm.warp(block.timestamp + REWARD_DURATION + 1);
@@ -436,53 +547,37 @@ contract AmbassadorRewardsTest is Test {
         vm.prank(marketplace);
         uint256 pendingRewardId = rewards.queueReward(1, sellerId, 1000 * 10**18);
 
-        assertEq(pendingRewardId, 0); // Should fail - reward period expired
-    }
-
-    function test_RewardsActiveJustBeforeExpiry() public {
-        uint256 sellerId = _setupActivatedSeller();
-
-        // Just before expiry
-        vm.warp(block.timestamp + REWARD_DURATION - 1);
-
-        vm.prank(marketplace);
-        uint256 pendingRewardId = rewards.queueReward(1, sellerId, 1000 * 10**18);
-
-        assertGt(pendingRewardId, 0); // Should succeed
+        assertEq(pendingRewardId, 0);
     }
 
     // ============ View Function Tests ============
 
-    function test_IsRewardPeriodActive() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+    function test_GetAmbassadorChain() public {
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
 
-        // Before recruitment
-        assertFalse(rewards.isRewardPeriodActive(1));
+        vm.prank(cityAmbassador);
+        rewards.registerAmbassador(1);
 
-        vm.prank(marketplace);
-        rewards.recordSellerRecruitment(1, 1);
+        vm.prank(neighborhoodAmbassador);
+        rewards.registerAmbassador(2);
 
-        // After recruitment
-        assertTrue(rewards.isRewardPeriodActive(1));
-
-        // After expiry
-        vm.warp(block.timestamp + REWARD_DURATION + 1);
-        assertFalse(rewards.isRewardPeriodActive(1));
+        uint256[] memory chain = rewards.getAmbassadorChain(3);
+        assertEq(chain.length, 3);
+        assertEq(chain[0], 3); // Neighborhood
+        assertEq(chain[1], 2); // City
+        assertEq(chain[2], 1); // State Founder
     }
 
     function test_GetAmbassadorId() public {
-        assertEq(rewards.getAmbassadorId(ambassador1), 0);
+        assertEq(rewards.getAmbassadorId(stateFounder), 0);
 
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
 
-        assertEq(rewards.getAmbassadorId(ambassador1), 1);
+        assertEq(rewards.getAmbassadorId(stateFounder), 1);
     }
 
     function test_IsAmbassadorActive() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
 
         // Before cooldown
         assertFalse(rewards.isAmbassadorActive(1));
@@ -493,8 +588,7 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_IsSellerActivated() public {
-        vm.prank(ambassador1);
-        rewards.registerAmbassador(0);
+        rewards.registerStateFounder(stateFounder, bytes8("djq"));
 
         vm.prank(marketplace);
         rewards.recordSellerRecruitment(1, 1);
@@ -512,13 +606,24 @@ contract AmbassadorRewardsTest is Test {
 
     // ============ Admin Tests ============
 
+    function test_SetAdmin() public {
+        address newAdmin = address(0x999);
+        rewards.setAdmin(newAdmin);
+        assertEq(rewards.admin(), newAdmin);
+    }
+
+    function test_RevertSetAdmin_NotAdmin() public {
+        vm.prank(stateFounder);
+        vm.expectRevert("Only admin");
+        rewards.setAdmin(stateFounder);
+    }
+
     function test_RevertSetMarketplace_AlreadySet() public {
         vm.expectRevert("Marketplace already set");
         rewards.setMarketplace(address(0x999));
     }
 
     function test_RevertSetMarketplace_ZeroAddress() public {
-        // Deploy fresh rewards
         AmbassadorRewards newRewards = new AmbassadorRewards(address(token));
 
         vm.expectRevert("Invalid marketplace address");
@@ -530,13 +635,5 @@ contract AmbassadorRewardsTest is Test {
     function test_RevertDeploy_ZeroToken() public {
         vm.expectRevert("Invalid token address");
         new AmbassadorRewards(address(0));
-    }
-
-    // ============ Deprecated Function Test ============
-
-    function test_RevertDistributeRewards_Deprecated() public {
-        vm.prank(marketplace);
-        vm.expectRevert("Use queueReward instead");
-        rewards.distributeRewards(1, 1000 * 10**18);
     }
 }

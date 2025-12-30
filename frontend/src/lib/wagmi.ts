@@ -1,32 +1,42 @@
 import { http, createConfig } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { connectorsForWallets } from '@rainbow-me/rainbowkit';
-import {
-  rainbowWallet,
-  walletConnectWallet,
-  coinbaseWallet,
-  metaMaskWallet,
-} from '@rainbow-me/rainbowkit/wallets';
+import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
+import { testWalletConnector, isTestWalletAvailable } from './testWalletConnector';
 
-const connectors = connectorsForWallets(
-  [
-    {
-      groupName: 'Recommended',
-      wallets: [coinbaseWallet, metaMaskWallet, rainbowWallet, walletConnectWallet],
-    },
-  ],
-  {
-    appName: 'Local Roots',
-    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
-  }
-);
+// WalletConnect Project ID - get one free at https://cloud.walletconnect.com/
+const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 
 export const config = createConfig({
-  chains: [base, baseSepolia],
-  connectors,
+  chains: [baseSepolia, base],
+  connectors: [
+    // Injected wallets (MetaMask extension, etc.)
+    injected({
+      shimDisconnect: true,
+    }),
+    // Coinbase/Base Wallet - native app only, no web flow
+    coinbaseWallet({
+      appName: 'Local Roots',
+      preference: 'eoaOnly', // Only connect to native wallet app, never coinbase.com
+    }),
+    // WalletConnect for mobile wallets (MetaMask, Trust, etc.)
+    ...(walletConnectProjectId ? [
+      walletConnect({
+        projectId: walletConnectProjectId,
+        metadata: {
+          name: 'Local Roots',
+          description: 'Neighbors Feeding Neighbors - Local produce marketplace',
+          url: 'https://localroots.app',
+          icons: ['https://localroots.app/icon.png'],
+        },
+        showQrModal: true,
+      }),
+    ] : []),
+    // Test wallet for development (only if private key is configured)
+    ...(isTestWalletAvailable() ? [testWalletConnector()] : []),
+  ],
   transports: {
-    [base.id]: http(),
     [baseSepolia.id]: http(),
+    [base.id]: http(),
   },
   ssr: true,
 });

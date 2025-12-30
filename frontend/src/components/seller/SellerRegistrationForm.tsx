@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,10 +12,28 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { LocationPicker } from './LocationPicker';
 import { ImageUploader } from './ImageUploader';
 import { useToast } from '@/hooks/use-toast';
+import { useRegisterSeller } from '@/hooks/useRegisterSeller';
+import { WalletButton } from '@/components/WalletButton';
+import { uploadImage, uploadMetadata } from '@/lib/pinata';
+
+// Helper to convert base64 data URL to File
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
 
 export function SellerRegistrationForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { isConnected, address } = useAccount();
+  const { registerSeller, isPending, isSuccess, error, txHash } = useRegisterSeller();
 
   // Form state
   const [name, setName] = useState('');
@@ -30,9 +49,28 @@ export function SellerRegistrationForm() {
   const [offersPickup, setOffersPickup] = useState(true);
   const [deliveryRadiusKm, setDeliveryRadiusKm] = useState(10);
   const [profileImageHash, setProfileImageHash] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [showLocationWarning, setShowLocationWarning] = useState(false);
+
+  // Handle success
+  useEffect(() => {
+    if (isSuccess) {
+      toast({
+        title: 'Registration successful!',
+        description: 'You are now a registered seller on Local Roots.',
+      });
+    }
+  }, [isSuccess, toast]);
+
+  // Handle errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: 'Registration failed',
+        description: error.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [error, toast]);
 
   // For MVP, location is optional - we can collect it later
   const isFormValid =
@@ -44,6 +82,15 @@ export function SellerRegistrationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isConnected) {
+      toast({
+        title: 'Wallet not connected',
+        description: 'Please connect your wallet to register as a seller.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (!isFormValid) {
       toast({
@@ -60,33 +107,63 @@ export function SellerRegistrationForm() {
       return;
     }
 
-    setIsSubmitting(true);
     setShowLocationWarning(false);
 
-    // TODO: This is where we'll integrate with Privy/Web3Auth to:
-    // 1. Create an embedded wallet for the user using their email
-    // 2. Upload metadata to IPFS
-    // 3. Register them as a seller on-chain
-    // For now, just simulate the flow
-
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload profile image to IPFS if it's a base64 data URL
+      let finalImageUrl = profileImageHash;
+      if (profileImageHash && profileImageHash.startsWith('data:')) {
+        toast({
+          title: 'Uploading image...',
+          description: 'Saving your photo to IPFS',
+        });
+        const imageFile = dataUrlToFile(profileImageHash, `profile-${Date.now()}.jpg`);
+        const imageResult = await uploadImage(imageFile);
+        finalImageUrl = imageResult.ipfsHash;
+        console.log('[Registration] Image uploaded to IPFS:', finalImageUrl);
+      }
 
-      setIsSuccess(true);
+      // Create metadata JSON
+      const metadata = {
+        name,
+        description,
+        email,
+        phone,
+        imageUrl: finalImageUrl,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Upload metadata to IPFS
       toast({
-        title: 'Application received!',
-        description: 'We\'ll be in touch shortly to get you set up.',
+        title: 'Uploading profile...',
+        description: 'Saving your profile to IPFS',
+      });
+      const metadataResult = await uploadMetadata(metadata, `profile-${Date.now()}.json`);
+      const storefrontIpfs = `ipfs://${metadataResult.ipfsHash}`;
+      console.log('[Registration] Metadata uploaded to IPFS:', storefrontIpfs);
+
+      // Use a default geohash if location not set
+      const geohash = location?.geohash || '9q8yyk8y'; // Default to SF area
+
+      toast({
+        title: 'Registering...',
+        description: 'Please confirm the transaction',
+      });
+
+      await registerSeller({
+        geohash,
+        storefrontIpfs,
+        offersDelivery,
+        offersPickup,
+        deliveryRadiusKm,
       });
     } catch (err) {
       console.error('Registration error:', err);
       toast({
-        title: 'Something went wrong',
-        description: 'Please try again or contact us for help.',
+        title: 'Registration failed',
+        description: err instanceof Error ? err.message : 'Failed to upload to IPFS',
         variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -305,13 +382,23 @@ export function SellerRegistrationForm() {
             </div>
           )}
 
+          {/* Wallet Connection */}
+          {!isConnected && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800 mb-3">
+                Connect your wallet to register as a seller on the blockchain.
+              </p>
+              <WalletButton />
+            </div>
+          )}
+
           {/* Submit */}
           <Button
             type="submit"
-            disabled={!isFormValid || isSubmitting}
+            disabled={!isFormValid || isPending || !isConnected}
             className="w-full bg-roots-primary hover:bg-roots-primary/90"
           >
-            {isSubmitting ? (
+            {isPending ? (
               <>
                 <svg
                   className="animate-spin -ml-1 mr-2 h-4 w-4"
@@ -333,8 +420,10 @@ export function SellerRegistrationForm() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Setting up your profile...
+                Registering on blockchain...
               </>
+            ) : !isConnected ? (
+              'Connect Wallet to Register'
             ) : (
               'Create My Seller Profile'
             )}

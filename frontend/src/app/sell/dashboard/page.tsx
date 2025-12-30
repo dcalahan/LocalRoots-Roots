@@ -1,35 +1,319 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSellerStatus } from '@/hooks/useSellerStatus';
+import { useSellerListings, type SellerListing } from '@/hooks/useSellerListings';
+import { useSellerOrders, OrderStatus, useAcceptOrder, useMarkReadyForPickup, useMarkOutForDelivery, type SellerOrder } from '@/hooks/useSellerOrders';
+import { useSellerProfile } from '@/hooks/useSellerProfile';
+import { ImageUploader } from '@/components/seller/ImageUploader';
+import { EditListingModal } from '@/components/seller/EditListingModal';
+import { EditSellerProfileModal } from '@/components/seller/EditSellerProfileModal';
+import { useDeleteListing } from '@/hooks/useDeleteListing';
+import { useToast } from '@/hooks/use-toast';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
+import { formatDistance } from '@/lib/distance';
+import { formatUnits } from 'viem';
+import { uploadImage } from '@/lib/pinata';
+import { rootsToFiat, formatFiat, formatRoots } from '@/lib/pricing';
 
-// Mock data - in production this would come from API/blockchain
-const MOCK_LISTINGS = [
-  { id: 1, name: 'Heirloom Tomatoes', price: 4.50, unit: 'lb', quantity: 12, status: 'active' },
-  { id: 2, name: 'Fresh Basil', price: 3.00, unit: 'bunch', quantity: 8, status: 'active' },
-  { id: 3, name: 'Bell Peppers', price: 2.00, unit: 'each', quantity: 0, status: 'sold_out' },
-];
-
-const MOCK_ORDERS = [
-  { id: 101, buyer: 'Sarah M.', items: 'Heirloom Tomatoes (3 lb)', total: 13.50, status: 'pending', date: '2024-12-24' },
-  { id: 102, buyer: 'John D.', items: 'Fresh Basil (2 bunches)', total: 6.00, status: 'ready', date: '2024-12-23' },
-];
-
-const MOCK_HISTORY = [
-  { id: 201, buyer: 'Mike R.', items: 'Bell Peppers (5)', total: 10.00, status: 'completed', date: '2024-12-20' },
-  { id: 202, buyer: 'Lisa K.', items: 'Heirloom Tomatoes (2 lb)', total: 9.00, status: 'completed', date: '2024-12-18' },
-  { id: 203, buyer: 'Tom B.', items: 'Fresh Basil (1 bunch)', total: 3.00, status: 'completed', date: '2024-12-15' },
-];
+// Helper to convert base64 data URL to File
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
 
 type Tab = 'listings' | 'orders' | 'history';
 
-export default function SellerDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('listings');
+function formatPrice(priceWei: string): { fiat: string; roots: string } {
+  const amount = BigInt(priceWei);
+  return {
+    fiat: formatFiat(rootsToFiat(amount)),
+    roots: formatRoots(amount),
+  };
+}
 
-  const pendingOrders = MOCK_ORDERS.filter(o => o.status === 'pending').length;
-  const totalEarnings = MOCK_HISTORY.reduce((sum, o) => sum + o.total, 0);
+function getStatusLabel(status: OrderStatus): string {
+  switch (status) {
+    case OrderStatus.Pending: return 'Pending Acceptance';
+    case OrderStatus.Accepted: return 'Preparing';
+    case OrderStatus.ReadyForPickup: return 'Ready for Pickup';
+    case OrderStatus.OutForDelivery: return 'Delivered';
+    case OrderStatus.Completed: return 'Completed';
+    case OrderStatus.Disputed: return 'Disputed';
+    case OrderStatus.Refunded: return 'Refunded';
+    case OrderStatus.Cancelled: return 'Cancelled';
+    default: return 'Unknown';
+  }
+}
+
+function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: () => void }) {
+  const [showProofUpload, setShowProofUpload] = useState(false);
+  const [proofImage, setProofImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+  const { acceptOrder, isPending: isAccepting, isSuccess: acceptSuccess } = useAcceptOrder();
+  const { markReady, isPending: isMarkingReady, isSuccess: readySuccess } = useMarkReadyForPickup();
+  const { markOutForDelivery, isPending: isMarkingDelivery, isSuccess: deliverySuccess } = useMarkOutForDelivery();
+
+  useEffect(() => {
+    console.log('[OrderActions] Success state changed:', { acceptSuccess, readySuccess, deliverySuccess });
+    if (acceptSuccess || readySuccess || deliverySuccess) {
+      console.log('[OrderActions] Success! Closing modal and refreshing...');
+      setShowProofUpload(false);
+      setProofImage(null);
+      onComplete();
+    }
+  }, [acceptSuccess, readySuccess, deliverySuccess, onComplete]);
+
+  const handleAcceptOrder = async () => {
+    try {
+      toast({
+        title: 'Accepting order...',
+        description: 'Please confirm the transaction',
+      });
+      await acceptOrder(BigInt(order.orderId));
+    } catch (err) {
+      console.error('[OrderActions] Accept error:', err);
+      toast({
+        title: 'Failed to accept order',
+        description: err instanceof Error ? err.message : 'Please try again',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleProofComplete = (imageData: string | null) => {
+    setProofImage(imageData);
+  };
+
+  const handleSubmitProof = async () => {
+    if (!proofImage) return;
+
+    try {
+      setIsUploading(true);
+
+      // Upload image to IPFS if it's a base64 data URL
+      let ipfsHash = proofImage;
+      if (proofImage.startsWith('data:')) {
+        toast({
+          title: 'Uploading proof photo...',
+          description: 'Saving to IPFS',
+        });
+        const imageFile = dataUrlToFile(proofImage, `proof-${order.orderId}-${Date.now()}.jpg`);
+        const result = await uploadImage(imageFile);
+        ipfsHash = result.ipfsHash;
+        console.log('[OrderActions] Proof uploaded to IPFS:', ipfsHash);
+      }
+
+      toast({
+        title: 'Submitting to blockchain...',
+        description: 'Please confirm the transaction',
+      });
+
+      const orderId = BigInt(order.orderId);
+      if (order.isDelivery) {
+        await markOutForDelivery(orderId, ipfsHash);
+      } else {
+        await markReady(orderId, ipfsHash);
+      }
+    } catch (err) {
+      console.error('[OrderActions] Error:', err);
+      toast({
+        title: 'Failed to submit proof',
+        description: err instanceof Error ? err.message : 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const isPending = isAccepting || isMarkingReady || isMarkingDelivery || isUploading;
+
+  // Step 1: Pending orders need to be accepted first
+  if (order.status === OrderStatus.Pending) {
+    return (
+      <div className="flex gap-2 mt-2">
+        <Button
+          size="sm"
+          className="bg-roots-primary hover:bg-roots-primary/90"
+          onClick={handleAcceptOrder}
+          disabled={isAccepting}
+        >
+          {isAccepting ? 'Accepting...' : 'Accept Order'}
+        </Button>
+      </div>
+    );
+  }
+
+  // Step 2: Accepted orders can be marked ready/delivered with proof photo
+  if (order.status === OrderStatus.Accepted) {
+    if (showProofUpload) {
+      return (
+        <div className="mt-4 p-4 bg-white rounded-lg border space-y-4">
+          <div>
+            <h4 className="font-medium mb-2">Upload Proof Photo</h4>
+            <p className="text-sm text-roots-gray mb-3">
+              {order.isDelivery
+                ? 'Take a photo showing the delivered order (e.g., at customer\'s door). This confirms delivery and releases payment to you.'
+                : 'Take a photo of the order ready for pickup (e.g., items packaged and labeled). This releases payment to you.'
+              }
+            </p>
+            <ImageUploader
+              onUpload={handleProofComplete}
+              currentHash={proofImage || undefined}
+              label="Proof Photo"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowProofUpload(false);
+                setProofImage(null);
+              }}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-roots-secondary hover:bg-roots-secondary/90"
+              onClick={handleSubmitProof}
+              disabled={!proofImage || isPending}
+            >
+              {isPending ? (isUploading ? 'Uploading...' : 'Processing...') : order.isDelivery ? 'Confirm Delivered' : 'Mark Ready for Pickup'}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex gap-2 mt-2">
+        <Button
+          size="sm"
+          className="bg-roots-secondary hover:bg-roots-secondary/90"
+          onClick={() => setShowProofUpload(true)}
+        >
+          {order.isDelivery ? 'Confirm Delivery' : 'Mark Ready'}
+        </Button>
+      </div>
+    );
+  }
+
+  if (order.status === OrderStatus.ReadyForPickup || order.status === OrderStatus.OutForDelivery) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-roots-secondary font-medium">
+          {order.fundsReleased ? 'Funds Released' : 'Awaiting Completion'}
+        </span>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+export default function SellerDashboard() {
+  const [activeTab, setActiveTab] = useState<Tab>('orders');
+  const [editingListing, setEditingListing] = useState<SellerListing | null>(null);
+  const [deletingListing, setDeletingListing] = useState<SellerListing | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const { toast } = useToast();
+  const { preferences } = useUserPreferences();
+  const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
+  const { profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useSellerProfile();
+  const { listings, isLoading: isLoadingListings, refetch: refetchListings } = useSellerListings();
+  const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSellerOrders();
+  const { deleteListing, isPending: isDeleting, isSuccess: deleteSuccess, error: deleteError, reset: resetDelete } = useDeleteListing();
+
+  const distanceUnit = preferences.distanceUnit;
+
+  // Handle delete success
+  useEffect(() => {
+    if (deleteSuccess) {
+      toast({
+        title: 'Listing deleted',
+        description: 'The listing has been removed from the marketplace.',
+      });
+      setDeletingListing(null);
+      resetDelete();
+      refetchListings();
+    }
+  }, [deleteSuccess, toast, resetDelete, refetchListings]);
+
+  // Handle delete error
+  useEffect(() => {
+    if (deleteError) {
+      toast({
+        title: 'Failed to delete listing',
+        description: deleteError.message || 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+      setDeletingListing(null);
+      resetDelete();
+    }
+  }, [deleteError, toast, resetDelete]);
+
+  // Separate orders by status
+  // Pending = new orders needing acceptance, Accepted = accepted and preparing
+  const pendingOrders = orders.filter(o =>
+    o.status === OrderStatus.Pending || o.status === OrderStatus.Accepted
+  );
+  const activeOrders = orders.filter(o =>
+    o.status === OrderStatus.ReadyForPickup || o.status === OrderStatus.OutForDelivery
+  );
+  const historyOrders = orders.filter(o =>
+    o.status === OrderStatus.Completed ||
+    o.status === OrderStatus.Disputed ||
+    o.status === OrderStatus.Refunded ||
+    o.status === OrderStatus.Cancelled
+  );
+
+  const activeListings = listings.filter(l => l.active);
+  // Hide "deleted" listings (inactive with qty=0) from display
+  const visibleListings = listings.filter(l => l.active || l.quantityAvailable > 0);
+  console.log('[Dashboard] All listings:', listings.length, 'Visible listings:', visibleListings.length);
+  console.log('[Dashboard] Listings details:', listings.map(l => ({ id: l.listingId, active: l.active, qty: l.quantityAvailable, name: l.metadata?.produceName })));
+  const totalEarnings = historyOrders
+    .filter(o => o.status === OrderStatus.Completed)
+    .reduce((sum, o) => sum + parseFloat(formatUnits(BigInt(o.totalPrice), 18)), 0);
+
+  if (isCheckingSeller) {
+    return (
+      <div className="min-h-screen bg-roots-cream flex items-center justify-center">
+        <div className="text-roots-gray">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isSeller) {
+    return (
+      <div className="min-h-screen bg-roots-cream">
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="font-heading text-3xl font-bold mb-4">Not Registered</h1>
+          <p className="text-roots-gray mb-8">You need to register as a seller first.</p>
+          <Link href="/sell/register">
+            <Button className="bg-roots-primary hover:bg-roots-primary/90">
+              Register as Seller
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-roots-cream">
@@ -47,28 +331,95 @@ export default function SellerDashboard() {
           </Link>
         </div>
 
+        {/* Profile Card */}
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              {/* Profile Image */}
+              <div className="w-20 h-20 rounded-xl bg-roots-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {profile?.metadata?.imageUrl ? (
+                  <img
+                    src={profile.metadata.imageUrl}
+                    alt={profile.metadata?.name || 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl font-bold text-roots-primary">
+                    {profile?.metadata?.name?.charAt(0).toUpperCase() || 'S'}
+                  </span>
+                )}
+              </div>
+
+              {/* Profile Info */}
+              <div className="flex-1">
+                <h2 className="font-heading text-xl font-bold">
+                  {profile?.metadata?.name || 'Your Garden'}
+                </h2>
+                <p className="text-roots-gray text-sm mb-2">
+                  {profile?.metadata?.description || 'Add a description to tell buyers about your garden.'}
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {profile?.offersPickup && (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                      Pickup Available
+                    </span>
+                  )}
+                  {profile?.offersDelivery && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                      Delivery ({formatDistance(profile.deliveryRadiusKm, distanceUnit)})
+                    </span>
+                  )}
+                  <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+                    Seller ID: {profile?.sellerId?.toString() || '...'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Edit Button */}
+              <Button
+                variant="outline"
+                onClick={() => setEditingProfile(true)}
+                disabled={isLoadingProfile || !profile}
+              >
+                Edit Profile
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Edit Profile Modal */}
+        {editingProfile && profile && (
+          <EditSellerProfileModal
+            profile={profile}
+            onClose={() => setEditingProfile(false)}
+            onSuccess={refetchProfile}
+          />
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-roots-gray mb-1">Active Listings</p>
               <p className="text-2xl font-heading font-bold">
-                {MOCK_LISTINGS.filter(l => l.status === 'active').length}
+                {isLoadingListings ? '...' : activeListings.length}
               </p>
             </CardContent>
           </Card>
-          <Card className={pendingOrders > 0 ? 'border-roots-secondary bg-roots-secondary/5' : ''}>
+          <Card className={pendingOrders.length > 0 ? 'border-roots-secondary bg-roots-secondary/5' : ''}>
             <CardContent className="pt-6">
               <p className="text-sm text-roots-gray mb-1">Pending Orders</p>
-              <p className={`text-2xl font-heading font-bold ${pendingOrders > 0 ? 'text-roots-secondary' : ''}`}>
-                {pendingOrders}
+              <p className={`text-2xl font-heading font-bold ${pendingOrders.length > 0 ? 'text-roots-secondary' : ''}`}>
+                {isLoadingOrders ? '...' : pendingOrders.length}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-roots-gray mb-1">Completed Sales</p>
-              <p className="text-2xl font-heading font-bold">{MOCK_HISTORY.length}</p>
+              <p className="text-2xl font-heading font-bold">
+                {isLoadingOrders ? '...' : historyOrders.filter(o => o.status === OrderStatus.Completed).length}
+              </p>
             </CardContent>
           </Card>
           <Link href="/sell/earnings">
@@ -76,7 +427,12 @@ export default function SellerDashboard() {
               <CardContent className="pt-6">
                 <p className="text-sm text-roots-gray mb-1">Total Earnings</p>
                 <p className="text-2xl font-heading font-bold text-roots-primary">
-                  ${totalEarnings.toFixed(2)}
+                  {isLoadingOrders ? '...' : (
+                    <>
+                      {formatFiat(rootsToFiat(BigInt(Math.floor(totalEarnings * 1e18))))}
+                      <span className="block text-sm font-normal text-roots-gray">{formatRoots(BigInt(Math.floor(totalEarnings * 1e18)))} ROOTS</span>
+                    </>
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -104,9 +460,9 @@ export default function SellerDashboard() {
             }`}
           >
             Orders
-            {pendingOrders > 0 && (
+            {pendingOrders.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-roots-secondary text-white text-xs rounded-full flex items-center justify-center">
-                {pendingOrders}
+                {pendingOrders.length}
               </span>
             )}
           </button>
@@ -129,8 +485,13 @@ export default function SellerDashboard() {
               <>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="font-heading text-xl font-bold">Your Listings</h2>
+                  <Button variant="outline" size="sm" onClick={refetchListings}>
+                    Refresh
+                  </Button>
                 </div>
-                {MOCK_LISTINGS.length === 0 ? (
+                {isLoadingListings ? (
+                  <div className="text-center py-12 text-roots-gray">Loading listings...</div>
+                ) : visibleListings.length === 0 ? (
                   <div className="text-center py-12 text-roots-gray">
                     <p className="mb-4">You haven&apos;t added any listings yet.</p>
                     <Link href="/sell/listings/new">
@@ -139,36 +500,117 @@ export default function SellerDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {MOCK_LISTINGS.map((listing) => (
+                    {visibleListings.map((listing) => (
                       <div
-                        key={listing.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                        key={listing.listingId}
+                        className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                          listing.active
+                            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 hover:border-green-300'
+                            : listing.quantityAvailable === 0
+                              ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200'
+                              : 'bg-gray-50 border-gray-200'
+                        }`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-roots-primary/10 rounded-lg flex items-center justify-center">
-                            <svg className="w-6 h-6 text-roots-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                            </svg>
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden shadow-sm ${
+                            listing.metadata?.imageUrl ? '' : 'bg-roots-primary/10'
+                          }`}>
+                            {listing.metadata?.imageUrl ? (
+                              <img
+                                src={listing.metadata.imageUrl}
+                                alt={listing.metadata.produceName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-2xl">🥬</span>
+                            )}
                           </div>
                           <div>
-                            <p className="font-medium">{listing.name}</p>
-                            <p className="text-sm text-roots-gray">
-                              ${listing.price.toFixed(2)} / {listing.unit} • {listing.quantity} available
+                            <p className="font-medium text-gray-900">{listing.metadata?.produceName || 'Unknown Product'}</p>
+                            <p className="text-sm">
+                              <span className="font-semibold text-roots-primary">{formatPrice(listing.pricePerUnit).fiat}</span>
+                              <span className="text-roots-gray"> / {listing.metadata?.unit || 'unit'}</span>
+                            </p>
+                            <p className="text-xs text-roots-gray">{formatPrice(listing.pricePerUnit).roots} ROOTS</p>
+                            <p className={`text-xs ${listing.quantityAvailable > 5 ? 'text-green-600' : listing.quantityAvailable > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                              {listing.quantityAvailable} available
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            listing.status === 'active'
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            listing.active
                               ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-600'
+                              : listing.quantityAvailable === 0
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-gray-100 text-gray-600'
                           }`}>
-                            {listing.status === 'active' ? 'Active' : 'Sold Out'}
+                            {listing.active ? '✓ Active' : listing.quantityAvailable === 0 ? 'Sold Out' : 'Inactive'}
                           </span>
-                          <Button variant="outline" size="sm">Edit</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-roots-primary text-roots-primary hover:bg-roots-primary/5"
+                            onClick={() => setEditingListing(listing)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            onClick={() => setDeletingListing(listing)}
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Edit Listing Modal */}
+                {editingListing && (
+                  <EditListingModal
+                    listing={editingListing}
+                    onClose={() => setEditingListing(null)}
+                    onSuccess={refetchListings}
+                  />
+                )}
+
+                {/* Delete Confirmation Modal */}
+                {deletingListing && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+                      <h3 className="text-lg font-heading font-bold mb-2">Delete Listing?</h3>
+                      <p className="text-roots-gray mb-4">
+                        Are you sure you want to delete &quot;{deletingListing.metadata?.produceName || 'this listing'}&quot;?
+                        This will remove it from the marketplace.
+                      </p>
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setDeletingListing(null)}
+                          disabled={isDeleting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          className="flex-1 bg-red-600 hover:bg-red-700"
+                          onClick={() => {
+                            deleteListing(
+                              BigInt(deletingListing.listingId),
+                              deletingListing.metadataIpfs,
+                              BigInt(deletingListing.pricePerUnit)
+                            );
+                          }}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? 'Deleting...' : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </>
@@ -176,48 +618,139 @@ export default function SellerDashboard() {
 
             {activeTab === 'orders' && (
               <>
-                <h2 className="font-heading text-xl font-bold mb-4">Pending Orders</h2>
-                {MOCK_ORDERS.length === 0 ? (
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="font-heading text-xl font-bold">Current Orders</h2>
+                  <Button variant="outline" size="sm" onClick={refetchOrders}>
+                    Refresh
+                  </Button>
+                </div>
+                {isLoadingOrders ? (
+                  <div className="text-center py-12 text-roots-gray">Loading orders...</div>
+                ) : pendingOrders.length === 0 && activeOrders.length === 0 ? (
                   <div className="text-center py-12 text-roots-gray">
                     <p>No pending orders right now.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {MOCK_ORDERS.map((order) => (
-                      <div
-                        key={order.id}
-                        className={`p-4 rounded-lg border-2 ${
-                          order.status === 'pending'
-                            ? 'border-roots-secondary bg-roots-secondary/5'
-                            : 'border-gray-200 bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium">{order.buyer}</p>
-                            <p className="text-sm text-roots-gray">{order.items}</p>
+                  <div className="space-y-4">
+                    {/* Pending Orders */}
+                    {pendingOrders.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-roots-gray uppercase">Needs Action</h3>
+                        {pendingOrders.map((order) => (
+                          <div
+                            key={order.orderId}
+                            className="p-4 rounded-lg border-2 border-roots-secondary bg-roots-secondary/5"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <p className="font-medium">Order #{order.orderId}</p>
+                                <p className="text-sm font-medium text-gray-800">
+                                  {order.produceName || 'Unknown Product'} x{order.quantity}
+                                </p>
+                                <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${
+                                  order.isDelivery
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-green-100 text-green-700'
+                                }`}>
+                                  {order.isDelivery ? '🚚 Delivery' : '📍 Pickup'}
+                                </span>
+                                <p className="text-xs text-roots-gray mt-1">
+                                  Buyer: {order.buyer.slice(0, 6)}...{order.buyer.slice(-4)}
+                                </p>
+                              </div>
+                              <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} ROOTS</p>
+                            </div>
+                            {/* Delivery address */}
+                            {order.isDelivery && order.deliveryInfo && (
+                              <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                <p className="text-xs font-medium text-blue-800">Deliver to:</p>
+                                <p className="text-sm text-blue-900">{order.deliveryInfo.address}</p>
+                                {order.deliveryInfo.phone && (
+                                  <p className="text-xs text-blue-700 mt-1">📞 {order.deliveryInfo.phone}</p>
+                                )}
+                                {order.deliveryInfo.notes && (
+                                  <p className="text-xs text-blue-600 mt-1 italic">{order.deliveryInfo.notes}</p>
+                                )}
+                              </div>
+                            )}
+                            {order.isDelivery && !order.deliveryInfo && (
+                              <div className="mt-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
+                                <p className="text-xs text-amber-700">
+                                  ⚠️ No delivery address provided. Contact buyer to arrange delivery.
+                                </p>
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center mt-2">
+                              <span className="text-xs text-roots-gray">
+                                {order.createdAt.toLocaleDateString()}
+                              </span>
+                            </div>
+                            <OrderActions
+                              order={order}
+                              onComplete={refetchOrders}
+                            />
                           </div>
-                          <p className="font-bold">${order.total.toFixed(2)}</p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-roots-gray">{order.date}</span>
-                          <div className="flex gap-2">
-                            {order.status === 'pending' ? (
-                              <>
-                                <Button size="sm" variant="outline">Message</Button>
-                                <Button size="sm" className="bg-roots-secondary hover:bg-roots-secondary/90">
-                                  Mark Ready
-                                </Button>
-                              </>
-                            ) : (
-                              <Button size="sm" className="bg-roots-primary hover:bg-roots-primary/90">
-                                Complete Handoff
-                              </Button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Active Orders (Ready/Out for Delivery) */}
+                    {activeOrders.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-roots-gray uppercase">In Progress</h3>
+                        {activeOrders.map((order) => (
+                          <div
+                            key={order.orderId}
+                            className={`p-4 rounded-lg border-2 ${
+                              order.status === OrderStatus.OutForDelivery
+                                ? 'bg-gradient-to-r from-blue-50 to-sky-50 border-blue-200'
+                                : 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <p className="font-medium">Order #{order.orderId}</p>
+                                <p className="text-sm font-medium text-gray-800">
+                                  {order.produceName || 'Unknown Product'} x{order.quantity}
+                                </p>
+                                <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 ${
+                                  order.isDelivery
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-green-100 text-green-700'
+                                }`}>
+                                  {order.isDelivery ? '🚚 Delivery' : '📍 Pickup'}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} ROOTS</p>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  order.status === OrderStatus.ReadyForPickup
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {getStatusLabel(order.status)}
+                                </span>
+                              </div>
+                            </div>
+                            {/* Delivery address */}
+                            {order.isDelivery && order.deliveryInfo && (
+                              <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                <p className="text-xs font-medium text-blue-800">Deliver to:</p>
+                                <p className="text-sm text-blue-900">{order.deliveryInfo.address}</p>
+                                {order.deliveryInfo.phone && (
+                                  <p className="text-xs text-blue-700 mt-1">📞 {order.deliveryInfo.phone}</p>
+                                )}
+                              </div>
+                            )}
+                            {order.fundsReleased && (
+                              <p className="text-sm text-green-600 mt-2 font-medium">✓ Funds released to your wallet</p>
                             )}
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </>
@@ -226,7 +759,9 @@ export default function SellerDashboard() {
             {activeTab === 'history' && (
               <>
                 <h2 className="font-heading text-xl font-bold mb-4">Sales History</h2>
-                {MOCK_HISTORY.length === 0 ? (
+                {isLoadingOrders ? (
+                  <div className="text-center py-12 text-roots-gray">Loading history...</div>
+                ) : historyOrders.length === 0 ? (
                   <div className="text-center py-12 text-roots-gray">
                     <p>No completed sales yet.</p>
                   </div>
@@ -236,18 +771,41 @@ export default function SellerDashboard() {
                       <thead>
                         <tr className="border-b text-left">
                           <th className="pb-3 font-medium text-roots-gray">Date</th>
+                          <th className="pb-3 font-medium text-roots-gray">Order</th>
+                          <th className="pb-3 font-medium text-roots-gray">Product</th>
                           <th className="pb-3 font-medium text-roots-gray">Buyer</th>
-                          <th className="pb-3 font-medium text-roots-gray">Items</th>
+                          <th className="pb-3 font-medium text-roots-gray">Status</th>
                           <th className="pb-3 font-medium text-roots-gray text-right">Total</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {MOCK_HISTORY.map((sale) => (
-                          <tr key={sale.id} className="border-b last:border-0">
-                            <td className="py-3 text-sm">{sale.date}</td>
-                            <td className="py-3">{sale.buyer}</td>
-                            <td className="py-3 text-roots-gray">{sale.items}</td>
-                            <td className="py-3 text-right font-medium">${sale.total.toFixed(2)}</td>
+                        {historyOrders.map((order) => (
+                          <tr key={order.orderId} className="border-b last:border-0">
+                            <td className="py-3 text-sm">
+                              {order.completedAt?.toLocaleDateString() || order.createdAt.toLocaleDateString()}
+                            </td>
+                            <td className="py-3">#{order.orderId}</td>
+                            <td className="py-3 text-sm">
+                              {order.produceName || 'Unknown'} x{order.quantity}
+                            </td>
+                            <td className="py-3 text-roots-gray text-sm">
+                              {order.buyer.slice(0, 6)}...{order.buyer.slice(-4)}
+                            </td>
+                            <td className="py-3">
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                order.status === OrderStatus.Completed
+                                  ? 'bg-green-100 text-green-700'
+                                  : order.status === OrderStatus.Refunded
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {getStatusLabel(order.status)}
+                              </span>
+                            </td>
+                            <td className="py-3 text-right">
+                              <div className="font-medium">{formatPrice(order.totalPrice).fiat}</div>
+                              <div className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} ROOTS</div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

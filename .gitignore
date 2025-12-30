@@ -41,3 +41,9 @@ coverage/
 # Misc
 *.log
 *.tmp
+
+# Deployment artifacts
+contracts/broadcast/
+
+# TypeScript build info
+*.tsbuildinfo

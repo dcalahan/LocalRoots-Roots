@@ -1,16 +1,26 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 
-export default function SellerDashboard() {
+export default function SellerPage() {
+  const router = useRouter();
   const { isConnected } = useAccount();
   const { isSeller, sellerId, isLoading } = useSellerStatus();
 
-  // Show dashboard only if connected AND registered as seller
+  // Redirect to dashboard if registered seller
+  useEffect(() => {
+    if (isConnected && !isLoading && isSeller) {
+      router.replace('/sell/dashboard');
+    }
+  }, [isConnected, isLoading, isSeller, router]);
+
+  // Show loading while checking seller status
   if (isConnected && isLoading) {
     return (
       <div className="min-h-screen bg-roots-cream">
@@ -26,10 +36,19 @@ export default function SellerDashboard() {
     );
   }
 
-  // Show dashboard if registered seller
+  // Show loading while redirecting
   if (isConnected && isSeller) {
     return (
-      <SellerDashboardView sellerId={sellerId} />
+      <div className="min-h-screen bg-roots-cream">
+        <div className="container mx-auto px-4 py-16">
+          <Card className="max-w-md mx-auto text-center">
+            <CardContent className="py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-roots-primary border-t-transparent rounded-full mx-auto mb-4" />
+              <p className="text-roots-gray">Redirecting to dashboard...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
@@ -185,58 +204,3 @@ export default function SellerDashboard() {
   );
 }
 
-function SellerDashboardView({ sellerId }: { sellerId: bigint | null }) {
-  return (
-    <div className="min-h-screen bg-roots-cream">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="font-heading text-3xl font-bold">Seller Dashboard</h1>
-            <p className="text-roots-gray">Seller ID: #{sellerId?.toString()}</p>
-          </div>
-          <Link href="/sell/listings/new">
-            <Button className="bg-roots-primary hover:bg-roots-primary/90">
-              + New Listing
-            </Button>
-          </Link>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-roots-gray mb-1">Active Listings</p>
-              <p className="text-3xl font-heading font-bold">0</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-roots-gray mb-1">Pending Orders</p>
-              <p className="text-3xl font-heading font-bold">0</p>
-            </CardContent>
-          </Card>
-          <Link href="/sell/earnings">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-roots-primary/20 bg-roots-primary/5">
-              <CardContent className="pt-6">
-                <p className="text-sm text-roots-gray mb-1">Earnings & $ROOTS</p>
-                <p className="text-3xl font-heading font-bold text-roots-primary">$0</p>
-                <p className="text-xs text-roots-secondary mt-1">View Details →</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <h2 className="font-heading text-xl font-bold mb-4">Your Listings</h2>
-            <div className="text-center py-12 text-roots-gray">
-              <p className="mb-4">You haven&apos;t created any listings yet.</p>
-              <Link href="/sell/listings/new">
-                <Button variant="outline">Create Your First Listing</Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}

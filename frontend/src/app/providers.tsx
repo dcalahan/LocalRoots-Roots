@@ -1,26 +1,38 @@
 'use client';
 
+// Polyfill must be imported first
+import '@/lib/polyfills';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
-import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { config } from '@/lib/wagmi';
-import '@rainbow-me/rainbowkit/styles.css';
+import { CartProvider } from '@/contexts/CartContext';
+import { UserPreferencesProvider } from '@/contexts/UserPreferencesContext';
+import { DemoModeProvider } from '@/contexts/DemoModeContext';
+import { useState } from 'react';
+import { useWalletRedirect } from '@/hooks/useWalletRedirect';
 
-const queryClient = new QueryClient();
+// Component that uses the wallet redirect hook
+function WalletRedirectHandler({ children }: { children: React.ReactNode }) {
+  useWalletRedirect();
+  return <>{children}</>;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          theme={darkTheme({
-            accentColor: '#EB6851',
-            accentColorForeground: 'white',
-            borderRadius: 'medium',
-          })}
-        >
-          {children}
-        </RainbowKitProvider>
+        <DemoModeProvider>
+          <WalletRedirectHandler>
+            <UserPreferencesProvider>
+              <CartProvider>
+                {children}
+              </CartProvider>
+            </UserPreferencesProvider>
+          </WalletRedirectHandler>
+        </DemoModeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

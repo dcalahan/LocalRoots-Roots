@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAccount } from 'wagmi';
+import { parseFiatToRoots } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,12 +21,77 @@ import {
 import { ProduceSelector } from './ProduceSelector';
 import { ImageUploader } from './ImageUploader';
 import { useToast } from '@/hooks/use-toast';
+import { useCreateListing } from '@/hooks/useCreateListing';
+import { useSellerStatus } from '@/hooks/useSellerStatus';
+import { WalletButton } from '@/components/WalletButton';
 import { getAllUnits } from '@/lib/produce';
+import { uploadImage, uploadMetadata } from '@/lib/pinata';
 import type { ProduceItem } from '@/lib/produce';
+
+// Helper to convert base64 data URL to File
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
+// Helper to get user-friendly error message
+function getErrorMessage(error: Error | null): string {
+  if (!error) return 'Something went wrong. Please try again.';
+
+  // Log the full error for debugging
+  console.error('[CreateListing] Full error:', error);
+  console.error('[CreateListing] Error message:', error.message);
+
+  const message = error.message.toLowerCase();
+
+  if (message.includes('not a registered seller')) {
+    return 'You need to register as a seller first before creating listings.';
+  }
+  if (message.includes('seller not active')) {
+    return 'Your seller account is not active. Please contact support.';
+  }
+  if (message.includes('price must be')) {
+    return 'Please enter a valid price greater than 0.';
+  }
+  if (message.includes('quantity must be')) {
+    return 'Please enter a valid quantity greater than 0.';
+  }
+  if (message.includes('user rejected') || message.includes('user denied')) {
+    return 'Transaction was cancelled. No changes were made.';
+  }
+  if (message.includes('insufficient funds')) {
+    return 'Insufficient ETH for gas fees. Please add ETH to your wallet.';
+  }
+  if (message.includes('switch') && message.includes('network')) {
+    return 'Please switch your wallet to Base Sepolia network.';
+  }
+  if (message.includes('eth_estimategas') || message.includes('estimate gas')) {
+    return 'Transaction would fail. Please check your wallet is on Base Sepolia and you are registered as a seller.';
+  }
+  // Be more specific - only match actual chain mismatch, not general network errors
+  if (message.includes('chain mismatch') || message.includes('wrong network') || message.includes('switch to')) {
+    return 'Please switch your wallet to Base Sepolia network.';
+  }
+
+  // Return the actual error for debugging (truncated if too long)
+  return error.message.length > 150
+    ? error.message.substring(0, 150) + '...'
+    : error.message;
+}
 
 export function CreateListingForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { isConnected } = useAccount();
+  const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
+  const { createListing, isPending, isSuccess, error, reset } = useCreateListing();
 
   const units = getAllUnits();
 
@@ -36,8 +104,28 @@ export function CreateListingForm() {
   const [organic, setOrganic] = useState(false);
   const [growingPractices, setGrowingPractices] = useState('');
   const [imageHash, setImageHash] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+
+  // Handle errors from hook
+  useEffect(() => {
+    if (error) {
+      const friendlyMessage = getErrorMessage(error);
+      toast({
+        title: 'Unable to create listing',
+        description: friendlyMessage,
+        variant: 'destructive',
+      });
+    }
+  }, [error, toast]);
+
+  // Handle success from hook
+  useEffect(() => {
+    if (isSuccess) {
+      toast({
+        title: 'Listing created!',
+        description: 'Your produce has been added to the marketplace.',
+      });
+    }
+  }, [isSuccess, toast]);
 
   const isFormValid =
     selectedProduce !== null &&
@@ -48,6 +136,15 @@ export function CreateListingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isConnected) {
+      toast({
+        title: 'Wallet not connected',
+        description: 'Please connect your wallet to create a listing.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!isFormValid || !selectedProduce) {
       toast({
         title: 'Missing information',
@@ -57,47 +154,74 @@ export function CreateListingForm() {
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
       const selectedUnit = units.find((u) => u.id === unitId);
 
-      // For MVP, just store locally (simulate save)
-      // In production, this will upload to IPFS and create on-chain
-      const listingData = {
+      // Upload image to IPFS if it's a base64 data URL
+      let imageIpfsHash: string | undefined;
+      if (imageHash && imageHash.startsWith('data:')) {
+        toast({
+          title: 'Uploading image...',
+          description: 'Saving your photo to IPFS',
+        });
+        const imageFile = dataUrlToFile(imageHash, `listing-${Date.now()}.jpg`);
+        const imageResult = await uploadImage(imageFile);
+        imageIpfsHash = imageResult.ipfsHash;
+        console.log('[CreateListing] Image uploaded to IPFS:', imageIpfsHash);
+      } else if (imageHash) {
+        // It's already a URL or IPFS hash
+        imageIpfsHash = imageHash;
+      }
+
+      // Create metadata object
+      const metadata = {
         produceId: selectedProduce.id,
         produceName: selectedProduce.name,
         category: selectedProduce.category,
         description: description || undefined,
         unitId,
         unitName: selectedUnit?.name || unitId,
-        images: imageHash ? [imageHash] : [],
+        images: imageIpfsHash ? [imageIpfsHash] : [],
         organic,
         growingPractices: growingPractices || undefined,
-        pricePerUnit: parseFloat(pricePerUnit),
-        quantity,
         createdAt: new Date().toISOString(),
       };
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      console.log('Listing saved (MVP):', listingData);
-
-      setIsSuccess(true);
+      // Upload metadata to IPFS
       toast({
-        title: 'Listing saved!',
-        description: 'Your produce has been added to your listings.',
+        title: 'Uploading metadata...',
+        description: 'Saving listing details to IPFS',
+      });
+      const metadataResult = await uploadMetadata(
+        metadata,
+        `listing-${selectedProduce.id}-${Date.now()}.json`
+      );
+      const metadataIpfs = `ipfs://${metadataResult.ipfsHash}`;
+      console.log('[CreateListing] Metadata uploaded to IPFS:', metadataIpfs);
+
+      // Convert USD price to ROOTS tokens
+      const priceInRoots = parseFiatToRoots(pricePerUnit, 'USD');
+
+      // Call the blockchain with just the IPFS hash
+      toast({
+        title: 'Creating listing...',
+        description: 'Confirm the transaction in your wallet',
+      });
+      await createListing({
+        pricePerUnit: priceInRoots,
+        quantityAvailable: quantity,
+        metadataIpfs,
       });
     } catch (err) {
       console.error('Create listing error:', err);
-      toast({
-        title: 'Failed to create listing',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
+      // Show error toast for IPFS upload failures
+      if (err instanceof Error && err.message.includes('IPFS')) {
+        toast({
+          title: 'Upload failed',
+          description: err.message,
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -110,8 +234,56 @@ export function CreateListingForm() {
     setOrganic(false);
     setGrowingPractices('');
     setImageHash(null);
-    setIsSuccess(false);
+    reset(); // Reset the hook state
   };
+
+  // Show loading while checking seller status
+  if (isCheckingSeller) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardContent className="pt-6 text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-roots-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-roots-gray">Checking seller status...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show message if not a registered seller
+  if (isConnected && !isSeller) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardContent className="pt-6 text-center">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-amber-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-xl font-heading font-bold mb-2">
+            Register First
+          </h3>
+          <p className="text-roots-gray mb-4">
+            You need to create your seller profile before you can add listings.
+          </p>
+          <Link href="/sell/register">
+            <Button className="bg-roots-primary hover:bg-roots-primary/90">
+              Create Seller Profile
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Handle successful listing creation
   if (isSuccess) {
@@ -134,10 +306,10 @@ export function CreateListingForm() {
             </svg>
           </div>
           <h3 className="text-xl font-heading font-bold mb-2">
-            Listing Saved!
+            Listing Created!
           </h3>
           <p className="text-roots-gray mb-4">
-            Your {selectedProduce?.name} listing has been added. You can add more produce or view your dashboard.
+            Your {selectedProduce?.name} listing is now live on the marketplace!
           </p>
           <div className="flex gap-3 justify-center">
             <Button
@@ -274,40 +446,63 @@ export function CreateListingForm() {
             </>
           )}
 
-          {/* Submit */}
-          <Button
-            type="submit"
-            disabled={!isFormValid || isSubmitting}
-            className="w-full bg-roots-primary hover:bg-roots-primary/90"
-          >
-            {isSubmitting ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Saving...
-              </>
-            ) : (
-              'Save Listing'
-            )}
-          </Button>
+          {/* Wallet Connection */}
+          {!isConnected && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800 mb-3">
+                Connect your wallet to create a listing on the blockchain.
+              </p>
+              <WalletButton />
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => router.push('/sell/dashboard')}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!isFormValid || isPending || !isConnected}
+              className="flex-1 bg-roots-primary hover:bg-roots-primary/90"
+            >
+              {isPending ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Creating...
+                </>
+              ) : !isConnected ? (
+                'Connect Wallet'
+              ) : (
+                'Create Listing'
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </form>

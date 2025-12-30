@@ -9,6 +9,9 @@ export function encodeLocation(latitude: number, longitude: number): string {
   return ngeohash.encode(latitude, longitude, 8);
 }
 
+// Alias for compatibility
+export const encodeGeohash = encodeLocation;
+
 /**
  * Decode a geohash string back to latitude/longitude
  */

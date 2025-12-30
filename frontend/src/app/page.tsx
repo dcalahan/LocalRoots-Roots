@@ -1,35 +1,15 @@
 'use client';
 
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { WalletButton } from '@/components/WalletButton';
 
 export default function Home() {
   const { isConnected } = useAccount();
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-roots-primary">Local Roots</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <Link href="/marketplace" className="text-roots-gray hover:text-roots-primary">
-              Marketplace
-            </Link>
-            <Link href="/sell" className="text-roots-gray hover:text-roots-primary">
-              Sell
-            </Link>
-            <Link href="/ambassador" className="text-roots-gray hover:text-roots-primary">
-              Ambassadors
-            </Link>
-            <ConnectButton />
-          </nav>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
@@ -43,15 +23,19 @@ export default function Home() {
           <div className="flex justify-center gap-4">
             {isConnected ? (
               <>
-                <Link href="/marketplace" className="btn-primary">
-                  Browse Produce
+                <Link href="/buy">
+                  <Button className="bg-roots-primary hover:bg-roots-primary/90">
+                    Browse Produce
+                  </Button>
                 </Link>
-                <Link href="/sell" className="btn-secondary">
-                  Start Selling
+                <Link href="/sell">
+                  <Button variant="outline">
+                    Start Selling
+                  </Button>
                 </Link>
               </>
             ) : (
-              <ConnectButton />
+              <WalletButton />
             )}
           </div>
         </div>
@@ -89,22 +73,22 @@ export default function Home() {
               <div className="w-12 h-12 bg-roots-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 1
               </div>
-              <h4 className="font-semibold mb-2">Connect Wallet</h4>
-              <p className="text-sm text-roots-gray">Connect your wallet to get started</p>
+              <h4 className="font-semibold mb-2">Set Your Location</h4>
+              <p className="text-sm text-roots-gray">Find growers in your area</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-roots-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 2
               </div>
-              <h4 className="font-semibold mb-2">Find Sellers</h4>
-              <p className="text-sm text-roots-gray">Browse growers in your area</p>
+              <h4 className="font-semibold mb-2">Browse Local Produce</h4>
+              <p className="text-sm text-roots-gray">Shop fresh, homegrown goods</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-roots-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
                 3
               </div>
-              <h4 className="font-semibold mb-2">Purchase with $ROOTS</h4>
-              <p className="text-sm text-roots-gray">Pay with $ROOTS tokens</p>
+              <h4 className="font-semibold mb-2">Pay Your Way</h4>
+              <p className="text-sm text-roots-gray">Credit card or $ROOTS tokens</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-roots-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">
@@ -117,19 +101,34 @@ export default function Home() {
         </div>
 
         {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-8 text-center">
+        <div className="grid md:grid-cols-3 gap-8 text-center mb-16">
           <div>
             <div className="text-4xl font-bold text-roots-primary">100M</div>
             <div className="text-roots-gray">$ROOTS Total Supply</div>
           </div>
           <div>
-            <div className="text-4xl font-bold text-roots-secondary">2.5%</div>
-            <div className="text-roots-gray">Platform Fee (to Ambassadors)</div>
+            <div className="text-4xl font-bold text-roots-secondary">0%</div>
+            <div className="text-roots-gray">Platform Fees</div>
           </div>
           <div>
             <div className="text-4xl font-bold text-roots-primary">Base</div>
             <div className="text-roots-gray">Built on Base L2</div>
           </div>
+        </div>
+
+        {/* Ambassador CTA */}
+        <div className="card bg-gradient-to-r from-roots-primary/5 to-roots-secondary/5 text-center">
+          <div className="text-4xl mb-4">🌟</div>
+          <h3 className="text-2xl font-bold mb-2">Build Community Resilience</h3>
+          <p className="text-roots-gray max-w-xl mx-auto mb-4">
+            Ambassadors inspire neighbors to grow food, help them share their harvest, and earn $ROOTS
+            as local food production flourishes. <strong className="text-roots-primary">The more your community grows, the more you earn.</strong>
+          </p>
+          <Link href="/ambassador">
+            <Button variant="outline" className="border-roots-primary text-roots-primary hover:bg-roots-primary hover:text-white">
+              Become an Ambassador
+            </Button>
+          </Link>
         </div>
       </main>
 
