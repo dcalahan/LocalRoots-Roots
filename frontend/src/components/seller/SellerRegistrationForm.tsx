@@ -29,7 +29,11 @@ function dataUrlToFile(dataUrl: string, filename: string): File {
   return new File([u8arr], filename, { type: mime });
 }
 
-export function SellerRegistrationForm() {
+interface SellerRegistrationFormProps {
+  ambassadorId?: bigint | null;
+}
+
+export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { isConnected, address } = useAccount();
@@ -58,6 +62,8 @@ export function SellerRegistrationForm() {
         title: 'Registration successful!',
         description: 'You are now a registered seller on Local Roots.',
       });
+      // Clear ambassador referral from localStorage
+      localStorage.removeItem('ambassadorRef');
     }
   }, [isSuccess, toast]);
 
@@ -124,7 +130,7 @@ export function SellerRegistrationForm() {
       }
 
       // Create metadata JSON
-      const metadata = {
+      const metadata: Record<string, any> = {
         name,
         description,
         email,
@@ -132,6 +138,12 @@ export function SellerRegistrationForm() {
         imageUrl: finalImageUrl,
         createdAt: new Date().toISOString(),
       };
+
+      // Include ambassador referral if present
+      if (ambassadorId) {
+        metadata.ambassadorId = ambassadorId.toString();
+        console.log('[Registration] Including ambassador referral:', ambassadorId.toString());
+      }
 
       // Upload metadata to IPFS
       toast({

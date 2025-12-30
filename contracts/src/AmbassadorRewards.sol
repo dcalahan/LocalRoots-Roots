@@ -80,6 +80,7 @@ contract AmbassadorRewards is ReentrancyGuard {
         bool active;
         bool suspended;
         bytes8 regionGeohash;       // For State Founders: the region they own (e.g., state prefix)
+        string profileIpfs;         // IPFS hash for ambassador profile (name, bio, etc.)
     }
 
     struct SellerRecruitment {
@@ -166,6 +167,7 @@ contract AmbassadorRewards is ReentrancyGuard {
     event DailyCapReached(uint256 indexed day, uint256 amount);
     event WeeklyCapReached(uint256 indexed ambassadorId, uint256 indexed week, uint256 amount);
     event TreasuryInitialized(uint256 amount);
+    event ProfileUpdated(uint256 indexed ambassadorId, string profileIpfs);
 
     // ============ Modifiers ============
 
@@ -226,10 +228,12 @@ contract AmbassadorRewards is ReentrancyGuard {
      * @dev Only admin can register State Founders
      * @param _wallet Address of the State Founder
      * @param _regionGeohash Geohash prefix for their region (e.g., first 2-3 chars for state)
+     * @param _profileIpfs IPFS hash for ambassador profile
      */
     function registerStateFounder(
         address _wallet,
-        bytes8 _regionGeohash
+        bytes8 _regionGeohash,
+        string calldata _profileIpfs
     ) external onlyAdmin returns (uint256 ambassadorId) {
         require(ambassadorIdByWallet[_wallet] == 0, "Already an ambassador");
 
@@ -245,7 +249,8 @@ contract AmbassadorRewards is ReentrancyGuard {
             createdAt: block.timestamp,
             active: true,
             suspended: false,
-            regionGeohash: _regionGeohash
+            regionGeohash: _regionGeohash,
+            profileIpfs: _profileIpfs
         });
 
         ambassadorIdByWallet[_wallet] = ambassadorId;
@@ -258,8 +263,9 @@ contract AmbassadorRewards is ReentrancyGuard {
     /**
      * @notice Register as an ambassador under an existing ambassador
      * @param _uplineId The ambassador who recruited you (must be active)
+     * @param _profileIpfs IPFS hash for ambassador profile (name, bio, etc.)
      */
-    function registerAmbassador(uint256 _uplineId) external returns (uint256 ambassadorId) {
+    function registerAmbassador(uint256 _uplineId, string calldata _profileIpfs) external returns (uint256 ambassadorId) {
         require(ambassadorIdByWallet[msg.sender] == 0, "Already an ambassador");
         require(_uplineId != 0, "Must have an upline (use registerStateFounder for founders)");
         require(ambassadors[_uplineId].active, "Upline not active");
@@ -279,12 +285,27 @@ contract AmbassadorRewards is ReentrancyGuard {
             createdAt: block.timestamp,
             active: true,
             suspended: false,
-            regionGeohash: bytes8(0)  // Only State Founders have regions
+            regionGeohash: bytes8(0),  // Only State Founders have regions
+            profileIpfs: _profileIpfs
         });
 
         ambassadorIdByWallet[msg.sender] = ambassadorId;
 
         emit AmbassadorRegistered(ambassadorId, msg.sender, _uplineId);
+    }
+
+    /**
+     * @notice Update ambassador profile
+     * @param _profileIpfs New IPFS hash for ambassador profile
+     */
+    function updateProfile(string calldata _profileIpfs) external {
+        uint256 ambassadorId = ambassadorIdByWallet[msg.sender];
+        require(ambassadorId != 0, "Not an ambassador");
+        require(ambassadors[ambassadorId].active, "Ambassador not active");
+
+        ambassadors[ambassadorId].profileIpfs = _profileIpfs;
+
+        emit ProfileUpdated(ambassadorId, _profileIpfs);
     }
 
     // ============ Seller Recruitment ============

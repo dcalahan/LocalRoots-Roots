@@ -1,12 +1,34 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccount } from 'wagmi';
+import { useAmbassadorStatus } from '@/hooks/useAmbassadorStatus';
+import { WalletButton } from '@/components/WalletButton';
 
 export default function AmbassadorPage() {
+  const router = useRouter();
   const { isConnected } = useAccount();
+  const { isAmbassador, isLoading } = useAmbassadorStatus();
+
+  // Auto-redirect to dashboard if already an ambassador
+  useEffect(() => {
+    if (!isLoading && isConnected && isAmbassador) {
+      router.push('/ambassador/dashboard');
+    }
+  }, [isLoading, isConnected, isAmbassador, router]);
+
+  // Show loading while checking status
+  if (isConnected && isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-roots-gray">Checking ambassador status...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -312,12 +334,30 @@ export default function AmbassadorPage() {
               </div>
 
               <div className="text-center">
-                <p className="text-sm text-roots-gray mb-4">
-                  Ambassador program launching soon. Join the waitlist to be notified.
-                </p>
-                <Button disabled className="bg-roots-primary/50 cursor-not-allowed">
-                  Coming Soon
-                </Button>
+                {isLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-10 bg-gray-200 rounded w-48 mx-auto" />
+                  </div>
+                ) : isAmbassador ? (
+                  <Link href="/ambassador/dashboard">
+                    <Button className="bg-roots-primary hover:bg-roots-primary/90">
+                      Go to Ambassador Dashboard
+                    </Button>
+                  </Link>
+                ) : isConnected ? (
+                  <Link href="/ambassador/register">
+                    <Button className="bg-roots-primary hover:bg-roots-primary/90">
+                      Become an Ambassador
+                    </Button>
+                  </Link>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-roots-gray mb-4">
+                      Connect your wallet to become an ambassador.
+                    </p>
+                    <WalletButton />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

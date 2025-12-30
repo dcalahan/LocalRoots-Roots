@@ -98,7 +98,7 @@ contract AmbassadorRewardsTest is Test {
     function test_RegisterStateFounder() public {
         bytes8 georgiaGeohash = bytes8("djq"); // Georgia prefix
 
-        uint256 id = rewards.registerStateFounder(stateFounder, georgiaGeohash);
+        uint256 id = rewards.registerStateFounder(stateFounder, georgiaGeohash, "");
 
         assertEq(id, 1);
         assertEq(rewards.getAmbassadorId(stateFounder), 1);
@@ -120,26 +120,26 @@ contract AmbassadorRewardsTest is Test {
 
         vm.prank(stateFounder);
         vm.expectRevert("Only admin");
-        rewards.registerStateFounder(stateFounder, georgiaGeohash);
+        rewards.registerStateFounder(stateFounder, georgiaGeohash, "");
     }
 
     function test_RevertStateFounder_AlreadyRegistered() public {
         bytes8 georgiaGeohash = bytes8("djq");
-        rewards.registerStateFounder(stateFounder, georgiaGeohash);
+        rewards.registerStateFounder(stateFounder, georgiaGeohash, "");
 
         vm.expectRevert("Already an ambassador");
-        rewards.registerStateFounder(stateFounder, bytes8("drt")); // Alabama
+        rewards.registerStateFounder(stateFounder, bytes8("drt"), ""); // Alabama
     }
 
     // ============ Ambassador Registration Tests ============
 
     function test_RegisterAmbassador() public {
         // First register state founder
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         // Register city ambassador under state founder
         vm.prank(cityAmbassador);
-        uint256 id = rewards.registerAmbassador(1); // upline is state founder
+        uint256 id = rewards.registerAmbassador(1, ""); // upline is state founder
 
         assertEq(id, 2);
         assertEq(rewards.getAmbassadorId(cityAmbassador), 2);
@@ -157,16 +157,16 @@ contract AmbassadorRewardsTest is Test {
 
     function test_RegisterMultiLevelChain() public {
         // State Founder -> City -> Neighborhood -> Block
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(cityAmbassador);
-        rewards.registerAmbassador(1);
+        rewards.registerAmbassador(1, "");
 
         vm.prank(neighborhoodAmbassador);
-        rewards.registerAmbassador(2);
+        rewards.registerAmbassador(2, "");
 
         vm.prank(blockAmbassador);
-        rewards.registerAmbassador(3);
+        rewards.registerAmbassador(3, "");
 
         // Verify chain
         uint256[] memory chain = rewards.getAmbassadorChain(4);
@@ -178,32 +178,32 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_RevertRegister_AlreadyAmbassador() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.startPrank(cityAmbassador);
-        rewards.registerAmbassador(1);
+        rewards.registerAmbassador(1, "");
 
         vm.expectRevert("Already an ambassador");
-        rewards.registerAmbassador(1);
+        rewards.registerAmbassador(1, "");
         vm.stopPrank();
     }
 
     function test_RevertRegister_NoUpline() public {
         vm.prank(cityAmbassador);
         vm.expectRevert("Must have an upline (use registerStateFounder for founders)");
-        rewards.registerAmbassador(0);
+        rewards.registerAmbassador(0, "");
     }
 
     function test_RevertRegister_InvalidUpline() public {
         vm.prank(cityAmbassador);
         vm.expectRevert("Upline not active");
-        rewards.registerAmbassador(999);
+        rewards.registerAmbassador(999, "");
     }
 
     // ============ Seller Recruitment Tests ============
 
     function test_RecordSellerRecruitment() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(marketplace);
         rewards.recordSellerRecruitment(1, 1); // sellerId 1, ambassadorId 1
@@ -224,7 +224,7 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_RevertRecruitment_NotMarketplace() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(stateFounder);
         vm.expectRevert("Only marketplace");
@@ -234,7 +234,7 @@ contract AmbassadorRewardsTest is Test {
     // ============ Seller Activation Tests (Circuit Breaker) ============
 
     function test_SellerActivation() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(marketplace);
         rewards.recordSellerRecruitment(1, 1);
@@ -273,16 +273,16 @@ contract AmbassadorRewardsTest is Test {
         sellerId = 1;
 
         // Setup 4-level chain: State -> City -> Neighborhood -> Block
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(cityAmbassador);
-        rewards.registerAmbassador(1);
+        rewards.registerAmbassador(1, "");
 
         vm.prank(neighborhoodAmbassador);
-        rewards.registerAmbassador(2);
+        rewards.registerAmbassador(2, "");
 
         vm.prank(blockAmbassador);
-        rewards.registerAmbassador(3);
+        rewards.registerAmbassador(3, "");
 
         // Wait for all cooldowns
         vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
@@ -341,7 +341,7 @@ contract AmbassadorRewardsTest is Test {
 
     function test_StateFounderDirectRecruitment() public {
         // State founder recruits seller directly - gets 100%
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
         vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
 
         vm.prank(marketplace);
@@ -366,10 +366,10 @@ contract AmbassadorRewardsTest is Test {
 
     function test_CityAmbassadorRecruitment() public {
         // City ambassador recruits seller - city gets 80%, state gets 20%
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(cityAmbassador);
-        rewards.registerAmbassador(1);
+        rewards.registerAmbassador(1, "");
 
         vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
 
@@ -400,7 +400,7 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_QueueReward_FailsBeforeCooldown() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
         // Don't wait for cooldown
 
         vm.prank(marketplace);
@@ -418,7 +418,7 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_QueueReward_FailsBeforeActivation() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
         vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
 
         vm.prank(marketplace);
@@ -553,13 +553,13 @@ contract AmbassadorRewardsTest is Test {
     // ============ View Function Tests ============
 
     function test_GetAmbassadorChain() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(cityAmbassador);
-        rewards.registerAmbassador(1);
+        rewards.registerAmbassador(1, "");
 
         vm.prank(neighborhoodAmbassador);
-        rewards.registerAmbassador(2);
+        rewards.registerAmbassador(2, "");
 
         uint256[] memory chain = rewards.getAmbassadorChain(3);
         assertEq(chain.length, 3);
@@ -571,13 +571,13 @@ contract AmbassadorRewardsTest is Test {
     function test_GetAmbassadorId() public {
         assertEq(rewards.getAmbassadorId(stateFounder), 0);
 
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         assertEq(rewards.getAmbassadorId(stateFounder), 1);
     }
 
     function test_IsAmbassadorActive() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         // Before cooldown
         assertFalse(rewards.isAmbassadorActive(1));
@@ -588,7 +588,7 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_IsSellerActivated() public {
-        rewards.registerStateFounder(stateFounder, bytes8("djq"));
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
 
         vm.prank(marketplace);
         rewards.recordSellerRecruitment(1, 1);
