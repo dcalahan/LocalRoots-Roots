@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 interface IAmbassadorRewards {
     function hasSufficientTreasury(uint256 amount) external view returns (bool);
@@ -18,7 +19,7 @@ interface IAmbassadorRewards {
  * @dev "Neighbors feeding neighbors"
  *      Rewards are only distributed after order completion (fraud protection)
  */
-contract LocalRootsMarketplace is ReentrancyGuard {
+contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     using SafeERC20 for IERC20;
 
     // ============ State Variables ============
@@ -110,7 +111,11 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
     // ============ Constructor ============
 
-    constructor(address _rootsToken, address _ambassadorRewards) {
+    constructor(
+        address _rootsToken,
+        address _ambassadorRewards,
+        address _trustedForwarder
+    ) ERC2771Context(_trustedForwarder) {
         require(_rootsToken != address(0), "Invalid token address");
         rootsToken = IERC20(_rootsToken);
         ambassadorRewards = _ambassadorRewards;
@@ -133,13 +138,13 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         bool _offersPickup,
         uint256 _deliveryRadiusKm
     ) external returns (uint256 sellerId) {
-        require(sellerIdByOwner[msg.sender] == 0, "Already registered as seller");
+        require(sellerIdByOwner[_msgSender()] == 0, "Already registered as seller");
         require(_offersDelivery || _offersPickup, "Must offer delivery or pickup");
 
         sellerId = ++nextSellerId;
 
         sellers[sellerId] = Seller({
-            owner: msg.sender,
+            owner: _msgSender(),
             geohash: _geohash,
             storefrontIpfs: _storefrontIpfs,
             offersDelivery: _offersDelivery,
@@ -149,7 +154,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
             active: true
         });
 
-        sellerIdByOwner[msg.sender] = sellerId;
+        sellerIdByOwner[_msgSender()] = sellerId;
 
         // Index by geohash prefix at multiple precision levels for discovery
         bytes4 prefix4 = bytes4(_geohash);
@@ -159,7 +164,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         sellersByGeohash5[prefix5].push(sellerId); // Neighborhood ~2.4km
         sellersByGeohash6[prefix6].push(sellerId); // Few blocks ~610m
 
-        emit SellerRegistered(sellerId, msg.sender, _geohash);
+        emit SellerRegistered(sellerId, _msgSender(), _geohash);
     }
 
     /**
@@ -172,7 +177,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         uint256 _deliveryRadiusKm,
         bool _active
     ) external {
-        uint256 sellerId = sellerIdByOwner[msg.sender];
+        uint256 sellerId = sellerIdByOwner[_msgSender()];
         require(sellerId != 0, "Not a registered seller");
         require(_offersDelivery || _offersPickup, "Must offer delivery or pickup");
 
@@ -199,7 +204,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         uint256 _pricePerUnit,
         uint256 _quantityAvailable
     ) external returns (uint256 listingId) {
-        uint256 sellerId = sellerIdByOwner[msg.sender];
+        uint256 sellerId = sellerIdByOwner[_msgSender()];
         require(sellerId != 0, "Not a registered seller");
         require(sellers[sellerId].active, "Seller not active");
         require(_pricePerUnit > 0, "Price must be > 0");
@@ -230,7 +235,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
     ) external {
         Listing storage listing = listings[_listingId];
         require(listing.sellerId != 0, "Listing does not exist");
-        require(sellers[listing.sellerId].owner == msg.sender, "Not listing owner");
+        require(sellers[listing.sellerId].owner == _msgSender(), "Not listing owner");
 
         listing.metadataIpfs = _metadataIpfs;
         listing.pricePerUnit = _pricePerUnit;
@@ -274,7 +279,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         uint256 totalPrice = listing.pricePerUnit * _quantity;
 
         // Hold funds in escrow (this contract) until seller provides delivery proof
-        rootsToken.safeTransferFrom(msg.sender, address(this), totalPrice);
+        rootsToken.safeTransferFrom(_msgSender(), address(this), totalPrice);
 
         // Update listing quantity
         listing.quantityAvailable -= _quantity;
@@ -284,7 +289,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
         orders[orderId] = Order({
             listingId: _listingId,
             sellerId: listing.sellerId,
-            buyer: msg.sender,
+            buyer: _msgSender(),
             quantity: _quantity,
             totalPrice: totalPrice,
             isDelivery: _isDelivery,
@@ -298,7 +303,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
             buyerInfoIpfs: _buyerInfoIpfs
         });
 
-        emit OrderCreated(orderId, _listingId, msg.sender, _quantity);
+        emit OrderCreated(orderId, _listingId, _msgSender(), _quantity);
     }
 
     // ============ Order Management ============
@@ -309,7 +314,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
     function acceptOrder(uint256 _orderId) external {
         Order storage order = orders[_orderId];
         require(order.status == OrderStatus.Pending, "Invalid order status");
-        require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
+        require(sellers[order.sellerId].owner == _msgSender(), "Not order seller");
 
         order.status = OrderStatus.Accepted;
         emit OrderStatusChanged(_orderId, OrderStatus.Accepted);
@@ -326,7 +331,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
         Order storage order = orders[_orderId];
         require(order.status == OrderStatus.Accepted, "Invalid order status");
-        require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
+        require(sellers[order.sellerId].owner == _msgSender(), "Not order seller");
         require(!order.isDelivery, "Order is for delivery");
 
         order.proofIpfs = _proofIpfs;
@@ -347,7 +352,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
         Order storage order = orders[_orderId];
         require(order.status == OrderStatus.Accepted, "Invalid order status");
-        require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
+        require(sellers[order.sellerId].owner == _msgSender(), "Not order seller");
         require(order.isDelivery, "Order is for pickup");
 
         order.proofIpfs = _proofIpfs;
@@ -369,7 +374,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
             order.status == OrderStatus.OutForDelivery,
             "Invalid order status"
         );
-        require(order.buyer == msg.sender, "Not order buyer");
+        require(order.buyer == _msgSender(), "Not order buyer");
 
         order.status = OrderStatus.Completed;
         order.completedAt = block.timestamp;
@@ -411,7 +416,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
      */
     function raiseDispute(uint256 _orderId) external {
         Order storage order = orders[_orderId];
-        require(order.buyer == msg.sender, "Not order buyer");
+        require(order.buyer == _msgSender(), "Not order buyer");
         require(
             order.status == OrderStatus.Pending ||
             order.status == OrderStatus.Accepted ||
@@ -440,7 +445,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
             }
         }
 
-        emit DisputeRaised(_orderId, msg.sender);
+        emit DisputeRaised(_orderId, _msgSender());
         emit OrderStatusChanged(_orderId, OrderStatus.Disputed);
     }
 
@@ -453,7 +458,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
      */
     function claimFunds(uint256 _orderId) external nonReentrant {
         Order storage order = orders[_orderId];
-        require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
+        require(sellers[order.sellerId].owner == _msgSender(), "Not order seller");
         require(!order.fundsReleased, "Funds already released");
         require(order.proofUploadedAt > 0, "No proof uploaded");
         require(
@@ -499,7 +504,7 @@ contract LocalRootsMarketplace is ReentrancyGuard {
 
         // For now, only the seller can initiate a refund (voluntary)
         // In future, this could be admin-controlled or through arbitration
-        require(sellers[order.sellerId].owner == msg.sender, "Not order seller");
+        require(sellers[order.sellerId].owner == _msgSender(), "Not order seller");
 
         order.fundsReleased = true;
         order.status = OrderStatus.Refunded;

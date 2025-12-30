@@ -6,6 +6,7 @@ import "../src/RootsToken.sol";
 import "../src/FounderVesting.sol";
 import "../src/LocalRootsMarketplace.sol";
 import "../src/AmbassadorRewards.sol";
+import "@openzeppelin/contracts/metatx/ERC2771Forwarder.sol";
 
 contract DeployScript is Script {
     function run() external {
@@ -24,13 +25,17 @@ contract DeployScript is Script {
         // 2. Deploy Founder Vesting
         FounderVesting founderVesting = new FounderVesting(tempToken, founder);
 
-        // 3. Deploy Ambassador Rewards
-        AmbassadorRewards ambassadorRewards = new AmbassadorRewards(tempToken);
+        // 3. Deploy Forwarder for gasless transactions
+        ERC2771Forwarder forwarder = new ERC2771Forwarder("LocalRootsForwarder");
+
+        // 4. Deploy Ambassador Rewards
+        AmbassadorRewards ambassadorRewards = new AmbassadorRewards(tempToken, address(forwarder));
 
         // For now, we'll deploy with placeholder addresses
         // In production, deploy in correct order or use proxies
 
         console.log("=== Deployment Addresses ===");
+        console.log("Forwarder:", address(forwarder));
         console.log("FounderVesting:", address(founderVesting));
         console.log("AmbassadorRewards:", address(ambassadorRewards));
 
@@ -46,7 +51,8 @@ contract DeployAll is Script {
         RootsToken token,
         FounderVesting founderVesting,
         AmbassadorRewards ambassadorRewards,
-        LocalRootsMarketplace marketplace
+        LocalRootsMarketplace marketplace,
+        ERC2771Forwarder forwarder
     ) {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address founder = vm.envAddress("FOUNDER_ADDRESS");
@@ -56,7 +62,10 @@ contract DeployAll is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // Step 1: Compute future addresses using CREATE
+        // Step 1: Deploy Forwarder first (for gasless transactions)
+        forwarder = new ERC2771Forwarder("LocalRootsForwarder");
+
+        // Step 2: Compute future addresses using CREATE
         address deployer = vm.addr(deployerPrivateKey);
         uint64 nonce = vm.getNonce(deployer);
 
@@ -70,15 +79,15 @@ contract DeployAll is Script {
         address predictedAmbassador = computeCreateAddress(deployer, uint256(nonce) + 1);
         address predictedToken = computeCreateAddress(deployer, uint256(nonce) + 2);
 
-        // Step 2: Deploy FounderVesting
+        // Step 3: Deploy FounderVesting
         founderVesting = new FounderVesting(predictedToken, founder);
         require(address(founderVesting) == predictedVesting, "Vesting address mismatch");
 
-        // Step 3: Deploy AmbassadorRewards
-        ambassadorRewards = new AmbassadorRewards(predictedToken);
+        // Step 4: Deploy AmbassadorRewards (with forwarder)
+        ambassadorRewards = new AmbassadorRewards(predictedToken, address(forwarder));
         require(address(ambassadorRewards) == predictedAmbassador, "Ambassador address mismatch");
 
-        // Step 4: Deploy RootsToken with all addresses
+        // Step 5: Deploy RootsToken with all addresses
         token = new RootsToken(
             address(founderVesting),
             address(ambassadorRewards),
@@ -88,19 +97,21 @@ contract DeployAll is Script {
         );
         require(address(token) == predictedToken, "Token address mismatch");
 
-        // Step 5: Deploy Marketplace
+        // Step 6: Deploy Marketplace (with forwarder)
         marketplace = new LocalRootsMarketplace(
             address(token),
-            address(ambassadorRewards)
+            address(ambassadorRewards),
+            address(forwarder)
         );
 
-        // Step 6: Configure AmbassadorRewards
+        // Step 7: Configure AmbassadorRewards
         ambassadorRewards.setMarketplace(address(marketplace));
 
-        // Step 7: Initialize founder vesting
+        // Step 8: Initialize founder vesting
         founderVesting.initializeAllocation();
 
         console.log("=== Deployment Complete ===");
+        console.log("ERC2771Forwarder:", address(forwarder));
         console.log("RootsToken:", address(token));
         console.log("FounderVesting:", address(founderVesting));
         console.log("AmbassadorRewards:", address(ambassadorRewards));

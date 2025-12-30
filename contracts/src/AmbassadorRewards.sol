@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 
 /**
  * @title AmbassadorRewards
@@ -29,7 +30,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  *      - Ambassador weekly cap: 10,000 ROOTS per ambassador per week
  *      - New ambassador cooldown: 24 hours before rewards activate
  */
-contract AmbassadorRewards is ReentrancyGuard {
+contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     using SafeERC20 for IERC20;
 
     // ============ State Variables ============
@@ -182,7 +183,7 @@ contract AmbassadorRewards is ReentrancyGuard {
     }
 
     modifier onlyActiveAmbassador() {
-        uint256 ambassadorId = ambassadorIdByWallet[msg.sender];
+        uint256 ambassadorId = ambassadorIdByWallet[_msgSender()];
         require(ambassadorId != 0, "Not an ambassador");
         require(ambassadors[ambassadorId].active, "Ambassador not active");
         require(!ambassadors[ambassadorId].suspended, "Ambassador suspended");
@@ -191,10 +192,13 @@ contract AmbassadorRewards is ReentrancyGuard {
 
     // ============ Constructor ============
 
-    constructor(address _rootsToken) {
+    constructor(
+        address _rootsToken,
+        address _trustedForwarder
+    ) ERC2771Context(_trustedForwarder) {
         require(_rootsToken != address(0), "Invalid token address");
         rootsToken = IERC20(_rootsToken);
-        admin = msg.sender;
+        admin = msg.sender;  // Deployer is admin - intentionally msg.sender, not _msgSender()
     }
 
     // ============ Admin Functions ============
@@ -266,7 +270,7 @@ contract AmbassadorRewards is ReentrancyGuard {
      * @param _profileIpfs IPFS hash for ambassador profile (name, bio, etc.)
      */
     function registerAmbassador(uint256 _uplineId, string calldata _profileIpfs) external returns (uint256 ambassadorId) {
-        require(ambassadorIdByWallet[msg.sender] == 0, "Already an ambassador");
+        require(ambassadorIdByWallet[_msgSender()] == 0, "Already an ambassador");
         require(_uplineId != 0, "Must have an upline (use registerStateFounder for founders)");
         require(ambassadors[_uplineId].active, "Upline not active");
         require(!ambassadors[_uplineId].suspended, "Upline suspended");
@@ -276,7 +280,7 @@ contract AmbassadorRewards is ReentrancyGuard {
         ambassadorId = ++nextAmbassadorId;
 
         ambassadors[ambassadorId] = Ambassador({
-            wallet: msg.sender,
+            wallet: _msgSender(),
             uplineId: _uplineId,
             totalEarned: 0,
             totalPending: 0,
@@ -289,9 +293,9 @@ contract AmbassadorRewards is ReentrancyGuard {
             profileIpfs: _profileIpfs
         });
 
-        ambassadorIdByWallet[msg.sender] = ambassadorId;
+        ambassadorIdByWallet[_msgSender()] = ambassadorId;
 
-        emit AmbassadorRegistered(ambassadorId, msg.sender, _uplineId);
+        emit AmbassadorRegistered(ambassadorId, _msgSender(), _uplineId);
     }
 
     /**
@@ -299,7 +303,7 @@ contract AmbassadorRewards is ReentrancyGuard {
      * @param _profileIpfs New IPFS hash for ambassador profile
      */
     function updateProfile(string calldata _profileIpfs) external {
-        uint256 ambassadorId = ambassadorIdByWallet[msg.sender];
+        uint256 ambassadorId = ambassadorIdByWallet[_msgSender()];
         require(ambassadorId != 0, "Not an ambassador");
         require(ambassadors[ambassadorId].active, "Ambassador not active");
 
@@ -519,7 +523,7 @@ contract AmbassadorRewards is ReentrancyGuard {
      * @notice Claim all vested rewards for the caller
      */
     function claimVestedRewards() external nonReentrant {
-        uint256 ambassadorId = ambassadorIdByWallet[msg.sender];
+        uint256 ambassadorId = ambassadorIdByWallet[_msgSender()];
         require(ambassadorId != 0, "Not an ambassador");
         require(!ambassadors[ambassadorId].suspended, "Ambassador suspended");
 
@@ -559,7 +563,7 @@ contract AmbassadorRewards is ReentrancyGuard {
         }
 
         require(totalToClaim > 0, "No rewards to claim");
-        rootsToken.safeTransfer(msg.sender, totalToClaim);
+        rootsToken.safeTransfer(_msgSender(), totalToClaim);
     }
 
     // ============ Clawback ============
@@ -594,7 +598,7 @@ contract AmbassadorRewards is ReentrancyGuard {
         uint256 _targetAmbassadorId,
         string calldata _reason
     ) external onlyActiveAmbassador returns (uint256 flagId) {
-        uint256 flaggedBy = ambassadorIdByWallet[msg.sender];
+        uint256 flaggedBy = ambassadorIdByWallet[_msgSender()];
         require(_targetAmbassadorId != flaggedBy, "Cannot flag yourself");
         require(ambassadors[_targetAmbassadorId].active, "Target not active");
         require(!ambassadors[_targetAmbassadorId].suspended, "Already suspended");
@@ -618,7 +622,7 @@ contract AmbassadorRewards is ReentrancyGuard {
     }
 
     function voteOnFlag(uint256 _flagId, bool _voteToSuspend) external onlyActiveAmbassador {
-        uint256 ambassadorId = ambassadorIdByWallet[msg.sender];
+        uint256 ambassadorId = ambassadorIdByWallet[_msgSender()];
         FraudFlag storage flag = fraudFlags[_flagId];
 
         require(!flag.resolved, "Flag already resolved");

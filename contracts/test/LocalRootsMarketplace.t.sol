@@ -30,7 +30,8 @@ contract LocalRootsMarketplaceTest is Test {
 
     function setUp() public {
         // Deploy ambassador rewards first (with temp token address)
-        ambassadorRewardsContract = new AmbassadorRewards(address(1));
+        // address(0) forwarder disables meta-tx in tests
+        ambassadorRewardsContract = new AmbassadorRewards(address(1), address(0));
 
         // Deploy token with ambassador rewards address
         token = new RootsToken(
@@ -42,16 +43,17 @@ contract LocalRootsMarketplaceTest is Test {
         );
 
         // Redeploy ambassador rewards with correct token
-        ambassadorRewardsContract = new AmbassadorRewards(address(token));
+        ambassadorRewardsContract = new AmbassadorRewards(address(token), address(0));
 
         // Fund ambassador treasury
         vm.prank(treasury);
         token.transfer(address(ambassadorRewardsContract), AMBASSADOR_ALLOCATION);
 
-        // Deploy marketplace
+        // Deploy marketplace (address(0) forwarder disables meta-tx in tests)
         marketplace = new LocalRootsMarketplace(
             address(token),
-            address(ambassadorRewardsContract)
+            address(ambassadorRewardsContract),
+            address(0)
         );
 
         // Set marketplace in ambassador rewards
@@ -430,10 +432,11 @@ contract LocalRootsMarketplaceTest is Test {
     function test_EscrowWorksWithEmptyTreasury() public {
         // Deploy fresh contracts with NO treasury funding
         // to verify escrow still works
-        AmbassadorRewards freshAmbassador = new AmbassadorRewards(address(token));
+        AmbassadorRewards freshAmbassador = new AmbassadorRewards(address(token), address(0));
         LocalRootsMarketplace freshMarketplace = new LocalRootsMarketplace(
             address(token),
-            address(freshAmbassador)
+            address(freshAmbassador),
+            address(0)
         );
         freshAmbassador.setMarketplace(address(freshMarketplace));
 

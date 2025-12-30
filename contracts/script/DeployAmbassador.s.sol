@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import "../src/AmbassadorRewards.sol";
+import "@openzeppelin/contracts/metatx/ERC2771Forwarder.sol";
 
 contract DeployAmbassador is Script {
     function run() external {
@@ -10,8 +11,13 @@ contract DeployAmbassador is Script {
 
         vm.startBroadcast();
 
-        AmbassadorRewards ambassador = new AmbassadorRewards(rootsToken);
+        // Deploy forwarder for gasless transactions
+        ERC2771Forwarder forwarder = new ERC2771Forwarder("LocalRootsForwarder");
 
+        // Deploy ambassador rewards with forwarder
+        AmbassadorRewards ambassador = new AmbassadorRewards(rootsToken, address(forwarder));
+
+        console.log("ERC2771Forwarder deployed at:", address(forwarder));
         console.log("AmbassadorRewards deployed at:", address(ambassador));
 
         vm.stopBroadcast();

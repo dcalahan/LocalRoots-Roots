@@ -28,8 +28,8 @@ contract AmbassadorRewardsTest is Test {
     uint256 public constant AMBASSADOR_COOLDOWN = 24 hours;
 
     function setUp() public {
-        // Deploy rewards contract first
-        rewards = new AmbassadorRewards(address(1)); // temp token
+        // Deploy rewards contract first (address(0) forwarder disables meta-tx in tests)
+        rewards = new AmbassadorRewards(address(1), address(0)); // temp token
 
         // Deploy token with rewards address
         token = new RootsToken(
@@ -41,7 +41,7 @@ contract AmbassadorRewardsTest is Test {
         );
 
         // Redeploy rewards with correct token
-        rewards = new AmbassadorRewards(address(token));
+        rewards = new AmbassadorRewards(address(token), address(0));
 
         // Fund rewards contract
         vm.prank(treasury);
@@ -624,7 +624,7 @@ contract AmbassadorRewardsTest is Test {
     }
 
     function test_RevertSetMarketplace_ZeroAddress() public {
-        AmbassadorRewards newRewards = new AmbassadorRewards(address(token));
+        AmbassadorRewards newRewards = new AmbassadorRewards(address(token), address(0));
 
         vm.expectRevert("Invalid marketplace address");
         newRewards.setMarketplace(address(0));
@@ -634,6 +634,6 @@ contract AmbassadorRewardsTest is Test {
 
     function test_RevertDeploy_ZeroToken() public {
         vm.expectRevert("Invalid token address");
-        new AmbassadorRewards(address(0));
+        new AmbassadorRewards(address(0), address(0));
     }
 }
