@@ -7,16 +7,16 @@ export const ROOTS_DECIMALS = 18;
 const DEFAULT_ROOTS_PER_ETH = 1000;
 
 // Fiat currency rates (ROOTS to fiat) - these would come from an oracle in production
-// For now, 1 ROOTS ≈ $0.10 USD
+// For now, 100 ROOTS = $1 USD (1 ROOTS ≈ $0.01 USD)
 const FIAT_RATES: Record<string, number> = {
-  USD: 0.10,
-  EUR: 0.09,
-  BRL: 0.50,
-  GBP: 0.08,
-  CAD: 0.14,
-  AUD: 0.15,
-  JPY: 15.0,
-  MXN: 1.70,
+  USD: 0.01,
+  EUR: 0.009,
+  BRL: 0.05,
+  GBP: 0.008,
+  CAD: 0.014,
+  AUD: 0.015,
+  JPY: 1.5,
+  MXN: 0.17,
 };
 
 export type SupportedCurrency = keyof typeof FIAT_RATES;

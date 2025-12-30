@@ -1,12 +1,12 @@
 import { type Address } from 'viem';
 
-// ERC2771Forwarder contract address on Base Sepolia
-export const FORWARDER_ADDRESS: Address = '0x9e80a34E1aBDDC50ca2928b688b43C821FE1C2bc';
+// ERC2771Forwarder contract address on Base Sepolia (1B token deployment)
+export const FORWARDER_ADDRESS: Address = '0x76110d5cDA036dA56E78B6812180772a2D494793';
 
 // Allowed target contracts for gasless transactions
 export const ALLOWED_TARGETS: Address[] = [
-  '0xfC6Fdf32587F433d9638c4dC84e3A4Be2B3C8a77', // LocalRootsMarketplace
-  '0x6838063D4A7fBdDc62E3886e6306e3076267c29d', // AmbassadorRewards
+  '0xdDfFdBed78D85F5a4910943f5FB6cF9d21a8c800', // LocalRootsMarketplace
+  '0xEAFCc936fB1794635eE580Dc9A580fF488762f43', // AmbassadorRewards
 ];
 
 // ERC2771Forwarder ABI (only the functions we need)
@@ -64,9 +64,9 @@ export const forwarderAbi = [
   },
 ] as const;
 
-// EIP-712 domain for the forwarder
+// EIP-712 domain for the forwarder (matches ERC2771Forwarder constructor)
 export const forwarderDomain = {
-  name: 'LocalRootsForwarder',
+  name: 'ERC2771Forwarder',
   version: '1',
   chainId: 84532, // Base Sepolia
   verifyingContract: FORWARDER_ADDRESS,

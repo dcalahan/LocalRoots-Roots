@@ -8,17 +8,17 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 /**
  * @title RootsToken ($ROOTS)
  * @notice The native token for the Local Roots marketplace
- * @dev Total supply: 100,000,000 ROOTS
+ * @dev Total supply: 1,000,000,000 ROOTS (1 billion)
  *
  * Allocation:
- * - 10% Founders (10M) - vested over 3 years with 6-month cliff
- * - 25% Ambassador Rewards (25M) - released as earned
- * - 15% Liquidity (15M) - for Aerodrome LP
- * - 40% Treasury (40M) - DAO controlled
- * - 10% Airdrop (10M) - initial distribution
+ * - 10% Founders (100M) - vested over 3 years with 6-month cliff
+ * - 25% Ambassador Rewards (250M) - released as earned
+ * - 15% Liquidity (150M) - for Aerodrome LP
+ * - 40% Treasury (400M) - DAO controlled
+ * - 10% Airdrop (100M) - initial distribution
  */
 contract RootsToken is ERC20, ERC20Burnable, ERC20Permit {
-    uint256 public constant TOTAL_SUPPLY = 100_000_000 * 10**18;
+    uint256 public constant TOTAL_SUPPLY = 1_000_000_000 * 10**18;
 
     // Allocation percentages (basis points, 10000 = 100%)
     uint256 public constant FOUNDER_ALLOCATION = 1000;      // 10%
