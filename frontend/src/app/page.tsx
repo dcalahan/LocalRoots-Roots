@@ -103,7 +103,7 @@ export default function Home() {
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-8 text-center mb-16">
           <div>
-            <div className="text-4xl font-bold text-roots-primary">100M</div>
+            <div className="text-4xl font-bold text-roots-primary">1B</div>
             <div className="text-roots-gray">$ROOTS Total Supply</div>
           </div>
           <div>

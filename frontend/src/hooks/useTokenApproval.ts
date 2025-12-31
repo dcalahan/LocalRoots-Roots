@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { type Address } from 'viem';
 import { MARKETPLACE_ADDRESS, ROOTS_TOKEN_ADDRESS, erc20Abi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
 
@@ -15,12 +16,18 @@ export function useTokenApproval() {
 
   const isTestWallet = connector?.id === 'testWallet';
 
-  const checkAllowance = useCallback(async (): Promise<bigint> => {
+  /**
+   * Check the current allowance for a token
+   * @param tokenAddress Optional token address (defaults to ROOTS)
+   */
+  const checkAllowance = useCallback(async (tokenAddress?: Address): Promise<bigint> => {
     if (!publicClient || !address) return 0n;
+
+    const token = tokenAddress || ROOTS_TOKEN_ADDRESS;
 
     try {
       const allowance = await publicClient.readContract({
-        address: ROOTS_TOKEN_ADDRESS,
+        address: token,
         abi: erc20Abi,
         functionName: 'allowance',
         args: [address, MARKETPLACE_ADDRESS],
@@ -33,7 +40,12 @@ export function useTokenApproval() {
     }
   }, [publicClient, address]);
 
-  const approve = useCallback(async (amount: bigint): Promise<boolean> => {
+  /**
+   * Approve a token for spending by the marketplace
+   * @param amount Amount to approve
+   * @param tokenAddress Optional token address (defaults to ROOTS)
+   */
+  const approve = useCallback(async (amount: bigint, tokenAddress?: Address): Promise<boolean> => {
     if (!address) {
       setError('Wallet not connected');
       return false;
@@ -45,12 +57,14 @@ export function useTokenApproval() {
       return false;
     }
 
+    const token = tokenAddress || ROOTS_TOKEN_ADDRESS;
+
     setIsApproving(true);
     setError(null);
 
     try {
-      // Check current allowance
-      const currentAllowance = await checkAllowance();
+      // Check current allowance for this specific token
+      const currentAllowance = await checkAllowance(token);
 
       if (currentAllowance >= amount) {
         // Already approved
@@ -61,9 +75,9 @@ export function useTokenApproval() {
 
       // Use direct viem method for test wallet
       if (isTestWallet && isTestWalletAvailable()) {
-        console.log('[useTokenApproval] Using direct test wallet transaction');
+        console.log('[useTokenApproval] Using direct test wallet transaction for token:', token);
         hash = await testWalletWriteContract({
-          address: ROOTS_TOKEN_ADDRESS,
+          address: token,
           abi: erc20Abi,
           functionName: 'approve',
           args: [MARKETPLACE_ADDRESS, amount],
@@ -72,7 +86,7 @@ export function useTokenApproval() {
       } else {
         // Request approval for the exact amount needed
         hash = await walletClient!.writeContract({
-          address: ROOTS_TOKEN_ADDRESS,
+          address: token,
           abi: erc20Abi,
           functionName: 'approve',
           args: [MARKETPLACE_ADDRESS, amount],

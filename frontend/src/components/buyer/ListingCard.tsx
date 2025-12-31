@@ -33,6 +33,8 @@ export interface ListingCardData {
     name: string;
     offersDelivery: boolean;
     offersPickup: boolean;
+    geohash: string; // Seller's location geohash for distance filtering
+    deliveryRadiusKm: number; // Maximum delivery distance in km
   };
 }
 

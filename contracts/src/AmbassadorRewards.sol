@@ -37,7 +37,11 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
 
     IERC20 public immutable rootsToken;
     address public marketplace;
-    address public admin;
+    address public admin;  // Legacy single admin (kept for backwards compatibility)
+
+    // Multi-admin support
+    address[] public admins;
+    mapping(address => bool) public isAdminMap;
 
     // Reward distribution parameters
     uint256 public constant TOTAL_REWARD_BPS = 2500;      // 25% of sale to ambassador pool
@@ -169,6 +173,7 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     event WeeklyCapReached(uint256 indexed ambassadorId, uint256 indexed week, uint256 amount);
     event TreasuryInitialized(uint256 amount);
     event ProfileUpdated(uint256 indexed ambassadorId, string profileIpfs);
+    event MarketplaceUpdated(address indexed marketplace);
 
     // ============ Modifiers ============
 
@@ -178,7 +183,7 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin");
+        require(isAdminMap[msg.sender] || msg.sender == admin, "Only admin");
         _;
     }
 
@@ -199,6 +204,10 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         require(_rootsToken != address(0), "Invalid token address");
         rootsToken = IERC20(_rootsToken);
         admin = msg.sender;  // Deployer is admin - intentionally msg.sender, not _msgSender()
+
+        // Initialize multi-admin array with deployer
+        admins.push(msg.sender);
+        isAdminMap[msg.sender] = true;
     }
 
     // ============ Admin Functions ============
@@ -209,9 +218,73 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         marketplace = _marketplace;
     }
 
+    /**
+     * @notice Update the marketplace address (admin only)
+     * @param _marketplace New marketplace contract address
+     */
+    function updateMarketplace(address _marketplace) external onlyAdmin {
+        require(_marketplace != address(0), "Invalid marketplace address");
+        marketplace = _marketplace;
+        emit MarketplaceUpdated(_marketplace);
+    }
+
     function setAdmin(address _newAdmin) external onlyAdmin {
         require(_newAdmin != address(0), "Invalid admin address");
         admin = _newAdmin;
+    }
+
+    /**
+     * @notice Add a new admin
+     * @param _newAdmin Address to grant admin rights
+     */
+    function addAdmin(address _newAdmin) external onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        require(!isAdminMap[_newAdmin], "Already an admin");
+
+        admins.push(_newAdmin);
+        isAdminMap[_newAdmin] = true;
+    }
+
+    /**
+     * @notice Remove an admin
+     * @param _admin Address to revoke admin rights
+     */
+    function removeAdmin(address _admin) external onlyAdmin {
+        require(isAdminMap[_admin], "Not an admin");
+        require(admins.length > 1, "Cannot remove last admin");
+
+        isAdminMap[_admin] = false;
+
+        // Remove from array
+        for (uint256 i = 0; i < admins.length; i++) {
+            if (admins[i] == _admin) {
+                admins[i] = admins[admins.length - 1];
+                admins.pop();
+                break;
+            }
+        }
+    }
+
+    /**
+     * @notice Get all admin addresses
+     */
+    function getAdmins() external view returns (address[] memory) {
+        return admins;
+    }
+
+    /**
+     * @notice Directly suspend an ambassador (bypasses governance vote)
+     * @param _ambassadorId Ambassador to suspend
+     * @param _reason Reason for suspension
+     */
+    function adminSuspendAmbassador(uint256 _ambassadorId, string calldata _reason) external onlyAdmin {
+        require(ambassadors[_ambassadorId].wallet != address(0), "Ambassador does not exist");
+        require(!ambassadors[_ambassadorId].suspended, "Already suspended");
+
+        ambassadors[_ambassadorId].suspended = true;
+        _clawbackAllPending(_ambassadorId);
+
+        emit AmbassadorSuspended(_ambassadorId);
     }
 
     function initializeTreasury() external {

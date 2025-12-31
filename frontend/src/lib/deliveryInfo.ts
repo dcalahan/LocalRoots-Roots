@@ -1,5 +1,6 @@
-// Temporary client-side storage for delivery addresses
-// TODO: This should be moved to smart contract storage for production
+// Local cache for delivery addresses
+// Primary storage is IPFS (hash stored on-chain with each order via buyerInfoIpfs field)
+// This localStorage cache is used for quick access before IPFS upload completes
 
 const DELIVERY_INFO_KEY = 'localroots_delivery_info';
 

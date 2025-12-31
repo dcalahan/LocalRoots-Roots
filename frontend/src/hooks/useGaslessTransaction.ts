@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useAccount, useSignTypedData, usePublicClient } from 'wagmi';
+import { useAccount, useSignTypedData, usePublicClient, useSwitchChain } from 'wagmi';
+import { baseSepolia } from 'wagmi/chains';
 import { type Address, encodeFunctionData } from 'viem';
 import {
   FORWARDER_ADDRESS,
@@ -39,9 +40,10 @@ interface GaslessTransactionResult {
  * });
  */
 export function useGaslessTransaction(): GaslessTransactionResult {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const publicClient = usePublicClient();
   const { signTypedDataAsync } = useSignTypedData();
+  const { switchChainAsync } = useSwitchChain();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +64,34 @@ export function useGaslessTransaction(): GaslessTransactionResult {
       setError(null);
 
       try {
+        // 0. Ensure we're on Base Sepolia before signing
+        if (chainId !== baseSepolia.id) {
+          console.log('[useGaslessTransaction] Current chain:', chainId, 'Switching to Base Sepolia...');
+          try {
+            await switchChainAsync({
+              chainId: baseSepolia.id,
+              // This tells wagmi to add the chain if it's not already configured
+              addEthereumChainParameter: {
+                chainName: baseSepolia.name,
+                nativeCurrency: baseSepolia.nativeCurrency,
+                rpcUrls: [baseSepolia.rpcUrls.default.http[0]],
+                blockExplorerUrls: baseSepolia.blockExplorers?.default ? [baseSepolia.blockExplorers.default.url] : undefined,
+              },
+            });
+          } catch (switchError) {
+            console.error('[useGaslessTransaction] Chain switch failed:', switchError);
+            // Try to give a more helpful error message
+            const errorMsg = switchError instanceof Error ? switchError.message : String(switchError);
+            if (errorMsg.includes('rejected') || errorMsg.includes('denied')) {
+              setError('Chain switch was rejected. Please approve switching to Base Sepolia.');
+            } else {
+              setError('Please manually switch to Base Sepolia network in your wallet settings.');
+            }
+            setIsLoading(false);
+            return null;
+          }
+        }
+
         // 1. Encode the function call data
         const data = encodeFunctionData({
           abi: params.abi,
@@ -148,7 +178,7 @@ export function useGaslessTransaction(): GaslessTransactionResult {
         setIsLoading(false);
       }
     },
-    [address, isConnected, publicClient, signTypedDataAsync]
+    [address, isConnected, publicClient, signTypedDataAsync, chainId, switchChainAsync]
   );
 
   return {

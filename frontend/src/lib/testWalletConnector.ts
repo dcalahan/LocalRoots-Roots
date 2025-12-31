@@ -248,6 +248,14 @@ export function testWalletConnector() {
       return true;
     },
 
+    async switchChain({ chainId }: { chainId: number }) {
+      // Test wallet is hardcoded to Base Sepolia
+      if (chainId !== baseSepolia.id) {
+        throw new Error(`Test wallet only supports Base Sepolia (${baseSepolia.id})`);
+      }
+      return baseSepolia;
+    },
+
     onAccountsChanged() {},
     onChainChanged() {},
     onDisconnect() {},

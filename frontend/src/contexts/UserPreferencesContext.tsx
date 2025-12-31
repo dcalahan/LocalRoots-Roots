@@ -14,6 +14,7 @@ interface UserPreferences {
   } | null;
   lastVisitedPage: string | null;
   distanceUnit: DistanceUnit;
+  searchRadiusKm: number; // Buyer's search radius in km (default 10km / ~6 miles)
 }
 
 interface UserPreferencesContextType {
@@ -23,15 +24,20 @@ interface UserPreferencesContextType {
   setPreferredLocation: (location: { geohash: string; displayName: string } | null) => void;
   setLastVisitedPage: (page: string) => void;
   setDistanceUnit: (unit: DistanceUnit) => void;
+  setSearchRadiusKm: (radiusKm: number) => void;
   getRedirectPath: () => string;
   clearPreferences: () => void;
 }
+
+// Default search radius matches the seller default (10km / ~6 miles)
+const DEFAULT_SEARCH_RADIUS_KM = 10;
 
 const defaultPreferences: UserPreferences = {
   primaryRole: null,
   preferredLocation: null,
   lastVisitedPage: null,
   distanceUnit: 'km', // Will be updated based on locale after hydration
+  searchRadiusKm: DEFAULT_SEARCH_RADIUS_KM,
 };
 
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
@@ -57,6 +63,10 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         // Ensure distanceUnit has a valid value
         if (!parsed.distanceUnit || (parsed.distanceUnit !== 'km' && parsed.distanceUnit !== 'miles')) {
           parsed.distanceUnit = getPreferredDistanceUnit();
+        }
+        // Ensure searchRadiusKm has a valid value (migration for old preferences)
+        if (!parsed.searchRadiusKm || typeof parsed.searchRadiusKm !== 'number') {
+          parsed.searchRadiusKm = DEFAULT_SEARCH_RADIUS_KM;
         }
         setPreferences(parsed);
       } else {
@@ -118,6 +128,14 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     });
   }, [savePreferences]);
 
+  const setSearchRadiusKm = useCallback((radiusKm: number) => {
+    setPreferences(prev => {
+      const newPrefs = { ...prev, searchRadiusKm: radiusKm };
+      savePreferences(newPrefs);
+      return newPrefs;
+    });
+  }, [savePreferences]);
+
   const getRedirectPath = useCallback((): string => {
     switch (preferences.primaryRole) {
       case 'seller':
@@ -149,6 +167,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         setPreferredLocation,
         setLastVisitedPage,
         setDistanceUnit,
+        setSearchRadiusKm,
         getRedirectPath,
         clearPreferences,
       }}

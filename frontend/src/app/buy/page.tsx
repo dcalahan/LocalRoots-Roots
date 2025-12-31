@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,8 @@ import { useAllListings } from '@/hooks/useListings';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { features } from '@/config/features';
 import { useAccount } from 'wagmi';
+import { approximateDistance, bytes8ToGeohash } from '@/lib/geohash';
+import { fromKm, getShortUnitLabel } from '@/lib/distance';
 
 interface Location {
   latitude: number;
@@ -19,12 +22,14 @@ interface Location {
 }
 
 export default function BuyPage() {
-  const { preferences, setPreferredLocation } = useUserPreferences();
+  const { preferences, setPreferredLocation, setSearchRadiusKm } = useUserPreferences();
   const { listings, isLoading } = useAllListings();
   const { isConnected } = useAccount();
 
   // Use persisted location from preferences
   const location = preferences.preferredLocation;
+  const searchRadiusKm = preferences.searchRadiusKm;
+  const distanceUnit = preferences.distanceUnit;
 
   const handleLocationSelect = (loc: Location) => {
     setPreferredLocation({
@@ -37,9 +42,38 @@ export default function BuyPage() {
     setPreferredLocation(null);
   };
 
-  // For now, show all listings once location is set
-  // In production, would filter by geohash proximity
-  const nearbyListings = location ? listings : [];
+  // Filter listings by distance from buyer's location
+  const nearbyListings = useMemo(() => {
+    if (!location) return [];
+
+    return listings.filter((listing) => {
+      // Convert seller's bytes8 geohash to string if it starts with 0x
+      const sellerGeohash = listing.seller.geohash.startsWith('0x')
+        ? bytes8ToGeohash(listing.seller.geohash as `0x${string}`)
+        : listing.seller.geohash;
+
+      // Calculate distance from buyer to seller
+      const distanceKm = approximateDistance(location.geohash, sellerGeohash);
+
+      // Only show listings within buyer's search radius
+      if (distanceKm > searchRadiusKm) {
+        return false;
+      }
+
+      // For sellers that only offer delivery (no pickup):
+      // Only show if buyer is within seller's delivery radius
+      if (listing.seller.offersDelivery && !listing.seller.offersPickup) {
+        if (distanceKm > listing.seller.deliveryRadiusKm) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [location, listings, searchRadiusKm]);
+
+  // Radius options in km (will be displayed in user's preferred unit)
+  const radiusOptions = [5, 10, 25, 50, 100];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -84,7 +118,7 @@ export default function BuyPage() {
           {/* Main content */}
           <div className="flex-1">
             {/* Location header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl font-heading font-bold">
                   Fresh produce near you
@@ -96,9 +130,26 @@ export default function BuyPage() {
                   {location.displayName}
                 </p>
               </div>
-              <Button variant="outline" onClick={handleClearLocation}>
-                Change Location
-              </Button>
+              <div className="flex items-center gap-3">
+                {/* Radius selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-roots-gray">Within:</span>
+                  <select
+                    value={searchRadiusKm}
+                    onChange={(e) => setSearchRadiusKm(Number(e.target.value))}
+                    className="text-sm border rounded-lg px-2 py-1.5 bg-white"
+                  >
+                    {radiusOptions.map((km) => (
+                      <option key={km} value={km}>
+                        {Math.round(fromKm(km, distanceUnit))} {getShortUnitLabel(distanceUnit)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleClearLocation}>
+                  Change Location
+                </Button>
+              </div>
             </div>
 
             {/* Listings grid */}
@@ -119,7 +170,7 @@ export default function BuyPage() {
               emptyMessage={
                 listings.length === 0
                   ? "No sellers have listed produce yet. Be the first to sell in your area!"
-                  : "No listings found nearby. Try expanding your search."
+                  : `No listings found within ${Math.round(fromKm(searchRadiusKm, distanceUnit))} ${getShortUnitLabel(distanceUnit)}. Try expanding your search radius.`
               }
             />
             </section>

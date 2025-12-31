@@ -168,6 +168,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
         offersDelivery,
         offersPickup,
         deliveryRadiusKm,
+        ambassadorId: ambassadorId ?? undefined,
       });
     } catch (err) {
       console.error('Registration error:', err);

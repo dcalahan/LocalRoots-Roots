@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { getIpfsUrl } from '@/lib/pinata';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
+import { approximateDistance, bytes8ToGeohash } from '@/lib/geohash';
+import { fromKm, getShortUnitLabel } from '@/lib/distance';
 
 // Helper to convert image reference to displayable URL
 function resolveImageUrl(imageRef: string | null | undefined): string | null {
@@ -34,6 +37,8 @@ interface AddToCartModalProps {
       name: string;
       offersDelivery: boolean;
       offersPickup: boolean;
+      geohash: string;
+      deliveryRadiusKm: number;
     };
   };
 }
@@ -41,15 +46,37 @@ interface AddToCartModalProps {
 export function AddToCartModal({ isOpen, onClose, listing }: AddToCartModalProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
+  const { preferences } = useUserPreferences();
 
   const [quantity, setQuantity] = useState(1);
-  const [isDelivery, setIsDelivery] = useState(listing.seller.offersDelivery);
+
+  // Calculate distance from buyer to seller
+  const distanceInfo = useMemo(() => {
+    if (!preferences.preferredLocation) {
+      return { distanceKm: null, canDeliver: false };
+    }
+
+    // Convert seller's bytes8 geohash to string if needed
+    const sellerGeohash = listing.seller.geohash.startsWith('0x')
+      ? bytes8ToGeohash(listing.seller.geohash as `0x${string}`)
+      : listing.seller.geohash;
+
+    const distanceKm = approximateDistance(preferences.preferredLocation.geohash, sellerGeohash);
+    const canDeliver = distanceKm <= listing.seller.deliveryRadiusKm;
+
+    return { distanceKm, canDeliver };
+  }, [preferences.preferredLocation, listing.seller.geohash, listing.seller.deliveryRadiusKm]);
+
+  // Delivery is available only if seller offers it AND buyer is within delivery radius
+  const canDelivery = listing.seller.offersDelivery && distanceInfo.canDeliver;
+  const canPickup = listing.seller.offersPickup;
+
+  // Default to pickup if delivery not available, otherwise prefer delivery if seller offers it
+  const [isDelivery, setIsDelivery] = useState(canDelivery);
 
   if (!isOpen) return null;
 
   const totalPrice = BigInt(listing.pricePerUnit) * BigInt(quantity);
-  const canDelivery = listing.seller.offersDelivery;
-  const canPickup = listing.seller.offersPickup;
 
   const handleAddToCart = () => {
     console.log('[AddToCart] Adding item:', {
@@ -184,26 +211,35 @@ export function AddToCartModal({ isOpen, onClose, listing }: AddToCartModalProps
                     </p>
                   </button>
                 )}
-                {canDelivery && (
+                {listing.seller.offersDelivery && (
                   <button
-                    onClick={() => setIsDelivery(true)}
+                    onClick={() => canDelivery && setIsDelivery(true)}
+                    disabled={!canDelivery}
                     className={`p-3 rounded-lg border-2 text-left transition-all ${
-                      isDelivery
-                        ? 'border-roots-primary bg-roots-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
+                      !canDelivery
+                        ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                        : isDelivery
+                          ? 'border-roots-primary bg-roots-primary/5'
+                          : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                        isDelivery ? 'border-roots-primary' : 'border-gray-300'
+                        isDelivery && canDelivery ? 'border-roots-primary' : 'border-gray-300'
                       }`}>
-                        {isDelivery && <div className="w-2 h-2 rounded-full bg-roots-primary" />}
+                        {isDelivery && canDelivery && <div className="w-2 h-2 rounded-full bg-roots-primary" />}
                       </div>
                       <span className="font-medium">Delivery</span>
                     </div>
-                    <p className="text-xs text-roots-gray mt-1 ml-6">
-                      Seller will deliver to your location
-                    </p>
+                    {canDelivery ? (
+                      <p className="text-xs text-roots-gray mt-1 ml-6">
+                        Seller will deliver to your location
+                      </p>
+                    ) : (
+                      <p className="text-xs text-amber-600 mt-1 ml-6">
+                        Outside delivery area (max {Math.round(fromKm(listing.seller.deliveryRadiusKm, preferences.distanceUnit))} {getShortUnitLabel(preferences.distanceUnit)})
+                      </p>
+                    )}
                   </button>
                 )}
               </div>

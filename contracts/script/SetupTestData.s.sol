@@ -23,7 +23,8 @@ contract SetupTestData is Script {
             storefrontIpfs,
             true,  // offers delivery
             true,  // offers pickup
-            10     // 10km delivery radius
+            10,    // 10km delivery radius
+            0      // no ambassador referral
         );
         console.log("Seller registered with ID:", sellerId);
 

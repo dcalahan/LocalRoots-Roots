@@ -15,6 +15,7 @@ interface RegisterSellerParams {
   offersDelivery: boolean;
   offersPickup: boolean;
   deliveryRadiusKm: number;
+  ambassadorId?: bigint; // Optional ambassador referral ID (0 = no referral)
   useGasless?: boolean; // Default true - no ETH needed
 }
 
@@ -76,6 +77,7 @@ export function useRegisterSeller() {
   const registerSeller = async (params: RegisterSellerParams) => {
     const geohashBytes = geohashToBytes8(params.geohash) as Hex;
     const useGasless = params.useGasless !== false; // Default to gasless
+    const ambassadorId = params.ambassadorId ?? 0n; // Default to 0 (no referral)
 
     console.log('[useRegisterSeller] Registering seller:', {
       geohash: params.geohash,
@@ -83,6 +85,7 @@ export function useRegisterSeller() {
       offersDelivery: params.offersDelivery,
       offersPickup: params.offersPickup,
       deliveryRadiusKm: params.deliveryRadiusKm,
+      ambassadorId: ambassadorId.toString(),
       useGasless,
     });
     console.log('[useRegisterSeller] Connector:', connector?.id, 'Is test wallet:', isTestWallet);
@@ -106,6 +109,7 @@ export function useRegisterSeller() {
             params.offersDelivery,
             params.offersPickup,
             BigInt(params.deliveryRadiusKm),
+            ambassadorId,
           ],
           gas: 500000n,
         });
@@ -134,6 +138,7 @@ export function useRegisterSeller() {
             params.offersDelivery,
             params.offersPickup,
             BigInt(params.deliveryRadiusKm),
+            ambassadorId,
           ],
           gas: 500000n,
         });
@@ -159,6 +164,7 @@ export function useRegisterSeller() {
         params.offersDelivery,
         params.offersPickup,
         BigInt(params.deliveryRadiusKm),
+        ambassadorId,
       ],
       chainId: baseSepolia.id,
       gas: 500000n,

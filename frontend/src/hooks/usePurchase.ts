@@ -2,8 +2,16 @@
 
 import { useState, useCallback } from 'react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
-import { decodeEventLog } from 'viem';
-import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
+import { decodeEventLog, type Address, zeroAddress } from 'viem';
+import {
+  MARKETPLACE_ADDRESS,
+  marketplaceAbi,
+  ROOTS_TOKEN_ADDRESS,
+  type PaymentToken,
+  getPaymentTokenAddress,
+  PAYMENT_TOKENS,
+  rootsToStablecoin,
+} from '@/lib/contracts/marketplace';
 import { useTokenApproval } from './useTokenApproval';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
 import { useGaslessTransaction } from './useGaslessTransaction';
@@ -12,8 +20,9 @@ interface PurchaseParams {
   listingId: bigint;
   quantity: bigint;
   isDelivery: boolean;
-  totalPrice: bigint;
+  totalPrice: bigint; // Price in ROOTS (18 decimals)
   buyerInfoIpfs: string; // IPFS hash of buyer's delivery info (required for delivery)
+  paymentToken?: PaymentToken; // Default: 'ROOTS' - can also be 'USDC' or 'USDT'
   useGasless?: boolean; // Default true - no ETH needed for the purchase tx
 }
 
@@ -36,12 +45,29 @@ export function usePurchase() {
 
   const purchase = useCallback(async (params: PurchaseParams): Promise<PurchaseResult | null> => {
     const useGasless = params.useGasless !== false; // Default to gasless
+    const paymentToken = params.paymentToken || 'ROOTS';
+    const paymentTokenAddress = getPaymentTokenAddress(paymentToken);
+
+    // Calculate the amount to approve based on payment token
+    // For ROOTS: approve the full price in ROOTS (18 decimals)
+    // For stablecoins: approve the equivalent USD amount (6 decimals)
+    const approvalAmount = paymentToken === 'ROOTS'
+      ? params.totalPrice
+      : rootsToStablecoin(params.totalPrice);
+
+    // Get the token address for approval (ROOTS address for ROOTS, stablecoin address otherwise)
+    const tokenToApprove = paymentToken === 'ROOTS'
+      ? ROOTS_TOKEN_ADDRESS
+      : PAYMENT_TOKENS[paymentToken].address;
 
     console.log('[usePurchase] Called with params:', {
       listingId: params.listingId.toString(),
       quantity: params.quantity.toString(),
       isDelivery: params.isDelivery,
       buyerInfoIpfs: params.buyerInfoIpfs,
+      paymentToken,
+      paymentTokenAddress,
+      approvalAmount: approvalAmount.toString(),
       useGasless,
     });
 
@@ -60,12 +86,12 @@ export function usePurchase() {
     setError(null);
 
     try {
-      // Check and request approval if needed
+      // Check and request approval if needed for the correct token
       // Note: Token approval still requires ETH for now - future improvement would use ERC20Permit
-      const currentAllowance = await checkAllowance();
+      const currentAllowance = await checkAllowance(tokenToApprove);
 
-      if (currentAllowance < params.totalPrice) {
-        const approved = await approve(params.totalPrice);
+      if (currentAllowance < approvalAmount) {
+        const approved = await approve(approvalAmount, tokenToApprove);
         if (!approved) {
           setError('Token approval failed');
           return null;
@@ -74,6 +100,15 @@ export function usePurchase() {
 
       let hash: `0x${string}`;
 
+      // Purchase arguments now include payment token address
+      const purchaseArgs: [bigint, bigint, boolean, string, Address] = [
+        params.listingId,
+        params.quantity,
+        params.isDelivery,
+        params.buyerInfoIpfs,
+        paymentTokenAddress,
+      ];
+
       // Use direct viem method for test wallet
       if (isTestWallet && isTestWalletAvailable()) {
         console.log('[usePurchase] Using direct test wallet transaction');
@@ -81,7 +116,7 @@ export function usePurchase() {
           address: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'purchase',
-          args: [params.listingId, params.quantity, params.isDelivery, params.buyerInfoIpfs],
+          args: purchaseArgs,
           gas: 500000n,
         });
       } else if (useGasless) {
@@ -91,7 +126,7 @@ export function usePurchase() {
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'purchase',
-          args: [params.listingId, params.quantity, params.isDelivery, params.buyerInfoIpfs],
+          args: purchaseArgs,
           gas: 500000n,
         });
         if (!txHash) {
@@ -105,7 +140,7 @@ export function usePurchase() {
           address: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'purchase',
-          args: [params.listingId, params.quantity, params.isDelivery, params.buyerInfoIpfs],
+          args: purchaseArgs,
         });
       }
 

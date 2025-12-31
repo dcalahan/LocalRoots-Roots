@@ -192,7 +192,7 @@ async function fetchListingData(listingId: bigint, client?: ReturnType<typeof cr
       args: [sellerId],
     }) as [string, string, string, boolean, boolean, bigint, bigint, boolean];
 
-    const [, , storefrontIpfs, offersDelivery, offersPickup, , , sellerActive] = seller;
+    const [, sellerGeohash, storefrontIpfs, offersDelivery, offersPickup, deliveryRadiusKm, , sellerActive] = seller;
 
     if (!sellerActive) return null;
 
@@ -218,6 +218,8 @@ async function fetchListingData(listingId: bigint, client?: ReturnType<typeof cr
         name: sellerMeta?.name || 'Local Seller',
         offersDelivery,
         offersPickup,
+        geohash: sellerGeohash,
+        deliveryRadiusKm: Number(deliveryRadiusKm),
       },
     };
   } catch (err) {

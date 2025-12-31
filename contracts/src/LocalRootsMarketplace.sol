@@ -5,12 +5,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+import "./interfaces/ISwapRouter.sol";
 
 interface IAmbassadorRewards {
     function hasSufficientTreasury(uint256 amount) external view returns (bool);
     function queueReward(uint256 orderId, uint256 sellerId, uint256 saleAmount) external returns (uint256);
     function clawbackReward(uint256 orderId, string calldata reason) external;
     function recordCompletedOrder(uint256 sellerId, address buyer) external;
+    function recordSellerRecruitment(uint256 sellerId, uint256 ambassadorId) external;
 }
 
 /**
@@ -33,6 +35,20 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     uint256 public nextSellerId;
     uint256 public nextListingId;
     uint256 public nextOrderId;
+
+    // Admin management
+    address[] public admins;
+    mapping(address => bool) public isAdmin;
+    mapping(uint256 => bool) public sellerSuspended;
+
+    // Multi-token payment support
+    mapping(address => bool) public acceptedPaymentTokens;
+    address[] public paymentTokenList;
+    address public swapRouter;
+
+    // Exchange rate: 100 ROOTS = 1 USD (stablecoins have 6 decimals, ROOTS has 18)
+    uint256 public constant ROOTS_PER_USD = 100;
+    uint256 public constant STABLECOIN_DECIMAL_CONVERSION = 1e12; // 10^(18-6)
 
     // ============ Structs ============
 
@@ -109,16 +125,42 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     event FundsReleased(uint256 indexed orderId, address indexed seller, uint256 amount);
     event FundsRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount);
 
+    // Admin events
+    event AdminAdded(address indexed admin, address indexed addedBy);
+    event AdminRemoved(address indexed admin, address indexed removedBy);
+    event SellerSuspended(uint256 indexed sellerId, address indexed admin, string reason);
+    event SellerUnsuspended(uint256 indexed sellerId, address indexed admin);
+    event OrderCancelledByAdmin(uint256 indexed orderId, address indexed admin, string reason);
+
+    // Payment token events
+    event PaymentTokenAdded(address indexed token);
+    event PaymentTokenRemoved(address indexed token);
+    event SwapRouterUpdated(address indexed router);
+    event PaymentSwapped(address indexed paymentToken, uint256 stablecoinAmount, uint256 rootsAmount);
+
+    // ============ Modifiers ============
+
+    modifier onlyAdmin() {
+        require(isAdmin[_msgSender()], "Not an admin");
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor(
         address _rootsToken,
         address _ambassadorRewards,
-        address _trustedForwarder
+        address _trustedForwarder,
+        address _initialAdmin
     ) ERC2771Context(_trustedForwarder) {
         require(_rootsToken != address(0), "Invalid token address");
+        require(_initialAdmin != address(0), "Invalid admin address");
         rootsToken = IERC20(_rootsToken);
         ambassadorRewards = _ambassadorRewards;
+
+        // Set up initial admin
+        admins.push(_initialAdmin);
+        isAdmin[_initialAdmin] = true;
     }
 
     // ============ Seller Functions ============
@@ -130,13 +172,15 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
      * @param _offersDelivery Whether seller offers delivery
      * @param _offersPickup Whether seller offers pickup
      * @param _deliveryRadiusKm Delivery radius in kilometers
+     * @param _ambassadorId Optional ambassador ID who referred this seller (0 = no referral)
      */
     function registerSeller(
         bytes8 _geohash,
         string calldata _storefrontIpfs,
         bool _offersDelivery,
         bool _offersPickup,
-        uint256 _deliveryRadiusKm
+        uint256 _deliveryRadiusKm,
+        uint256 _ambassadorId
     ) external returns (uint256 sellerId) {
         require(sellerIdByOwner[_msgSender()] == 0, "Already registered as seller");
         require(_offersDelivery || _offersPickup, "Must offer delivery or pickup");
@@ -163,6 +207,11 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         sellersByGeohash4[prefix4].push(sellerId); // City ~20km
         sellersByGeohash5[prefix5].push(sellerId); // Neighborhood ~2.4km
         sellersByGeohash6[prefix6].push(sellerId); // Few blocks ~610m
+
+        // Record ambassador referral if provided
+        if (_ambassadorId > 0 && ambassadorRewards != address(0)) {
+            IAmbassadorRewards(ambassadorRewards).recordSellerRecruitment(sellerId, _ambassadorId);
+        }
 
         emit SellerRegistered(sellerId, _msgSender(), _geohash);
     }
@@ -251,16 +300,19 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
      * @notice Purchase items from a listing
      * @dev Payment is held in escrow until seller provides delivery proof.
      *      Ambassador rewards are queued at order completion.
+     *      Accepts ROOTS directly or stablecoins (USDC/USDT) which are swapped to ROOTS.
      * @param _listingId Listing to purchase from
      * @param _quantity Quantity to purchase
      * @param _isDelivery Whether buyer wants delivery (vs pickup)
      * @param _buyerInfoIpfs IPFS hash of buyer's delivery address/contact info (required for delivery)
+     * @param _paymentToken Payment token address (address(0) or rootsToken = pay with ROOTS)
      */
     function purchase(
         uint256 _listingId,
         uint256 _quantity,
         bool _isDelivery,
-        string calldata _buyerInfoIpfs
+        string calldata _buyerInfoIpfs,
+        address _paymentToken
     ) external nonReentrant returns (uint256 orderId) {
         Listing storage listing = listings[_listingId];
         require(listing.active, "Listing not active");
@@ -276,22 +328,45 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
             require(seller.offersPickup, "Seller does not offer pickup");
         }
 
-        uint256 totalPrice = listing.pricePerUnit * _quantity;
+        uint256 totalPriceRoots = listing.pricePerUnit * _quantity;
 
-        // Hold funds in escrow (this contract) until seller provides delivery proof
-        rootsToken.safeTransferFrom(_msgSender(), address(this), totalPrice);
+        // Handle payment based on token type
+        if (_paymentToken == address(0) || _paymentToken == address(rootsToken)) {
+            // Pay directly with ROOTS
+            rootsToken.safeTransferFrom(_msgSender(), address(this), totalPriceRoots);
+        } else {
+            // Pay with stablecoin, swap to ROOTS
+            require(acceptedPaymentTokens[_paymentToken], "Payment token not accepted");
+            require(swapRouter != address(0), "Swap router not configured");
+
+            uint256 stablecoinAmount = _calculateStablecoinAmount(totalPriceRoots);
+
+            // Transfer stablecoin from buyer to this contract
+            IERC20(_paymentToken).safeTransferFrom(_msgSender(), address(this), stablecoinAmount);
+
+            // Approve swap router and swap to ROOTS
+            IERC20(_paymentToken).approve(swapRouter, stablecoinAmount);
+            uint256 rootsReceived = ISwapRouter(swapRouter).swapStablecoinForRoots(
+                _paymentToken,
+                stablecoinAmount,
+                totalPriceRoots
+            );
+
+            require(rootsReceived >= totalPriceRoots, "Insufficient ROOTS received from swap");
+            emit PaymentSwapped(_paymentToken, stablecoinAmount, rootsReceived);
+        }
 
         // Update listing quantity
         listing.quantityAvailable -= _quantity;
 
-        // Create order
+        // Create order (escrow is always in ROOTS)
         orderId = ++nextOrderId;
         orders[orderId] = Order({
             listingId: _listingId,
             sellerId: listing.sellerId,
             buyer: _msgSender(),
             quantity: _quantity,
-            totalPrice: totalPrice,
+            totalPrice: totalPriceRoots,
             isDelivery: _isDelivery,
             status: OrderStatus.Pending,
             createdAt: block.timestamp,
@@ -304,6 +379,26 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         });
 
         emit OrderCreated(orderId, _listingId, _msgSender(), _quantity);
+    }
+
+    /**
+     * @notice Calculate stablecoin amount needed for a given ROOTS price
+     * @param rootsAmount Amount in ROOTS (18 decimals)
+     * @return stablecoinAmount Amount in stablecoin (6 decimals)
+     */
+    function _calculateStablecoinAmount(uint256 rootsAmount) internal pure returns (uint256) {
+        // 100 ROOTS = 1 USD, ROOTS has 18 decimals, USDC/USDT have 6
+        // rootsAmount / 100 / 1e12 = stablecoinAmount
+        return rootsAmount / ROOTS_PER_USD / STABLECOIN_DECIMAL_CONVERSION;
+    }
+
+    /**
+     * @notice Get the stablecoin price for a given ROOTS amount (view function for frontend)
+     * @param rootsAmount Amount in ROOTS (18 decimals)
+     * @return stablecoinAmount Amount in stablecoin (6 decimals)
+     */
+    function getStablecoinPrice(uint256 rootsAmount) external pure returns (uint256) {
+        return rootsAmount / ROOTS_PER_USD / STABLECOIN_DECIMAL_CONVERSION;
     }
 
     // ============ Order Management ============
@@ -553,5 +648,179 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
      */
     function getOrder(uint256 _orderId) external view returns (Order memory) {
         return orders[_orderId];
+    }
+
+    // ============ Admin Functions ============
+
+    /**
+     * @notice Add a new admin
+     * @param _newAdmin Address to grant admin rights
+     */
+    function addAdmin(address _newAdmin) external onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        require(!isAdmin[_newAdmin], "Already an admin");
+
+        admins.push(_newAdmin);
+        isAdmin[_newAdmin] = true;
+
+        emit AdminAdded(_newAdmin, _msgSender());
+    }
+
+    /**
+     * @notice Remove an admin
+     * @param _admin Address to revoke admin rights
+     */
+    function removeAdmin(address _admin) external onlyAdmin {
+        require(isAdmin[_admin], "Not an admin");
+        require(admins.length > 1, "Cannot remove last admin");
+
+        isAdmin[_admin] = false;
+
+        // Remove from array
+        for (uint256 i = 0; i < admins.length; i++) {
+            if (admins[i] == _admin) {
+                admins[i] = admins[admins.length - 1];
+                admins.pop();
+                break;
+            }
+        }
+
+        emit AdminRemoved(_admin, _msgSender());
+    }
+
+    /**
+     * @notice Get all admin addresses
+     */
+    function getAdmins() external view returns (address[] memory) {
+        return admins;
+    }
+
+    /**
+     * @notice Suspend a seller
+     * @param _sellerId Seller ID to suspend
+     * @param _reason Reason for suspension
+     */
+    function suspendSeller(uint256 _sellerId, string calldata _reason) external onlyAdmin {
+        require(sellers[_sellerId].owner != address(0), "Seller does not exist");
+        require(!sellerSuspended[_sellerId], "Already suspended");
+
+        sellerSuspended[_sellerId] = true;
+        sellers[_sellerId].active = false;
+
+        emit SellerSuspended(_sellerId, _msgSender(), _reason);
+    }
+
+    /**
+     * @notice Unsuspend a seller
+     * @param _sellerId Seller ID to unsuspend
+     */
+    function unsuspendSeller(uint256 _sellerId) external onlyAdmin {
+        require(sellers[_sellerId].owner != address(0), "Seller does not exist");
+        require(sellerSuspended[_sellerId], "Not suspended");
+
+        sellerSuspended[_sellerId] = false;
+        sellers[_sellerId].active = true;
+
+        emit SellerUnsuspended(_sellerId, _msgSender());
+    }
+
+    /**
+     * @notice Check if a seller is suspended
+     * @param _sellerId Seller ID to check
+     */
+    function isSellerSuspended(uint256 _sellerId) external view returns (bool) {
+        return sellerSuspended[_sellerId];
+    }
+
+    /**
+     * @notice Cancel a fraudulent order (admin only)
+     * @dev Refunds buyer and claws back any pending ambassador rewards
+     * @param _orderId Order ID to cancel
+     * @param _reason Reason for cancellation
+     */
+    function adminCancelOrder(uint256 _orderId, string calldata _reason) external onlyAdmin nonReentrant {
+        Order storage order = orders[_orderId];
+        require(order.buyer != address(0), "Order does not exist");
+        require(!order.fundsReleased, "Funds already released");
+        require(
+            order.status != OrderStatus.Refunded &&
+            order.status != OrderStatus.Cancelled,
+            "Order already cancelled/refunded"
+        );
+
+        // Refund buyer
+        if (order.totalPrice > 0) {
+            rootsToken.safeTransfer(order.buyer, order.totalPrice);
+        }
+
+        order.fundsReleased = true;
+        order.status = OrderStatus.Cancelled;
+
+        // Clawback ambassador rewards if queued
+        if (ambassadorRewards != address(0) && order.rewardQueued) {
+            try IAmbassadorRewards(ambassadorRewards).clawbackReward(
+                _orderId,
+                _reason
+            ) {} catch {}
+        }
+
+        emit OrderCancelledByAdmin(_orderId, _msgSender(), _reason);
+        emit FundsRefunded(_orderId, order.buyer, order.totalPrice);
+        emit OrderStatusChanged(_orderId, OrderStatus.Cancelled);
+    }
+
+    // ============ Payment Token Management (Admin) ============
+
+    /**
+     * @notice Add a payment token (USDC, USDT, etc.)
+     * @param _token Token address to accept as payment
+     */
+    function addPaymentToken(address _token) external onlyAdmin {
+        require(_token != address(0), "Invalid token address");
+        require(!acceptedPaymentTokens[_token], "Token already accepted");
+
+        acceptedPaymentTokens[_token] = true;
+        paymentTokenList.push(_token);
+
+        emit PaymentTokenAdded(_token);
+    }
+
+    /**
+     * @notice Remove a payment token
+     * @param _token Token address to stop accepting
+     */
+    function removePaymentToken(address _token) external onlyAdmin {
+        require(acceptedPaymentTokens[_token], "Token not accepted");
+
+        acceptedPaymentTokens[_token] = false;
+
+        // Remove from array
+        for (uint256 i = 0; i < paymentTokenList.length; i++) {
+            if (paymentTokenList[i] == _token) {
+                paymentTokenList[i] = paymentTokenList[paymentTokenList.length - 1];
+                paymentTokenList.pop();
+                break;
+            }
+        }
+
+        emit PaymentTokenRemoved(_token);
+    }
+
+    /**
+     * @notice Set the swap router for stablecoin → ROOTS conversions
+     * @param _router Swap router contract address
+     */
+    function setSwapRouter(address _router) external onlyAdmin {
+        require(_router != address(0), "Invalid router address");
+        swapRouter = _router;
+        emit SwapRouterUpdated(_router);
+    }
+
+    /**
+     * @notice Get all accepted payment tokens
+     * @return Array of accepted token addresses
+     */
+    function getAcceptedPaymentTokens() external view returns (address[] memory) {
+        return paymentTokenList;
     }
 }

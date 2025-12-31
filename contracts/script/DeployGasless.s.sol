@@ -34,7 +34,8 @@ contract DeployGasless is Script {
         marketplace = new LocalRootsMarketplace(
             ROOTS_TOKEN,
             address(ambassadorRewards),
-            address(forwarder)
+            address(forwarder),
+            msg.sender  // Initial admin is the deployer
         );
         console.log("LocalRootsMarketplace deployed at:", address(marketplace));
 

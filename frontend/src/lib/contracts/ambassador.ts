@@ -1,7 +1,7 @@
 import { type Address } from 'viem';
 
-// Contract address on Base Sepolia (1B token supply deployment)
-export const AMBASSADOR_REWARDS_ADDRESS: Address = '0xEAFCc936fB1794635eE580Dc9A580fF488762f43';
+// Contract address on Base Sepolia (v5 deployment with updateMarketplace function)
+export const AMBASSADOR_REWARDS_ADDRESS: Address = '0x9bB140264a3A7b9411F4dd74108481E780e1A55b';
 
 // ABI for ambassador functions
 export const ambassadorAbi = [
@@ -141,6 +141,86 @@ export const ambassadorAbi = [
       { name: 'pendingRewardId', type: 'uint256', indexed: true },
       { name: 'ambassadorId', type: 'uint256', indexed: true },
       { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
+  // Admin read functions
+  {
+    type: 'function',
+    name: 'admin',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'admins',
+    inputs: [{ name: '', type: 'uint256' }],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'isAdminMap',
+    inputs: [{ name: '', type: 'address' }],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getAdmins',
+    inputs: [],
+    outputs: [{ name: '', type: 'address[]' }],
+    stateMutability: 'view',
+  },
+  // Admin write functions
+  {
+    type: 'function',
+    name: 'addAdmin',
+    inputs: [{ name: '_newAdmin', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'removeAdmin',
+    inputs: [{ name: '_admin', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'adminSuspendAmbassador',
+    inputs: [
+      { name: '_ambassadorId', type: 'uint256' },
+      { name: '_reason', type: 'string' },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  // Admin events
+  {
+    type: 'event',
+    name: 'AdminAdded',
+    inputs: [
+      { name: 'admin', type: 'address', indexed: true },
+      { name: 'addedBy', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'AdminRemoved',
+    inputs: [
+      { name: 'admin', type: 'address', indexed: true },
+      { name: 'removedBy', type: 'address', indexed: true },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'AmbassadorSuspendedByAdmin',
+    inputs: [
+      { name: 'ambassadorId', type: 'uint256', indexed: true },
+      { name: 'admin', type: 'address', indexed: true },
+      { name: 'reason', type: 'string', indexed: false },
     ],
   },
 ] as const;

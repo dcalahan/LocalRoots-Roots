@@ -17,6 +17,8 @@ import { baseSepolia } from 'wagmi/chains';
 import { formatRoots, rootsToFiat, formatFiat } from '@/lib/pricing';
 import { isTestWalletAvailable } from '@/lib/testWalletConnector';
 import { uploadMetadata } from '@/lib/pinata';
+import { PaymentTokenSelector } from '@/components/buyer/PaymentTokenSelector';
+import { type PaymentToken, PAYMENT_TOKENS, rootsToStablecoin } from '@/lib/contracts/marketplace';
 
 type CheckoutStep = 'review' | 'processing' | 'complete';
 
@@ -48,11 +50,13 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<CheckoutStep>('review');
   const [balance, setBalance] = useState<bigint>(0n);
   const [allowance, setAllowance] = useState<bigint>(0n);
+  const [paymentToken, setPaymentToken] = useState<PaymentToken>('ROOTS');
 
   // Delivery info state
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryPhone, setDeliveryPhone] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [processingStatus, setProcessingStatus] = useState('');
 
   const total = useMemo(() => getTotal(), [getTotal]);
   const sellerTotals = useMemo(() => getSellerTotals(), [getSellerTotals]);
@@ -60,12 +64,19 @@ export default function CheckoutPage() {
   // Check if any items need delivery
   const hasDeliveryItems = useMemo(() => items.some(item => item.isDelivery), [items]);
 
+  // Get the token address and required amount based on payment token selection
+  const tokenAddress = PAYMENT_TOKENS[paymentToken].address;
+  const requiredAmount = paymentToken === 'ROOTS' ? total : rootsToStablecoin(total);
+
   // Check balance and allowance (only when on correct network)
   useEffect(() => {
     async function check() {
       if (!isConnected || !isCorrectNetwork) return;
       try {
-        const [bal, allow] = await Promise.all([getBalance(), checkAllowance()]);
+        const [bal, allow] = await Promise.all([
+          getBalance(), // TODO: Update to check balance of selected token
+          checkAllowance(tokenAddress),
+        ]);
         setBalance(bal);
         setAllowance(allow);
       } catch (err) {
@@ -73,10 +84,10 @@ export default function CheckoutPage() {
       }
     }
     check();
-  }, [isConnected, isCorrectNetwork, getBalance, checkAllowance]);
+  }, [isConnected, isCorrectNetwork, getBalance, checkAllowance, tokenAddress]);
 
-  const hasEnoughBalance = balance >= total;
-  const hasEnoughAllowance = allowance >= total;
+  const hasEnoughBalance = balance >= requiredAmount;
+  const hasEnoughAllowance = allowance >= requiredAmount;
   const hasDeliveryAddress = !hasDeliveryItems || deliveryAddress.trim().length > 0;
 
   if (!isConnected) {
@@ -131,22 +142,20 @@ export default function CheckoutPage() {
     );
   }
 
-  const [processingStatus, setProcessingStatus] = useState('');
-
   const handleCheckout = async () => {
     setStep('processing');
 
     // First, check and handle approval if needed
     if (!hasEnoughAllowance) {
-      setProcessingStatus('Approving ROOTS spending...');
-      const approved = await approve(total);
+      setProcessingStatus(`Approving ${paymentToken} spending...`);
+      const approved = await approve(requiredAmount, tokenAddress);
       if (!approved) {
         setProcessingStatus('Approval failed');
         // Go back to review step on failure
         setTimeout(() => setStep('review'), 2000);
         return;
       }
-      setAllowance(total);
+      setAllowance(requiredAmount);
     }
 
     setProcessingStatus('Processing purchases...');
@@ -181,6 +190,7 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         isDelivery: item.isDelivery,
         buyerInfoIpfs: item.isDelivery ? buyerInfoIpfs : '',
+        paymentToken,
       });
       return {
         listingId: BigInt(item.listingId),
@@ -189,6 +199,7 @@ export default function CheckoutPage() {
         totalPrice: BigInt(item.pricePerUnit) * BigInt(item.quantity),
         // Include IPFS hash for delivery orders, empty string for pickup
         buyerInfoIpfs: item.isDelivery ? buyerInfoIpfs : '',
+        paymentToken,
       };
     });
 
@@ -361,6 +372,18 @@ export default function CheckoutPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Payment token selection */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <PaymentTokenSelector
+            selected={paymentToken}
+            onChange={setPaymentToken}
+            rootsAmount={total}
+            disabled={isPurchasing || isApproving}
+          />
+        </CardContent>
+      </Card>
 
       {/* Total and balance check */}
       <Card className="mb-6">

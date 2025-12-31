@@ -177,6 +177,8 @@ export default function SellerProfilePage() {
                   name: meta?.name || 'Local Seller',
                   offersDelivery,
                   offersPickup,
+                  geohash,
+                  deliveryRadiusKm: Number(deliveryRadiusKm),
                 },
               });
             }

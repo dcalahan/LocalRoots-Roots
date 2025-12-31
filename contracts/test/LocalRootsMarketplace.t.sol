@@ -15,6 +15,7 @@ contract LocalRootsMarketplaceTest is Test {
     address public liquidityPool = address(0x3);
     address public treasury = address(0x4);
     address public airdrop = address(0x5);
+    address public admin = address(0x6);
 
     address public seller1 = address(0x100);
     address public seller2 = address(0x101);
@@ -53,7 +54,8 @@ contract LocalRootsMarketplaceTest is Test {
         marketplace = new LocalRootsMarketplace(
             address(token),
             address(ambassadorRewardsContract),
-            address(0)
+            address(0),
+            admin
         );
 
         // Set marketplace in ambassador rewards
@@ -77,7 +79,8 @@ contract LocalRootsMarketplaceTest is Test {
             "ipfs://storefront1",
             true,  // offers delivery
             true,  // offers pickup
-            10     // 10km radius
+            10,    // 10km radius
+            0      // no ambassador referral
         );
 
         assertEq(sellerId, 1);
@@ -106,10 +109,10 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_RegisterMultipleSellers() public {
         vm.prank(seller1);
-        uint256 id1 = marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10);
+        uint256 id1 = marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10, 0);
 
         vm.prank(seller2);
-        uint256 id2 = marketplace.registerSeller(geohash2, "ipfs://2", false, true, 0);
+        uint256 id2 = marketplace.registerSeller(geohash2, "ipfs://2", false, true, 0, 0);
 
         assertEq(id1, 1);
         assertEq(id2, 2);
@@ -117,22 +120,22 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_RevertRegister_AlreadyRegistered() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10, 0);
 
         vm.expectRevert("Already registered as seller");
-        marketplace.registerSeller(geohash1, "ipfs://2", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://2", true, true, 10, 0);
         vm.stopPrank();
     }
 
     function test_RevertRegister_NoDeliveryOrPickup() public {
         vm.prank(seller1);
         vm.expectRevert("Must offer delivery or pickup");
-        marketplace.registerSeller(geohash1, "ipfs://1", false, false, 10);
+        marketplace.registerSeller(geohash1, "ipfs://1", false, false, 10, 0);
     }
 
     function test_GeohashIndexing() public {
         vm.prank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10, 0);
 
         // Test city level (4 chars, ~20km)
         bytes4 prefix4 = bytes4(geohash1);
@@ -161,10 +164,10 @@ contract LocalRootsMarketplaceTest is Test {
         bytes8 geohashB = bytes8("9q8ybm2b");
 
         vm.prank(seller1);
-        marketplace.registerSeller(geohashA, "ipfs://1", true, true, 10);
+        marketplace.registerSeller(geohashA, "ipfs://1", true, true, 10, 0);
 
         vm.prank(seller2);
-        marketplace.registerSeller(geohashB, "ipfs://2", true, true, 10);
+        marketplace.registerSeller(geohashB, "ipfs://2", true, true, 10, 0);
 
         // City level (4 chars ~20km) - should find BOTH sellers
         uint256[] memory cityResults = marketplace.getSellersByCity(bytes4("9q8y"));
@@ -184,7 +187,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_UpdateSeller() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10, 0);
 
         marketplace.updateSeller(
             "ipfs://updated",
@@ -205,7 +208,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_DeactivateSeller() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://1", true, true, 10, 0);
         marketplace.updateSeller("ipfs://1", true, true, 10, false);
         vm.stopPrank();
 
@@ -223,7 +226,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_CreateListing() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
 
         uint256 listingId = marketplace.createListing(
             "ipfs://tomatoes",
@@ -251,7 +254,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_CreateMultipleListings() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
 
         uint256 id1 = marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         uint256 id2 = marketplace.createListing("ipfs://cucumbers", PRICE_PER_UNIT * 2, 50);
@@ -269,7 +272,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_RevertListing_InactiveSeller() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.updateSeller("ipfs://store", true, true, 10, false);
 
         vm.expectRevert("Seller not active");
@@ -279,7 +282,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_RevertListing_ZeroPrice() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
 
         vm.expectRevert("Price must be > 0");
         marketplace.createListing("ipfs://tomatoes", 0, 100);
@@ -288,7 +291,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_RevertListing_ZeroQuantity() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
 
         vm.expectRevert("Quantity must be > 0");
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 0);
@@ -297,7 +300,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_UpdateListing() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
 
         marketplace.updateListing(
@@ -322,7 +325,7 @@ contract LocalRootsMarketplaceTest is Test {
     function test_Purchase_FundsHeldInEscrow() public {
         // Setup seller and listing
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
@@ -337,7 +340,7 @@ contract LocalRootsMarketplaceTest is Test {
         uint256 sellerBalanceBefore = token.balanceOf(seller1);
         uint256 marketplaceBalanceBefore = token.balanceOf(address(marketplace));
 
-        uint256 orderId = marketplace.purchase(1, quantity, false, "");
+        uint256 orderId = marketplace.purchase(1, quantity, false, "", address(0));
         vm.stopPrank();
 
         assertEq(orderId, 1);
@@ -356,14 +359,14 @@ contract LocalRootsMarketplaceTest is Test {
     function test_FundsNotReleasedUntilDisputeWindowExpires() public {
         // Setup seller and listing
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
         // Buyer purchases
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, false, "");
+        uint256 orderId = marketplace.purchase(1, 5, false, "", address(0));
         vm.stopPrank();
 
         uint256 expectedTotal = PRICE_PER_UNIT * 5;
@@ -390,14 +393,14 @@ contract LocalRootsMarketplaceTest is Test {
     function test_SellerClaimsFundsAfterDisputeWindow() public {
         // Setup seller and listing
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
         // Buyer purchases
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, false, "");
+        uint256 orderId = marketplace.purchase(1, 5, false, "", address(0));
         vm.stopPrank();
 
         uint256 expectedTotal = PRICE_PER_UNIT * 5;
@@ -436,13 +439,14 @@ contract LocalRootsMarketplaceTest is Test {
         LocalRootsMarketplace freshMarketplace = new LocalRootsMarketplace(
             address(token),
             address(freshAmbassador),
-            address(0)
+            address(0),
+            admin
         );
         freshAmbassador.setMarketplace(address(freshMarketplace));
 
         // Setup seller and listing
         vm.startPrank(seller1);
-        freshMarketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        freshMarketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         freshMarketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
@@ -456,7 +460,7 @@ contract LocalRootsMarketplaceTest is Test {
         uint256 buyerBalanceBefore = token.balanceOf(buyer1);
         uint256 sellerBalanceBefore = token.balanceOf(seller1);
 
-        uint256 orderId = freshMarketplace.purchase(1, quantity, false, "");
+        uint256 orderId = freshMarketplace.purchase(1, quantity, false, "", address(0));
         vm.stopPrank();
 
         // Buyer pays exact price
@@ -486,13 +490,13 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_PurchaseWithDelivery() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, true, "ipfs://buyer-address"); // isDelivery = true
+        uint256 orderId = marketplace.purchase(1, 5, true, "ipfs://buyer-address", address(0)); // isDelivery = true
         vm.stopPrank();
 
         LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
@@ -502,7 +506,7 @@ contract LocalRootsMarketplaceTest is Test {
 
     function test_RevertPurchase_InactiveListing() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         marketplace.updateListing(1, "ipfs://tomatoes", PRICE_PER_UNIT, 100, false);
         vm.stopPrank();
@@ -511,13 +515,13 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Listing not active");
-        marketplace.purchase(1, 5, false, "");
+        marketplace.purchase(1, 5, false, "", address(0));
         vm.stopPrank();
     }
 
     function test_RevertPurchase_InsufficientQuantity() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 10);
         vm.stopPrank();
 
@@ -525,13 +529,13 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Insufficient quantity");
-        marketplace.purchase(1, 15, false, "");
+        marketplace.purchase(1, 15, false, "", address(0));
         vm.stopPrank();
     }
 
     function test_RevertPurchase_DeliveryNotOffered() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", false, true, 0); // pickup only
+        marketplace.registerSeller(geohash1, "ipfs://store", false, true, 0, 0); // pickup only
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
@@ -539,13 +543,13 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Seller does not offer delivery");
-        marketplace.purchase(1, 5, true, "ipfs://buyer-address");
+        marketplace.purchase(1, 5, true, "ipfs://buyer-address", address(0));
         vm.stopPrank();
     }
 
     function test_RevertPurchase_PickupNotOffered() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, false, 10); // delivery only
+        marketplace.registerSeller(geohash1, "ipfs://store", true, false, 10, 0); // delivery only
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
@@ -553,13 +557,13 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Seller does not offer pickup");
-        marketplace.purchase(1, 5, false, "");
+        marketplace.purchase(1, 5, false, "", address(0));
         vm.stopPrank();
     }
 
     function test_RevertPurchase_DeliveryWithoutAddress() public {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
@@ -567,7 +571,7 @@ contract LocalRootsMarketplaceTest is Test {
         token.approve(address(marketplace), type(uint256).max);
 
         vm.expectRevert("Delivery address required");
-        marketplace.purchase(1, 5, true, ""); // delivery with empty address
+        marketplace.purchase(1, 5, true, "", address(0)); // delivery with empty address
         vm.stopPrank();
     }
 
@@ -575,13 +579,13 @@ contract LocalRootsMarketplaceTest is Test {
 
     function _createOrderFixture() internal returns (uint256 orderId) {
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        orderId = marketplace.purchase(1, 5, false, "");
+        orderId = marketplace.purchase(1, 5, false, "", address(0));
         vm.stopPrank();
     }
 
@@ -613,13 +617,13 @@ contract LocalRootsMarketplaceTest is Test {
     function test_MarkOutForDelivery() public {
         // Create order with delivery
         vm.startPrank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
         marketplace.createListing("ipfs://tomatoes", PRICE_PER_UNIT, 100);
         vm.stopPrank();
 
         vm.startPrank(buyer1);
         token.approve(address(marketplace), type(uint256).max);
-        uint256 orderId = marketplace.purchase(1, 5, true, "ipfs://buyer-address"); // delivery
+        uint256 orderId = marketplace.purchase(1, 5, true, "ipfs://buyer-address", address(0)); // delivery
         vm.stopPrank();
 
         vm.startPrank(seller1);
@@ -824,7 +828,7 @@ contract LocalRootsMarketplaceTest is Test {
         assertFalse(marketplace.isSeller(seller1));
 
         vm.prank(seller1);
-        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10);
+        marketplace.registerSeller(geohash1, "ipfs://store", true, true, 10, 0);
 
         assertTrue(marketplace.isSeller(seller1));
     }

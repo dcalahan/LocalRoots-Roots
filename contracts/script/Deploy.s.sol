@@ -97,11 +97,12 @@ contract DeployAll is Script {
         );
         require(address(token) == predictedToken, "Token address mismatch");
 
-        // Step 6: Deploy Marketplace (with forwarder)
+        // Step 6: Deploy Marketplace (with forwarder and initial admin = deployer)
         marketplace = new LocalRootsMarketplace(
             address(token),
             address(ambassadorRewards),
-            address(forwarder)
+            address(forwarder),
+            deployer  // Initial admin is the deployer (use computed address, not msg.sender)
         );
 
         // Step 7: Configure AmbassadorRewards
