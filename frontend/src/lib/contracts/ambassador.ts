@@ -1,7 +1,7 @@
 import { type Address } from 'viem';
 
-// Contract address on Base Sepolia (v5 deployment with updateMarketplace function)
-export const AMBASSADOR_REWARDS_ADDRESS: Address = '0x9bB140264a3A7b9411F4dd74108481E780e1A55b';
+// Contract address on Base Sepolia - loaded from environment variable (Jan 2 updated deployment with independent registration)
+export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x360A0eD0b51675514a38e9C7e63b3065c853E0Df') as Address;
 
 // ABI for ambassador functions
 export const ambassadorAbi = [

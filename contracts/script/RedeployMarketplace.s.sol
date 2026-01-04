@@ -29,12 +29,13 @@ contract RedeployMarketplace is Script {
         // Deploy forwarder for gasless transactions
         forwarder = new ERC2771Forwarder("LocalRootsForwarder");
 
-        // Deploy new marketplace with forwarder and initial admin
+        // Deploy new marketplace with forwarder and initial admin (Phase 2 mode)
         marketplace = new LocalRootsMarketplace(
             ROOTS_TOKEN,
             AMBASSADOR_REWARDS,
             address(forwarder),
-            deployer  // Initial admin is the deployer
+            deployer,  // Initial admin is the deployer
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
         );
 
         // Configure payment token support

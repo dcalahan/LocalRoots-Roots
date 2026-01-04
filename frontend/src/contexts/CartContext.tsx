@@ -3,6 +3,9 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { CartItem, CartContextType, CartState } from '@/types/cart';
 
+// Re-export CartItem for convenience
+export type { CartItem } from '@/types/cart';
+
 const CART_STORAGE_KEY = 'localroots_cart';
 
 const CartContext = createContext<CartContextType | null>(null);

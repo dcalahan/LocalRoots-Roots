@@ -68,12 +68,13 @@ contract MultiTokenPaymentTest is Test {
         vm.prank(treasury);
         rootsToken.transfer(address(swapRouter), SWAP_ROUTER_LIQUIDITY);
 
-        // Deploy marketplace
+        // Deploy marketplace (Phase 2 mode for multi-token payment tests)
         marketplace = new LocalRootsMarketplace(
             address(rootsToken),
             address(ambassadorRewardsContract),
             address(0),
-            admin
+            admin,
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
         );
 
         // Set marketplace in ambassador rewards
@@ -284,12 +285,13 @@ contract MultiTokenPaymentTest is Test {
     }
 
     function test_RevertPurchase_NoSwapRouterConfigured() public {
-        // Deploy fresh marketplace without swap router
+        // Deploy fresh marketplace without swap router (Phase 2 mode)
         LocalRootsMarketplace freshMarketplace = new LocalRootsMarketplace(
             address(rootsToken),
             address(ambassadorRewardsContract),
             address(0),
-            admin
+            admin,
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
         );
 
         // Setup seller

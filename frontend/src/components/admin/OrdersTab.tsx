@@ -8,14 +8,16 @@ import { formatDistanceToNow } from 'date-fns';
 import { formatUnits } from 'viem';
 
 // Order status enum matching the contract
+// enum OrderStatus { Pending, Accepted, ReadyForPickup, OutForDelivery, Completed, Disputed, Refunded, Cancelled }
 const ORDER_STATUS = {
   0: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
   1: { label: 'Accepted', color: 'bg-blue-100 text-blue-700' },
-  2: { label: 'Ready/Out', color: 'bg-purple-100 text-purple-700' },
-  3: { label: 'Completed', color: 'bg-green-100 text-green-700' },
-  4: { label: 'Disputed', color: 'bg-red-100 text-red-700' },
-  5: { label: 'Refunded', color: 'bg-gray-100 text-gray-700' },
-  6: { label: 'Cancelled', color: 'bg-gray-100 text-gray-700' },
+  2: { label: 'Ready for Pickup', color: 'bg-purple-100 text-purple-700' },
+  3: { label: 'Out for Delivery', color: 'bg-indigo-100 text-indigo-700' },
+  4: { label: 'Completed', color: 'bg-green-100 text-green-700' },
+  5: { label: 'Disputed', color: 'bg-red-100 text-red-700' },
+  6: { label: 'Refunded', color: 'bg-gray-100 text-gray-700' },
+  7: { label: 'Cancelled', color: 'bg-gray-100 text-gray-700' },
 } as const;
 
 type StatusFilter = 'all' | 'active' | 'completed' | 'disputed' | 'cancelled';
@@ -30,13 +32,15 @@ export function OrdersTab() {
   const filteredOrders = orders.filter((order) => {
     switch (statusFilter) {
       case 'active':
-        return order.status >= 0 && order.status <= 2;
+        // Pending, Accepted, ReadyForPickup, OutForDelivery
+        return order.status >= 0 && order.status <= 3;
       case 'completed':
-        return order.status === 3;
-      case 'disputed':
         return order.status === 4;
+      case 'disputed':
+        return order.status === 5;
       case 'cancelled':
-        return order.status === 5 || order.status === 6;
+        // Refunded or Cancelled
+        return order.status === 6 || order.status === 7;
       default:
         return true;
     }
@@ -52,8 +56,8 @@ export function OrdersTab() {
     }
   };
 
-  const activeCount = orders.filter((o) => o.status >= 0 && o.status <= 2).length;
-  const disputedCount = orders.filter((o) => o.status === 4).length;
+  const activeCount = orders.filter((o) => o.status >= 0 && o.status <= 3).length;
+  const disputedCount = orders.filter((o) => o.status === 5).length;
 
   return (
     <div>
@@ -74,7 +78,7 @@ export function OrdersTab() {
         <div className="bg-green-50 rounded-lg p-4">
           <p className="text-sm text-green-600">Completed</p>
           <p className="text-2xl font-bold text-green-700">
-            {orders.filter((o) => o.status === 3).length}
+            {orders.filter((o) => o.status === 4).length}
           </p>
         </div>
       </div>
@@ -193,7 +197,8 @@ function OrderRow({
 }) {
   const status = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS] || { label: 'Unknown', color: 'bg-gray-100 text-gray-700' };
   const totalPriceRoots = formatUnits(order.totalPrice, 18);
-  const canCancel = order.status < 3; // Can only cancel if not completed/disputed/refunded
+  // Can only cancel if not completed (4), disputed (5), refunded (6), or cancelled (7)
+  const canCancel = order.status < 4;
 
   return (
     <tr className="border-b hover:bg-gray-50">

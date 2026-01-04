@@ -109,12 +109,18 @@ export function useTokenApproval() {
     }
   }, [walletClient, address, publicClient, checkAllowance, isTestWallet]);
 
-  const getBalance = useCallback(async (): Promise<bigint> => {
+  /**
+   * Get the balance of a token
+   * @param tokenAddress Optional token address (defaults to ROOTS)
+   */
+  const getBalance = useCallback(async (tokenAddress?: Address): Promise<bigint> => {
     if (!publicClient || !address) return 0n;
+
+    const token = tokenAddress || ROOTS_TOKEN_ADDRESS;
 
     try {
       const balance = await publicClient.readContract({
-        address: ROOTS_TOKEN_ADDRESS,
+        address: token,
         abi: erc20Abi,
         functionName: 'balanceOf',
         args: [address],

@@ -1,14 +1,14 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { WalletButton } from '@/components/WalletButton';
+import { ImageUploader } from '@/components/seller/ImageUploader';
 import { useAmbassadorStatus, useAmbassadorById } from '@/hooks/useAmbassadorStatus';
 import { useAmbassadorProfile } from '@/hooks/useAmbassadorProfile';
 import { useRegisterAmbassador } from '@/hooks/useRegisterAmbassador';
@@ -20,7 +20,7 @@ function AmbassadorRegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { isConnected } = useAccount();
+  const { user, authenticated: isConnected, login } = usePrivy();
 
   // Get referral from URL params
   const refParam = searchParams.get('ref');
@@ -30,7 +30,18 @@ function AmbassadorRegisterContent() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [email, setEmail] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
+
+  // Pre-fill email from Privy user (only once)
+  const emailPrefilled = useRef(false);
+  useEffect(() => {
+    if (user?.email?.address && !emailPrefilled.current) {
+      emailPrefilled.current = true;
+      setEmail(user.email.address);
+    }
+  }, [user?.email?.address]);
 
   // Check if already an ambassador
   const { isAmbassador, isLoading: isCheckingStatus } = useAmbassadorStatus();
@@ -42,7 +53,51 @@ function AmbassadorRegisterContent() {
   const { profile: uplineProfile, isLoading: isLoadingUplineProfile } = useAmbassadorProfile(uplineAmbassador?.profileIpfs);
 
   // IPFS upload hook
-  const { uploadJson } = usePinataUpload();
+  const { uploadJson, uploadFile } = usePinataUpload();
+
+  // Handle image from ImageUploader (receives data URL)
+  const handleImageUpload = async (dataUrl: string | null) => {
+    if (!dataUrl) {
+      setImageUrl('');
+      return;
+    }
+
+    // If it's already a URL (stock photo or IPFS), use it directly
+    if (dataUrl.startsWith('http') || dataUrl.startsWith('/')) {
+      setImageUrl(dataUrl);
+      return;
+    }
+
+    // For data URLs, upload to IPFS
+    if (dataUrl.startsWith('data:')) {
+      setIsUploadingImage(true);
+      try {
+        // Convert data URL to file
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+
+        const result = await uploadFile(file);
+        if (result) {
+          const uploadedUrl = `https://gateway.pinata.cloud/ipfs/${result.ipfsHash}`;
+          setImageUrl(uploadedUrl);
+          toast({
+            title: 'Image uploaded!',
+            description: 'Your profile picture has been uploaded.',
+          });
+        }
+      } catch (err) {
+        console.error('[handleImageUpload] Error:', err);
+        toast({
+          title: 'Upload failed',
+          description: 'Could not upload image. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
+  };
 
   // Registration hook
   const {
@@ -52,11 +107,7 @@ function AmbassadorRegisterContent() {
     error: registerError,
   } = useRegisterAmbassador();
 
-  // Default community founder ID - anyone can join under this if they don't have a referral
-  // This should be set to the first State Founder registered in the system
-  const DEFAULT_COMMUNITY_UPLINE = 1n;
-
-  // Parse referral param
+  // Parse referral param - ambassadors can register independently (uplineId = 0)
   useEffect(() => {
     if (refParam) {
       try {
@@ -65,11 +116,14 @@ function AmbassadorRegisterContent() {
           setUplineId(id);
           // Also store in localStorage for seller registration flow
           localStorage.setItem('ambassadorRef', refParam);
+        } else {
+          // ref=0 means independent registration
+          setUplineId(0n);
         }
       } catch {
         console.error('[AmbassadorRegister] Invalid ref param:', refParam);
-        // Fall back to community upline
-        setUplineId(DEFAULT_COMMUNITY_UPLINE);
+        // Fall back to independent registration
+        setUplineId(0n);
       }
     } else {
       // Check localStorage
@@ -85,8 +139,8 @@ function AmbassadorRegisterContent() {
           // Invalid stored ref
         }
       }
-      // No referral - use default community upline
-      setUplineId(DEFAULT_COMMUNITY_UPLINE);
+      // No referral - register independently (uplineId = 0)
+      setUplineId(0n);
     }
   }, [refParam]);
 
@@ -106,9 +160,12 @@ function AmbassadorRegisterContent() {
       });
       // Clear stored ref
       localStorage.removeItem('ambassadorRef');
+      // Set flag to prevent dashboard redirect before data is indexed
+      sessionStorage.setItem('just_registered_ambassador', 'true');
       router.push('/ambassador/dashboard');
     }
-  }, [isSuccess, toast, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuccess, router]);
 
   // Handle errors
   useEffect(() => {
@@ -119,26 +176,13 @@ function AmbassadorRegisterContent() {
         variant: 'destructive',
       });
     }
-  }, [registerError, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registerError]);
 
-  const handleRegister = async () => {
-    if (!uplineId) {
-      toast({
-        title: 'Missing referral',
-        description: 'You need a referral link from an existing ambassador to join.',
-        variant: 'destructive',
-      });
-      return;
-    }
 
-    if (!name.trim()) {
-      toast({
-        title: 'Name required',
-        description: 'Please enter your name to continue.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  // The actual registration submission (called after login is confirmed)
+  const handleRegistrationSubmit = async () => {
+    if (uplineId === null || !isConnected) return;
 
     setIsUploadingProfile(true);
 
@@ -148,6 +192,7 @@ function AmbassadorRegisterContent() {
         name: name.trim(),
         bio: bio.trim() || undefined,
         email: email.trim() || undefined,
+        imageUrl: imageUrl || undefined,
         createdAt: new Date().toISOString(),
       };
 
@@ -174,6 +219,46 @@ function AmbassadorRegisterContent() {
     }
   };
 
+  // Handle button click - validate and either submit or trigger login
+  const handleRegister = async () => {
+    // uplineId can be 0n for independent registration, or null if still loading
+    if (uplineId === null) {
+      toast({
+        title: 'Please wait',
+        description: 'Still loading registration details...',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!name.trim()) {
+      toast({
+        title: 'Name required',
+        description: 'Please enter your name to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!email.trim() || !email.includes('@')) {
+      toast({
+        title: 'Email required',
+        description: 'Please enter your email address to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // If already connected, submit directly
+    if (isConnected) {
+      await handleRegistrationSubmit();
+      return;
+    }
+
+    // If not connected, trigger Privy login - user will click button again after login
+    login({ prefill: { type: 'email', value: email.trim() } });
+  };
+
   // Loading state
   if (isCheckingStatus) {
     return (
@@ -183,11 +268,11 @@ function AmbassadorRegisterContent() {
     );
   }
 
-  // Check if using default community upline (no specific referral)
-  const isUsingDefaultUpline = uplineId === DEFAULT_COMMUNITY_UPLINE && !refParam;
+  // Check if registering independently (no referral/upline)
+  const isIndependentRegistration = uplineId === 0n;
 
-  // Invalid upline (but not if we're still loading or using default)
-  if (uplineError || (uplineAmbassador && !uplineAmbassador.active)) {
+  // Invalid upline (but not if we're registering independently or still loading)
+  if (!isIndependentRegistration && (uplineError || (uplineAmbassador && !uplineAmbassador.active))) {
     return (
       <div className="min-h-screen bg-roots-cream">
         <div className="max-w-xl mx-auto px-4 py-16">
@@ -197,10 +282,10 @@ function AmbassadorRegisterContent() {
               <h1 className="text-2xl font-heading font-bold mb-4">Invalid Referral</h1>
               <p className="text-roots-gray mb-6">
                 This referral link is not valid. The ambassador may no longer be active.
-                Please get a new referral link from an active ambassador.
+                You can still register independently without a referral.
               </p>
-              <Link href="/ambassador">
-                <Button variant="outline">Learn About Ambassadors</Button>
+              <Link href="/ambassador/register">
+                <Button variant="outline">Register Without Referral</Button>
               </Link>
             </CardContent>
           </Card>
@@ -241,20 +326,11 @@ function AmbassadorRegisterContent() {
                 <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
                 <div className="h-3 bg-gray-200 rounded w-1/3" />
               </div>
-            ) : isUsingDefaultUpline && uplineProfile ? (
+            ) : isIndependentRegistration ? (
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm text-green-800 font-medium">
-                  Join with {uplineProfile.name}
-                </p>
+                <p className="text-sm text-green-800 font-medium">Independent Ambassador Registration</p>
                 <p className="text-xs text-green-700 mt-1">
-                  You'll be joining under {uplineProfile.name}, our community founder. Once registered, you can recruit farmers and other ambassadors!
-                </p>
-              </div>
-            ) : isUsingDefaultUpline ? (
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm text-green-800 font-medium">Join the Local Roots Community</p>
-                <p className="text-xs text-green-700 mt-1">
-                  You'll be joining under the community founder. Once registered, you can recruit farmers and other ambassadors!
+                  You're registering as an independent ambassador. Once registered, you can recruit farmers and other ambassadors to earn rewards!
                 </p>
               </div>
             ) : uplineAmbassador ? (
@@ -269,9 +345,6 @@ function AmbassadorRegisterContent() {
                 <p className="text-xs text-roots-gray">
                   Wallet: {uplineAmbassador.wallet.slice(0, 6)}...{uplineAmbassador.wallet.slice(-4)}
                 </p>
-                {uplineAmbassador.uplineId === 0n && (
-                  <p className="text-xs text-roots-primary font-medium mt-1">State Founder</p>
-                )}
               </div>
             ) : null}
 
@@ -298,6 +371,20 @@ function AmbassadorRegisterContent() {
             <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-medium">Your Ambassador Profile</h3>
 
+              {/* Profile Picture */}
+              <div className="space-y-2">
+                <ImageUploader
+                  label="Profile Picture (optional)"
+                  onUpload={handleImageUpload}
+                  currentHash={imageUrl}
+                  accept="image/*"
+                  maxSizeMB={5}
+                />
+                {isUploadingImage && (
+                  <p className="text-sm text-roots-gray">Uploading to IPFS...</p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input
@@ -322,30 +409,26 @@ function AmbassadorRegisterContent() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email (optional)</Label>
+                <Label htmlFor="email">
+                  Email {user?.email?.address ? '(from your login)' : '(optional)'}
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className={user?.email?.address ? 'bg-gray-50' : ''}
                 />
                 <p className="text-xs text-roots-gray">For Local Roots updates only</p>
               </div>
             </div>
 
-            {/* Wallet connection */}
-            {!isConnected ? (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-800 mb-3">
-                  Connect your wallet to register as an ambassador
-                </p>
-                <WalletButton />
-              </div>
-            ) : (
+            {/* Show wallet status if connected */}
+            {isConnected && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
-                  Wallet connected. Ready to register!
+                  Logged in and ready to register!
                 </p>
               </div>
             )}
@@ -353,7 +436,7 @@ function AmbassadorRegisterContent() {
             {/* Register button */}
             <Button
               onClick={handleRegister}
-              disabled={!isConnected || isPending || isLoadingUpline || isUploadingProfile || !name.trim()}
+              disabled={isPending || isLoadingUpline || isUploadingProfile || isUploadingImage || !name.trim() || !email.trim() || !email.includes('@')}
               className="w-full bg-roots-primary hover:bg-roots-primary/90"
             >
               {isPending || isUploadingProfile ? (
@@ -380,10 +463,10 @@ function AmbassadorRegisterContent() {
                   </svg>
                   {isUploadingProfile ? 'Uploading profile...' : 'Registering...'}
                 </>
-              ) : !isConnected ? (
-                'Connect Wallet to Register'
               ) : !name.trim() ? (
-                'Enter Your Name to Continue'
+                'Enter Your Name'
+              ) : !email.trim() || !email.includes('@') ? (
+                'Enter Your Email'
               ) : (
                 'Become an Ambassador'
               )}

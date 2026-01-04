@@ -63,9 +63,12 @@ function resolveImageUrl(imageRef: string | null | undefined): string | null {
 }
 
 async function fetchIpfsMetadata<T>(metadataUri: string): Promise<T | null> {
+  console.log('[fetchIpfsMetadata] Fetching:', metadataUri);
+
   // Check for test metadata first
   if (metadataUri.startsWith('test-')) {
     const testData = TEST_METADATA[metadataUri] || TEST_SELLER_METADATA;
+    console.log('[fetchIpfsMetadata] Using test data:', testData);
     return testData as T;
   }
 
@@ -101,9 +104,14 @@ async function fetchIpfsMetadata<T>(metadataUri: string): Promise<T | null> {
       ? `https://gateway.pinata.cloud/ipfs/${metadataUri.slice(7)}`
       : `https://gateway.pinata.cloud/ipfs/${metadataUri}`;
 
+    console.log('[fetchIpfsMetadata] Fetching URL:', url);
     const response = await fetch(url);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error('[fetchIpfsMetadata] Fetch failed:', response.status, response.statusText);
+      return null;
+    }
     const data = await response.json();
+    console.log('[fetchIpfsMetadata] Got data:', data);
 
     // Convert image hash to URL and return normalized metadata
     return {
@@ -115,7 +123,8 @@ async function fetchIpfsMetadata<T>(metadataUri: string): Promise<T | null> {
       // Also include seller metadata fields in case this is a seller
       name: data.name || 'Local Seller',
     } as T;
-  } catch {
+  } catch (err) {
+    console.error('[fetchIpfsMetadata] Error:', err);
     return null;
   }
 }

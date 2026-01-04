@@ -33,6 +33,11 @@ import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     using SafeERC20 for IERC20;
 
+    // ============ Phase Configuration ============
+
+    enum LaunchPhase { Phase1_USDC, Phase2_ROOTS }
+    LaunchPhase public currentPhase;
+
     // ============ State Variables ============
 
     IERC20 public immutable rootsToken;
@@ -175,6 +180,20 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     event ProfileUpdated(uint256 indexed ambassadorId, string profileIpfs);
     event MarketplaceUpdated(address indexed marketplace);
 
+    // Phase 1 Seeds events
+    event AmbassadorSeedsEarned(
+        uint256 indexed ambassadorId,
+        uint256 seedsAmount,
+        uint256 orderId,
+        uint256 chainLevel
+    );
+    event AmbassadorRecruitmentSeeds(
+        uint256 indexed ambassadorId,
+        uint256 indexed sellerId,
+        uint256 seedsAmount
+    );
+    event PhaseTransitioned(LaunchPhase newPhase);
+
     // ============ Modifiers ============
 
     modifier onlyMarketplace() {
@@ -231,6 +250,16 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     function setAdmin(address _newAdmin) external onlyAdmin {
         require(_newAdmin != address(0), "Invalid admin address");
         admin = _newAdmin;
+    }
+
+    /**
+     * @notice Transition from Phase 1 (USDC/Seeds) to Phase 2 (ROOTS)
+     * @dev One-way transition, cannot be reversed
+     */
+    function transitionToPhase2() external onlyAdmin {
+        require(currentPhase == LaunchPhase.Phase1_USDC, "Already in Phase 2");
+        currentPhase = LaunchPhase.Phase2_ROOTS;
+        emit PhaseTransitioned(LaunchPhase.Phase2_ROOTS);
     }
 
     /**
@@ -338,17 +367,19 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     // ============ Ambassador Registration ============
 
     /**
-     * @notice Register as an ambassador under an existing ambassador
-     * @param _uplineId The ambassador who recruited you (must be active)
+     * @notice Register as an ambassador, optionally under an existing ambassador
+     * @param _uplineId The ambassador who recruited you (0 for independent registration)
      * @param _profileIpfs IPFS hash for ambassador profile (name, bio, etc.)
      */
     function registerAmbassador(uint256 _uplineId, string calldata _profileIpfs) external returns (uint256 ambassadorId) {
         require(ambassadorIdByWallet[_msgSender()] == 0, "Already an ambassador");
-        require(_uplineId != 0, "Must have an upline (use registerStateFounder for founders)");
-        require(ambassadors[_uplineId].active, "Upline not active");
-        require(!ambassadors[_uplineId].suspended, "Upline suspended");
 
-        ambassadors[_uplineId].recruitedAmbassadors++;
+        // Allow independent registration (uplineId = 0) or registration under an active upline
+        if (_uplineId != 0) {
+            require(ambassadors[_uplineId].active, "Upline not active");
+            require(!ambassadors[_uplineId].suspended, "Upline suspended");
+            ambassadors[_uplineId].recruitedAmbassadors++;
+        }
 
         ambassadorId = ++nextAmbassadorId;
 
@@ -434,6 +465,15 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
             recruitment.uniqueBuyerCount >= SELLER_MIN_UNIQUE_BUYERS) {
             recruitment.activated = true;
             emit SellerActivated(_sellerId, recruitment.ambassadorId);
+
+            // Phase 1: Emit recruitment Seeds for the ambassador who recruited this seller
+            if (currentPhase == LaunchPhase.Phase1_USDC) {
+                emit AmbassadorRecruitmentSeeds(
+                    recruitment.ambassadorId,
+                    _sellerId,
+                    2500 * 1e6  // 2,500 Seeds for successful recruitment
+                );
+            }
         }
     }
 
@@ -588,6 +628,81 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         emit RewardQueued(pendingRewardId, _orderId, distributed, depth);
 
         return pendingRewardId;
+    }
+
+    /**
+     * @notice Queue Seeds rewards for Phase 1 (no token transfers, just events)
+     * @dev Walks up the ambassador chain and emits Seeds events for indexing
+     *      Same 80/20 split logic as queueReward but without token transfers
+     */
+    function queueSeedsReward(
+        uint256 _orderId,
+        uint256 _sellerId,
+        uint256 _saleAmount
+    ) external onlyMarketplace {
+        require(currentPhase == LaunchPhase.Phase1_USDC, "Not Phase 1");
+
+        SellerRecruitment storage recruitment = sellerRecruitments[_sellerId];
+
+        // Check if seller was recruited
+        if (recruitment.ambassadorId == 0) {
+            return;
+        }
+
+        // Check reward period
+        if (block.timestamp > recruitment.recruitedAt + REWARD_DURATION) {
+            return;
+        }
+
+        // Seller must be activated
+        if (!recruitment.activated) {
+            return;
+        }
+
+        // Calculate total Seeds pool (25% of sale, same as ROOTS rewards)
+        uint256 totalPool = (_saleAmount * TOTAL_REWARD_BPS) / 10000;
+
+        if (totalPool == 0) {
+            return;
+        }
+
+        // Walk the chain and emit Seeds events (no token transfers)
+        uint256 remainingPool = totalPool;
+        uint256 currentAmbassadorId = recruitment.ambassadorId;
+        uint256 depth = 0;
+
+        while (currentAmbassadorId != 0 && remainingPool > 0 && depth < MAX_CHAIN_DEPTH) {
+            Ambassador storage amb = ambassadors[currentAmbassadorId];
+
+            if (!amb.active || amb.suspended) {
+                // Skip suspended/inactive, move to upline
+                currentAmbassadorId = amb.uplineId;
+                depth++;
+                continue;
+            }
+
+            // Skip cooldown check for Seeds (optional - can be added if needed)
+
+            uint256 payout;
+            if (amb.uplineId == 0) {
+                // State Founder - keeps everything remaining
+                payout = remainingPool;
+            } else {
+                // Regular ambassador - keeps 80%, passes 20% up
+                payout = (remainingPool * RECRUITER_KEEP_BPS) / 10000;
+            }
+
+            // Emit Seeds event (NO token transfer in Phase 1)
+            emit AmbassadorSeedsEarned(currentAmbassadorId, payout, _orderId, depth);
+
+            // Update remaining and move up chain
+            remainingPool -= payout;
+            currentAmbassadorId = amb.uplineId;
+            depth++;
+        }
+
+        // Update sales volume tracking
+        recruitment.totalSalesVolume += _saleAmount;
     }
 
     // ============ Claim Rewards ============

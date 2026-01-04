@@ -1,0 +1,2461 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-01",
+  "description": "Growing data for all crops with timing relative to frost dates",
+  "crops": {
+    "tomato-beefsteak": {
+      "name": "Beefsteak Tomato",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 80, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 24,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "carrot", "parsley", "marigold"],
+      "avoid": ["cabbage-green", "fennel", "potato"],
+      "tips": [
+        "Stake or cage plants when transplanting to avoid root damage later",
+        "Remove suckers for larger fruits, or leave for more but smaller tomatoes",
+        "Water deeply and consistently to prevent blossom end rot",
+        "Mulch heavily to retain moisture and prevent soil splash"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "tomato-cherry": {
+      "name": "Cherry Tomatoes",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 55, "max": 70 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 24,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "carrot", "parsley"],
+      "avoid": ["cabbage-green", "fennel"],
+      "tips": [
+        "Very prolific - expect hundreds of fruits per plant",
+        "Can be grown in large containers on patios",
+        "Harvest when fully colored for best flavor",
+        "Plants continue producing until frost"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 12 }
+    },
+    "tomato-heirloom": {
+      "name": "Heirloom Tomato",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 75, "max": 95 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 30,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "carrot", "parsley"],
+      "avoid": ["cabbage-green", "fennel"],
+      "tips": [
+        "More susceptible to disease than hybrids - good airflow is essential",
+        "Flavor is exceptional when vine-ripened",
+        "Handle fruits gently as skin is often thinner",
+        "Save seeds to continue the variety"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "tomato-roma": {
+      "name": "Roma Tomato",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 70, "max": 80 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 24,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "carrot", "parsley"],
+      "avoid": ["cabbage-green", "fennel"],
+      "tips": [
+        "Determinate variety - fruits ripen within a concentrated period",
+        "Excellent for canning and sauce making",
+        "Less juicy, more meaty flesh than slicing tomatoes",
+        "Good disease resistance"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "pepper-bell-red": {
+      "name": "Red Bell Pepper",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 70, "max": 85 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "tomato-cherry", "carrot"],
+      "avoid": ["fennel"],
+      "tips": [
+        "Red peppers are fully ripe green peppers - takes 2-3 weeks longer",
+        "Sweeter and more nutritious than green peppers",
+        "Support plants once fruits develop to prevent breakage",
+        "Pick first fruits to encourage more production"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "pepper-bell-green": {
+      "name": "Green Bell Pepper",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 60, "max": 75 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "tomato-cherry", "carrot"],
+      "avoid": ["fennel"],
+      "tips": [
+        "Harvest when full-sized and glossy for crisp texture",
+        "Can be picked at any size - smaller peppers are still tasty",
+        "Consistent watering prevents bitter taste",
+        "Plants are smaller than tomatoes but equally productive"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 10 }
+    },
+    "pepper-jalapeno": {
+      "name": "Jalapeno Pepper",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 65, "max": 80 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "tomato-cherry", "carrot"],
+      "avoid": ["fennel"],
+      "tips": [
+        "Stress (less water) increases heat level",
+        "White lines (corking) indicate a hotter pepper",
+        "Very prolific - expect 25-50 peppers per plant",
+        "Can be harvested green or red (red is sweeter and hotter)"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 10 }
+    },
+    "pepper-habanero": {
+      "name": "Habanero Pepper",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 10, "weeksBeforeLastFrostMax": 12 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 3, "minSoilTempF": 70 },
+      "daysToMaturity": { "min": 90, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "tomato-cherry"],
+      "avoid": ["fennel"],
+      "tips": [
+        "Needs long warm season - start early indoors",
+        "Extremely hot - use gloves when handling",
+        "Fruity flavor beneath the heat",
+        "Plants are beautiful with colorful fruits"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "pepper-serrano": {
+      "name": "Serrano Pepper",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 75, "max": 85 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "tomato-cherry", "cilantro"],
+      "avoid": ["fennel"],
+      "tips": [
+        "Hotter than jalapenos, great for salsa",
+        "Very productive plants",
+        "Best harvested when still green and firm",
+        "Thinner walls than jalapenos - not ideal for stuffing"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 10 }
+    },
+    "eggplant": {
+      "name": "Eggplant",
+      "category": "nightshades",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 70 },
+      "daysToMaturity": { "min": 65, "max": 80 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 24,
+        "soilPH": { "min": 5.5, "max": 6.5 }
+      },
+      "frostTolerance": "none",
+      "companions": ["basil", "pepper-bell-green", "spinach"],
+      "avoid": ["fennel"],
+      "tips": [
+        "Loves heat - don't rush transplanting",
+        "Harvest when skin is glossy; dull skin means overripe",
+        "Cut rather than pull fruits to avoid damaging plant",
+        "Flea beetles are common - use row cover early"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "zucchini": {
+      "name": "Zucchini",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 45, "max": 55 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 36,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans", "radish"],
+      "avoid": ["potato"],
+      "tips": [
+        "Incredibly prolific - 2-3 plants feed a family",
+        "Harvest at 6-8 inches for best texture",
+        "Check daily - fruits grow quickly",
+        "Male flowers appear first, then female flowers with tiny fruit"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 10 }
+    },
+    "yellow-squash": {
+      "name": "Yellow Squash",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 45, "max": 55 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 36,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans", "radish"],
+      "avoid": ["potato"],
+      "tips": [
+        "Same care as zucchini",
+        "Crookneck and straightneck varieties available",
+        "Harvest young for tender skin",
+        "Flowers are edible and delicious stuffed"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 10 }
+    },
+    "cucumber": {
+      "name": "Cucumber",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 50, "max": 70 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "high",
+        "spacingInches": 36,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans", "lettuce-romaine", "dill"],
+      "avoid": ["potato", "sage"],
+      "tips": [
+        "Consistent watering prevents bitter taste",
+        "Trellis vining types to save space and keep fruits clean",
+        "Harvest frequently to encourage more production",
+        "Morning harvest gives crispest cucumbers"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "cucumber-pickling": {
+      "name": "Pickling Cucumber",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 50, "max": 60 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "high",
+        "spacingInches": 36,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans", "dill"],
+      "avoid": ["potato", "sage"],
+      "tips": [
+        "Harvest at 2-4 inches for best pickles",
+        "Plants produce in waves - plan succession picklings",
+        "Bumpy skin is normal and desirable",
+        "Process within 24 hours of harvest for crispest pickles"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "butternut-squash": {
+      "name": "Butternut Squash",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 90, "max": 110 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 48,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans"],
+      "avoid": ["potato"],
+      "tips": [
+        "Needs long warm season - start early in short-season areas",
+        "Cure in sun for 10 days after harvest for longer storage",
+        "Stores 3-6 months in cool, dry conditions",
+        "Leave 2-inch stem when harvesting"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "acorn-squash": {
+      "name": "Acorn Squash",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 80, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 48,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans"],
+      "avoid": ["potato"],
+      "tips": [
+        "Harvest when skin is hard and deep green with orange spot",
+        "Shorter storage life than butternut - use within 2 months",
+        "Single-serving size makes portioning easy",
+        "Can be baked whole, then scooped"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "spaghetti-squash": {
+      "name": "Spaghetti Squash",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 90, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 48,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans"],
+      "avoid": ["potato"],
+      "tips": [
+        "Harvest when skin turns from green to yellow",
+        "Stores 1-2 months in cool conditions",
+        "Low-carb pasta alternative",
+        "Flesh forms spaghetti-like strands when cooked"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "pumpkin": {
+      "name": "Pumpkin",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 65 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 90, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 60,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "green-beans"],
+      "avoid": ["potato"],
+      "tips": [
+        "Count back from desired harvest date to determine planting",
+        "Vines spread 15-20 feet - plan accordingly",
+        "Place cardboard under fruits to prevent rot",
+        "Cure 10 days in sun before storage"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "watermelon": {
+      "name": "Watermelon",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 2, "minSoilTempF": 70 },
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 70 },
+      "daysToMaturity": { "min": 80, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "high",
+        "spacingInches": 72,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "radish"],
+      "avoid": ["potato"],
+      "tips": [
+        "Needs long hot season - use black plastic mulch to warm soil",
+        "Thump test: ripe melons sound hollow",
+        "Tendril near fruit turns brown when ripe",
+        "Reduce watering as fruits ripen for sweeter flavor"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "cantaloupe": {
+      "name": "Cantaloupe",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 75, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 48,
+        "soilPH": { "min": 6.0, "max": 6.5 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "radish", "lettuce-romaine"],
+      "avoid": ["potato"],
+      "tips": [
+        "Ripe when stem slips easily from fruit with light pressure",
+        "Strong sweet aroma indicates ripeness",
+        "Net pattern becomes more pronounced when ripe",
+        "Don't refrigerate until cut for best flavor"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "honeydew": {
+      "name": "Honeydew Melon",
+      "category": "squash",
+      "startIndoors": { "weeksBeforeLastFrost": 3, "weeksBeforeLastFrostMax": 4 },
+      "directSow": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 85, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 48,
+        "soilPH": { "min": 6.0, "max": 6.5 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "radish"],
+      "avoid": ["potato"],
+      "tips": [
+        "Needs longer season than cantaloupe",
+        "Ripe when blossom end gives slightly to pressure",
+        "Skin turns creamy yellow when ready",
+        "Sweetest when left on vine until fully ripe"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "lettuce-romaine": {
+      "name": "Romaine Lettuce",
+      "category": "leafy-greens",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "fallSow": { "weeksBeforeFirstFrost": 8, "weeksEnd": 4, "minZone": 6, "notes": "Fall planting for late fall/winter harvest" },
+      "daysToMaturity": { "min": 65, "max": 75 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": ["carrot", "radish", "strawberry", "chives"],
+      "avoid": [],
+      "tips": [
+        "Bolt-resistant varieties extend harvest in warm weather",
+        "Harvest outer leaves for extended picking",
+        "Afternoon shade helps in hot weather",
+        "Succession plant every 2 weeks for continuous harvest"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "lettuce-butter": {
+      "name": "Butter Lettuce",
+      "category": "leafy-greens",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "daysToMaturity": { "min": 55, "max": 65 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 10,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": ["carrot", "radish", "strawberry"],
+      "avoid": [],
+      "tips": [
+        "Tender leaves bruise easily - handle gently",
+        "Buttery, mild flavor",
+        "Harvest whole head or cut-and-come-again",
+        "Best in cooler weather"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "lettuce-mixed": {
+      "name": "Mixed Salad Greens",
+      "category": "leafy-greens",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "daysToMaturity": { "min": 28, "max": 45 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": ["carrot", "radish"],
+      "avoid": [],
+      "tips": [
+        "Cut at 4-6 inches, will regrow 2-3 times",
+        "Mix includes variety of colors and textures",
+        "Great for containers and small spaces",
+        "Sow densely for baby greens"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "spinach": {
+      "name": "Spinach",
+      "category": "leafy-greens",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 35 },
+      "transplant": { "weeksBeforeLastFrost": 3, "minSoilTempF": 35 },
+      "fallSow": { "weeksBeforeFirstFrost": 8, "weeksEnd": 4, "minZone": 6, "notes": "Fall planting for winter harvest or overwintering" },
+      "daysToMaturity": { "min": 37, "max": 50 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.5, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["strawberry", "peas", "cabbage-green"],
+      "avoid": [],
+      "tips": [
+        "Prefers cool weather - bolts quickly in heat",
+        "Plant in fall for overwintered spring harvest",
+        "High in iron and nutrients",
+        "Baby leaves are more tender"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "kale": {
+      "name": "Kale",
+      "category": "leafy-greens",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 3, "minSoilTempF": 45 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "fallSow": { "weeksBeforeFirstFrost": 10, "weeksEnd": 6, "minZone": 5, "notes": "Fall planting for winter harvest - frost sweetens flavor" },
+      "daysToMaturity": { "min": 55, "max": 75 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["beet", "celery", "onion-yellow"],
+      "avoid": [],
+      "tips": [
+        "Frost improves flavor - becomes sweeter",
+        "Harvest lower leaves first, plant keeps producing",
+        "Can overwinter in many zones",
+        "Multiple varieties: curly, lacinato, red Russian"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 12 }
+    },
+    "swiss-chard": {
+      "name": "Swiss Chard",
+      "category": "leafy-greens",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "transplant": { "weeksBeforeLastFrost": 1, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 55, "max": 65 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "cabbage-green"],
+      "avoid": [],
+      "tips": [
+        "Colorful stems are edible and decorative",
+        "More heat tolerant than spinach",
+        "Harvest outer leaves for continuous production",
+        "Can produce for entire growing season"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 16 }
+    },
+    "arugula": {
+      "name": "Arugula",
+      "category": "leafy-greens",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "transplant": null,
+      "daysToMaturity": { "min": 30, "max": 40 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": ["carrot", "lettuce-romaine"],
+      "avoid": [],
+      "tips": [
+        "Fast growing - from seed to salad in 4 weeks",
+        "Peppery flavor intensifies in heat",
+        "Let some plants flower for edible blooms",
+        "Self-seeds readily for future crops"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "collard-greens": {
+      "name": "Collard Greens",
+      "category": "leafy-greens",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "daysToMaturity": { "min": 55, "max": 75 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "high",
+      "companions": ["onion-yellow", "garlic"],
+      "avoid": [],
+      "tips": [
+        "Southern staple - extremely cold hardy",
+        "Frost sweetens the leaves",
+        "Harvest lower leaves, plant keeps producing",
+        "Can survive temperatures into the teens"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 12 }
+    },
+    "mustard-greens": {
+      "name": "Mustard Greens",
+      "category": "leafy-greens",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 3, "minSoilTempF": 40 },
+      "transplant": null,
+      "daysToMaturity": { "min": 30, "max": 45 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 8,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "lettuce-romaine"],
+      "avoid": [],
+      "tips": [
+        "Spicy, peppery flavor - milder when young",
+        "Very fast growing",
+        "Bolts quickly in heat - plant in spring or fall",
+        "Seeds can be saved for making mustard"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "microgreens": {
+      "name": "Microgreens",
+      "category": "leafy-greens",
+      "startIndoors": { "yearRound": true },
+      "directSow": null,
+      "transplant": null,
+      "daysToMaturity": { "min": 7, "max": 21 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 0.5,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "indoor",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Grow year-round indoors on windowsill",
+        "Harvest when first true leaves appear",
+        "Concentrated nutrition - 4-40x more nutrients than mature plants",
+        "Popular varieties: sunflower, pea shoots, radish, broccoli"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "indoorCrop": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 1 }
+    },
+    "carrot": {
+      "name": "Carrots",
+      "category": "root-vegetables",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "transplant": null,
+      "fallSow": { "weeksBeforeFirstFrost": 12, "weeksEnd": 8, "minZone": 6, "notes": "Fall carrots sweeten after light frost" },
+      "daysToMaturity": { "min": 60, "max": 80 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 3,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "lettuce-romaine", "tomato-cherry"],
+      "avoid": ["dill"],
+      "tips": [
+        "Loose, sandy soil prevents forking",
+        "Keep soil moist during germination (up to 3 weeks)",
+        "Thin to 2-3 inches apart when tops are 2 inches tall",
+        "Fall carrots are sweetest after light frost"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "beet": {
+      "name": "Beets",
+      "category": "root-vegetables",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "fallSow": { "weeksBeforeFirstFrost": 10, "weeksEnd": 6, "minZone": 6, "notes": "Fall planting for late fall harvest" },
+      "daysToMaturity": { "min": 50, "max": 70 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 4,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "lettuce-romaine", "cabbage-green"],
+      "avoid": ["pole-beans"],
+      "tips": [
+        "Each seed cluster produces multiple plants - thin to one",
+        "Greens are edible and delicious",
+        "Harvest when golf ball to tennis ball size",
+        "Golden varieties don't bleed like red ones"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "radish": {
+      "name": "Radishes",
+      "category": "root-vegetables",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 40 },
+      "transplant": null,
+      "fallSow": { "weeksBeforeFirstFrost": 6, "weeksEnd": 2, "minZone": 5, "notes": "Quick fall crop before frost" },
+      "daysToMaturity": { "min": 22, "max": 30 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 2,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": ["carrot", "lettuce-romaine", "spinach"],
+      "avoid": [],
+      "tips": [
+        "Fastest vegetable to harvest - 3-4 weeks",
+        "Succession plant every week for continuous harvest",
+        "Becomes woody and pungent if left too long",
+        "Great for marking rows of slow-germinating seeds"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 1 }
+    },
+    "potato": {
+      "name": "Potatoes",
+      "category": "root-vegetables",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "transplant": null,
+      "daysToMaturity": { "min": 70, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 12,
+        "soilPH": { "min": 5.0, "max": 6.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["green-beans", "corn", "cabbage-green"],
+      "avoid": ["tomato-cherry", "cucumber", "squash"],
+      "tips": [
+        "Plant certified seed potatoes, not grocery store potatoes",
+        "Hill soil around stems as plants grow",
+        "New potatoes ready when plants flower",
+        "Cure in dark for 2 weeks before storage"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "sweet-potato": {
+      "name": "Sweet Potatoes",
+      "category": "root-vegetables",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 12, "slips": true },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 90, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 12,
+        "soilPH": { "min": 5.5, "max": 6.5 }
+      },
+      "frostTolerance": "none",
+      "companions": ["green-beans", "radish"],
+      "avoid": [],
+      "tips": [
+        "Grown from slips (rooted sprouts), not seed potatoes",
+        "Needs long warm season - 90+ frost-free days",
+        "Harvest before first frost",
+        "Cure at 80-85°F for 10 days for best storage"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "turnip": {
+      "name": "Turnips",
+      "category": "root-vegetables",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 40 },
+      "transplant": null,
+      "daysToMaturity": { "min": 45, "max": 65 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 4,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["peas", "lettuce-romaine"],
+      "avoid": [],
+      "tips": [
+        "Both roots and greens are edible",
+        "Best flavor from fall harvest",
+        "Quick growing - good for succession planting",
+        "Harvest when 2-3 inches diameter"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "parsnip": {
+      "name": "Parsnips",
+      "category": "root-vegetables",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 35 },
+      "transplant": null,
+      "daysToMaturity": { "min": 100, "max": 130 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 4,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["onion-yellow", "lettuce-romaine"],
+      "avoid": [],
+      "tips": [
+        "Needs frost to convert starches to sugar",
+        "Can overwinter in ground with mulch",
+        "Very slow germination - 3-4 weeks",
+        "Use fresh seed only - viability drops quickly"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "onion-yellow": {
+      "name": "Yellow Onion",
+      "category": "alliums",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 12 },
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 35 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 35 },
+      "fallSow": { "weeksBeforeFirstFrost": 6, "weeksEnd": 2, "minZone": 7, "notes": "Short-day onions (Vidalia, Texas Sweet) for zones 7+" },
+      "daysToMaturity": { "min": 90, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 4,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["carrot", "lettuce-romaine", "tomato-cherry"],
+      "avoid": ["green-beans", "peas"],
+      "tips": [
+        "Day length determines bulbing - choose correct variety for latitude",
+        "Short-day onions (Vidalia) planted fall in zones 7+ for spring harvest",
+        "Stop watering when tops fall over",
+        "Cure in sun for 1-2 weeks before storage"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "onion-red": {
+      "name": "Red Onion",
+      "category": "alliums",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 12 },
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 35 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 90, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 4,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["carrot", "lettuce-romaine", "tomato-cherry"],
+      "avoid": ["green-beans", "peas"],
+      "tips": [
+        "Milder flavor than yellow onions",
+        "Great for fresh eating in salads",
+        "Shorter storage life than yellow varieties",
+        "Color fades when cooked"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "green-onion": {
+      "name": "Green Onions / Scallions",
+      "category": "alliums",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 35 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 60, "max": 80 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 1,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["carrot", "lettuce-romaine"],
+      "avoid": ["green-beans"],
+      "tips": [
+        "Can regrow from root ends in water or soil",
+        "Harvest by pulling or cutting at soil level",
+        "Bunching varieties don't form bulbs",
+        "Succession plant for year-round harvest"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "garlic": {
+      "name": "Garlic",
+      "category": "alliums",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeFirstFrost": 4, "fallPlanting": true, "minSoilTempF": 50 },
+      "transplant": null,
+      "daysToMaturity": { "min": 240, "max": 270 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["tomato-cherry", "pepper-bell-red", "lettuce-romaine"],
+      "avoid": ["green-beans", "peas"],
+      "tips": [
+        "Plant in fall for summer harvest",
+        "Separate bulbs into individual cloves for planting",
+        "Cut scapes (curly tops) to encourage larger bulbs",
+        "Harvest when lower leaves brown, tops still green"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "fallPlanting": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "leek": {
+      "name": "Leeks",
+      "category": "alliums",
+      "startIndoors": { "weeksBeforeLastFrost": 10, "weeksBeforeLastFrostMax": 12 },
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "daysToMaturity": { "min": 100, "max": 150 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["carrot", "celery"],
+      "avoid": ["green-beans"],
+      "tips": [
+        "Hill soil around stems for longer white portion",
+        "Very cold hardy - harvest into winter",
+        "Mild onion flavor, no bulb formation",
+        "Excellent in soups and stews"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "shallot": {
+      "name": "Shallots",
+      "category": "alliums",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 35 },
+      "transplant": null,
+      "daysToMaturity": { "min": 90, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["carrot", "lettuce-romaine"],
+      "avoid": ["green-beans"],
+      "tips": [
+        "Plant sets (small bulbs) like garlic cloves",
+        "Each set multiplies into cluster of 4-12 shallots",
+        "Gourmet mild flavor prized by chefs",
+        "Store like onions after curing"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "broccoli": {
+      "name": "Broccoli",
+      "category": "brassicas",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "fallSow": { "weeksBeforeFirstFrost": 14, "weeksEnd": 10, "minZone": 5, "notes": "Start indoors mid-summer for fall transplant" },
+      "daysToMaturity": { "min": 55, "max": 80 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "celery", "potato"],
+      "avoid": ["tomato-cherry", "strawberry"],
+      "tips": [
+        "Harvest main head before flowers open",
+        "Side shoots continue producing for weeks after main harvest",
+        "Prefers cool weather - bolts in heat",
+        "Fall crop often easier than spring"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "cauliflower": {
+      "name": "Cauliflower",
+      "category": "brassicas",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 55, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "celery", "spinach"],
+      "avoid": ["tomato-cherry", "strawberry"],
+      "tips": [
+        "More finicky than broccoli - needs consistent conditions",
+        "Blanch white varieties by tying leaves over head",
+        "Purple and orange varieties don't need blanching",
+        "Single harvest per plant - no side shoots"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "cabbage-green": {
+      "name": "Green Cabbage",
+      "category": "brassicas",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 70, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "high",
+      "companions": ["onion-yellow", "celery", "dill"],
+      "avoid": ["tomato-cherry", "strawberry"],
+      "tips": [
+        "Very cold hardy - improves flavor after frost",
+        "Consistent watering prevents head splitting",
+        "Early varieties 70 days, storage varieties 100+ days",
+        "Excellent for sauerkraut"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "cabbage-red": {
+      "name": "Red Cabbage",
+      "category": "brassicas",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 70, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "high",
+      "companions": ["onion-yellow", "celery"],
+      "avoid": ["tomato-cherry", "strawberry"],
+      "tips": [
+        "Same care as green cabbage",
+        "Color intensifies in acidic conditions",
+        "Keeps color when pickled or fermented",
+        "High in antioxidants"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "brussels-sprouts": {
+      "name": "Brussels Sprouts",
+      "category": "brassicas",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 0, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 90, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 24,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "high",
+      "companions": ["onion-yellow", "carrot"],
+      "avoid": ["tomato-cherry", "strawberry"],
+      "tips": [
+        "Frost dramatically improves flavor",
+        "Harvest bottom sprouts first as they mature",
+        "Top the plant 3 weeks before harvest for uniform sprouts",
+        "Long season - plant for fall/early winter harvest"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "kohlrabi": {
+      "name": "Kohlrabi",
+      "category": "brassicas",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 45 },
+      "daysToMaturity": { "min": 45, "max": 60 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "beet"],
+      "avoid": ["tomato-cherry"],
+      "tips": [
+        "Harvest when tennis ball size - larger gets woody",
+        "Swollen stem (not root) is the edible part",
+        "Mild, slightly sweet flavor like broccoli stem",
+        "Fast growing - good for succession planting"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "bok-choy": {
+      "name": "Bok Choy",
+      "category": "brassicas",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 45, "max": 60 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 8,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["onion-yellow", "celery"],
+      "avoid": ["tomato-cherry"],
+      "tips": [
+        "Baby bok choy ready in 30 days",
+        "Bolts quickly in heat - grow in spring or fall",
+        "Both leaves and stems are edible",
+        "Great for stir-fries and salads"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "green-beans": {
+      "name": "Green Beans",
+      "category": "legumes",
+      "startIndoors": null,
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": null,
+      "daysToMaturity": { "min": 50, "max": 65 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 4,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "cucumber", "carrot"],
+      "avoid": ["onion-yellow", "garlic"],
+      "tips": [
+        "Bush beans don't need support; pole beans need trellis",
+        "Pick frequently to encourage more production",
+        "Inoculant helps fix nitrogen in soil",
+        "Don't work in beds when leaves are wet - spreads disease"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "snap-peas": {
+      "name": "Sugar Snap Peas",
+      "category": "legumes",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 40 },
+      "transplant": null,
+      "daysToMaturity": { "min": 55, "max": 70 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 3,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["carrot", "turnip", "radish"],
+      "avoid": ["onion-yellow", "garlic"],
+      "tips": [
+        "Plant as early as soil can be worked",
+        "Provide trellis - most varieties climb 4-6 feet",
+        "Entire pod is edible and sweet",
+        "Heat ends production - enjoy spring harvest"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "snow-peas": {
+      "name": "Snow Peas",
+      "category": "legumes",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 40 },
+      "transplant": null,
+      "daysToMaturity": { "min": 55, "max": 65 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 3,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["carrot", "turnip", "radish"],
+      "avoid": ["onion-yellow", "garlic"],
+      "tips": [
+        "Harvest when pods are flat, before peas develop",
+        "Dwarf varieties available for small spaces",
+        "Tendrils and shoots also edible",
+        "Classic in stir-fries"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "shell-peas": {
+      "name": "Garden Peas",
+      "category": "legumes",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 40 },
+      "transplant": null,
+      "daysToMaturity": { "min": 60, "max": 70 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 3,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["carrot", "turnip", "radish"],
+      "avoid": ["onion-yellow", "garlic"],
+      "tips": [
+        "Shell fresh peas immediately for best sweetness",
+        "Sugars convert to starch quickly after picking",
+        "Blanch and freeze for year-round enjoyment",
+        "Kids love eating them straight from the pod"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "lima-beans": {
+      "name": "Lima Beans",
+      "category": "legumes",
+      "startIndoors": null,
+      "directSow": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "transplant": null,
+      "daysToMaturity": { "min": 75, "max": 95 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "cucumber"],
+      "avoid": ["onion-yellow", "garlic"],
+      "tips": [
+        "Need warm soil - don't rush planting",
+        "Pole varieties more productive than bush",
+        "Harvest when pods are plump but still green",
+        "Also called butter beans"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "edamame": {
+      "name": "Edamame",
+      "category": "legumes",
+      "startIndoors": null,
+      "directSow": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "transplant": null,
+      "daysToMaturity": { "min": 85, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["corn", "cucumber"],
+      "avoid": ["onion-yellow", "garlic"],
+      "tips": [
+        "Harvest when pods are plump, still bright green",
+        "Entire plant produces at once - not continuous",
+        "Boil in salted water for classic preparation",
+        "High in protein - great vegetarian option"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "basil": {
+      "name": "Basil",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 60, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["tomato-cherry", "pepper-bell-green"],
+      "avoid": ["sage"],
+      "tips": [
+        "Pinch flower buds to prolong leaf production",
+        "Harvest from top to encourage bushy growth",
+        "Classic partner for tomatoes in garden and kitchen",
+        "Many varieties: sweet, Thai, lemon, purple"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 12 }
+    },
+    "cilantro": {
+      "name": "Cilantro",
+      "category": "herbs",
+      "startIndoors": null,
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "transplant": null,
+      "daysToMaturity": { "min": 45, "max": 70 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 6,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": ["tomato-cherry", "spinach"],
+      "avoid": ["fennel"],
+      "tips": [
+        "Bolts quickly in heat - succession plant every 2 weeks",
+        "Seeds (coriander) are also culinary herb",
+        "Slow-bolt varieties extend harvest",
+        "Self-seeds readily for next year"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "parsley": {
+      "name": "Parsley",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": { "weeksBeforeLastFrost": 4, "minSoilTempF": 50 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 70, "max": 90 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "regular",
+        "spacingInches": 8,
+        "soilPH": { "min": 5.5, "max": 6.7 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["tomato-cherry", "asparagus"],
+      "avoid": [],
+      "tips": [
+        "Slow to germinate - soak seeds overnight",
+        "Biennial - flowers second year",
+        "Cut outer stems to encourage new growth",
+        "Flat-leaf has stronger flavor than curly"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 20 }
+    },
+    "mint": {
+      "name": "Mint",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 0, "minSoilTempF": 55 },
+      "daysToMaturity": { "min": 90, "max": 90 },
+      "requirements": {
+        "sunlight": "partial",
+        "waterNeeds": "high",
+        "spacingInches": 24,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["cabbage-green", "tomato-cherry"],
+      "avoid": [],
+      "tips": [
+        "VERY invasive - plant in containers or with barriers",
+        "Spreading roots can take over entire garden beds",
+        "Many varieties: spearmint, peppermint, chocolate, apple",
+        "Cut back hard to rejuvenate"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 20 }
+    },
+    "rosemary": {
+      "name": "Rosemary",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 10, "weeksBeforeLastFrostMax": 14 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 180, "max": 365 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "low",
+        "spacingInches": 24,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "light",
+      "companions": ["cabbage-green", "carrot", "green-beans"],
+      "avoid": [],
+      "tips": [
+        "Mediterranean native - needs excellent drainage",
+        "Overwatering is the main killer",
+        "Bring indoors where winters are cold",
+        "Can live for decades in mild climates"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 52 }
+    },
+    "thyme": {
+      "name": "Thyme",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 0, "minSoilTempF": 55 },
+      "daysToMaturity": { "min": 90, "max": 180 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "low",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 8.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["cabbage-green", "tomato-cherry", "eggplant"],
+      "avoid": [],
+      "tips": [
+        "Very hardy once established",
+        "Prefers lean, dry conditions",
+        "Harvest before flowering for best flavor",
+        "Many varieties: lemon, caraway, creeping"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 52 }
+    },
+    "oregano": {
+      "name": "Oregano",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 0, "minSoilTempF": 55 },
+      "daysToMaturity": { "min": 80, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "low",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 8.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["tomato-cherry", "pepper-bell-green"],
+      "avoid": [],
+      "tips": [
+        "Greek oregano has strongest flavor",
+        "Cut back after flowering to maintain shape",
+        "Dries very well for winter use",
+        "Spreads readily - can become aggressive"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 20 }
+    },
+    "sage": {
+      "name": "Sage",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 75, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "low",
+        "spacingInches": 24,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["carrot", "cabbage-green", "rosemary"],
+      "avoid": ["cucumber"],
+      "tips": [
+        "Beautiful silvery foliage - ornamental as well as culinary",
+        "Don't overwater - prefers dry conditions",
+        "Prune woody growth in spring to rejuvenate",
+        "Classic with poultry and stuffing"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 20 }
+    },
+    "dill": {
+      "name": "Dill",
+      "category": "herbs",
+      "startIndoors": null,
+      "directSow": { "weeksAfterLastFrost": 0, "minSoilTempF": 60 },
+      "transplant": null,
+      "daysToMaturity": { "min": 40, "max": 60 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 12,
+        "soilPH": { "min": 5.5, "max": 6.5 }
+      },
+      "frostTolerance": "light",
+      "companions": ["cabbage-green", "lettuce-romaine", "onion-yellow"],
+      "avoid": ["carrot"],
+      "tips": [
+        "Doesn't transplant well - direct sow only",
+        "Both leaves (dill weed) and seeds are flavorful",
+        "Self-seeds prolifically",
+        "Essential for pickles and fish dishes"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "chives": {
+      "name": "Chives",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 10 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 80, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 8,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["carrot", "tomato-cherry"],
+      "avoid": ["green-beans"],
+      "tips": [
+        "Perennial that returns stronger each year",
+        "Purple flowers are edible and beautiful",
+        "Cut to 2 inches above ground to harvest",
+        "Divide clumps every 3-4 years"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 24 }
+    },
+    "lavender": {
+      "name": "Lavender",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 10, "weeksBeforeLastFrostMax": 12 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 90, "max": 180 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "low",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.5, "max": 7.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Needs excellent drainage - raised beds ideal",
+        "Don't overwater or over-fertilize",
+        "Harvest flowers just before fully open",
+        "Prune in spring to maintain shape"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "lemongrass": {
+      "name": "Lemongrass",
+      "category": "herbs",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 75, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "high",
+        "spacingInches": 24,
+        "soilPH": { "min": 5.0, "max": 8.0 }
+      },
+      "frostTolerance": "none",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Tropical plant - bring indoors before frost",
+        "Can grow 3-6 feet tall",
+        "Harvest outer stalks at base",
+        "Root stalks from grocery store in water"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 16 }
+    },
+    "strawberry": {
+      "name": "Strawberries",
+      "category": "berries",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 4, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 60, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 5.5, "max": 6.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["lettuce-romaine", "spinach", "onion-yellow"],
+      "avoid": ["cabbage-green", "broccoli"],
+      "tips": [
+        "June-bearing: one large harvest; everbearing: crops all season",
+        "Remove flowers first year for stronger plants",
+        "Runners can be rooted for new plants",
+        "Mulch heavily for winter protection"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "blueberry": {
+      "name": "Blueberries",
+      "category": "berries",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 4, "minSoilTempF": 40 },
+      "daysToMaturity": { "min": 730, "max": 1095 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 72,
+        "soilPH": { "min": 4.5, "max": 5.5 }
+      },
+      "frostTolerance": "high",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "MUST have acidic soil - most gardens need amendment",
+        "Plant 2+ varieties for cross-pollination",
+        "Takes 2-3 years to produce significant harvest",
+        "Net plants to protect from birds"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "raspberry": {
+      "name": "Raspberries",
+      "category": "berries",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 4, "minSoilTempF": 40 },
+      "daysToMaturity": { "min": 365, "max": 730 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 36,
+        "soilPH": { "min": 5.5, "max": 6.5 }
+      },
+      "frostTolerance": "high",
+      "companions": ["garlic"],
+      "avoid": ["blackberry", "potato"],
+      "tips": [
+        "Summer-bearing vs everbearing varieties",
+        "Prune after fruiting to maintain productivity",
+        "Spreads via underground runners",
+        "Very productive once established"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "blackberry": {
+      "name": "Blackberries",
+      "category": "berries",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 4, "minSoilTempF": 40 },
+      "daysToMaturity": { "min": 365, "max": 730 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 48,
+        "soilPH": { "min": 5.5, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": [],
+      "avoid": ["raspberry", "potato"],
+      "tips": [
+        "Thornless varieties available for easier harvest",
+        "Train on trellis or fence",
+        "Can become invasive if not managed",
+        "Prune after harvest - new canes fruit next year"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "grape": {
+      "name": "Grapes",
+      "category": "berries",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 1095, "max": 1460 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 96,
+        "soilPH": { "min": 5.5, "max": 6.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Needs sturdy trellis or arbor support",
+        "Heavy pruning essential for fruit production",
+        "Takes 3 years to first real harvest",
+        "American, European, and hybrid varieties for different climates"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "apple": {
+      "name": "Apples",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "dormantPlanting": true, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 1460, "max": 2555 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 180,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["chives", "garlic"],
+      "avoid": [],
+      "tips": [
+        "Plant 2+ varieties for pollination",
+        "Dwarf rootstocks for smaller trees",
+        "Annual pruning essential",
+        "Takes 4-7 years to first fruit"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "pear": {
+      "name": "Pears",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "dormantPlanting": true, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 1460, "max": 2190 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 180,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": ["garlic"],
+      "avoid": [],
+      "tips": [
+        "Harvest when still firm, ripen off tree",
+        "Less maintenance than apples",
+        "Fire blight can be serious issue",
+        "Asian pears ripen on tree, European off tree"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "peach": {
+      "name": "Peaches",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "dormantPlanting": true, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 1095, "max": 1460 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 180,
+        "soilPH": { "min": 6.0, "max": 6.5 }
+      },
+      "frostTolerance": "moderate",
+      "companions": ["garlic"],
+      "avoid": [],
+      "tips": [
+        "Need 600-900 chill hours depending on variety",
+        "Self-fertile - one tree sufficient",
+        "Thin fruit to 6-8 inches apart for larger peaches",
+        "Prune heavily - fruits on 1-year wood"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 3 }
+    },
+    "plum": {
+      "name": "Plums",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "dormantPlanting": true, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 1460, "max": 1825 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 180,
+        "soilPH": { "min": 6.0, "max": 6.5 }
+      },
+      "frostTolerance": "high",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "European plums often self-fertile; Japanese need pollinators",
+        "Less prone to pests than peaches",
+        "Prunes are dried Italian plums",
+        "Thin fruit for larger plums"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 4 }
+    },
+    "cherry": {
+      "name": "Cherries",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "dormantPlanting": true, "minSoilTempF": 35 },
+      "daysToMaturity": { "min": 1460, "max": 2190 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 180,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "high",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Sweet cherries need pollinators; sour often self-fertile",
+        "Bird netting essential",
+        "Short harvest window - pick when fully colored",
+        "Rain during harvest causes splitting"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "fig": {
+      "name": "Figs",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 730, "max": 1460 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 120,
+        "soilPH": { "min": 6.0, "max": 6.5 }
+      },
+      "frostTolerance": "light",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Can grow in containers and overwinter indoors",
+        "Wrap or protect in cold climates",
+        "Self-pollinating - one tree is enough",
+        "Two crops possible in warm climates"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "lemon": {
+      "name": "Lemons",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 4, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 1095, "max": 1825 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 120,
+        "soilPH": { "min": 5.5, "max": 6.5 }
+      },
+      "frostTolerance": "none",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Frost-sensitive - zones 9-11 outdoors only",
+        "Meyer lemons best for containers",
+        "Bring indoors where winters are cold",
+        "Fruit year-round once established"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "citrus": true,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 52 }
+    },
+    "lime": {
+      "name": "Limes",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 4, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 1095, "max": 1825 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 120,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "More cold-sensitive than lemons",
+        "Key limes best for containers",
+        "Thornless varieties available",
+        "Harvest when green for most lime flavor"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "citrus": true,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 52 }
+    },
+    "orange": {
+      "name": "Oranges",
+      "category": "tree-fruits",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 4, "minSoilTempF": 60 },
+      "daysToMaturity": { "min": 1460, "max": 2190 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 180,
+        "soilPH": { "min": 6.0, "max": 7.5 }
+      },
+      "frostTolerance": "none",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Need consistent warmth - zones 9-11",
+        "Navel for eating, Valencia for juice",
+        "Fruit may stay on tree for months",
+        "Dwarf varieties good for containers"
+      ],
+      "isPerennial": true,
+      "treeFruit": true,
+      "citrus": true,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 16 }
+    },
+    "corn": {
+      "name": "Sweet Corn",
+      "category": "other",
+      "startIndoors": null,
+      "directSow": { "weeksAfterLastFrost": 1, "minSoilTempF": 60 },
+      "transplant": null,
+      "daysToMaturity": { "min": 60, "max": 100 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "high",
+        "spacingInches": 12,
+        "soilPH": { "min": 5.8, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["green-beans", "cucumber", "pumpkin"],
+      "avoid": ["tomato-cherry"],
+      "tips": [
+        "Plant in blocks, not rows, for pollination",
+        "Heavy feeder - needs nitrogen",
+        "Silks dry and brown when ready",
+        "Sugars convert to starch quickly - eat same day"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "asparagus": {
+      "name": "Asparagus",
+      "category": "other",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 4, "crowns": true, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 730, "max": 1095 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.5, "max": 7.5 }
+      },
+      "frostTolerance": "high",
+      "companions": ["tomato-cherry", "parsley"],
+      "avoid": ["onion-yellow", "garlic"],
+      "tips": [
+        "Perennial that produces for 20+ years",
+        "Don't harvest first 2 years",
+        "Harvest in spring for 6-8 weeks",
+        "Let ferns grow to feed roots for next year"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "rhubarb": {
+      "name": "Rhubarb",
+      "category": "other",
+      "startIndoors": null,
+      "directSow": null,
+      "transplant": { "weeksBeforeLastFrost": 4, "crowns": true, "minSoilTempF": 40 },
+      "daysToMaturity": { "min": 730, "max": 730 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 36,
+        "soilPH": { "min": 6.0, "max": 6.8 }
+      },
+      "frostTolerance": "high",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Only stalks edible - leaves are toxic",
+        "Don't harvest first year",
+        "Pull (don't cut) stalks for harvest",
+        "Needs winter cold to produce well"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 10 }
+    },
+    "artichoke": {
+      "name": "Artichokes",
+      "category": "other",
+      "startIndoors": { "weeksBeforeLastFrost": 8, "weeksBeforeLastFrostMax": 12 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 0, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 85, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 48,
+        "soilPH": { "min": 6.5, "max": 8.0 }
+      },
+      "frostTolerance": "light",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Perennial in mild climates, annual elsewhere",
+        "Needs vernalization (cold period) to flower",
+        "Harvest buds before they open",
+        "Large, dramatic plants - good focal point"
+      ],
+      "isPerennial": true,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 8 }
+    },
+    "celery": {
+      "name": "Celery",
+      "category": "other",
+      "startIndoors": { "weeksBeforeLastFrost": 10, "weeksBeforeLastFrostMax": 12 },
+      "directSow": null,
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 85, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "high",
+        "spacingInches": 10,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": ["onion-yellow", "cabbage-green"],
+      "avoid": ["corn"],
+      "tips": [
+        "Very demanding - needs constant moisture",
+        "Blanch by mounding soil or wrapping",
+        "Slow growing but worth the effort",
+        "Harvest outer stalks as needed"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 6 }
+    },
+    "fennel": {
+      "name": "Fennel",
+      "category": "other",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksBeforeLastFrost": 2, "minSoilTempF": 50 },
+      "transplant": { "weeksBeforeLastFrost": 0, "minSoilTempF": 50 },
+      "daysToMaturity": { "min": 65, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 8.0 }
+      },
+      "frostTolerance": "light",
+      "companions": [],
+      "avoid": ["tomato-cherry", "green-beans", "caraway"],
+      "tips": [
+        "Don't plant near other vegetables - can inhibit growth",
+        "Bulb fennel vs herb fennel are different",
+        "Bolts in heat - plant for spring or fall",
+        "Anise flavor mellows when cooked"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": false,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 2 }
+    },
+    "okra": {
+      "name": "Okra",
+      "category": "other",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "transplant": { "weeksAfterLastFrost": 2, "minSoilTempF": 65 },
+      "daysToMaturity": { "min": 50, "max": 65 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 18,
+        "soilPH": { "min": 6.5, "max": 7.0 }
+      },
+      "frostTolerance": "none",
+      "companions": ["pepper-bell-green", "eggplant"],
+      "avoid": [],
+      "tips": [
+        "Loves heat - don't rush planting",
+        "Soak seeds overnight for better germination",
+        "Harvest at 3-4 inches - larger pods get tough",
+        "Pick every 2-3 days for continuous production"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 10 }
+    },
+    "sprouts": {
+      "name": "Sprouts",
+      "category": "other",
+      "startIndoors": { "yearRound": true },
+      "directSow": null,
+      "transplant": null,
+      "daysToMaturity": { "min": 3, "max": 7 },
+      "requirements": {
+        "sunlight": "none",
+        "waterNeeds": "high",
+        "spacingInches": 0,
+        "soilPH": null
+      },
+      "frostTolerance": "indoor",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "No soil needed - just water and a jar",
+        "Rinse 2-3 times daily",
+        "Popular: mung bean, alfalfa, broccoli, radish",
+        "Refrigerate and eat within a week"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "indoorCrop": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 1 }
+    },
+    "flowers-edible": {
+      "name": "Edible Flowers",
+      "category": "other",
+      "startIndoors": { "weeksBeforeLastFrost": 4, "weeksBeforeLastFrostMax": 6 },
+      "directSow": { "weeksAfterLastFrost": 0, "minSoilTempF": 55 },
+      "transplant": { "weeksAfterLastFrost": 0, "minSoilTempF": 55 },
+      "daysToMaturity": { "min": 45, "max": 90 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "moderate",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "light",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Popular: nasturtiums, pansies, calendula, borage",
+        "Never eat flowers treated with pesticides",
+        "Harvest in morning after dew dries",
+        "Add color and flavor to salads and desserts"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 16 }
+    },
+    "flowers-cut": {
+      "name": "Cut Flowers",
+      "category": "other",
+      "startIndoors": { "weeksBeforeLastFrost": 6, "weeksBeforeLastFrostMax": 8 },
+      "directSow": { "weeksAfterLastFrost": 0, "minSoilTempF": 55 },
+      "transplant": { "weeksAfterLastFrost": 0, "minSoilTempF": 55 },
+      "daysToMaturity": { "min": 60, "max": 120 },
+      "requirements": {
+        "sunlight": "full",
+        "waterNeeds": "regular",
+        "spacingInches": 12,
+        "soilPH": { "min": 6.0, "max": 7.0 }
+      },
+      "frostTolerance": "varies",
+      "companions": [],
+      "avoid": [],
+      "tips": [
+        "Popular: zinnias, sunflowers, dahlias, cosmos",
+        "Cut in early morning for longest vase life",
+        "Cut more for more blooms",
+        "Succession plant for season-long bouquets"
+      ],
+      "isPerennial": false,
+      "tropicalSuitable": true,
+      "harvestWindow": { "weeksFromMaturity": 0, "duration": 16 }
+    }
+  },
+  "nonGrowingItems": ["eggs", "honey"],
+  "notes": {
+    "timingExplanation": "All timing is relative to last spring frost date unless otherwise noted. Negative weeks = before frost, positive = after.",
+    "frostTolerance": {
+      "none": "Cannot tolerate any frost",
+      "light": "Can survive brief light frost (28-32°F)",
+      "moderate": "Can survive frost to mid-20s°F",
+      "high": "Very cold hardy, can survive temps below 20°F",
+      "indoor": "Grown indoors, not applicable"
+    },
+    "sunlight": {
+      "full": "6+ hours direct sun",
+      "partial": "3-6 hours direct sun",
+      "shade": "Less than 3 hours direct sun",
+      "none": "No sun required (sprouts)"
+    },
+    "perennials": "Berries and tree fruits focus on care/harvest timing rather than planting from seed. Days to maturity represents time to first significant harvest.",
+    "tropicalNote": "For tropical regions, crops marked tropicalSuitable:false may not grow well due to lack of cold period or excessive heat."
+  }
+}

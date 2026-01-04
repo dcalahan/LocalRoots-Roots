@@ -34,7 +34,11 @@ export function useAmbassadorProfile(profileIpfs: string | null | undefined): Am
 
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`Failed to fetch profile: ${response.status}`);
+          // Profile not found or invalid - this is OK, just means no profile uploaded yet
+          console.warn('[useAmbassadorProfile] Profile not found:', response.status);
+          setProfile(null);
+          setIsLoading(false);
+          return;
         }
 
         const data = await response.json();
@@ -42,8 +46,9 @@ export function useAmbassadorProfile(profileIpfs: string | null | undefined): Am
 
         setProfile(data as AmbassadorProfile);
       } catch (err) {
-        console.error('[useAmbassadorProfile] Error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch profile');
+        // Silently handle errors - profile is optional
+        console.warn('[useAmbassadorProfile] Could not fetch profile:', err);
+        setProfile(null);
       } finally {
         setIsLoading(false);
       }

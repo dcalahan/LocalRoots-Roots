@@ -245,7 +245,8 @@ export function testWalletConnector() {
     },
 
     async isAuthorized() {
-      return true;
+      // NEVER auto-connect - test wallet only used at checkout
+      return false;
     },
 
     async switchChain({ chainId }: { chainId: number }) {

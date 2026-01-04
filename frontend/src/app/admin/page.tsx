@@ -11,6 +11,7 @@ import { useAdminStatus } from '@/hooks/useAdminStatus';
 import { RegistrationsTab } from '@/components/admin/RegistrationsTab';
 import { OrdersTab } from '@/components/admin/OrdersTab';
 import { AdminManagementTab } from '@/components/admin/AdminManagementTab';
+import { OperationsTab } from '@/components/admin/operations';
 
 interface ActivityEvent {
   type: 'seller_registered' | 'listing_created' | 'order_placed' | 'order_status' | 'funds_released';
@@ -20,7 +21,7 @@ interface ActivityEvent {
   details: Record<string, string | number>;
 }
 
-type Tab = 'activity' | 'registrations' | 'orders' | 'admins';
+type Tab = 'activity' | 'registrations' | 'orders' | 'admins' | 'operations';
 
 export default function AdminDashboard() {
   const { address, isConnected } = useAccount();
@@ -245,6 +246,7 @@ export default function AdminDashboard() {
           { id: 'registrations', label: 'Registrations' },
           { id: 'orders', label: 'Orders' },
           { id: 'admins', label: 'Admin Management' },
+          { id: 'operations', label: 'Operations Treasury' },
         ] as { id: Tab; label: string }[]).map((tab) => (
           <button
             key={tab.id}
@@ -332,6 +334,7 @@ export default function AdminDashboard() {
           {activeTab === 'registrations' && <RegistrationsTab />}
           {activeTab === 'orders' && <OrdersTab />}
           {activeTab === 'admins' && <AdminManagementTab />}
+          {activeTab === 'operations' && <OperationsTab />}
         </CardContent>
       </Card>
 

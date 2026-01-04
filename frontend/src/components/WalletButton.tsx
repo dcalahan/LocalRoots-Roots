@@ -1,25 +1,44 @@
 'use client';
 
-import { useState } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
-import { WalletConnectModal } from './WalletConnectModal';
 
 export function WalletButton() {
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const [showModal, setShowModal] = useState(false);
+  const { ready, authenticated, user, login, logout } = usePrivy();
 
-  if (isConnected && address) {
+  // Get wallet address from Privy user
+  const walletAddress = user?.wallet?.address;
+
+  if (!ready) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        disabled
+        className="text-xs md:text-sm px-2 md:px-4"
+      >
+        Loading...
+      </Button>
+    );
+  }
+
+  // Show disconnect if authenticated (even without wallet address yet)
+  if (authenticated) {
     return (
       <div className="flex items-center gap-1 md:gap-2">
-        <span className="text-xs md:text-sm text-roots-gray hidden sm:inline">
-          {address.slice(0, 6)}...{address.slice(-4)}
-        </span>
+        {walletAddress ? (
+          <span className="text-xs md:text-sm text-roots-gray hidden sm:inline">
+            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+          </span>
+        ) : (
+          <span className="text-xs md:text-sm text-roots-gray hidden sm:inline">
+            Loading wallet...
+          </span>
+        )}
         <Button
           variant="outline"
           size="sm"
-          onClick={() => disconnect()}
+          onClick={logout}
           className="text-xs md:text-sm px-2 md:px-3"
         >
           Disconnect
@@ -29,18 +48,12 @@ export function WalletButton() {
   }
 
   return (
-    <>
-      <WalletConnectModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-      />
-      <Button
-        onClick={() => setShowModal(true)}
-        size="sm"
-        className="bg-roots-primary hover:bg-roots-primary/90 text-xs md:text-sm px-2 md:px-4"
-      >
-        Connect
-      </Button>
-    </>
+    <Button
+      onClick={login}
+      size="sm"
+      className="bg-roots-primary hover:bg-roots-primary/90 text-xs md:text-sm px-2 md:px-4"
+    >
+      Sign Up / Log In
+    </Button>
   );
 }

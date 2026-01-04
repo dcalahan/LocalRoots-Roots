@@ -1,15 +1,18 @@
 import { type Address } from 'viem';
+import { MARKETPLACE_ADDRESS, AMBASSADOR_REWARDS_ADDRESS } from './marketplace';
 
-// ERC2771Forwarder contract address on Base Sepolia (v4 deployment with USDC/USDT payment support)
-export const FORWARDER_ADDRESS: Address = '0x24A316733D68A0a7B8917E347cF02ed45bE0E034';
+// ERC2771Forwarder contract address on Base Sepolia - loaded from environment variable
+export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x63e7eb99daE531227dD690A031eAD1d8d5BeAc54') as Address;
 
-// Allowed target contracts for gasless transactions
+// Allowed target contracts for gasless transactions (dynamically uses current addresses)
 export const ALLOWED_TARGETS: Address[] = [
-  '0xCF1a1B59e9867bf70a6dFb88159A78160E6B00D0', // LocalRootsMarketplace (v5)
-  '0x9bB140264a3A7b9411F4dd74108481E780e1A55b', // AmbassadorRewards (v5)
+  MARKETPLACE_ADDRESS,
+  AMBASSADOR_REWARDS_ADDRESS,
 ];
 
 // ERC2771Forwarder ABI (only the functions we need)
+// Note: OpenZeppelin's ForwardRequestData struct has signature INSIDE the struct,
+// and nonce is NOT in the struct (it's retrieved from Nonces contract internally)
 export const forwarderAbi = [
   {
     type: 'function',
@@ -23,12 +26,11 @@ export const forwarderAbi = [
           { name: 'to', type: 'address' },
           { name: 'value', type: 'uint256' },
           { name: 'gas', type: 'uint256' },
-          { name: 'nonce', type: 'uint256' },
           { name: 'deadline', type: 'uint48' },
           { name: 'data', type: 'bytes' },
+          { name: 'signature', type: 'bytes' },
         ],
       },
-      { name: 'signature', type: 'bytes' },
     ],
     outputs: [],
     stateMutability: 'payable',
@@ -52,12 +54,11 @@ export const forwarderAbi = [
           { name: 'to', type: 'address' },
           { name: 'value', type: 'uint256' },
           { name: 'gas', type: 'uint256' },
-          { name: 'nonce', type: 'uint256' },
           { name: 'deadline', type: 'uint48' },
           { name: 'data', type: 'bytes' },
+          { name: 'signature', type: 'bytes' },
         ],
       },
-      { name: 'signature', type: 'bytes' },
     ],
     outputs: [{ name: '', type: 'bool' }],
     stateMutability: 'view',
@@ -74,6 +75,7 @@ export const forwarderDomain = {
 } as const;
 
 // EIP-712 types for ForwardRequest
+// Note: Not using 'as const' to ensure compatibility with Privy's signTypedData
 export const forwardRequestTypes = {
   ForwardRequest: [
     { name: 'from', type: 'address' },
@@ -84,9 +86,9 @@ export const forwardRequestTypes = {
     { name: 'deadline', type: 'uint48' },
     { name: 'data', type: 'bytes' },
   ],
-} as const;
+};
 
-// ForwardRequest type
+// ForwardRequest type (for EIP-712 signing - includes nonce)
 export interface ForwardRequest {
   from: Address;
   to: Address;
@@ -95,4 +97,15 @@ export interface ForwardRequest {
   nonce: bigint;
   deadline: number;
   data: `0x${string}`;
+}
+
+// ForwardRequestData type (for contract calls - has signature, no nonce)
+export interface ForwardRequestData {
+  from: Address;
+  to: Address;
+  value: bigint;
+  gas: bigint;
+  deadline: number;
+  data: `0x${string}`;
+  signature: `0x${string}`;
 }

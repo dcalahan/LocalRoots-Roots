@@ -51,11 +51,13 @@ contract LocalRootsMarketplaceTest is Test {
         token.transfer(address(ambassadorRewardsContract), AMBASSADOR_ALLOCATION);
 
         // Deploy marketplace (address(0) forwarder disables meta-tx in tests)
+        // Using Phase2_ROOTS for existing tests that use ROOTS token
         marketplace = new LocalRootsMarketplace(
             address(token),
             address(ambassadorRewardsContract),
             address(0),
-            admin
+            admin,
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
         );
 
         // Set marketplace in ambassador rewards
@@ -440,7 +442,8 @@ contract LocalRootsMarketplaceTest is Test {
             address(token),
             address(freshAmbassador),
             address(0),
-            admin
+            admin,
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
         );
         freshAmbassador.setMarketplace(address(freshMarketplace));
 

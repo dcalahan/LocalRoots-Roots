@@ -145,7 +145,16 @@ export function usePurchase() {
       }
 
       // Wait for confirmation
+      console.log('[usePurchase] Waiting for transaction receipt:', hash);
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log('[usePurchase] Receipt status:', receipt.status, 'logs:', receipt.logs.length);
+
+      // Check if transaction reverted
+      if (receipt.status === 'reverted') {
+        console.error('[usePurchase] Transaction reverted!');
+        setError('Transaction reverted on-chain');
+        return null;
+      }
 
       // Parse OrderPlaced event to get orderId
       let orderId = 0n;

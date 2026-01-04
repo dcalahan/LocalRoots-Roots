@@ -5,11 +5,11 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 // Demo wallet address (for display purposes)
 const DEMO_WALLET_ADDRESS = '0xDemoWallet1234567890abcdef1234567890abcdef' as `0x${string}`;
 
-// Demo balances
+// Demo balances (stored as strings to avoid BigInt serialization issues)
 const DEMO_BALANCES = {
-  ROOTS: BigInt(5000 * 10 ** 18), // 5000 ROOTS
-  ETH: BigInt(0.5 * 10 ** 18),     // 0.5 ETH
-  USDC: BigInt(100 * 10 ** 6),     // 100 USDC
+  ROOTS: (5000n * 10n ** 18n).toString(), // 5000 ROOTS
+  ETH: (5n * 10n ** 17n).toString(),       // 0.5 ETH
+  USDC: (100n * 10n ** 6n).toString(),     // 100 USDC
 };
 
 interface DemoModeContextType {
@@ -19,9 +19,9 @@ interface DemoModeContextType {
   demoAddress: `0x${string}`;
   demoBalances: typeof DEMO_BALANCES;
   // Mock transaction functions
-  simulatePurchase: (listingId: bigint, quantity: bigint, totalPrice: bigint) => Promise<{ success: boolean; orderId: bigint }>;
+  simulatePurchase: (listingId: bigint, quantity: bigint, totalPrice: bigint) => Promise<{ success: boolean; orderId: string }>;
   simulateApproval: (amount: bigint) => Promise<boolean>;
-  demoAllowance: bigint;
+  demoAllowance: string; // Stored as string to avoid BigInt serialization issues
   setDemoAllowance: (amount: bigint) => void;
 }
 
@@ -29,8 +29,12 @@ const DemoModeContext = createContext<DemoModeContextType | undefined>(undefined
 
 export function DemoModeProvider({ children }: { children: ReactNode }) {
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [demoAllowance, setDemoAllowance] = useState<bigint>(0n);
-  const [nextOrderId, setNextOrderId] = useState(1000n);
+  const [demoAllowance, setDemoAllowanceState] = useState<string>('0');
+  const [nextOrderId, setNextOrderId] = useState(1000);
+
+  const setDemoAllowance = useCallback((amount: bigint) => {
+    setDemoAllowanceState(amount.toString());
+  }, []);
 
   const enableDemoMode = useCallback(() => {
     setIsDemoMode(true);
@@ -39,14 +43,14 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
 
   const disableDemoMode = useCallback(() => {
     setIsDemoMode(false);
-    setDemoAllowance(0n);
+    setDemoAllowanceState('0');
     console.log('Demo Mode disabled');
   }, []);
 
   const simulateApproval = useCallback(async (amount: bigint): Promise<boolean> => {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1500));
-    setDemoAllowance(amount);
+    setDemoAllowanceState(amount.toString());
     console.log('🧪 Demo: Approved', amount.toString(), 'ROOTS');
     return true;
   }, []);
@@ -55,12 +59,12 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     listingId: bigint,
     quantity: bigint,
     totalPrice: bigint
-  ): Promise<{ success: boolean; orderId: bigint }> => {
+  ): Promise<{ success: boolean; orderId: string }> => {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const orderId = nextOrderId;
-    setNextOrderId(prev => prev + 1n);
+    setNextOrderId(prev => prev + 1);
 
     console.log('🧪 Demo: Purchase completed', {
       listingId: listingId.toString(),
@@ -69,7 +73,7 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
       orderId: orderId.toString(),
     });
 
-    return { success: true, orderId };
+    return { success: true, orderId: orderId.toString() };
   }, [nextOrderId]);
 
   return (

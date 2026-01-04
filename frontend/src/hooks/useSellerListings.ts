@@ -118,10 +118,10 @@ export function useSellerListings() {
 
           const [listingSellerId, metadataIpfs, pricePerUnit, quantityAvailable, active] = listing;
 
-          console.log(`[useSellerListings] Listing ${i}: sellerId=${listingSellerId.toString()}, matches=${listingSellerId === sellerId}`);
+          console.log(`[useSellerListings] Listing ${i}: sellerId=${listingSellerId.toString()}, matches=${listingSellerId.toString() === sellerId}`);
 
-          // Only include listings for this seller
-          if (listingSellerId === sellerId) {
+          // Only include listings for this seller (compare as strings)
+          if (listingSellerId.toString() === sellerId) {
             const metadata = await fetchIpfsMetadata(metadataIpfs);
 
             sellerListings.push({

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { parseFiatToRoots } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,7 +89,7 @@ function getErrorMessage(error: Error | null): string {
 export function CreateListingForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const { isConnected } = useAccount();
+  const { authenticated } = usePrivy();
   const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
   const { createListing, isPending, isSuccess, error, reset } = useCreateListing();
 
@@ -136,10 +136,10 @@ export function CreateListingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isConnected) {
+    if (!authenticated) {
       toast({
-        title: 'Wallet not connected',
-        description: 'Please connect your wallet to create a listing.',
+        title: 'Not logged in',
+        description: 'Please log in to create a listing.',
         variant: 'destructive',
       });
       return;
@@ -250,7 +250,7 @@ export function CreateListingForm() {
   }
 
   // Show message if not a registered seller
-  if (isConnected && !isSeller) {
+  if (authenticated && !isSeller) {
     return (
       <Card className="max-w-md mx-auto">
         <CardContent className="pt-6 text-center">
@@ -446,11 +446,11 @@ export function CreateListingForm() {
             </>
           )}
 
-          {/* Wallet Connection */}
-          {!isConnected && (
+          {/* Login Prompt */}
+          {!authenticated && (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-800 mb-3">
-                Connect your wallet to create a listing on the blockchain.
+                Log in to create a listing on the blockchain.
               </p>
               <WalletButton />
             </div>
@@ -469,7 +469,7 @@ export function CreateListingForm() {
             </Button>
             <Button
               type="submit"
-              disabled={!isFormValid || isPending || !isConnected}
+              disabled={!isFormValid || isPending || !authenticated}
               className="flex-1 bg-roots-primary hover:bg-roots-primary/90"
             >
               {isPending ? (
@@ -496,8 +496,8 @@ export function CreateListingForm() {
                   </svg>
                   Creating...
                 </>
-              ) : !isConnected ? (
-                'Connect Wallet'
+              ) : !authenticated ? (
+                'Log In'
               ) : (
                 'Create Listing'
               )}

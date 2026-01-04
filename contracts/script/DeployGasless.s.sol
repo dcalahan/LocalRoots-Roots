@@ -30,12 +30,13 @@ contract DeployGasless is Script {
         ambassadorRewards = new AmbassadorRewards(ROOTS_TOKEN, address(forwarder));
         console.log("AmbassadorRewards deployed at:", address(ambassadorRewards));
 
-        // 3. Deploy LocalRootsMarketplace with forwarder
+        // 3. Deploy LocalRootsMarketplace with forwarder (Phase 2 mode with token)
         marketplace = new LocalRootsMarketplace(
             ROOTS_TOKEN,
             address(ambassadorRewards),
             address(forwarder),
-            msg.sender  // Initial admin is the deployer
+            msg.sender,  // Initial admin is the deployer
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
         );
         console.log("LocalRootsMarketplace deployed at:", address(marketplace));
 

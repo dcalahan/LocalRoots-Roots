@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PriceDisplay } from '@/components/ui/PriceDisplay';
 import { useBuyerOrders } from '@/hooks/useBuyerOrders';
 import { useCompleteOrder } from '@/hooks/useOrderActions';
-import { OrderStatus, OrderStatusLabels, type OrderWithMetadata } from '@/types/order';
-import { useAccount } from 'wagmi';
+import { OrderStatus, OrderStatusLabels, canRaiseDispute, getDisputeTimeRemaining, formatTimeRemaining, type OrderWithMetadata } from '@/types/order';
 import { getIpfsUrl } from '@/lib/pinata';
+import { useToast } from '@/hooks/use-toast';
+import { DisputeModal } from '@/components/order/DisputeModal';
 
 // Helper to convert image reference to displayable URL
 function resolveImageUrl(imageRef: string | null | undefined): string | null {
@@ -45,13 +46,40 @@ function getStatusColor(status: OrderStatus): string {
   }
 }
 
+function getStatusDescription(order: OrderWithMetadata): { icon: string; text: string; color: string } {
+  switch (order.status) {
+    case OrderStatus.Pending:
+      return { icon: '🕐', text: 'Waiting for seller to accept', color: 'text-yellow-700' };
+    case OrderStatus.Accepted:
+      return { icon: '📦', text: 'Seller is preparing your order', color: 'text-blue-700' };
+    case OrderStatus.ReadyForPickup:
+      return { icon: '✅', text: 'Ready for pickup - tap to accept', color: 'text-green-700' };
+    case OrderStatus.OutForDelivery:
+      return { icon: '🚗', text: 'Delivered - tap to accept', color: 'text-green-700' };
+    case OrderStatus.Completed:
+      return { icon: '✓', text: order.fundsReleased ? 'Complete - seller paid' : 'Complete', color: 'text-gray-600' };
+    case OrderStatus.Disputed:
+      return { icon: '⚠️', text: 'Under review', color: 'text-orange-700' };
+    case OrderStatus.Refunded:
+      return { icon: '↩️', text: 'Refunded to your wallet', color: 'text-gray-600' };
+    case OrderStatus.Cancelled:
+      return { icon: '✕', text: 'Cancelled', color: 'text-gray-600' };
+    default:
+      return { icon: '', text: '', color: 'text-gray-600' };
+  }
+}
+
 // Order card component with accept functionality
-function OrderCard({ order, onAccept, isAccepting }: {
+function OrderCard({ order, onAccept, isAccepting, onDispute }: {
   order: OrderWithMetadata;
   onAccept?: (orderId: bigint) => void;
   isAccepting?: boolean;
+  onDispute?: (order: OrderWithMetadata) => void;
 }) {
   const needsAcceptance = order.status === OrderStatus.ReadyForPickup || order.status === OrderStatus.OutForDelivery;
+  const statusDesc = getStatusDescription(order);
+  const showDisputeLink = canRaiseDispute(order);
+  const disputeTimeRemaining = getDisputeTimeRemaining(order);
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -89,6 +117,11 @@ function OrderCard({ order, onAccept, isAccepting }: {
                 </span>
               </div>
 
+              {/* Status description */}
+              <p className={`text-xs mt-1 ${statusDesc.color}`}>
+                {statusDesc.icon} {statusDesc.text}
+              </p>
+
               <div className="mt-2 flex items-center justify-between">
                 <PriceDisplay amount={order.totalPrice} size="sm" />
                 <span className="text-sm text-roots-gray">
@@ -97,9 +130,10 @@ function OrderCard({ order, onAccept, isAccepting }: {
               </div>
             </Link>
 
-            {/* Accept button for delivered orders */}
-            {needsAcceptance && onAccept && (
-              <div className="mt-3">
+            {/* Action buttons */}
+            <div className="mt-3 flex items-center gap-3">
+              {/* Confirm receipt button for ready/delivered orders */}
+              {needsAcceptance && onAccept && (
                 <Button
                   size="sm"
                   className="bg-roots-primary hover:bg-roots-primary/90"
@@ -109,10 +143,23 @@ function OrderCard({ order, onAccept, isAccepting }: {
                   }}
                   disabled={isAccepting}
                 >
-                  {isAccepting ? 'Accepting...' : 'Accept Order'}
+                  {isAccepting ? 'Confirming...' : order.status === OrderStatus.OutForDelivery ? 'Confirm Delivery Received' : 'Confirm Pickup Received'}
                 </Button>
-              </div>
-            )}
+              )}
+
+              {/* Dispute link - shown when within 48-hour window */}
+              {showDisputeLink && onDispute && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onDispute(order);
+                  }}
+                  className="text-xs text-red-600 hover:text-red-800 hover:underline"
+                >
+                  Report an issue ({formatTimeRemaining(disputeTimeRemaining)} left)
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
@@ -121,16 +168,57 @@ function OrderCard({ order, onAccept, isAccepting }: {
 }
 
 export default function OrdersPage() {
-  const { isConnected } = useAccount();
-  const { orders, isLoading, error, refetch } = useBuyerOrders();
-  const { completeOrder, isCompleting, isSuccess } = useCompleteOrder();
+  const { orders, isLoading, error, refetch, isConnected } = useBuyerOrders();
+  const { completeOrder, isCompleting, isSuccess, error: completeError, reset } = useCompleteOrder();
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
+  const [disputeOrder, setDisputeOrder] = useState<OrderWithMetadata | null>(null);
+  const { toast } = useToast();
 
-  // Refetch when order is accepted
-  if (isSuccess && acceptingOrderId) {
-    setAcceptingOrderId(null);
+  const handleDispute = (order: OrderWithMetadata) => {
+    setDisputeOrder(order);
+  };
+
+  const handleDisputeSuccess = () => {
+    setDisputeOrder(null);
+    toast({
+      title: 'Dispute submitted',
+      description: 'Our team will review your case and get back to you.',
+    });
     refetch();
-  }
+  };
+
+  // Handle success
+  useEffect(() => {
+    if (isSuccess && acceptingOrderId) {
+      toast({
+        title: 'Order confirmed!',
+        description: 'Thank you for confirming receipt. The seller will receive payment after the dispute window.',
+      });
+      setAcceptingOrderId(null);
+      reset();
+      // Small delay to ensure blockchain state is updated before refetch
+      setTimeout(() => {
+        refetch();
+      }, 1000);
+    }
+  }, [isSuccess, acceptingOrderId, toast, reset, refetch]);
+
+  // Handle errors
+  useEffect(() => {
+    if (completeError && acceptingOrderId) {
+      const isStaleData = completeError.includes('FailedCall') || completeError.includes('Invalid');
+      toast({
+        title: isStaleData ? 'Order already confirmed' : 'Failed to confirm order',
+        description: isStaleData ? 'This order may have already been confirmed. Refreshing...' : completeError,
+        variant: 'destructive',
+      });
+      if (isStaleData) {
+        reset();
+        setAcceptingOrderId(null);
+        refetch();
+      }
+    }
+  }, [completeError, acceptingOrderId, toast, reset, refetch]);
 
   // Split orders into current (waiting) and past (ready to accept or done)
   const currentOrders = orders.filter(o =>
@@ -142,7 +230,17 @@ export default function OrdersPage() {
 
   const handleAcceptOrder = async (orderId: bigint) => {
     setAcceptingOrderId(orderId.toString());
-    await completeOrder(orderId);
+    const success = await completeOrder(orderId);
+    if (success) {
+      toast({
+        title: 'Order confirmed!',
+        description: 'Thank you for confirming receipt. The seller will receive payment after the dispute window.',
+      });
+      setAcceptingOrderId(null);
+      setTimeout(() => refetch(), 1000);
+    } else {
+      setAcceptingOrderId(null);
+    }
   };
 
   if (!isConnected) {
@@ -217,7 +315,11 @@ export default function OrdersPage() {
           <h2 className="text-lg font-medium text-roots-gray mb-3">Current Orders</h2>
           <div className="space-y-4">
             {currentOrders.map((order) => (
-              <OrderCard key={order.orderId.toString()} order={order} />
+              <OrderCard
+                key={order.orderId.toString()}
+                order={order}
+                onDispute={handleDispute}
+              />
             ))}
           </div>
         </div>
@@ -234,10 +336,21 @@ export default function OrdersPage() {
                 order={order}
                 onAccept={handleAcceptOrder}
                 isAccepting={isCompleting && acceptingOrderId === order.orderId.toString()}
+                onDispute={handleDispute}
               />
             ))}
           </div>
         </div>
+      )}
+
+      {/* Dispute Modal */}
+      {disputeOrder && (
+        <DisputeModal
+          orderId={disputeOrder.orderId}
+          productName={disputeOrder.metadata.produceName}
+          onClose={() => setDisputeOrder(null)}
+          onSuccess={handleDisputeSuccess}
+        />
       )}
     </div>
   );

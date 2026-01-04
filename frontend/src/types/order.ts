@@ -70,3 +70,55 @@ export function getDisputeTimeRemaining(order: Order): number {
 
   return Math.max(0, disputeDeadline - now);
 }
+
+// Get the date/time when funds will be releasable
+export function getFundsReleaseDate(order: Order): Date | null {
+  if (order.proofUploadedAt === 0n) return null;
+  const releaseTimestamp = Number(order.proofUploadedAt) + DISPUTE_WINDOW_SECONDS;
+  return new Date(releaseTimestamp * 1000);
+}
+
+// Check if seller can claim funds now
+export function canClaimFunds(order: Order): boolean {
+  if (order.fundsReleased) return false;
+  if (order.proofUploadedAt === 0n) return false;
+  if (order.status === OrderStatus.Disputed) return false;
+  if (order.status === OrderStatus.Cancelled) return false;
+  if (order.status === OrderStatus.Refunded) return false;
+
+  const now = Math.floor(Date.now() / 1000);
+  const releaseTime = Number(order.proofUploadedAt) + DISPUTE_WINDOW_SECONDS;
+
+  return now >= releaseTime;
+}
+
+// Get remaining time until funds can be claimed (in seconds)
+export function getTimeUntilFundsRelease(order: Order): number {
+  if (order.fundsReleased) return 0;
+  if (order.proofUploadedAt === 0n) return 0;
+
+  const now = Math.floor(Date.now() / 1000);
+  const releaseTime = Number(order.proofUploadedAt) + DISPUTE_WINDOW_SECONDS;
+
+  return Math.max(0, releaseTime - now);
+}
+
+// Format remaining time as human readable string
+export function formatTimeRemaining(seconds: number): string {
+  if (seconds <= 0) return 'Now';
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return `${days}d ${remainingHours}h`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}

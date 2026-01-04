@@ -13,7 +13,7 @@ interface StorefrontMetadata {
 }
 
 export interface SellerProfile {
-  sellerId: bigint;
+  sellerId: string;
   owner: string;
   geohash: string;
   storefrontIpfs: string;
@@ -82,7 +82,7 @@ export function useSellerProfile() {
     address: MARKETPLACE_ADDRESS,
     abi: marketplaceAbi,
     functionName: 'sellers',
-    args: sellerId ? [sellerId] : undefined,
+    args: sellerId ? [BigInt(sellerId)] : undefined,
     query: {
       enabled: sellerId !== null && sellerId !== undefined,
     },

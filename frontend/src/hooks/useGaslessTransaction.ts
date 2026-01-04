@@ -107,8 +107,8 @@ export function useGaslessTransaction(): GaslessTransactionResult {
           args: [address],
         }) as bigint;
 
-        // 3. Set deadline to 5 minutes from now
-        const deadline = Math.floor(Date.now() / 1000) + 300;
+        // 3. Set deadline to 10 minutes from now (gives user time to review signing dialog)
+        const deadline = Math.floor(Date.now() / 1000) + 600;
 
         // 4. Build the forward request
         const forwardRequest: ForwardRequest = {
@@ -121,27 +121,53 @@ export function useGaslessTransaction(): GaslessTransactionResult {
           data,
         };
 
-        console.log('[useGaslessTransaction] Forward request:', forwardRequest);
-
-        // 5. Sign the typed data (EIP-712)
-        const signature = await signTypedDataAsync({
-          domain: forwarderDomain,
-          types: forwardRequestTypes,
-          primaryType: 'ForwardRequest',
-          message: {
-            from: forwardRequest.from,
-            to: forwardRequest.to,
-            value: forwardRequest.value,
-            gas: forwardRequest.gas,
-            nonce: forwardRequest.nonce,
-            deadline: forwardRequest.deadline,
-            data: forwardRequest.data,
-          },
+        console.log('[useGaslessTransaction] Forward request:', {
+          from: forwardRequest.from,
+          to: forwardRequest.to,
+          value: forwardRequest.value.toString(),
+          gas: forwardRequest.gas.toString(),
+          nonce: forwardRequest.nonce.toString(),
+          deadline: forwardRequest.deadline,
+          dataLength: forwardRequest.data.length,
         });
 
-        console.log('[useGaslessTransaction] Signature:', signature);
+        // 5. Sign the typed data (EIP-712) using wagmi
+        // wagmi handles Privy integration through the wagmi adapter automatically
+        const messageToSign = {
+          from: forwardRequest.from,
+          to: forwardRequest.to,
+          value: forwardRequest.value,
+          gas: forwardRequest.gas,
+          nonce: forwardRequest.nonce,
+          deadline: forwardRequest.deadline,
+          data: forwardRequest.data,
+        };
+
+        console.log('[useGaslessTransaction] Signing EIP-712 typed data via wagmi...');
+
+        let signature: `0x${string}`;
+        try {
+          signature = await signTypedDataAsync({
+            domain: forwarderDomain,
+            types: forwardRequestTypes,
+            primaryType: 'ForwardRequest',
+            message: messageToSign,
+          });
+          console.log('[useGaslessTransaction] Signature obtained:', signature.slice(0, 20) + '...');
+        } catch (signError) {
+          console.error('[useGaslessTransaction] Signing failed:', signError);
+          const signErrorMsg = signError instanceof Error ? signError.message : String(signError);
+          if (signErrorMsg.includes('rejected') || signErrorMsg.includes('denied') || signErrorMsg.includes('cancelled')) {
+            setError('Signature request was cancelled. Please try again and approve the signature.');
+          } else {
+            setError(`Failed to sign: ${signErrorMsg}`);
+          }
+          setIsLoading(false);
+          return null;
+        }
 
         // 6. Send to relayer API
+        console.log('[useGaslessTransaction] Sending to relay API...');
         const response = await fetch('/api/relay', {
           method: 'POST',
           headers: {
@@ -164,6 +190,7 @@ export function useGaslessTransaction(): GaslessTransactionResult {
         const result = await response.json();
 
         if (!response.ok) {
+          console.error('[useGaslessTransaction] Relay error:', result);
           throw new Error(result.error || 'Relay failed');
         }
 

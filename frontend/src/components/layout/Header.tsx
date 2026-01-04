@@ -1,19 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { WalletButton } from '@/components/WalletButton';
+import { UnifiedWalletButton } from '@/components/UnifiedWalletButton';
 import { useCart } from '@/contexts/CartContext';
 
 export function Header() {
   const pathname = usePathname();
   const { getItemCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch - only apply active styles after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const itemCount = getItemCount();
 
   const isActive = (path: string) => {
+    // Don't highlight anything until mounted to prevent hydration mismatch
+    if (!mounted) return false;
     // Exact match for /buy to avoid highlighting both Shop and Orders
     if (path === '/buy') {
       return pathname === '/buy' || pathname === '/buy/listings' || pathname.startsWith('/buy/listings/') || pathname.startsWith('/buy/sellers/');
@@ -26,6 +34,7 @@ export function Header() {
     { href: '/buy/orders', label: 'Orders' },
     { href: '/sell', label: 'Sell' },
     { href: '/ambassador', label: 'Ambassadors' },
+    { href: '/about/vision', label: 'About' },
   ];
 
   return (
@@ -85,7 +94,7 @@ export function Header() {
 
             {/* Wallet connect */}
             <div className="ml-2">
-              <WalletButton />
+              <UnifiedWalletButton />
             </div>
           </nav>
 
@@ -154,7 +163,7 @@ export function Header() {
                 </Link>
               ))}
               <div className="pt-2 pb-1 px-3">
-                <WalletButton />
+                <UnifiedWalletButton />
               </div>
             </nav>
           </div>

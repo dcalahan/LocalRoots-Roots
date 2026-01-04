@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 import { useSellerListings, type SellerListing } from '@/hooks/useSellerListings';
-import { useSellerOrders, OrderStatus, useAcceptOrder, useMarkReadyForPickup, useMarkOutForDelivery, type SellerOrder } from '@/hooks/useSellerOrders';
+import { useSellerOrders, OrderStatus, useAcceptOrder, useMarkReadyForPickup, useMarkOutForDelivery, useAutoClaimFunds, type SellerOrder } from '@/hooks/useSellerOrders';
 import { useSellerProfile } from '@/hooks/useSellerProfile';
 import { ImageUploader } from '@/components/seller/ImageUploader';
 import { EditListingModal } from '@/components/seller/EditListingModal';
@@ -18,6 +18,12 @@ import { formatDistance } from '@/lib/distance';
 import { formatUnits } from 'viem';
 import { uploadImage } from '@/lib/pinata';
 import { rootsToFiat, formatFiat, formatRoots } from '@/lib/pricing';
+import { SellerTierCard, SellerTierBadge } from '@/components/seeds/SellerTierBadge';
+import { EarlyAdopterBanner } from '@/components/seeds/EarlyAdopterBanner';
+import { GrowingProfileProvider } from '@/contexts/GrowingProfileContext';
+import { GrowingProfileCard, MonthlyCalendar, TechniqueGuideCard } from '@/components/grow';
+import guidesData from '../../../../../data/technique-guides.json';
+import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
 // Helper to convert base64 data URL to File
 function dataUrlToFile(dataUrl: string, filename: string): File {
@@ -32,7 +38,7 @@ function dataUrlToFile(dataUrl: string, filename: string): File {
   return new File([u8arr], filename, { type: mime });
 }
 
-type Tab = 'listings' | 'orders' | 'history';
+type Tab = 'listings' | 'orders' | 'history' | 'growing';
 
 function formatPrice(priceWei: string): { fiat: string; roots: string } {
   const amount = BigInt(priceWei);
@@ -61,9 +67,53 @@ function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: (
   const [proofImage, setProofImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const { acceptOrder, isPending: isAccepting, isSuccess: acceptSuccess } = useAcceptOrder();
-  const { markReady, isPending: isMarkingReady, isSuccess: readySuccess } = useMarkReadyForPickup();
-  const { markOutForDelivery, isPending: isMarkingDelivery, isSuccess: deliverySuccess } = useMarkOutForDelivery();
+  const { acceptOrder, isPending: isAccepting, isSuccess: acceptSuccess, error: acceptError, reset: resetAccept } = useAcceptOrder();
+  const { markReady, isPending: isMarkingReady, isSuccess: readySuccess, error: readyError, reset: resetReady } = useMarkReadyForPickup();
+  const { markOutForDelivery, isPending: isMarkingDelivery, isSuccess: deliverySuccess, error: deliveryError, reset: resetDelivery } = useMarkOutForDelivery();
+
+  // Log and display errors from hooks
+  useEffect(() => {
+    if (acceptError) {
+      console.error('[OrderActions] Accept error from hook:', acceptError);
+      const errorMessage = acceptError.message || 'Transaction failed';
+      const isStaleData = errorMessage.includes('FailedCall') || errorMessage.includes('Invalid order status');
+      toast({
+        title: isStaleData ? 'Order already accepted' : 'Failed to accept order',
+        description: isStaleData
+          ? 'This order may have already been accepted. Refreshing...'
+          : errorMessage,
+        variant: 'destructive',
+      });
+      // If it's a stale data error, refresh the orders
+      if (isStaleData) {
+        resetAccept();
+        onComplete();
+      }
+    }
+  }, [acceptError, toast, resetAccept, onComplete]);
+
+  useEffect(() => {
+    if (readyError || deliveryError) {
+      const err = readyError || deliveryError;
+      console.error('[OrderActions] Ready/Delivery error from hook:', err);
+      // Check for common errors and provide helpful messages
+      const errorMessage = err?.message || 'Transaction failed';
+      const isStaleData = errorMessage.includes('FailedCall') || errorMessage.includes('Invalid order status');
+      toast({
+        title: isStaleData ? 'Order already updated' : 'Failed to update order',
+        description: isStaleData
+          ? 'This order may have already been processed. Refreshing...'
+          : errorMessage,
+        variant: 'destructive',
+      });
+      // If it's a stale data error, refresh the orders
+      if (isStaleData) {
+        if (readyError) resetReady();
+        if (deliveryError) resetDelivery();
+        onComplete();
+      }
+    }
+  }, [readyError, deliveryError, toast, resetReady, resetDelivery, onComplete]);
 
   useEffect(() => {
     console.log('[OrderActions] Success state changed:', { acceptSuccess, readySuccess, deliverySuccess });
@@ -71,24 +121,51 @@ function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: (
       console.log('[OrderActions] Success! Closing modal and refreshing...');
       setShowProofUpload(false);
       setProofImage(null);
-      onComplete();
+
+      // Show success toast and reset state
+      if (acceptSuccess) {
+        toast({
+          title: 'Order accepted!',
+          description: 'You can now prepare the order.',
+        });
+        resetAccept();
+      }
+      if (readySuccess) {
+        toast({
+          title: 'Marked as ready!',
+          description: 'The buyer has been notified. Funds will be released after the dispute window.',
+        });
+        resetReady();
+      }
+      if (deliverySuccess) {
+        toast({
+          title: 'Delivery confirmed!',
+          description: 'Funds will be released after the 48-hour dispute window.',
+        });
+        resetDelivery();
+      }
+
+      // Refresh orders list with small delay to ensure blockchain state is updated
+      setTimeout(() => {
+        onComplete();
+      }, 1000);
     }
-  }, [acceptSuccess, readySuccess, deliverySuccess, onComplete]);
+  }, [acceptSuccess, readySuccess, deliverySuccess, onComplete, resetAccept, resetReady, resetDelivery, toast]);
 
   const handleAcceptOrder = async () => {
-    try {
+    console.log('[OrderActions] handleAcceptOrder called for order:', order.orderId);
+    toast({
+      title: 'Accepting order...',
+      description: 'Please confirm in your wallet',
+    });
+    const success = await acceptOrder(BigInt(order.orderId));
+    console.log('[OrderActions] acceptOrder returned:', success);
+    if (success) {
       toast({
-        title: 'Accepting order...',
-        description: 'Please confirm the transaction',
+        title: 'Order accepted!',
+        description: 'You can now prepare the order.',
       });
-      await acceptOrder(BigInt(order.orderId));
-    } catch (err) {
-      console.error('[OrderActions] Accept error:', err);
-      toast({
-        title: 'Failed to accept order',
-        description: err instanceof Error ? err.message : 'Please try again',
-        variant: 'destructive',
-      });
+      setTimeout(() => onComplete(), 1000);
     }
   };
 
@@ -121,10 +198,21 @@ function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: (
       });
 
       const orderId = BigInt(order.orderId);
+      let success = false;
       if (order.isDelivery) {
-        await markOutForDelivery(orderId, ipfsHash);
+        success = await markOutForDelivery(orderId, ipfsHash);
       } else {
-        await markReady(orderId, ipfsHash);
+        success = await markReady(orderId, ipfsHash);
+      }
+
+      if (success) {
+        setShowProofUpload(false);
+        setProofImage(null);
+        toast({
+          title: order.isDelivery ? 'Delivery confirmed!' : 'Marked as ready!',
+          description: 'Funds will be released after the 48-hour dispute window.',
+        });
+        setTimeout(() => onComplete(), 1000);
       }
     } catch (err) {
       console.error('[OrderActions] Error:', err);
@@ -214,11 +302,108 @@ function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: (
   }
 
   if (order.status === OrderStatus.ReadyForPickup || order.status === OrderStatus.OutForDelivery) {
+    // Calculate time until funds can be claimed
+    const getFundsReleaseInfo = () => {
+      if (order.fundsReleased) return { canClaim: false, text: 'Funds Released', color: 'text-green-600', icon: '✓' };
+      if (!order.proofUploadedAt) return { canClaim: false, text: 'Awaiting Proof', color: 'text-roots-gray', icon: '⏳' };
+
+      const now = Date.now();
+      const releaseTime = order.proofUploadedAt.getTime() + (DISPUTE_WINDOW_SECONDS * 1000);
+      const remaining = releaseTime - now;
+
+      if (remaining <= 0) {
+        return { canClaim: true, text: 'Ready to Claim Funds', color: 'text-green-600', icon: '💰' };
+      }
+
+      const remainingSeconds = Math.floor(remaining / 1000);
+      return {
+        canClaim: false,
+        text: `Funds release in ${formatTimeRemaining(remainingSeconds)}`,
+        color: 'text-amber-600',
+        icon: '⏳'
+      };
+    };
+
+    const releaseInfo = getFundsReleaseInfo();
+
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-roots-secondary font-medium">
-          {order.fundsReleased ? 'Funds Released' : 'Awaiting Completion'}
-        </span>
+      <div className="flex flex-col gap-1 mt-2">
+        <div className="p-2 rounded-lg bg-amber-50 border border-amber-200">
+          <span className={`text-sm font-medium ${releaseInfo.color} flex items-center gap-1`}>
+            {releaseInfo.icon} {releaseInfo.text}
+          </span>
+          {order.proofUploadedAt && !order.fundsReleased && (
+            <span className="text-xs text-amber-700 block mt-1">
+              Buyer can dispute until {new Date(order.proofUploadedAt.getTime() + DISPUTE_WINDOW_SECONDS * 1000).toLocaleString()}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Completed orders
+  if (order.status === OrderStatus.Completed) {
+    return (
+      <div className="flex flex-col gap-1 mt-2">
+        <div className="p-2 rounded-lg bg-green-50 border border-green-200">
+          <span className="text-sm font-medium text-green-700 flex items-center gap-1">
+            ✓ {order.fundsReleased ? 'Completed & Paid' : 'Completed - Funds Pending'}
+          </span>
+          {order.completedAt && (
+            <span className="text-xs text-green-600 block mt-1">
+              Completed on {order.completedAt.toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Disputed orders
+  if (order.status === OrderStatus.Disputed) {
+    return (
+      <div className="flex flex-col gap-1 mt-2">
+        <div className="p-2 rounded-lg bg-red-50 border border-red-200">
+          <span className="text-sm font-medium text-red-700 flex items-center gap-1">
+            ⚠️ Disputed by Buyer
+          </span>
+          <span className="text-xs text-red-600 block mt-1">
+            Funds are held until dispute is resolved. Contact support if needed.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Refunded orders
+  if (order.status === OrderStatus.Refunded) {
+    return (
+      <div className="flex flex-col gap-1 mt-2">
+        <div className="p-2 rounded-lg bg-gray-50 border border-gray-200">
+          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+            ↩️ Refunded to Buyer
+          </span>
+          <span className="text-xs text-gray-600 block mt-1">
+            This order was refunded. No payment will be received.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Cancelled orders
+  if (order.status === OrderStatus.Cancelled) {
+    return (
+      <div className="flex flex-col gap-1 mt-2">
+        <div className="p-2 rounded-lg bg-gray-50 border border-gray-200">
+          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+            ✕ Cancelled
+          </span>
+          <span className="text-xs text-gray-600 block mt-1">
+            This order was cancelled by admin.
+          </span>
+        </div>
       </div>
     );
   }
@@ -238,6 +423,9 @@ export default function SellerDashboard() {
   const { listings, isLoading: isLoadingListings, refetch: refetchListings } = useSellerListings();
   const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSellerOrders();
   const { deleteListing, isPending: isDeleting, isSuccess: deleteSuccess, error: deleteError, reset: resetDelete } = useDeleteListing();
+
+  // Auto-claim funds for orders past 48-hour dispute window
+  const { isAutoClaiming } = useAutoClaimFunds(orders, refetchOrders);
 
   const distanceUnit = preferences.distanceUnit;
 
@@ -315,8 +503,14 @@ export default function SellerDashboard() {
     );
   }
 
+  // Calculate completed sales for tier
+  const completedSales = historyOrders.filter(o => o.status === OrderStatus.Completed).length;
+
   return (
     <div className="min-h-screen bg-roots-cream">
+      {/* Early Adopter Banner */}
+      <EarlyAdopterBanner />
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
@@ -358,7 +552,9 @@ export default function SellerDashboard() {
                 <p className="text-roots-gray text-sm mb-2">
                   {profile?.metadata?.description || 'Add a description to tell buyers about your garden.'}
                 </p>
-                <div className="flex flex-wrap gap-2 text-xs">
+                <div className="flex flex-wrap gap-2 text-xs items-center">
+                  {/* Seller Tier Badge */}
+                  <SellerTierBadge completedSales={completedSales} size="sm" />
                   {profile?.offersPickup && (
                     <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
                       Pickup Available
@@ -396,8 +592,11 @@ export default function SellerDashboard() {
           />
         )}
 
+        {/* Seller Tier Progress Card */}
+        <SellerTierCard completedSales={completedSales} className="mb-8" />
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-roots-gray mb-1">Active Listings</p>
@@ -437,10 +636,21 @@ export default function SellerDashboard() {
               </CardContent>
             </Card>
           </Link>
+          <Link href="/grow">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-green-200 bg-green-50">
+              <CardContent className="pt-6">
+                <p className="text-sm text-roots-gray mb-1">Growing Guides</p>
+                <p className="text-2xl font-heading font-bold text-green-700">
+                  What to Plant
+                </p>
+                <p className="text-xs text-green-600 mt-1">View calendar →</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 border-b">
+        <div className="flex gap-1 mb-6 border-b overflow-x-auto">
           <button
             onClick={() => setActiveTab('listings')}
             className={`px-4 py-2 font-medium transition-colors ${
@@ -475,6 +685,16 @@ export default function SellerDashboard() {
             }`}
           >
             History
+          </button>
+          <button
+            onClick={() => setActiveTab('growing')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === 'growing'
+                ? 'text-roots-primary border-b-2 border-roots-primary'
+                : 'text-roots-gray hover:text-gray-900'
+            }`}
+          >
+            Growing
           </button>
         </div>
 
@@ -599,11 +819,11 @@ export default function SellerDashboard() {
                         <Button
                           className="flex-1 bg-red-600 hover:bg-red-700"
                           onClick={() => {
-                            deleteListing(
-                              BigInt(deletingListing.listingId),
-                              deletingListing.metadataIpfs,
-                              BigInt(deletingListing.pricePerUnit)
-                            );
+                            deleteListing({
+                              listingId: BigInt(deletingListing.listingId),
+                              metadataIpfs: deletingListing.metadataIpfs,
+                              pricePerUnit: BigInt(deletingListing.pricePerUnit),
+                            });
                           }}
                           disabled={isDeleting}
                         >
@@ -813,6 +1033,59 @@ export default function SellerDashboard() {
                   </div>
                 )}
               </>
+            )}
+
+            {activeTab === 'growing' && (
+              <GrowingProfileProvider>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="font-heading text-xl font-bold">Planting Calendar</h2>
+                    <Link href="/grow" className="text-sm text-roots-primary hover:underline">
+                      Full Growing Guides →
+                    </Link>
+                  </div>
+
+                  {/* Growing Profile */}
+                  <GrowingProfileCard />
+
+                  {/* Monthly Calendar */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="font-heading text-lg">What to Plant Now</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <MonthlyCalendar />
+                    </CardContent>
+                  </Card>
+
+                  {/* Quick Guides */}
+                  <div>
+                    <h3 className="font-heading font-semibold mb-3">Quick Guides</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {Object.values(guidesData.guides).slice(0, 4).map((guide) => (
+                        <TechniqueGuideCard
+                          key={guide.slug}
+                          slug={guide.slug}
+                          title={guide.title}
+                          description={guide.description}
+                          difficulty={guide.difficulty as 'beginner' | 'intermediate' | 'advanced'}
+                          timeToComplete={guide.timeToComplete}
+                          tags={guide.tags}
+                          compact
+                        />
+                      ))}
+                    </div>
+                    <div className="text-center mt-4">
+                      <Link
+                        href="/grow/guides"
+                        className="text-sm text-roots-primary hover:underline"
+                      >
+                        View All Guides →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </GrowingProfileProvider>
             )}
           </CardContent>
         </Card>

@@ -73,8 +73,10 @@ export async function POST(request: NextRequest) {
     // Check deadline hasn't passed
     const now = Math.floor(Date.now() / 1000);
     if (deadline < now) {
+      const expiredSecondsAgo = now - deadline;
+      console.log(`[Relay] Request expired ${expiredSecondsAgo} seconds ago (deadline: ${deadline}, now: ${now})`);
       return NextResponse.json(
-        { error: 'Request deadline has passed' },
+        { error: `Request expired ${expiredSecondsAgo} seconds ago. Please try again with a fresh signature.` },
         { status: 400 }
       );
     }
@@ -102,36 +104,74 @@ export async function POST(request: NextRequest) {
       transport: http('https://sepolia.base.org'),
     });
 
+    // Log the request details for debugging
+    console.log('[Relay] Forward request received:', {
+      from,
+      to,
+      value,
+      gas,
+      nonce,
+      deadline,
+      dataLength: data?.length,
+      signatureLength: signature?.length,
+    });
+
+    // Build the ForwardRequestData struct (signature is INSIDE the struct, no nonce field)
+    // Note: OpenZeppelin's ERC2771Forwarder retrieves nonce internally from the Nonces contract
+    const requestDataStruct = {
+      from: from as Address,
+      to: to as Address,
+      value: BigInt(value),
+      gas: BigInt(gas),
+      deadline: Number(deadline),
+      data: data as `0x${string}`,
+      signature: signature as `0x${string}`,
+    };
+
+    console.log('[Relay] Calling verify with struct:', {
+      from: requestDataStruct.from,
+      to: requestDataStruct.to,
+      value: requestDataStruct.value.toString(),
+      gas: requestDataStruct.gas.toString(),
+      deadline: requestDataStruct.deadline,
+      dataLength: requestDataStruct.data.length,
+      signatureLength: requestDataStruct.signature.length,
+    });
+
+    console.log('[Relay] Using forwarder address:', FORWARDER_ADDRESS);
+    console.log('[Relay] Nonce from request:', nonce);
+
     // Verify the signature first
     try {
+      // First check current nonce on chain
+      const currentNonce = await publicClient.readContract({
+        address: FORWARDER_ADDRESS,
+        abi: forwarderAbi,
+        functionName: 'nonces',
+        args: [from as Address],
+      });
+      console.log('[Relay] Current on-chain nonce for', from, ':', currentNonce);
+
       const isValid = await publicClient.readContract({
         address: FORWARDER_ADDRESS,
         abi: forwarderAbi,
         functionName: 'verify',
-        args: [
-          {
-            from: from as Address,
-            to: to as Address,
-            value: BigInt(value),
-            gas: BigInt(gas),
-            nonce: BigInt(nonce),
-            deadline: Number(deadline),
-            data: data as `0x${string}`,
-          },
-          signature as `0x${string}`,
-        ],
+        args: [requestDataStruct],
       });
+
+      console.log('[Relay] Verify result:', isValid);
 
       if (!isValid) {
         return NextResponse.json(
-          { error: 'Invalid signature' },
+          { error: 'Invalid signature - verification returned false' },
           { status: 400 }
         );
       }
     } catch (verifyError) {
       console.error('[Relay] Signature verification failed:', verifyError);
+      const errorMessage = verifyError instanceof Error ? verifyError.message : String(verifyError);
       return NextResponse.json(
-        { error: 'Signature verification failed' },
+        { error: `Signature verification failed: ${errorMessage}` },
         { status: 400 }
       );
     }
@@ -143,18 +183,7 @@ export async function POST(request: NextRequest) {
       address: FORWARDER_ADDRESS,
       abi: forwarderAbi,
       functionName: 'execute',
-      args: [
-        {
-          from: from as Address,
-          to: to as Address,
-          value: BigInt(value),
-          gas: BigInt(gas),
-          nonce: BigInt(nonce),
-          deadline: Number(deadline),
-          data: data as `0x${string}`,
-        },
-        signature as `0x${string}`,
-      ],
+      args: [requestDataStruct],
     });
 
     console.log('[Relay] Transaction submitted:', txHash);

@@ -13,10 +13,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @dev Run with: forge script script/DeployPaymentSupport.s.sol --rpc-url $RPC_URL --broadcast
  */
 contract DeployPaymentSupport is Script {
-    // Existing deployed contracts (Base Sepolia)
-    address constant ROOTS_TOKEN = 0xffDAa58B1EB72c81ba8B728880b18A8E52409Ac7;
-    address constant MARKETPLACE = 0x8bD7d7925eB7c4d9BEbC6E2f1F14d32f41A4001c;
-    address constant TREASURY = 0x509dd8D46E66C6B6591c111551C6E6039941E63C;
+    // Existing deployed contracts (Base Sepolia) - Jan 2 fresh deployment
+    address constant ROOTS_TOKEN = 0x33eFBF74Df84193Ce39dfF91394d9A0fE20c36c3;
+    address constant MARKETPLACE = 0xEe6eCF5A36925C4D95097ffa2F40632bf500a0F8;
+    address constant TREASURY = 0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c;
 
     // Swap router ROOTS liquidity (1M ROOTS for initial liquidity)
     uint256 constant SWAP_ROUTER_LIQUIDITY = 1_000_000 * 10**18;

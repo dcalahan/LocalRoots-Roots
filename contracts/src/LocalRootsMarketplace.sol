@@ -10,6 +10,7 @@ import "./interfaces/ISwapRouter.sol";
 interface IAmbassadorRewards {
     function hasSufficientTreasury(uint256 amount) external view returns (bool);
     function queueReward(uint256 orderId, uint256 sellerId, uint256 saleAmount) external returns (uint256);
+    function queueSeedsReward(uint256 orderId, uint256 sellerId, uint256 saleAmount) external;
     function clawbackReward(uint256 orderId, string calldata reason) external;
     function recordCompletedOrder(uint256 sellerId, address buyer) external;
     function recordSellerRecruitment(uint256 sellerId, uint256 ambassadorId) external;
@@ -24,9 +25,18 @@ interface IAmbassadorRewards {
 contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     using SafeERC20 for IERC20;
 
+    // ============ Phase Configuration ============
+
+    enum LaunchPhase { Phase1_USDC, Phase2_ROOTS }
+    LaunchPhase public currentPhase;
+    bool public phaseTransitionLocked;
+
+    // USDC address on Base Sepolia (and mainnet)
+    address public constant USDC_ADDRESS = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+
     // ============ State Variables ============
 
-    IERC20 public immutable rootsToken;
+    IERC20 public rootsToken;  // Can be address(0) for Phase 1
     address public ambassadorRewards;
 
     // Note: No platform fees charged. Ambassador rewards come from treasury fund.
@@ -86,6 +96,7 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         uint256 proofUploadedAt;  // When seller uploaded proof (starts dispute window)
         bool fundsReleased;       // Whether escrowed funds have been released to seller
         string buyerInfoIpfs;     // IPFS hash of buyer's delivery address or contact info
+        address paymentToken;     // Token used for payment (USDC in Phase 1, ROOTS in Phase 2)
     }
 
     enum OrderStatus {
@@ -111,6 +122,10 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     mapping(bytes4 => uint256[]) public sellersByGeohash4; // City level
     mapping(bytes5 => uint256[]) public sellersByGeohash5; // Neighborhood level (default)
     mapping(bytes6 => uint256[]) public sellersByGeohash6; // Few blocks level
+
+    // Seller milestone tracking
+    mapping(uint256 => uint256) public sellerListingCount;  // sellerId => number of listings
+    mapping(uint256 => uint256) public sellerOrderCount;    // sellerId => number of completed orders
 
     // ============ Events ============
 
@@ -138,6 +153,11 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     event SwapRouterUpdated(address indexed router);
     event PaymentSwapped(address indexed paymentToken, uint256 stablecoinAmount, uint256 rootsAmount);
 
+    // Phase and Seeds events
+    event PhaseTransitioned(LaunchPhase newPhase);
+    event SeedsEarned(address indexed user, uint256 amount, string reason, uint256 orderId);
+    event SellerMilestoneSeeds(address indexed seller, uint256 indexed sellerId, uint256 amount, string milestone);
+
     // ============ Modifiers ============
 
     modifier onlyAdmin() {
@@ -151,12 +171,22 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         address _rootsToken,
         address _ambassadorRewards,
         address _trustedForwarder,
-        address _initialAdmin
+        address _initialAdmin,
+        LaunchPhase _initialPhase
     ) ERC2771Context(_trustedForwarder) {
-        require(_rootsToken != address(0), "Invalid token address");
         require(_initialAdmin != address(0), "Invalid admin address");
-        rootsToken = IERC20(_rootsToken);
+
+        // For Phase 1, rootsToken can be address(0)
+        // For Phase 2, rootsToken is required
+        if (_initialPhase == LaunchPhase.Phase2_ROOTS) {
+            require(_rootsToken != address(0), "Phase 2 requires token address");
+            rootsToken = IERC20(_rootsToken);
+        } else if (_rootsToken != address(0)) {
+            rootsToken = IERC20(_rootsToken);
+        }
+
         ambassadorRewards = _ambassadorRewards;
+        currentPhase = _initialPhase;
 
         // Set up initial admin
         admins.push(_initialAdmin);
@@ -214,6 +244,7 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         }
 
         emit SellerRegistered(sellerId, _msgSender(), _geohash);
+        // Note: No Seeds for profile completion - we reward action, not signup
     }
 
     /**
@@ -259,6 +290,10 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         require(_pricePerUnit > 0, "Price must be > 0");
         require(_quantityAvailable > 0, "Quantity must be > 0");
 
+        // Track listing count for first_listing milestone
+        bool isFirstListing = sellerListingCount[sellerId] == 0;
+        sellerListingCount[sellerId]++;
+
         listingId = ++nextListingId;
 
         listings[listingId] = Listing({
@@ -270,6 +305,11 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         });
 
         emit ListingCreated(listingId, sellerId, _pricePerUnit);
+
+        // Emit first_listing milestone Seeds in Phase 1 (minimal reward - prove you're serious)
+        if (currentPhase == LaunchPhase.Phase1_USDC && isFirstListing) {
+            emit SellerMilestoneSeeds(_msgSender(), sellerId, 50 * 1e6, "first_listing");
+        }
     }
 
     /**
@@ -299,13 +339,13 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     /**
      * @notice Purchase items from a listing
      * @dev Payment is held in escrow until seller provides delivery proof.
-     *      Ambassador rewards are queued at order completion.
-     *      Accepts ROOTS directly or stablecoins (USDC/USDT) which are swapped to ROOTS.
+     *      Phase 1: USDC only, emits Seeds events for indexing
+     *      Phase 2: ROOTS or stablecoins (swapped to ROOTS)
      * @param _listingId Listing to purchase from
      * @param _quantity Quantity to purchase
      * @param _isDelivery Whether buyer wants delivery (vs pickup)
      * @param _buyerInfoIpfs IPFS hash of buyer's delivery address/contact info (required for delivery)
-     * @param _paymentToken Payment token address (address(0) or rootsToken = pay with ROOTS)
+     * @param _paymentToken Payment token address (USDC in Phase 1, ROOTS/stablecoins in Phase 2)
      */
     function purchase(
         uint256 _listingId,
@@ -329,44 +369,68 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         }
 
         uint256 totalPriceRoots = listing.pricePerUnit * _quantity;
+        uint256 orderAmount;
+        address paymentTokenUsed;
 
-        // Handle payment based on token type
-        if (_paymentToken == address(0) || _paymentToken == address(rootsToken)) {
-            // Pay directly with ROOTS
-            rootsToken.safeTransferFrom(_msgSender(), address(this), totalPriceRoots);
+        if (currentPhase == LaunchPhase.Phase1_USDC) {
+            // Phase 1: USDC only
+            require(_paymentToken == USDC_ADDRESS, "Phase 1: USDC only");
+
+            // Calculate USDC amount (prices still in ROOTS units for compatibility)
+            uint256 usdcAmount = _calculateStablecoinAmount(totalPriceRoots);
+
+            // Hold USDC in escrow
+            IERC20(USDC_ADDRESS).safeTransferFrom(_msgSender(), address(this), usdcAmount);
+
+            orderAmount = usdcAmount;
+            paymentTokenUsed = USDC_ADDRESS;
+
+            // Emit Seeds for buyer (50 Seeds per $1 USDC spent)
+            // USDC has 6 decimals, so usdcAmount / 1e6 = dollars
+            // Seeds: 50 * usdcAmount (in USDC units, so 50 Seeds per 1 USDC = $1)
+            emit SeedsEarned(_msgSender(), usdcAmount * 50, "purchase", nextOrderId + 1);
         } else {
-            // Pay with stablecoin, swap to ROOTS
-            require(acceptedPaymentTokens[_paymentToken], "Payment token not accepted");
-            require(swapRouter != address(0), "Swap router not configured");
+            // Phase 2: ROOTS or stablecoins (swapped to ROOTS)
+            if (_paymentToken == address(0) || _paymentToken == address(rootsToken)) {
+                // Pay directly with ROOTS
+                rootsToken.safeTransferFrom(_msgSender(), address(this), totalPriceRoots);
+                paymentTokenUsed = address(rootsToken);
+            } else {
+                // Pay with stablecoin, swap to ROOTS
+                require(acceptedPaymentTokens[_paymentToken], "Payment token not accepted");
+                require(swapRouter != address(0), "Swap router not configured");
 
-            uint256 stablecoinAmount = _calculateStablecoinAmount(totalPriceRoots);
+                uint256 stablecoinAmount = _calculateStablecoinAmount(totalPriceRoots);
 
-            // Transfer stablecoin from buyer to this contract
-            IERC20(_paymentToken).safeTransferFrom(_msgSender(), address(this), stablecoinAmount);
+                // Transfer stablecoin from buyer to this contract
+                IERC20(_paymentToken).safeTransferFrom(_msgSender(), address(this), stablecoinAmount);
 
-            // Approve swap router and swap to ROOTS
-            IERC20(_paymentToken).approve(swapRouter, stablecoinAmount);
-            uint256 rootsReceived = ISwapRouter(swapRouter).swapStablecoinForRoots(
-                _paymentToken,
-                stablecoinAmount,
-                totalPriceRoots
-            );
+                // Approve swap router and swap to ROOTS
+                IERC20(_paymentToken).approve(swapRouter, stablecoinAmount);
+                uint256 rootsReceived = ISwapRouter(swapRouter).swapStablecoinForRoots(
+                    _paymentToken,
+                    stablecoinAmount,
+                    totalPriceRoots
+                );
 
-            require(rootsReceived >= totalPriceRoots, "Insufficient ROOTS received from swap");
-            emit PaymentSwapped(_paymentToken, stablecoinAmount, rootsReceived);
+                require(rootsReceived >= totalPriceRoots, "Insufficient ROOTS received from swap");
+                emit PaymentSwapped(_paymentToken, stablecoinAmount, rootsReceived);
+                paymentTokenUsed = _paymentToken;
+            }
+            orderAmount = totalPriceRoots;
         }
 
         // Update listing quantity
         listing.quantityAvailable -= _quantity;
 
-        // Create order (escrow is always in ROOTS)
+        // Create order
         orderId = ++nextOrderId;
         orders[orderId] = Order({
             listingId: _listingId,
             sellerId: listing.sellerId,
             buyer: _msgSender(),
             quantity: _quantity,
-            totalPrice: totalPriceRoots,
+            totalPrice: orderAmount,
             isDelivery: _isDelivery,
             status: OrderStatus.Pending,
             createdAt: block.timestamp,
@@ -375,7 +439,8 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
             proofIpfs: "",
             proofUploadedAt: 0,
             fundsReleased: false,
-            buyerInfoIpfs: _buyerInfoIpfs
+            buyerInfoIpfs: _buyerInfoIpfs,
+            paymentToken: paymentTokenUsed
         });
 
         emit OrderCreated(orderId, _listingId, _msgSender(), _quantity);
@@ -459,7 +524,8 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
 
     /**
      * @notice Complete an order (buyer confirms receipt)
-     * @dev This triggers ambassador reward queueing with 7-day vesting
+     * @dev Phase 1: Emits Seeds for seller and ambassadors
+     *      Phase 2: Triggers ambassador reward queueing with 7-day vesting
      *      Circuit breakers require seller activation (2 orders, 2 unique buyers)
      */
     function completeOrder(uint256 _orderId) external nonReentrant {
@@ -474,29 +540,65 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         order.status = OrderStatus.Completed;
         order.completedAt = block.timestamp;
 
-        if (ambassadorRewards != address(0)) {
-            // Record completed order for seller activation tracking
-            // This must happen BEFORE queueReward to potentially activate the seller
-            try IAmbassadorRewards(ambassadorRewards).recordCompletedOrder(
-                order.sellerId,
-                order.buyer
-            ) {} catch {}
+        Seller storage seller = sellers[order.sellerId];
 
-            // Queue ambassador reward (with 7-day vesting for fraud protection)
-            // Will only succeed if seller is activated (2 orders, 2 unique buyers)
-            if (!order.rewardQueued) {
-                try IAmbassadorRewards(ambassadorRewards).queueReward(
+        // Track seller order count for milestones
+        sellerOrderCount[order.sellerId]++;
+        uint256 orderCount = sellerOrderCount[order.sellerId];
+
+        if (currentPhase == LaunchPhase.Phase1_USDC) {
+            // Phase 1: Emit Seeds for seller (500 Seeds per $1 USDC earned)
+            // order.totalPrice is in USDC (6 decimals)
+            emit SeedsEarned(seller.owner, order.totalPrice * 500, "sale", _orderId);
+
+            // Emit seller milestone Seeds
+            if (orderCount == 1) {
+                emit SellerMilestoneSeeds(seller.owner, order.sellerId, 10000 * 1e6, "first_sale");
+            } else if (orderCount == 5) {
+                emit SellerMilestoneSeeds(seller.owner, order.sellerId, 25000 * 1e6, "five_sales");
+            } else if (orderCount == 15) {
+                emit SellerMilestoneSeeds(seller.owner, order.sellerId, 50000 * 1e6, "fifteen_sales");
+            }
+
+            // Queue Seeds reward for ambassadors (not ROOTS)
+            if (ambassadorRewards != address(0)) {
+                try IAmbassadorRewards(ambassadorRewards).recordCompletedOrder(
+                    order.sellerId,
+                    order.buyer
+                ) {} catch {}
+
+                try IAmbassadorRewards(ambassadorRewards).queueSeedsReward(
                     _orderId,
                     order.sellerId,
                     order.totalPrice
-                ) returns (uint256 pendingRewardId) {
-                    if (pendingRewardId > 0) {
-                        order.rewardQueued = true;
-                        emit RewardQueued(_orderId, order.sellerId);
+                ) {} catch {}
+            }
+        } else {
+            // Phase 2: Existing ROOTS logic
+            if (ambassadorRewards != address(0)) {
+                // Record completed order for seller activation tracking
+                // This must happen BEFORE queueReward to potentially activate the seller
+                try IAmbassadorRewards(ambassadorRewards).recordCompletedOrder(
+                    order.sellerId,
+                    order.buyer
+                ) {} catch {}
+
+                // Queue ambassador reward (with 7-day vesting for fraud protection)
+                // Will only succeed if seller is activated (2 orders, 2 unique buyers)
+                if (!order.rewardQueued) {
+                    try IAmbassadorRewards(ambassadorRewards).queueReward(
+                        _orderId,
+                        order.sellerId,
+                        order.totalPrice
+                    ) returns (uint256 pendingRewardId) {
+                        if (pendingRewardId > 0) {
+                            order.rewardQueued = true;
+                            emit RewardQueued(_orderId, order.sellerId);
+                        }
+                    } catch {
+                        // If reward queueing fails, order still completes
+                        // This prevents ambassador contract issues from blocking orders
                     }
-                } catch {
-                    // If reward queueing fails, order still completes
-                    // This prevents ambassador contract issues from blocking orders
                 }
             }
         }
@@ -573,6 +675,7 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
 
     /**
      * @notice Internal function to release escrowed funds to seller
+     * @dev Handles both USDC (Phase 1) and ROOTS (Phase 2) based on order.paymentToken
      * @param _orderId Order ID to release funds for
      */
     function _releaseFunds(uint256 _orderId) internal {
@@ -582,7 +685,12 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         Seller storage seller = sellers[order.sellerId];
         order.fundsReleased = true;
 
-        rootsToken.safeTransfer(seller.owner, order.totalPrice);
+        // Release funds in the token that was used for payment
+        if (order.paymentToken == USDC_ADDRESS) {
+            IERC20(USDC_ADDRESS).safeTransfer(seller.owner, order.totalPrice);
+        } else {
+            rootsToken.safeTransfer(seller.owner, order.totalPrice);
+        }
 
         emit FundsReleased(_orderId, seller.owner, order.totalPrice);
     }
@@ -590,6 +698,7 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     /**
      * @notice Refund buyer for a disputed order (admin only for now)
      * @dev Can only refund orders where funds haven't been released yet
+     *      Handles both USDC (Phase 1) and ROOTS (Phase 2)
      * @param _orderId Order ID to refund
      */
     function refundBuyer(uint256 _orderId) external nonReentrant {
@@ -604,7 +713,12 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         order.fundsReleased = true;
         order.status = OrderStatus.Refunded;
 
-        rootsToken.safeTransfer(order.buyer, order.totalPrice);
+        // Refund in the token that was used for payment
+        if (order.paymentToken == USDC_ADDRESS) {
+            IERC20(USDC_ADDRESS).safeTransfer(order.buyer, order.totalPrice);
+        } else {
+            rootsToken.safeTransfer(order.buyer, order.totalPrice);
+        }
 
         emit FundsRefunded(_orderId, order.buyer, order.totalPrice);
         emit OrderStatusChanged(_orderId, OrderStatus.Refunded);
@@ -735,6 +849,7 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     /**
      * @notice Cancel a fraudulent order (admin only)
      * @dev Refunds buyer and claws back any pending ambassador rewards
+     *      Handles both USDC (Phase 1) and ROOTS (Phase 2)
      * @param _orderId Order ID to cancel
      * @param _reason Reason for cancellation
      */
@@ -748,9 +863,13 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
             "Order already cancelled/refunded"
         );
 
-        // Refund buyer
+        // Refund buyer in the token that was used for payment
         if (order.totalPrice > 0) {
-            rootsToken.safeTransfer(order.buyer, order.totalPrice);
+            if (order.paymentToken == USDC_ADDRESS) {
+                IERC20(USDC_ADDRESS).safeTransfer(order.buyer, order.totalPrice);
+            } else {
+                rootsToken.safeTransfer(order.buyer, order.totalPrice);
+            }
         }
 
         order.fundsReleased = true;
@@ -822,5 +941,32 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
      */
     function getAcceptedPaymentTokens() external view returns (address[] memory) {
         return paymentTokenList;
+    }
+
+    // ============ Phase Transition (Admin) ============
+
+    /**
+     * @notice Transition from Phase 1 (USDC) to Phase 2 (ROOTS)
+     * @dev One-way transition, cannot be reversed
+     * @param _rootsToken The ROOTS token address for Phase 2
+     */
+    function transitionToPhase2(address _rootsToken) external onlyAdmin {
+        require(currentPhase == LaunchPhase.Phase1_USDC, "Already in Phase 2");
+        require(!phaseTransitionLocked, "Transition already locked");
+        require(_rootsToken != address(0), "Invalid token address");
+
+        rootsToken = IERC20(_rootsToken);
+        currentPhase = LaunchPhase.Phase2_ROOTS;
+        phaseTransitionLocked = true;
+
+        emit PhaseTransitioned(LaunchPhase.Phase2_ROOTS);
+    }
+
+    /**
+     * @notice Set ambassador rewards contract (admin only)
+     * @param _ambassadorRewards New ambassador rewards contract address
+     */
+    function setAmbassadorRewards(address _ambassadorRewards) external onlyAdmin {
+        ambassadorRewards = _ambassadorRewards;
     }
 }

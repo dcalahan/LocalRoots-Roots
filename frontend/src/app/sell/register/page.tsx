@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { SellerRegistrationForm } from '@/components/seller/SellerRegistrationForm';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 import { useEffect, useState } from 'react';
@@ -12,7 +12,7 @@ import { useAmbassadorProfile } from '@/hooks/useAmbassadorProfile';
 function SellerRegistrationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isConnected } = useAccount();
+  const { authenticated: isConnected } = usePrivy();
   const { isSeller, isLoading } = useSellerStatus();
 
   // Get referral from URL params
@@ -56,12 +56,36 @@ function SellerRegistrationContent() {
 
   // Redirect if already a seller
   useEffect(() => {
-    if (isConnected && !isLoading && isSeller) {
-      router.push('/sell');
+    if (!isLoading && isSeller) {
+      router.push('/sell/dashboard');
     }
-  }, [isSeller, isLoading, router, isConnected]);
+  }, [isSeller, isLoading, router]);
 
-  // Always show the registration form - wallet connection happens at submit time
+  // Show loading while checking seller status (only if wallet is connected)
+  if (isLoading && isConnected) {
+    return (
+      <div className="min-h-screen bg-roots-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-roots-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-roots-gray">Checking seller status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If already a seller, show redirecting message
+  if (isSeller) {
+    return (
+      <div className="min-h-screen bg-roots-cream flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-roots-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-roots-gray">You&apos;re already registered! Redirecting to dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show the registration form
   return (
     <div className="min-h-screen bg-roots-cream">
       <div className="container mx-auto px-4 py-8">
@@ -101,12 +125,6 @@ function SellerRegistrationContent() {
                     `Referred by Ambassador #${ambassadorId.toString()}`
                   )}
                 </span>
-                {referringAmbassador.uplineId === 0n && (
-                  <>
-                    <br />
-                    <span className="text-xs text-roots-primary">State Founder</span>
-                  </>
-                )}
               </p>
             </div>
           )}

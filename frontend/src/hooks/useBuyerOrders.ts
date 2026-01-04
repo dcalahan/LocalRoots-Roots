@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAccount } from 'wagmi';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
 import { getIpfsUrl } from '@/lib/pinata';
@@ -109,13 +110,27 @@ async function fetchIpfsMetadata<T>(ipfsHash: string): Promise<T | null> {
 }
 
 export function useBuyerOrders() {
-  const { address } = useAccount();
+  const { address: wagmiAddress } = useAccount();
+  const { user, authenticated } = usePrivy();
+  const { wallets, ready: walletsReady } = useWallets();
+
+  // Get Privy embedded wallet
+  const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
+  const privyAddress = (embeddedWallet?.address || user?.wallet?.address) as `0x${string}` | undefined;
+
+  // For buyers, use wagmi address first (external wallet for purchases), then Privy
+  const address = wagmiAddress || privyAddress;
+  const isConnected = !!wagmiAddress || (authenticated && walletsReady && !!privyAddress);
+
   const [orders, setOrders] = useState<OrderWithMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
+    console.log('[useBuyerOrders] fetchOrders called, address:', address, 'isConnected:', isConnected);
+
     if (!address) {
+      console.log('[useBuyerOrders] No address, returning early');
       setIsLoading(false);
       return;
     }
@@ -147,6 +162,8 @@ export function useBuyerOrders() {
       const results = await Promise.all(orderPromises);
       const buyerOrders = results.filter((o): o is OrderWithMetadata => o !== null);
 
+      console.log('[useBuyerOrders] Found', buyerOrders.length, 'orders for address', address, 'out of', Number(nextOrderId), 'total orders');
+
       // Sort by createdAt descending (newest first)
       buyerOrders.sort((a, b) => Number(b.createdAt - a.createdAt));
 
@@ -157,13 +174,13 @@ export function useBuyerOrders() {
     } finally {
       setIsLoading(false);
     }
-  }, [address]);
+  }, [address, walletsReady]);
 
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  return { orders, isLoading, error, refetch: fetchOrders };
+  return { orders, isLoading, error, refetch: fetchOrders, isConnected };
 }
 
 async function fetchOrderIfBuyer(

@@ -10,7 +10,12 @@
     {
       "id": "squash",
       "name": "Squash & Gourds",
-      "description": "Zucchini, pumpkins, cucumbers, and melons"
+      "description": "Zucchini, pumpkins, cucumbers, and squash"
+    },
+    {
+      "id": "melons",
+      "name": "Melons",
+      "description": "Watermelon, cantaloupe, honeydew, and other sweet melons"
     },
     {
       "id": "leafy-greens",
@@ -83,7 +88,7 @@
       "category": "nightshades",
       "seasonStart": 7,
       "seasonEnd": 9,
-      "image": "https://images.unsplash.com/photo-1561155707-64c65ad0d72c?w=400",
+      "image": "https://images.unsplash.com/photo-1444731961956-751ed90465a5?w=400",
       "tags": ["heirloom", "colorful", "summer"]
     },
     {
@@ -92,7 +97,7 @@
       "category": "nightshades",
       "seasonStart": 7,
       "seasonEnd": 9,
-      "image": "https://images.unsplash.com/photo-1594057687713-5fd14eed4a76?w=400",
+      "image": "https://images.unsplash.com/photo-1471194402529-8e0f5a675de6?w=400",
       "tags": ["paste", "sauce", "canning"]
     },
     {
@@ -137,7 +142,7 @@
       "category": "nightshades",
       "seasonStart": 7,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1588584942303-4e7a86169b49?w=400",
+      "image": "https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=400",
       "tags": ["hot", "prolific"]
     },
     {
@@ -209,7 +214,7 @@
       "category": "squash",
       "seasonStart": 9,
       "seasonEnd": 11,
-      "image": "https://images.unsplash.com/photo-1596097155498-59efdb1f85b4?w=400",
+      "image": "https://images.unsplash.com/photo-1506917728037-b6af01a7d403?w=400",
       "tags": ["winter", "low-carb"]
     },
     {
@@ -224,7 +229,7 @@
     {
       "id": "watermelon",
       "name": "Watermelon",
-      "category": "squash",
+      "category": "melons",
       "seasonStart": 7,
       "seasonEnd": 9,
       "image": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400",
@@ -233,7 +238,7 @@
     {
       "id": "cantaloupe",
       "name": "Cantaloupe",
-      "category": "squash",
+      "category": "melons",
       "seasonStart": 7,
       "seasonEnd": 9,
       "image": "https://images.unsplash.com/photo-1571575173700-afb9492e6a50?w=400",
@@ -242,10 +247,10 @@
     {
       "id": "honeydew",
       "name": "Honeydew Melon",
-      "category": "squash",
+      "category": "melons",
       "seasonStart": 7,
       "seasonEnd": 9,
-      "image": "https://images.unsplash.com/photo-1568584711271-6c929fb49b60?w=400",
+      "image": "https://images.unsplash.com/photo-1594897030264-ab7d87efc473?w=400",
       "tags": ["summer", "sweet", "melon"]
     },
     {
@@ -299,7 +304,7 @@
       "category": "leafy-greens",
       "seasonStart": 4,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1594137018519-56601c4ca04f?w=400",
+      "image": "https://images.unsplash.com/photo-1591261730799-ee4e6c2d16d7?w=400",
       "tags": ["colorful", "nutritious"]
     },
     {
@@ -308,7 +313,7 @@
       "category": "leafy-greens",
       "seasonStart": 4,
       "seasonEnd": 6,
-      "image": "https://images.unsplash.com/photo-1515686811547-3b4a9366c4b4?w=400",
+      "image": "https://images.unsplash.com/photo-1574316071802-0d684efa7bf5?w=400",
       "tags": ["peppery", "salad", "spring"]
     },
     {
@@ -362,7 +367,7 @@
       "category": "root-vegetables",
       "seasonStart": 7,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1518977676601-b53f82ber043?w=400",
+      "image": "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=400",
       "tags": ["staple", "storage", "popular"]
     },
     {
@@ -371,7 +376,7 @@
       "category": "root-vegetables",
       "seasonStart": 9,
       "seasonEnd": 11,
-      "image": "https://images.unsplash.com/photo-1596097557994-92180a8ad2b2?w=400",
+      "image": "https://images.unsplash.com/photo-1590868309235-ea34bed7bd7f?w=400",
       "tags": ["fall", "storage", "nutritious"]
     },
     {
@@ -380,7 +385,7 @@
       "category": "root-vegetables",
       "seasonStart": 9,
       "seasonEnd": 11,
-      "image": "https://images.unsplash.com/photo-1594282418728-8d5cfb9ea049?w=400",
+      "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400",
       "tags": ["fall", "greens-edible"]
     },
     {
@@ -389,7 +394,7 @@
       "category": "root-vegetables",
       "seasonStart": 10,
       "seasonEnd": 12,
-      "image": "https://images.unsplash.com/photo-1584286956023-a01a6cca9f64?w=400",
+      "image": "https://images.unsplash.com/photo-1600147131759-880e94a6185f?w=400",
       "tags": ["fall", "sweet-after-frost"]
     },
     {
@@ -407,7 +412,7 @@
       "category": "alliums",
       "seasonStart": 7,
       "seasonEnd": 9,
-      "image": "https://images.unsplash.com/photo-1587049693270-e8c757db9501?w=400",
+      "image": "https://images.unsplash.com/photo-1635774855317-edf3ee4463db?w=400",
       "tags": ["colorful", "salad", "mild"]
     },
     {
@@ -416,7 +421,7 @@
       "category": "alliums",
       "seasonStart": 4,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1608237663805-9014e4ec2cb9?w=400",
+      "image": "https://images.unsplash.com/photo-1633380110125-f6e685676160?w=400",
       "tags": ["quick-growing", "popular", "garnish"]
     },
     {
@@ -425,7 +430,7 @@
       "category": "alliums",
       "seasonStart": 7,
       "seasonEnd": 8,
-      "image": "https://images.unsplash.com/photo-1540148426945-6cf22a6b2a47?w=400",
+      "image": "https://images.unsplash.com/photo-1501420193726-1f65acd36cda?w=400",
       "tags": ["staple", "storage", "popular"]
     },
     {
@@ -434,7 +439,7 @@
       "category": "alliums",
       "seasonStart": 9,
       "seasonEnd": 11,
-      "image": "https://images.unsplash.com/photo-1558818498-28c1e002674f?w=400",
+      "image": "https://images.unsplash.com/photo-1590005354167-6da97870c757?w=400",
       "tags": ["fall", "soup", "mild"]
     },
     {
@@ -443,7 +448,7 @@
       "category": "alliums",
       "seasonStart": 7,
       "seasonEnd": 9,
-      "image": "https://images.unsplash.com/photo-1626697556651-67ebdcb8deb6?w=400",
+      "image": "https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?w=400",
       "tags": ["gourmet", "mild"]
     },
     {
@@ -452,7 +457,7 @@
       "category": "brassicas",
       "seasonStart": 5,
       "seasonEnd": 6,
-      "image": "https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400",
+      "image": "https://images.unsplash.com/photo-1584270354949-c26b0d5b4a0c?w=400",
       "tags": ["popular", "nutritious", "cool-weather"]
     },
     {
@@ -470,7 +475,7 @@
       "category": "brassicas",
       "seasonStart": 6,
       "seasonEnd": 11,
-      "image": "https://images.unsplash.com/photo-1594282418749-3da2dc4addb0?w=400",
+      "image": "https://images.unsplash.com/photo-1556910096-6f5e72db6803?w=400",
       "tags": ["storage", "coleslaw", "sauerkraut"]
     },
     {
@@ -488,7 +493,7 @@
       "category": "brassicas",
       "seasonStart": 9,
       "seasonEnd": 12,
-      "image": "https://images.unsplash.com/photo-1573484384693-a64aaa4f2e1e?w=400",
+      "image": "https://images.unsplash.com/photo-1582284540020-8acbe03f4924?w=400",
       "tags": ["fall", "frost-sweetened"]
     },
     {
@@ -506,7 +511,7 @@
       "category": "brassicas",
       "seasonStart": 4,
       "seasonEnd": 6,
-      "image": "https://images.unsplash.com/photo-1578407676337-39379d5667fb?w=400",
+      "image": "https://images.unsplash.com/photo-1566842600175-97dca489844f?w=400",
       "tags": ["asian", "stir-fry", "spring"]
     },
     {
@@ -524,7 +529,7 @@
       "category": "legumes",
       "seasonStart": 4,
       "seasonEnd": 6,
-      "image": "https://images.unsplash.com/photo-1587049715877-1c6b135e0a85?w=400",
+      "image": "https://images.unsplash.com/photo-1592394533824-9440e5d68530?w=400",
       "tags": ["spring", "snacking", "sweet"]
     },
     {
@@ -533,7 +538,7 @@
       "category": "legumes",
       "seasonStart": 4,
       "seasonEnd": 6,
-      "image": "https://images.unsplash.com/photo-1587049715877-1c6b135e0a85?w=400",
+      "image": "https://images.unsplash.com/photo-1592394533824-9440e5d68530?w=400",
       "tags": ["spring", "stir-fry", "flat"]
     },
     {
@@ -542,7 +547,7 @@
       "category": "legumes",
       "seasonStart": 5,
       "seasonEnd": 6,
-      "image": "https://images.unsplash.com/photo-1587049715877-1c6b135e0a85?w=400",
+      "image": "https://images.unsplash.com/photo-1592394533824-9440e5d68530?w=400",
       "tags": ["spring", "shelling", "sweet"]
     },
     {
@@ -578,7 +583,7 @@
       "category": "herbs",
       "seasonStart": 4,
       "seasonEnd": 6,
-      "image": "https://images.unsplash.com/photo-1591544088479-14ba31b4d7a5?w=400",
+      "image": "https://images.unsplash.com/photo-1526318472351-c75fcf070305?w=400",
       "tags": ["popular", "mexican", "cool-weather"]
     },
     {
@@ -587,7 +592,7 @@
       "category": "herbs",
       "seasonStart": 4,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1536941494036-3e6d3f3f3f3c?w=400",
+      "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400",
       "tags": ["versatile", "garnish", "biennial"]
     },
     {
@@ -614,7 +619,7 @@
       "category": "herbs",
       "seasonStart": 1,
       "seasonEnd": 12,
-      "image": "https://images.unsplash.com/photo-1594488455730-8c3e46b8d6e8?w=400",
+      "image": "https://images.unsplash.com/photo-1509909756405-be0199881695?w=400",
       "tags": ["perennial", "versatile", "tiny-leaves"]
     },
     {
@@ -623,7 +628,7 @@
       "category": "herbs",
       "seasonStart": 5,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1600326145308-d3aeb8e09bd2?w=400",
+      "image": "https://images.unsplash.com/photo-1531913223931-b0d3198229ee?w=400",
       "tags": ["perennial", "italian", "drying"]
     },
     {
@@ -632,7 +637,7 @@
       "category": "herbs",
       "seasonStart": 5,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1600326145308-d3aeb8e09bd2?w=400",
+      "image": "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=400",
       "tags": ["perennial", "thanksgiving", "fuzzy"]
     },
     {
@@ -668,7 +673,7 @@
       "category": "herbs",
       "seasonStart": 6,
       "seasonEnd": 9,
-      "image": "https://images.unsplash.com/photo-1595847097237-a24f95f5a58b?w=400",
+      "image": "https://images.unsplash.com/photo-1595855759920-86582396756a?w=400",
       "tags": ["asian", "tropical", "tea"]
     },
     {
@@ -704,7 +709,7 @@
       "category": "berries",
       "seasonStart": 7,
       "seasonEnd": 8,
-      "image": "https://images.unsplash.com/photo-1568702846914-96b305d2aca1?w=400",
+      "image": "https://images.unsplash.com/photo-1606923829579-0cb981a83e2e?w=400",
       "tags": ["bramble", "thorny", "perennial"]
     },
     {
@@ -740,7 +745,7 @@
       "category": "tree-fruits",
       "seasonStart": 7,
       "seasonEnd": 8,
-      "image": "https://images.unsplash.com/photo-1595124277851-9b61269c7cce?w=400",
+      "image": "https://images.unsplash.com/photo-1589927986089-35812388d1f4?w=400",
       "tags": ["summer", "stone-fruit", "tree"]
     },
     {
@@ -767,7 +772,7 @@
       "category": "tree-fruits",
       "seasonStart": 8,
       "seasonEnd": 10,
-      "image": "https://images.unsplash.com/photo-1601379760883-1bb497c558e0?w=400",
+      "image": "https://images.unsplash.com/photo-1601493700631-2b16ec4b4716?w=400",
       "tags": ["tree", "mediterranean", "sweet"]
     },
     {
@@ -857,7 +862,7 @@
       "category": "other",
       "seasonStart": 7,
       "seasonEnd": 9,
-      "image": "https://images.unsplash.com/photo-1596591606975-97ee5cef3a1e?w=400",
+      "image": "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400",
       "tags": ["southern", "summer", "heat-loving"]
     },
     {

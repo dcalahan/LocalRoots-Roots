@@ -1,0 +1,330 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-01",
+  "guides": {
+    "raised-beds": {
+      "title": "Building and Using Raised Beds",
+      "slug": "raised-beds",
+      "description": "Learn how to build productive raised beds that extend your growing season and maximize yields.",
+      "difficulty": "beginner",
+      "timeToComplete": "1-2 days",
+      "image": "/images/guides/raised-beds.jpg",
+      "tags": ["beds", "soil", "infrastructure"],
+      "sections": [
+        {
+          "title": "Why Raised Beds?",
+          "content": "Raised beds offer several advantages for backyard market gardeners. They warm up faster in spring, extending your growing season. They provide excellent drainage, which is crucial for preventing root rot and disease. You have complete control over soil quality since you fill them with your own mix. They're easier on your back and knees, making gardening more sustainable for you physically. Finally, the defined edges help prevent soil compaction from foot traffic.\n\nFor sellers on LocalRoots, raised beds can increase your yields per square foot by 2-3 times compared to traditional row gardening, meaning more produce to sell from the same space."
+        },
+        {
+          "title": "Choosing Materials",
+          "content": "The most common materials for raised bed frames are:\n\n**Untreated Cedar or Redwood**: Naturally rot-resistant and will last 10-15 years. This is the premium choice but costs more upfront.\n\n**Douglas Fir or Pine**: More affordable but will only last 3-5 years. A good starter option.\n\n**Concrete Blocks**: Extremely durable and allow for creative designs. The hollow cores can be filled with soil for extra planting space.\n\n**Galvanized Steel**: Modern look, very durable, but can get hot in summer. Consider adding shade cloth in hot climates.\n\n**Avoid treated lumber** for growing food - the chemicals can leach into soil. If you must use it, line the inside with landscape fabric."
+        },
+        {
+          "title": "Sizing Your Beds",
+          "content": "**Width**: Keep beds 3-4 feet wide so you can reach the center from either side without stepping on the soil. This prevents compaction.\n\n**Length**: 8-12 feet is common, but any length works. Longer beds mean fewer paths, maximizing growing space.\n\n**Height**: 6 inches minimum for most vegetables. Go 12-18 inches for root crops like carrots, or if you have poor native soil. Taller beds are also easier to work without bending.\n\n**Spacing Between Beds**: Leave 2-3 feet between beds for comfortable walking and wheelbarrow access."
+        },
+        {
+          "title": "The Perfect Soil Mix",
+          "content": "A productive raised bed soil mix follows roughly this recipe:\n\n- 60% topsoil or garden soil\n- 30% compost (homemade or purchased)\n- 10% amendments (perlite, vermiculite, or aged manure)\n\nFor a 4x8 foot bed that's 12 inches deep, you'll need about 1 cubic yard of material. Mix thoroughly before filling.\n\n**Pro tip**: The soil in raised beds will settle 10-20% in the first year. Overfill initially, and top dress with compost annually to maintain levels."
+        },
+        {
+          "title": "Planting in Raised Beds",
+          "content": "Raised beds excel with intensive planting methods. Instead of traditional rows, use:\n\n**Square Foot Gardening**: Divide your bed into 1-foot squares and plant according to spacing needs. One square might hold 1 tomato, 4 lettuce heads, or 16 carrots.\n\n**Succession Planting**: As soon as one crop is harvested, replant the space immediately. This keeps your bed producing continuously.\n\n**Interplanting**: Grow quick-maturing crops (radishes, lettuce) between slower ones (tomatoes, peppers). The fast crops will be harvested before the slow ones need the space.\n\nThese techniques can triple your harvest compared to traditional row planting - meaning more produce for your LocalRoots listings."
+        },
+        {
+          "title": "Maintenance and Care",
+          "content": "**Watering**: Raised beds drain faster and may need daily watering in summer. Install drip irrigation or soaker hoses for consistent moisture and time savings.\n\n**Mulching**: Apply 2-3 inches of straw, wood chips, or shredded leaves to retain moisture and suppress weeds.\n\n**Annual Refresh**: Each spring, add 1-2 inches of compost to the surface. No need to till it in - worms will do that work.\n\n**Crop Rotation**: Move plant families to different beds each year to prevent disease buildup and nutrient depletion."
+        }
+      ],
+      "materials": [
+        "4 boards (2x10, 8 feet long) for a 4x8 bed",
+        "8 corner brackets or 4x4 posts",
+        "Deck screws (3 inch)",
+        "Level",
+        "Soil mix components",
+        "Landscape fabric (optional, for bottom)"
+      ],
+      "relatedCrops": ["lettuce-romaine", "tomato-cherry", "carrot", "radish", "pepper-bell-green"],
+      "relatedGuides": ["composting", "succession-planting"]
+    },
+    "starting-seeds-indoors": {
+      "title": "Starting Seeds Indoors",
+      "slug": "starting-seeds-indoors",
+      "description": "Get a head start on the growing season by starting seeds indoors weeks before the last frost.",
+      "difficulty": "beginner",
+      "timeToComplete": "ongoing",
+      "image": "/images/guides/seed-starting.jpg",
+      "tags": ["seeds", "propagation", "spring"],
+      "sections": [
+        {
+          "title": "Why Start Seeds Indoors?",
+          "content": "Starting seeds indoors gives you a 6-8 week head start on the growing season. This is essential for warm-season crops like tomatoes and peppers in shorter growing seasons, and it lets you have transplants ready as soon as the soil warms up.\n\nFor LocalRoots sellers, this means earlier harvests when fresh local produce commands premium prices. Those first tomatoes of summer always sell fast!\n\nYou'll also save money compared to buying transplants, have access to more varieties than nurseries stock, and know exactly how your plants were grown from day one."
+        },
+        {
+          "title": "When to Start",
+          "content": "Use your last frost date as the anchor for all seed starting calculations. Check your LocalRoots Growing Profile for your estimated frost dates.\n\n**8-10 weeks before last frost**: Onions, leeks, celery\n**6-8 weeks before last frost**: Tomatoes, peppers, eggplant\n**4-6 weeks before last frost**: Broccoli, cabbage, cauliflower\n**2-4 weeks before last frost**: Squash, melons, cucumbers\n\nStarting too early is a common mistake. Leggy, overgrown seedlings are harder to transplant successfully than younger, stockier plants."
+        },
+        {
+          "title": "Equipment Needed",
+          "content": "**Seed Starting Mix**: Use a sterile, soilless mix designed for seeds. Regular garden soil is too heavy and may contain pathogens.\n\n**Containers**: Cell trays, peat pots, or recycled yogurt cups with drainage holes. Start small (2-3 inch) and pot up later.\n\n**Light**: A sunny south-facing window can work, but grow lights produce sturdier seedlings. LED shop lights positioned 2-3 inches above plants work great.\n\n**Heat Mat** (optional but helpful): Keeps soil at optimal 70-80°F for germination. Essential for peppers and tomatoes.\n\n**Labels**: Trust us - you will not remember which variety is which after a week."
+        },
+        {
+          "title": "Sowing Seeds",
+          "content": "1. **Moisten your seed starting mix** before filling containers. It should feel like a wrung-out sponge.\n\n2. **Fill containers loosely** and tap to settle. Don't pack the mix down.\n\n3. **Create small depressions** for seeds. General rule: plant seeds 2-3 times as deep as they are wide.\n\n4. **Cover lightly** with mix and mist gently.\n\n5. **Cover with humidity dome** or plastic wrap until seeds germinate.\n\n6. **Place on heat mat** if using, and check moisture daily.\n\nMost vegetable seeds germinate in 5-14 days. Once you see green, remove any covers and get them under lights immediately."
+        },
+        {
+          "title": "Growing Strong Seedlings",
+          "content": "**Light**: Seedlings need 14-16 hours of light daily. Keep lights 2-4 inches above plants and raise as they grow. Leggy seedlings are reaching for inadequate light.\n\n**Water**: Keep soil consistently moist but not waterlogged. Water from below when possible to prevent damping off (a fungal disease that kills seedlings).\n\n**Air Circulation**: A small fan on low prevents disease and strengthens stems.\n\n**Fertilizer**: Start feeding with diluted (1/4 strength) liquid fertilizer once true leaves appear. True leaves are the second set - the first leaves (cotyledons) are seed leaves.\n\n**Potting Up**: When seedlings have 2-3 sets of true leaves, move them to larger pots if roots are crowded."
+        },
+        {
+          "title": "Hardening Off",
+          "content": "This critical step toughens up indoor seedlings before transplanting. Skip it and your plants may die from shock.\n\n**Week 1**: Place seedlings outside in a sheltered, shaded spot for 1-2 hours. Bring inside.\n\n**Week 2**: Gradually increase outdoor time to 4-6 hours. Introduce some direct sun.\n\n**Week 3**: Leave outside all day, bringing in only if frost threatens. By week's end, they can stay out overnight.\n\nStart hardening off 2-3 weeks before your planned transplant date. This is also when you should stop fertilizing to slow growth."
+        }
+      ],
+      "materials": [
+        "Seed starting mix",
+        "Cell trays or small containers",
+        "Grow lights or sunny window",
+        "Spray bottle for misting",
+        "Plant labels and marker",
+        "Heat mat (optional)",
+        "Humidity dome or plastic wrap"
+      ],
+      "relatedCrops": ["tomato-cherry", "pepper-bell-green", "eggplant", "broccoli", "cabbage-green"],
+      "relatedGuides": ["transplanting", "raised-beds"]
+    },
+    "transplanting": {
+      "title": "Transplanting Seedlings Outdoors",
+      "slug": "transplanting",
+      "description": "Successfully move your seedlings into the garden with proper timing and technique.",
+      "difficulty": "beginner",
+      "timeToComplete": "1-2 hours",
+      "image": "/images/guides/transplanting.jpg",
+      "tags": ["planting", "spring", "seedlings"],
+      "sections": [
+        {
+          "title": "When to Transplant",
+          "content": "Timing is everything. Transplant too early and cold soil stunts growth or frost kills plants. Too late and root-bound seedlings struggle to establish.\n\n**Soil Temperature Matters**: Warm-season crops like tomatoes need soil at least 60°F. Cool-season crops tolerate 45-50°F soil. Use a soil thermometer - air temperature can be deceiving.\n\n**Check Your Frost Dates**: Your LocalRoots Growing Profile shows estimated frost dates. Tender crops (tomatoes, peppers, squash) should go out 1-2 weeks AFTER last frost. Hardy crops (broccoli, cabbage) can go out 2-4 weeks BEFORE.\n\n**Size of Seedlings**: Transplant when seedlings have 3-5 sets of true leaves and are 3-6 inches tall. Smaller plants establish better than overgrown ones."
+        },
+        {
+          "title": "Preparing the Planting Site",
+          "content": "Good preparation prevents problems later:\n\n1. **Loosen soil** 8-12 inches deep. Add compost if soil is compacted or poor.\n\n2. **Test drainage** by filling the planting hole with water. It should drain within an hour. Standing water rots roots.\n\n3. **Plan your spacing**: Check the recommended spacing for each crop. Overcrowding leads to disease and reduced yields.\n\n4. **Mark planting spots** before you start. This prevents transplant shock from sitting around with exposed roots.\n\n5. **Water the bed** the day before planting so soil is moist but not muddy."
+        },
+        {
+          "title": "The Transplanting Process",
+          "content": "**Best timing**: Transplant on a cloudy day or in late afternoon. Avoid hot, sunny midday when stress is highest.\n\n1. **Water seedlings** thoroughly 1-2 hours before transplanting.\n\n2. **Dig holes** slightly larger than root balls. Add a handful of compost to each hole.\n\n3. **Remove seedlings carefully**. Squeeze cell trays from below to push out the root ball. Never pull by the stem.\n\n4. **Handle by leaves, not stems**. A damaged leaf recovers; a damaged stem kills the plant.\n\n5. **Set at proper depth**: Most vegetables go at the same depth as they were growing. Exception: tomatoes can be buried deeper - they'll grow roots along the buried stem.\n\n6. **Firm soil gently** around roots to eliminate air pockets.\n\n7. **Water immediately** with a diluted seaweed or transplant solution to reduce shock."
+        },
+        {
+          "title": "Special Techniques",
+          "content": "**Tomatoes**: Bury 2/3 of the stem for stronger root systems. Remove lower leaves first.\n\n**Brassicas** (broccoli, cabbage): Plant slightly deeper than original level and firm soil well. These can be top-heavy.\n\n**Squash and Melons**: Disturb roots as little as possible. These resent transplanting - consider direct sowing if your season allows.\n\n**Peppers**: Wait for warm soil (65°F+). Cold soil severely stunts pepper growth.\n\n**Onions**: Trim tops to 4 inches before transplanting to reduce water loss."
+        },
+        {
+          "title": "Aftercare",
+          "content": "The first two weeks after transplanting are critical:\n\n**Water daily** for the first week if no rain. Then gradually reduce to encourage deep root growth.\n\n**Provide shade** for 3-5 days if weather turns hot and sunny. A lightweight row cover or upturned pot works.\n\n**Protect from wind** which dries out leaves faster than roots can replace moisture.\n\n**Watch for cutworms**: These soil-dwelling caterpillars chew through stems at ground level. Collar plants with cardboard tubes (toilet paper rolls work great).\n\n**Avoid fertilizing** for 2-3 weeks. Let plants establish roots before pushing top growth."
+        },
+        {
+          "title": "Troubleshooting",
+          "content": "**Wilting despite moist soil**: Transplant shock. Keep shaded and misted for a few days. Most plants recover within a week.\n\n**Yellow leaves**: Often nitrogen deficiency from root damage. Feed with diluted liquid fertilizer once plants perk up.\n\n**No growth after 2 weeks**: Check for root problems. Gently lift the plant - if roots haven't spread into surrounding soil, there may be a drainage or temperature issue.\n\n**Stems cut at ground level**: Cutworm damage. Apply collars to remaining plants and consider Bt (Bacillus thuringiensis) soil drench for severe infestations."
+        }
+      ],
+      "materials": [
+        "Trowel or dibber",
+        "Watering can or hose",
+        "Compost",
+        "Mulch",
+        "Row cover or shade cloth",
+        "Transplant solution (seaweed extract)",
+        "Cardboard collars for cutworm protection"
+      ],
+      "relatedCrops": ["tomato-beefsteak", "pepper-bell-green", "broccoli", "lettuce-romaine"],
+      "relatedGuides": ["starting-seeds-indoors", "raised-beds"]
+    },
+    "composting": {
+      "title": "Building and Using Compost",
+      "slug": "composting",
+      "description": "Turn kitchen scraps and yard waste into garden gold that feeds your soil and boosts yields.",
+      "difficulty": "beginner",
+      "timeToComplete": "3-6 months",
+      "image": "/images/guides/composting.jpg",
+      "tags": ["soil", "sustainability", "fertilizer"],
+      "sections": [
+        {
+          "title": "Why Compost?",
+          "content": "Compost is the foundation of productive organic gardening. It improves soil structure, adds slow-release nutrients, increases water retention, and feeds the beneficial organisms that make nutrients available to plants.\n\nFor market gardeners, good compost can reduce or eliminate the need for purchased fertilizers, lowering your costs and increasing profits. It also improves the flavor and nutrition of your produce - something your LocalRoots customers will notice and appreciate.\n\nPlus, composting keeps valuable organic materials out of landfills, where they produce methane (a potent greenhouse gas) instead of returning nutrients to the earth."
+        },
+        {
+          "title": "The Science: Browns and Greens",
+          "content": "Composting is controlled decomposition. To work efficiently, you need the right balance of:\n\n**Greens (Nitrogen-rich materials)**:\n- Fresh grass clippings\n- Kitchen vegetable scraps\n- Coffee grounds\n- Fresh plant trimmings\n- Manure from herbivores\n\n**Browns (Carbon-rich materials)**:\n- Dried leaves\n- Straw or hay\n- Cardboard (torn small)\n- Wood chips or sawdust\n- Dried plant stalks\n\n**The ideal ratio is 25-30 parts carbon to 1 part nitrogen by weight**, roughly translating to 3-4 parts browns to 1 part greens by volume. Too much green = smelly, slimy mess. Too much brown = slow decomposition."
+        },
+        {
+          "title": "Building Your Pile",
+          "content": "**Size matters**: Aim for at least 3x3x3 feet. Smaller piles don't generate enough heat. Larger is fine.\n\n**Location**: Partial shade, convenient to kitchen and garden. Level ground with good drainage.\n\n**The layering method**:\n1. Start with a 6-inch layer of coarse browns (sticks, stalks) for airflow\n2. Add 3-4 inches of greens\n3. Add 6-8 inches of browns\n4. Sprinkle with water (like a wrung-out sponge)\n5. Repeat layers until pile is complete\n6. Top with browns to reduce odors and pests\n\n**Optional but helpful**: Add a shovelful of finished compost or garden soil between layers to introduce decomposing organisms."
+        },
+        {
+          "title": "Hot vs. Cold Composting",
+          "content": "**Hot Composting** (3-4 weeks to 3 months):\n- Requires active management\n- Pile heats to 130-160°F\n- Kills weed seeds and pathogens\n- Turn pile when temperature drops (every 3-7 days initially)\n- Produces finished compost faster\n\n**Cold Composting** (6 months to 2 years):\n- Passive approach - just add materials\n- Pile never heats significantly\n- May not kill weed seeds\n- No turning required\n- Eventually produces same quality compost\n\nFor market gardeners producing lots of crop waste, hot composting makes sense. For small-scale home use, cold composting is perfectly fine."
+        },
+        {
+          "title": "Troubleshooting",
+          "content": "**Pile smells bad**: Too much nitrogen (greens) or too wet. Add browns and turn to incorporate air.\n\n**Pile isn't heating**: Too small, too dry, or not enough nitrogen. Check size, add water, and/or add greens.\n\n**Pile attracts pests**: Bury food scraps in the center, cover with browns, and avoid meat/dairy.\n\n**Taking forever**: Chop materials smaller, ensure moisture is right, add more greens, or turn more frequently.\n\n**Matted leaves/grass not decomposing**: These form layers that block air. Mix in with browns and fluff the pile."
+        },
+        {
+          "title": "Using Finished Compost",
+          "content": "Compost is ready when it's dark, crumbly, and smells earthy - not like its original ingredients.\n\n**In beds and borders**: Spread 1-2 inches on top annually. No need to dig in - worms will incorporate it.\n\n**For transplanting**: Add a handful to each planting hole.\n\n**As mulch**: A 2-3 inch layer suppresses weeds and feeds soil.\n\n**For potting mix**: Mix with perlite and peat/coir for container growing.\n\n**Compost tea**: Steep finished compost in water for 24-48 hours, then use the liquid to water plants for a nutrient boost.\n\nStore excess in bags or a covered bin. It keeps indefinitely when protected from rain."
+        }
+      ],
+      "materials": [
+        "Compost bin or three-sided structure",
+        "Pitchfork for turning",
+        "Garden hose or water source",
+        "Browns (dried leaves, straw, cardboard)",
+        "Greens (kitchen scraps, grass clippings)",
+        "Thermometer (optional, for hot composting)"
+      ],
+      "relatedCrops": ["tomato-beefsteak", "squash-zucchini", "cucumber", "pepper-bell-green"],
+      "relatedGuides": ["raised-beds", "cover-crops"]
+    },
+    "succession-planting": {
+      "title": "Succession Planting for Continuous Harvest",
+      "slug": "succession-planting",
+      "description": "Keep your LocalRoots listings stocked all season with strategic planting intervals.",
+      "difficulty": "intermediate",
+      "timeToComplete": "ongoing",
+      "image": "/images/guides/succession.jpg",
+      "tags": ["planning", "harvesting", "productivity"],
+      "sections": [
+        {
+          "title": "What is Succession Planting?",
+          "content": "Succession planting means planting the same crop multiple times throughout the season at regular intervals. Instead of one big harvest that overwhelms you, you get steady, manageable quantities over weeks or months.\n\nFor LocalRoots sellers, this is essential. Your customers want to buy fresh lettuce every week, not 50 heads all at once in June. Succession planting lets you list produce consistently, build reliable customer relationships, and maximize income from limited garden space.\n\nThe concept is simple: if lettuce takes 45 days to mature and you want fresh lettuce for 12 weeks, you need to make a new planting roughly every 10-14 days."
+        },
+        {
+          "title": "Best Crops for Succession",
+          "content": "Not all crops benefit equally from succession planting. Focus on:\n\n**Fast-maturing crops that are harvested all at once**:\n- Lettuce (30-60 days)\n- Radishes (25-30 days)\n- Bush beans (50-60 days)\n- Spinach (40-50 days)\n- Cilantro (45-70 days)\n\n**Crops that benefit from fresh sowings**:\n- Corn (pick at peak sweetness)\n- Beets (tender when young)\n- Carrots (sweetest when not overgrown)\n\n**Not worth succession planting**:\n- Tomatoes, peppers, squash (produce continuously over long period)\n- Perennials like asparagus\n- Long-season crops like winter squash"
+        },
+        {
+          "title": "Planning Your Succession Schedule",
+          "content": "Start with these questions:\n\n1. **How long until harvest?** Check days to maturity on seed packet.\n\n2. **How long is harvest window?** Lettuce holds about 1-2 weeks; radishes only days.\n\n3. **When is first frost?** Stop planting when there won't be time to mature.\n\n4. **How much do you need at once?** Plan plantings to match your expected sales.\n\n**Example: Lettuce**\n- Days to maturity: 50 days\n- Harvest window: 10-14 days\n- Growing season: April 15 - September 30\n- Succession interval: Every 10-14 days\n- Number of plantings: 12-15 over the season\n\nCreate a simple calendar marking each planting date. Set reminders on your phone."
+        },
+        {
+          "title": "Interval Guidelines by Crop",
+          "content": "**Every 7-10 days**:\n- Lettuce (for continuous baby greens)\n- Radishes\n- Arugula\n\n**Every 2 weeks**:\n- Spinach\n- Bush beans\n- Beets\n- Cilantro\n\n**Every 3 weeks**:\n- Sweet corn (for extended fresh eating)\n- Carrots\n- Turnips\n\n**Every 4 weeks**:\n- Scallions\n- Kale (if harvesting whole heads)\n\nAdjust based on your market. Selling at farmers markets? You might want weekly lettuce plantings. Filling orders for a few regular customers? Less frequent works."
+        },
+        {
+          "title": "Space Management Strategies",
+          "content": "Succession planting requires thoughtful space planning:\n\n**Dedicated Succession Beds**: Reserve specific beds for quick-rotation crops. As one planting finishes, immediately replant the same bed.\n\n**Interplanting**: Tuck quick crops between slow crops. Plant radishes between pepper plants while peppers are still small.\n\n**Relay Planting**: Start new plantings in a different bed while current planting matures. By harvest time, next succession is already established.\n\n**Block Planting**: Instead of rows, plant in blocks that are easy to clear and replant completely.\n\nFor a 4x8 raised bed dedicated to lettuce with 10-day successions, divide into 3-4 sections. Plant one section, wait 10 days, plant the next."
+        },
+        {
+          "title": "Season Extension Tips",
+          "content": "Extend your succession planting season with these techniques:\n\n**Spring**:\n- Start first successions indoors 4-6 weeks before transplanting outside\n- Use row covers to protect early plantings from frost\n- Choose cold-tolerant varieties for earliest plantings\n\n**Summer**:\n- Many cool-season crops bolt in heat - pause succession during hottest weeks\n- Provide shade for heat-sensitive crops\n- Choose bolt-resistant varieties for summer plantings\n\n**Fall**:\n- Resume cool-season succession as temperatures drop\n- Plant last successions 4-6 weeks before first frost\n- Use row covers to extend harvest into early winter\n\nWith protection, you might harvest succession lettuce from March through December in many climates."
+        }
+      ],
+      "materials": [
+        "Planting calendar or spreadsheet",
+        "Seeds for multiple plantings",
+        "Row covers (for season extension)",
+        "Labels to track planting dates"
+      ],
+      "relatedCrops": ["lettuce-romaine", "lettuce-butterhead", "radish", "spinach", "bean-snap", "carrot"],
+      "relatedGuides": ["starting-seeds-indoors", "raised-beds"]
+    },
+    "cover-crops": {
+      "title": "Using Cover Crops",
+      "slug": "cover-crops",
+      "description": "Build soil fertility naturally by growing cover crops when beds would otherwise sit empty.",
+      "difficulty": "intermediate",
+      "timeToComplete": "2-4 months",
+      "image": "/images/guides/cover-crops.jpg",
+      "tags": ["soil", "sustainability", "off-season"],
+      "sections": [
+        {
+          "title": "What Are Cover Crops?",
+          "content": "Cover crops are plants grown primarily to benefit the soil rather than for harvest. They're planted when beds would otherwise be bare, typically in fall after summer crops finish or in beds resting between crop rotations.\n\nBenefits include:\n- **Nitrogen fixation**: Legume cover crops (clover, peas, vetch) capture nitrogen from the air and store it in root nodules, then release it when incorporated into soil.\n- **Erosion prevention**: Roots hold soil in place; foliage protects from rain impact.\n- **Weed suppression**: Dense growth outcompetes weeds.\n- **Organic matter**: When turned under, cover crops add biomass that feeds soil life.\n- **Soil structure**: Roots break up compaction and create channels for water and air.\n\nFor market gardeners, cover crops are a natural, low-cost way to maintain soil fertility without purchased inputs."
+        },
+        {
+          "title": "Choosing Cover Crops",
+          "content": "**Legumes** (fix nitrogen):\n- **Crimson Clover**: Beautiful red flowers, fixes lots of nitrogen. Plant fall for spring incorporation.\n- **Winter Peas**: Cold-hardy, large biomass. Great for heavy clay.\n- **Hairy Vetch**: Very cold-hardy, excellent nitrogen fixer. Can be hard to terminate.\n\n**Grasses** (add organic matter, scavenge nutrients):\n- **Winter Rye**: Extremely cold-hardy, easy to grow. Extensive roots break compaction.\n- **Oats**: Quick to establish, winter-kills in cold climates for easy incorporation.\n- **Annual Ryegrass**: Fast germination, good for short windows.\n\n**Brassicas** (break compaction, scavenge nutrients):\n- **Tillage Radish**: Deep taproot breaks hardpan. Winter-kills.\n- **Mustard**: Fast-growing, may suppress soil-borne diseases.\n\n**Combinations** often work best. A classic mix is winter rye + crimson clover: the rye provides quick cover while the clover establishes."
+        },
+        {
+          "title": "When to Plant",
+          "content": "**Fall Cover Crops** (most common):\n- Plant 4-6 weeks before first fall frost\n- In Zone 7, that's typically late September to early October\n- Seeds need time to establish before cold weather\n- Will grow through fall, overwinter, resume growth in spring\n\n**Spring Cover Crops**:\n- Plant as soon as soil can be worked\n- Good for beds that won't be planted until summer\n- Choose fast-growing options like oats or buckwheat\n\n**Summer Cover Crops**:\n- Buckwheat is the classic choice - 30 days to flower\n- Fills short gaps between spring and fall plantings\n- Excellent for attracting pollinators\n\nCheck your LocalRoots Growing Profile for frost dates to time fall plantings correctly."
+        },
+        {
+          "title": "Planting Methods",
+          "content": "Cover crops are generally broadcast sown (scattered) rather than planted in rows:\n\n1. **Clear the bed** of crop residue and weeds.\n\n2. **Rake smooth** and remove large debris.\n\n3. **Calculate seed rate**: Package will specify per 1000 sq ft. For a 100 sq ft bed, use 1/10 of that amount.\n\n4. **Broadcast seed** by hand, walking across the bed in two perpendicular passes for even coverage.\n\n5. **Rake lightly** to cover seeds 1/4 to 1/2 inch deep.\n\n6. **Water gently** and keep moist until germination.\n\n**Alternative - understory planting**: Broadcast cover crop seeds between rows of summer crops 4-6 weeks before expected frost. The cover crop establishes under the main crop and takes over after harvest."
+        },
+        {
+          "title": "Termination and Incorporation",
+          "content": "Cover crops must be killed and incorporated before planting your next cash crop. Timing is critical - kill them too late and they'll compete with your vegetables.\n\n**When to terminate**: 2-3 weeks before you want to plant. This allows decomposition time.\n\n**Methods**:\n\n1. **Mow/cut then till**: Cut cover crop at ground level, let wilt 2-3 days, then turn under with a fork or tiller.\n\n2. **Smother method**: Mow low, cover with cardboard or tarps for 3-4 weeks. No tillage required.\n\n3. **Winter-kill**: Some covers (oats, tillage radish) die in cold winters. Just rake aside dead material in spring.\n\n4. **Crimp-roll**: For no-till gardeners - flatten the crop, then transplant directly into the mulch.\n\n**Important**: Kill legume covers at peak flowering for maximum nitrogen release. Grasses should be terminated before seed heads form."
+        },
+        {
+          "title": "Cover Crop Calendar",
+          "content": "**For a typical Zone 6-7 garden**:\n\n**August-September**: Plant fall brassicas cover (tillage radish) after early summer crops finish.\n\n**September-October**: Plant winter rye/clover mix after tomatoes and peppers finish.\n\n**April**: Terminate overwintered cover crop. Wait 2-3 weeks before planting.\n\n**May-June**: Plant buckwheat in beds waiting for warm-season transplants.\n\n**July**: Mow buckwheat at flowering. Can replant for second round.\n\nAdjust dates based on your specific frost dates. The goal is never having bare soil - it's either growing food or growing soil fertility."
+        }
+      ],
+      "materials": [
+        "Cover crop seeds (1-2 lbs per 1000 sq ft)",
+        "Rake",
+        "Broadcast spreader (optional)",
+        "Mower or string trimmer",
+        "Tarps (for smother method)"
+      ],
+      "relatedCrops": ["pea-sugar-snap", "bean-snap"],
+      "relatedGuides": ["composting", "raised-beds"]
+    },
+    "growing-naturally": {
+      "title": "Growing Naturally Without Chemicals",
+      "slug": "growing-naturally",
+      "description": "Learn how to grow healthy, productive vegetables using organic methods - no synthetic pesticides, herbicides, or fertilizers needed.",
+      "difficulty": "beginner",
+      "timeToComplete": "ongoing",
+      "image": "/images/guides/organic-growing.jpg",
+      "tags": ["organic", "sustainability", "natural", "pest-control"],
+      "sections": [
+        {
+          "title": "Why Grow Naturally?",
+          "content": "Growing without synthetic chemicals isn't just better for your health and the environment - it often produces better-tasting food that your LocalRoots customers will notice and appreciate.\n\n**Benefits of natural growing:**\n- **Healthier soil**: Chemical fertilizers can kill beneficial soil organisms. Natural methods feed the soil ecosystem, which feeds your plants.\n- **Better flavor**: Many gardeners and chefs report that naturally-grown produce tastes better. Slower growth may concentrate flavors.\n- **Lower costs**: Once established, natural gardens require fewer purchased inputs. You'll make your own fertilizers and pest controls.\n- **Safer for you**: No worry about chemical exposure while gardening or eating your harvest.\n- **Better for pollinators**: Your garden becomes a haven for bees, butterflies, and beneficial insects.\n- **Marketing advantage**: Many LocalRoots buyers specifically seek naturally-grown produce.\n\nThe key insight: instead of fighting nature with chemicals, work with natural systems to grow healthy plants that resist pests and disease on their own."
+        },
+        {
+          "title": "Building Healthy Soil",
+          "content": "Healthy soil is the foundation of natural gardening. When soil is alive with beneficial organisms, plants grow stronger and more resistant to problems.\n\n**Feed the soil, not just the plants:**\n\n- **Compost**: The cornerstone of natural fertility. Add 1-2 inches annually. Compost feeds soil life, improves structure, and provides slow-release nutrients.\n\n- **Mulch**: Cover bare soil with 2-4 inches of organic mulch (straw, leaves, wood chips). This feeds soil organisms, retains moisture, and suppresses weeds.\n\n- **Avoid tilling**: Excessive tilling destroys soil structure and kills beneficial fungi. Use no-dig methods when possible - add compost on top and let worms incorporate it.\n\n- **Keep soil covered**: Bare soil erodes, loses organic matter, and allows weed seeds to germinate. Use cover crops in off-season.\n\n- **Rotate crops**: Moving plant families to different beds each year prevents nutrient depletion and disease buildup.\n\n**Signs of healthy soil**: Earthy smell, crumbly texture, lots of earthworms, dark color, and water soaks in rather than running off."
+        },
+        {
+          "title": "Natural Fertilizers",
+          "content": "Plants need nitrogen (N), phosphorus (P), and potassium (K), plus trace minerals. Here's how to provide them naturally:\n\n**Nitrogen sources:**\n- Compost and composted manure\n- Blood meal (fast-acting)\n- Feather meal (slow-release)\n- Legume cover crops (clover, peas)\n- Grass clippings as mulch\n\n**Phosphorus sources:**\n- Bone meal\n- Rock phosphite\n- Compost with food scraps\n\n**Potassium sources:**\n- Wood ash (also raises pH - use sparingly)\n- Kelp meal\n- Greensand\n- Banana peels in compost\n\n**Complete natural fertilizers:**\n- Fish emulsion: Balanced, fast-acting liquid feed\n- Kelp/seaweed: Trace minerals plus growth hormones\n- Worm castings: Gentle, balanced, and full of beneficial microbes\n\n**DIY fertilizer tea**: Steep compost or worm castings in water for 24-48 hours. Strain and apply to soil or as foliar spray. Free and effective!"
+        },
+        {
+          "title": "Preventing Pest Problems",
+          "content": "In natural gardening, prevention is everything. Healthy plants in balanced ecosystems rarely have serious pest problems.\n\n**Build plant health:**\n- Strong, well-fed plants resist pests better. Weak, stressed plants attract them.\n- Water consistently - drought stress weakens plants.\n- Don't over-fertilize with nitrogen - lush, soft growth attracts aphids and other sucking insects.\n\n**Encourage beneficial insects:**\n- Plant flowers among vegetables: marigolds, alyssum, zinnias, and herbs attract predators that eat pests.\n- Leave some 'wild' areas for beneficial insects to overwinter.\n- Avoid killing all insects - most are beneficial or neutral.\n- Key beneficials: ladybugs eat aphids, lacewings eat many pests, parasitic wasps target caterpillars, ground beetles eat slugs.\n\n**Physical barriers:**\n- Row cover (floating fabric) keeps flying insects off crops entirely\n- Collars around stems prevent cutworm damage\n- Copper tape deters slugs\n- Hand-picking large pests (hornworms, squash bugs) is surprisingly effective\n\n**Crop rotation**: Many pests overwinter in soil near their host plants. Moving crop families annually breaks pest cycles."
+        },
+        {
+          "title": "Natural Pest Remedies",
+          "content": "When prevention isn't enough, these natural treatments are effective and break down quickly without residue:\n\n**Insecticidal soap**: Kills soft-bodied insects (aphids, whiteflies, spider mites) on contact. Safe for food crops. Spray directly on pests, not as a preventive.\n\n**Neem oil**: Disrupts insect feeding and reproduction. Effective against many pests including aphids, beetles, and caterpillars. Apply in evening to avoid harming bees.\n\n**Diatomaceous earth**: Microscopic sharp edges cut soft-bodied pests. Dust on dry plants for slugs, beetles, and ants. Reapply after rain.\n\n**BT (Bacillus thuringiensis)**: Natural bacteria that kills caterpillars (cabbage worms, tomato hornworms) without harming other insects. Very targeted and safe.\n\n**Spinosad**: Derived from soil bacteria. Effective against many chewing insects. More powerful than other options - use as last resort.\n\n**Homemade sprays:**\n- Garlic spray: Blend garlic with water, strain, spray. Repels many insects.\n- Hot pepper spray: Deters mammals and some insects.\n- Baking soda spray: 1 tbsp per gallon water helps prevent fungal diseases.\n\n**Remember**: Even natural pesticides can harm beneficial insects. Use targeted applications, spray in evening, and only when necessary."
+        },
+        {
+          "title": "Disease Prevention",
+          "content": "Most plant diseases are fungal, spread by water splash and favored by humid conditions. Prevention is much easier than treatment.\n\n**Cultural practices:**\n- **Air circulation**: Space plants properly, prune for airflow, stake tomatoes vertically.\n- **Water at soil level**: Drip irrigation or soaker hoses keep foliage dry. If you must overhead water, do it early morning so plants dry quickly.\n- **Remove infected material**: Don't compost diseased plants - bag and trash them.\n- **Rotate crops**: Many diseases persist in soil. Don't plant the same family in the same spot for 3-4 years.\n- **Clean tools**: Dip pruners in rubbing alcohol between plants when disease is present.\n\n**Natural fungicides:**\n- **Copper spray**: Effective preventive for many fungal and bacterial diseases. Apply before problems start.\n- **Sulfur**: Prevents powdery mildew and other fungi. Don't use within 2 weeks of oil sprays.\n- **Baking soda**: 1 tbsp plus 1 tsp dish soap per gallon water. Mild preventive for powdery mildew.\n- **Milk spray**: 40% milk to 60% water prevents powdery mildew on squash. Really works!\n\n**Disease-resistant varieties**: When available, choose varieties bred for resistance to common diseases in your area. Seed catalogs note this with codes like VF (verticillium, fusarium resistant)."
+        },
+        {
+          "title": "Weed Management",
+          "content": "Without herbicides, weed control requires different strategies. The good news: it gets easier each year as you reduce the weed seed bank.\n\n**Mulch heavily**: This is your best tool. 3-4 inches of organic mulch (straw, leaves, wood chips) suppresses most weed seeds. Refresh as needed.\n\n**Never let weeds go to seed**: One plant can produce thousands of seeds. Pull or hoe weeds when young. The saying: 'One year's seeds, seven years' weeds.'\n\n**Use the stale seedbed technique**:\n1. Prepare your bed 2-3 weeks before planting\n2. Water to germinate weed seeds\n3. Shallowly hoe or flame-weed the sprouts\n4. Plant your crop into the now weed-seed-depleted soil\n\n**Flame weeding**: A propane torch quickly kills young weeds without disturbing soil. Especially useful for slow-germinating crops like carrots.\n\n**Occultation**: Cover beds with black tarps for 4-6 weeks. Heat and darkness kill weeds and weed seeds near the surface.\n\n**Close spacing**: Dense plantings shade out weeds. Once your crop canopy closes, weeds struggle.\n\n**Accept some weeds**: A few weeds aren't a crisis. Some even attract beneficial insects. Focus your energy on preventing weeds from seeding."
+        },
+        {
+          "title": "Companion Planting",
+          "content": "Certain plant combinations benefit each other through pest confusion, beneficial insect attraction, or complementary growth habits.\n\n**Classic combinations:**\n- **Tomatoes + basil**: Basil may repel tomato hornworms and improves tomato flavor (some say).\n- **Carrots + onions**: Each repels the other's main pest fly.\n- **Squash + corn + beans** (Three Sisters): Corn provides trellis, beans fix nitrogen, squash shades soil.\n- **Brassicas + dill**: Dill attracts beneficial wasps that parasitize cabbage worms.\n- **Lettuce + tall plants**: Lettuce appreciates afternoon shade in summer.\n\n**Flowers to interplant:**\n- **Marigolds**: Root secretions deter nematodes. Flowers repel some pests.\n- **Nasturtiums**: Trap crop for aphids - they'll attack nasturtiums first.\n- **Alyssum**: Low-growing, attracts tiny parasitic wasps and hoverflies.\n- **Calendula**: Attracts beneficials, edible flowers, and medicinal uses.\n- **Sunflowers**: Attract pollinators and beneficial insects. Provide structure for climbing crops.\n\n**Herbs throughout the garden:**\n- Scatter basil, cilantro, dill, and parsley among vegetables.\n- Their flowers attract beneficial insects.\n- Strong scents may confuse pest insects searching for host plants.\n\nCompanion planting isn't magic - healthy soil and good cultural practices matter more. But it adds beauty, diversity, and often real pest-reduction benefits."
+        }
+      ],
+      "materials": [
+        "Compost (homemade or purchased)",
+        "Organic mulch (straw, leaves, or wood chips)",
+        "Row cover fabric",
+        "Insecticidal soap",
+        "Neem oil",
+        "BT (Bacillus thuringiensis) for caterpillars",
+        "Diatomaceous earth",
+        "Fish emulsion or kelp fertilizer"
+      ],
+      "relatedCrops": ["tomato-cherry", "lettuce-romaine", "basil", "carrot", "squash-zucchini"],
+      "relatedGuides": ["composting", "cover-crops", "raised-beds"]
+    }
+  }
+}

@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { geohashToBytes8 } from '@/lib/geohash';
-import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
-import { useGaslessTransaction } from './useGaslessTransaction';
+import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
 import type { Hex } from 'viem';
 
 interface RegisterSellerParams {
@@ -25,24 +25,21 @@ interface RegisterSellerParams {
  * Falls back to direct transactions for test wallet or if gasless disabled
  */
 export function useRegisterSeller() {
-  const { connector } = useAccount();
+  const { authenticated } = usePrivy();
 
-  // Gasless transaction support
+  // Gasless transaction support - sellers always use Privy wallet
+  // This ensures the Privy wallet address becomes the registered seller
   const {
     executeGasless,
     isLoading: isGaslessLoading,
     error: gaslessError,
-  } = useGaslessTransaction();
+  } = usePrivyGaslessTransaction();
 
   // State for gasless transactions
   const [gaslessTxHash, setGaslessTxHash] = useState<Hex | null>(null);
+  const [gaslessLocalError, setGaslessLocalError] = useState<Error | null>(null);
 
-  // State for test wallet direct transactions
-  const [directTxHash, setDirectTxHash] = useState<Hex | null>(null);
-  const [directError, setDirectError] = useState<Error | null>(null);
-  const [isDirectWriting, setIsDirectWriting] = useState(false);
-
-  // Wagmi hooks for regular wallets (fallback)
+  // Wagmi hooks for external wallets (fallback if gasless fails)
   const {
     data: wagmiHash,
     writeContract,
@@ -51,8 +48,8 @@ export function useRegisterSeller() {
     reset: wagmiReset,
   } = useWriteContract();
 
-  // Use whichever hash is available (priority: gasless > direct > wagmi)
-  const hash = gaslessTxHash || directTxHash || wagmiHash;
+  // Use whichever hash is available (priority: gasless > wagmi)
+  const hash = gaslessTxHash || wagmiHash;
 
   const {
     isLoading: isConfirming,
@@ -62,15 +59,12 @@ export function useRegisterSeller() {
     hash,
   });
 
-  const isTestWallet = connector?.id === 'testWallet';
-  const isWriting = isGaslessLoading || isDirectWriting || isWagmiWriting;
-  const writeError = directError || wagmiWriteError || (gaslessError ? new Error(gaslessError) : null);
+  const isWriting = isGaslessLoading || isWagmiWriting;
+  const writeError = gaslessLocalError || wagmiWriteError || (gaslessError ? new Error(gaslessError) : null);
 
   const reset = () => {
     setGaslessTxHash(null);
-    setDirectTxHash(null);
-    setDirectError(null);
-    setIsDirectWriting(false);
+    setGaslessLocalError(null);
     wagmiReset();
   };
 
@@ -88,45 +82,15 @@ export function useRegisterSeller() {
       ambassadorId: ambassadorId.toString(),
       useGasless,
     });
-    console.log('[useRegisterSeller] Connector:', connector?.id, 'Is test wallet:', isTestWallet);
 
     // Clear any previous errors/state
-    setDirectError(null);
+    setGaslessLocalError(null);
     setGaslessTxHash(null);
 
-    // Use direct viem method for test wallet (test wallets have ETH)
-    if (isTestWallet && isTestWalletAvailable()) {
-      console.log('[useRegisterSeller] Using direct test wallet transaction');
-      setIsDirectWriting(true);
-      try {
-        const txHash = await testWalletWriteContract({
-          address: MARKETPLACE_ADDRESS,
-          abi: marketplaceAbi,
-          functionName: 'registerSeller',
-          args: [
-            geohashBytes,
-            params.storefrontIpfs,
-            params.offersDelivery,
-            params.offersPickup,
-            BigInt(params.deliveryRadiusKm),
-            ambassadorId,
-          ],
-          gas: 500000n,
-        });
-        console.log('[useRegisterSeller] Test wallet transaction sent:', txHash);
-        setDirectTxHash(txHash);
-      } catch (err) {
-        console.error('[useRegisterSeller] Test wallet transaction failed:', err);
-        setDirectError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        setIsDirectWriting(false);
-      }
-      return;
-    }
-
-    // Use gasless transaction by default (no ETH needed!)
-    if (useGasless) {
-      console.log('[useRegisterSeller] Using gasless meta-transaction');
+    // Sellers always use gasless transactions via Privy wallet
+    // This ensures the Privy wallet address receives seller payments
+    if (authenticated && useGasless) {
+      console.log('[useRegisterSeller] Using gasless meta-transaction (Privy wallet will be registered)');
       try {
         const txHash = await executeGasless({
           to: MARKETPLACE_ADDRESS,
@@ -148,7 +112,7 @@ export function useRegisterSeller() {
         }
       } catch (err) {
         console.error('[useRegisterSeller] Gasless transaction failed:', err);
-        setDirectError(err instanceof Error ? err : new Error(String(err)));
+        setGaslessLocalError(err instanceof Error ? err : new Error(String(err)));
       }
       return;
     }

@@ -93,11 +93,11 @@ export function FundsAvailable() {
 
   // Show demo mode UI if enabled
   if (isDemoMode) {
-    const formattedDemoRoots = parseFloat(formatUnits(demoBalances.ROOTS, 18)).toLocaleString(undefined, {
+    const formattedDemoRoots = parseFloat(formatUnits(BigInt(demoBalances.ROOTS), 18)).toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-    const formattedDemoEth = parseFloat(formatUnits(demoBalances.ETH, 18)).toLocaleString(undefined, {
+    const formattedDemoEth = parseFloat(formatUnits(BigInt(demoBalances.ETH), 18)).toLocaleString(undefined, {
       minimumFractionDigits: 4,
       maximumFractionDigits: 4,
     });
@@ -185,28 +185,24 @@ export function FundsAvailable() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
-        Funds Available
+        Your Balance
       </h3>
 
-      {/* Wrong network warning */}
-      {!isCorrectNetwork && (
+      {/* Wrong network warning - only show in development */}
+      {!isCorrectNetwork && process.env.NODE_ENV === 'development' && (
         <div className="mb-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-          <p className="text-amber-800 text-xs font-medium mb-1">Wrong Network</p>
+          <p className="text-amber-800 text-xs font-medium mb-1">Development Mode</p>
           <p className="text-amber-700 text-xs mb-2">
-            You're on <strong>{chain?.name || 'Unknown'}</strong>. Local Roots uses Base Sepolia testnet.
+            Switch to test network to continue.
           </p>
-          {canUseTestWallet ? (
+          {canUseTestWallet && (
             <button
               onClick={handleUseTestWallet}
               disabled={isConnecting}
               className="w-full px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 disabled:opacity-50"
             >
-              {isConnecting ? 'Connecting...' : 'Use Test Wallet (Base Sepolia)'}
+              {isConnecting ? 'Connecting...' : 'Use Test Account'}
             </button>
-          ) : (
-            <p className="text-amber-700 text-xs">
-              Configure NEXT_PUBLIC_TEST_WALLET_PRIVATE_KEY in .env.local to use the test wallet.
-            </p>
           )}
         </div>
       )}
@@ -222,8 +218,8 @@ export function FundsAvailable() {
           {formattedRoots !== null && (
             <TokenRow
               symbol="R"
-              name="$ROOTS"
-              description="Local Roots Token"
+              name="Rewards"
+              description="Available balance"
               balance={formattedRoots}
               color="bg-roots-primary"
               highlight
@@ -234,50 +230,23 @@ export function FundsAvailable() {
           {formattedUsdc !== null && (
             <TokenRow
               symbol="$"
-              name="USDC"
-              description="USD Coin"
+              name="USD"
+              description="Available balance"
               balance={formattedUsdc}
               color="bg-blue-500"
             />
           )}
-
-          {/* ETH */}
-          <TokenRow
-            symbol="E"
-            name="ETH"
-            description="For gas fees"
-            balance={formattedEth}
-            color="bg-slate-600"
-          />
         </div>
       )}
 
-      {/* Helpful message if no funds */}
-      {hasNoFunds && !isLoading && (
+      {/* Helpful message if no funds - only show in development */}
+      {hasNoFunds && !isLoading && process.env.NODE_ENV === 'development' && (
         <div className="mt-3 p-2 bg-amber-50 rounded-lg border border-amber-200">
           <p className="text-xs text-amber-800">
-            <strong>Need funds?</strong> Get testnet ETH from a{' '}
-            <a
-              href="https://www.coinbase.com/faucets/base-sepolia-faucet"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:no-underline"
-            >
-              Base Sepolia faucet
-            </a>
+            <strong>Dev:</strong> Get test funds from a faucet
           </p>
         </div>
       )}
-
-      {/* Network indicator */}
-      <div className="mt-3 pt-3 border-t flex items-center justify-between">
-        <div className="text-xs text-roots-gray">
-          {address?.slice(0, 6)}...{address?.slice(-4)}
-        </div>
-        <div className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-roots-gray">
-          {chain?.name || 'Base Sepolia'}
-        </div>
-      </div>
     </div>
   );
 }

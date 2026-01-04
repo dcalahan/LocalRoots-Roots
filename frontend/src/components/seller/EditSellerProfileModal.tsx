@@ -175,7 +175,11 @@ export function EditSellerProfileModal({ profile, onClose, onSuccess }: EditSell
             </div>
 
             <div className="pt-4 border-t space-y-4">
-              <div className="flex items-center justify-between">
+              <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
+                offersPickup
+                  ? 'bg-roots-primary/10 border-roots-primary'
+                  : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+              }`}>
                 <div>
                   <p className="font-medium">Offer Pickup</p>
                   <p className="text-sm text-roots-gray">Buyers can pick up from your location</p>
@@ -183,7 +187,11 @@ export function EditSellerProfileModal({ profile, onClose, onSuccess }: EditSell
                 <Switch checked={offersPickup} onCheckedChange={setOffersPickup} />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
+                offersDelivery
+                  ? 'bg-roots-primary/10 border-roots-primary'
+                  : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+              }`}>
                 <div>
                   <p className="font-medium">Offer Delivery</p>
                   <p className="text-sm text-roots-gray">You can deliver to buyers</p>

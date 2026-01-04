@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
-import { useGaslessTransaction } from './useGaslessTransaction';
+import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
 import type { Hex } from 'viem';
 
 interface UpdateListingParams {
@@ -23,13 +24,15 @@ interface UpdateListingParams {
  */
 export function useUpdateListing() {
   const { connector } = useAccount();
+  const { authenticated } = usePrivy();
 
-  // Gasless transaction support
+  // Gasless transaction support - use Privy wallet for sellers
+  // This ensures updates are made by the seller's Privy wallet
   const {
     executeGasless,
     isLoading: isGaslessLoading,
     error: gaslessError,
-  } = useGaslessTransaction();
+  } = usePrivyGaslessTransaction();
 
   // State for gasless transactions
   const [gaslessTxHash, setGaslessTxHash] = useState<Hex | null>(null);
@@ -87,9 +90,43 @@ export function useUpdateListing() {
     setDirectError(null);
     setGaslessTxHash(null);
 
-    // Use direct viem method for test wallet (test wallets have ETH)
+    // IMPORTANT: When Privy is authenticated, always use gasless transactions
+    // This ensures the Privy wallet (seller's identity) makes the update
+    const shouldUseGasless = authenticated && useGasless;
+
+    console.log('[useUpdateListing] Auth state:', { authenticated, useGasless, shouldUseGasless, isTestWallet });
+
+    // Use gasless transaction when Privy is authenticated (seller's Privy wallet)
+    if (shouldUseGasless) {
+      console.log('[useUpdateListing] Using gasless meta-transaction (Privy wallet)');
+      try {
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'updateListing',
+          args: [
+            params.listingId,
+            params.metadataIpfs,
+            params.pricePerUnit,
+            BigInt(params.quantityAvailable),
+            params.active,
+          ],
+          gas: 300000n,
+        });
+        if (txHash) {
+          console.log('[useUpdateListing] Gasless transaction sent:', txHash);
+          setGaslessTxHash(txHash);
+        }
+      } catch (err) {
+        console.error('[useUpdateListing] Gasless transaction failed:', err);
+        setDirectError(err instanceof Error ? err : new Error(String(err)));
+      }
+      return;
+    }
+
+    // Use test wallet when Privy is NOT authenticated (dev-only fallback)
     if (isTestWallet && isTestWalletAvailable()) {
-      console.log('[useUpdateListing] Using direct test wallet transaction');
+      console.log('[useUpdateListing] Using test wallet (no Privy auth)');
       setIsDirectWriting(true);
       try {
         const txHash = await testWalletWriteContract({
@@ -112,34 +149,6 @@ export function useUpdateListing() {
         setDirectError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setIsDirectWriting(false);
-      }
-      return;
-    }
-
-    // Use gasless transaction by default (no ETH needed!)
-    if (useGasless) {
-      console.log('[useUpdateListing] Using gasless meta-transaction');
-      try {
-        const txHash = await executeGasless({
-          to: MARKETPLACE_ADDRESS,
-          abi: marketplaceAbi,
-          functionName: 'updateListing',
-          args: [
-            params.listingId,
-            params.metadataIpfs,
-            params.pricePerUnit,
-            BigInt(params.quantityAvailable),
-            params.active,
-          ],
-          gas: 300000n,
-        });
-        if (txHash) {
-          console.log('[useUpdateListing] Gasless transaction sent:', txHash);
-          setGaslessTxHash(txHash);
-        }
-      } catch (err) {
-        console.error('[useUpdateListing] Gasless transaction failed:', err);
-        setDirectError(err instanceof Error ? err : new Error(String(err)));
       }
       return;
     }

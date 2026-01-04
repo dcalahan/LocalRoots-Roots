@@ -1,0 +1,104 @@
+specVersion: 0.0.5
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: LocalRootsMarketplace
+    network: base-sepolia
+    source:
+      address: "0x63476E1FA440D292f5D1caA0Eb1A2EF58fE888A7"
+      abi: LocalRootsMarketplace
+      startBlock: 35843800
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Seller
+        - Listing
+        - Order
+        - SeedsBalance
+        - SeedsEvent
+        - GlobalSeedsStats
+      abis:
+        - name: LocalRootsMarketplace
+          file: contracts/out/LocalRootsMarketplace.sol/LocalRootsMarketplace.json
+      eventHandlers:
+        - event: SellerRegistered(indexed uint256,indexed address,bytes8)
+          handler: handleSellerRegistered
+        - event: SellerUpdated(indexed uint256)
+          handler: handleSellerUpdated
+        - event: ListingCreated(indexed uint256,indexed uint256,uint256)
+          handler: handleListingCreated
+        - event: ListingUpdated(indexed uint256)
+          handler: handleListingUpdated
+        - event: OrderCreated(indexed uint256,indexed uint256,indexed address,uint256)
+          handler: handleOrderCreated
+        - event: OrderStatusChanged(indexed uint256,uint8)
+          handler: handleOrderStatusChanged
+        - event: DisputeRaised(indexed uint256,indexed address)
+          handler: handleDisputeRaised
+        - event: SeedsEarned(indexed address,uint256,string,uint256)
+          handler: handleSeedsEarned
+        - event: SellerMilestoneSeeds(indexed address,indexed uint256,uint256,string)
+          handler: handleSellerMilestoneSeeds
+      file: LocalRootsMarketplace/LocalRootsMarketplace.wasm
+  - kind: ethereum
+    name: AmbassadorRewards
+    network: base-sepolia
+    source:
+      address: "0x19969dfad0f5e4A859944fD15aa613C37AcE7ad4"
+      abi: AmbassadorRewards
+      startBlock: 35843800
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Ambassador
+        - SellerRecruitment
+        - SeedsBalance
+        - SeedsEvent
+        - GlobalSeedsStats
+      abis:
+        - name: AmbassadorRewards
+          file: contracts/out/AmbassadorRewards.sol/AmbassadorRewards.json
+      eventHandlers:
+        - event: AmbassadorRegistered(indexed uint256,indexed address,indexed uint256)
+          handler: handleAmbassadorRegistered
+        - event: StateFounderRegistered(indexed uint256,indexed address,bytes8)
+          handler: handleStateFounderRegistered
+        - event: SellerRecruited(indexed uint256,indexed uint256)
+          handler: handleSellerRecruited
+        - event: SellerActivated(indexed uint256,indexed uint256)
+          handler: handleSellerActivated
+        - event: RewardQueued(indexed uint256,indexed uint256,uint256,uint256)
+          handler: handleRewardQueued
+        - event: RewardClaimed(indexed uint256,indexed uint256,uint256)
+          handler: handleRewardClaimed
+        - event: AmbassadorSeedsEarned(indexed uint256,uint256,uint256,uint256)
+          handler: handleAmbassadorSeedsEarned
+        - event: AmbassadorRecruitmentSeeds(indexed uint256,indexed uint256,uint256)
+          handler: handleAmbassadorRecruitmentSeeds
+      file: AmbassadorRewards/AmbassadorRewards.wasm
+  - kind: ethereum
+    name: RootsToken
+    network: base-sepolia
+    source:
+      address: "0x0000000000000000000000000000000000000001"
+      abi: RootsToken
+      startBlock: 35843800
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - TokenHolder
+        - Transfer
+      abis:
+        - name: RootsToken
+          file: contracts/out/RootsToken.sol/RootsToken.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: RootsToken/RootsToken.wasm

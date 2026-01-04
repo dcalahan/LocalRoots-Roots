@@ -1,16 +1,15 @@
 import { type Address } from 'viem';
 
-// Contract addresses on Base Sepolia (v5 deployment - redeployed with correct ambassador)
-export const MARKETPLACE_ADDRESS: Address = '0xCF1a1B59e9867bf70a6dFb88159A78160E6B00D0';
-export const ROOTS_TOKEN_ADDRESS: Address = '0xffDAa58B1EB72c81ba8B728880b18A8E52409Ac7';
-export const AMBASSADOR_REWARDS_ADDRESS: Address = '0x9bB140264a3A7b9411F4dd74108481E780e1A55b';
-export const FOUNDER_VESTING_ADDRESS: Address = '0x98111962d809B4AA056a549012Efe16156B79DC5';
-export const FORWARDER_ADDRESS: Address = '0x24A316733D68A0a7B8917E347cF02ed45bE0E034';
+// Contract addresses - loaded from environment variables
+export const MARKETPLACE_ADDRESS: Address = (process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS || '0xEe6eCF5A36925C4D95097ffa2F40632bf500a0F8') as Address;
+export const ROOTS_TOKEN_ADDRESS: Address = (process.env.NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS || '0x33eFBF74Df84193Ce39dfF91394d9A0fE20c36c3') as Address;
+export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x13C20235BD86635627573e3027b6112a28dCfe3E') as Address;
+export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x63e7eb99daE531227dD690A031eAD1d8d5BeAc54') as Address;
 
-// Payment token addresses (Mock tokens for testnet)
-export const USDC_ADDRESS: Address = '0x46d25975B3C6894Bab136416520b642B7F6BE8E7';
-export const USDT_ADDRESS: Address = '0xC124130852Fa56634D1DC7ee8A0dF288DFcF70A8';
-export const SWAP_ROUTER_ADDRESS: Address = '0xa49BA7c5444D4CCce5cc44aBd9b2dfb9CADf758f';
+// Payment token addresses (Mock tokens for testnet) - Jan 2 fresh deployment
+export const USDC_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x1638264e592C58327fb3Fe7D74509d1Ca7c86F1d') as Address;
+export const USDT_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDT_ADDRESS || '0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b') as Address;
+export const SWAP_ROUTER_ADDRESS: Address = (process.env.NEXT_PUBLIC_SWAP_ROUTER_ADDRESS || '0x6e75366f3bda38C6Ba83082Ea94d0dC14345F772') as Address;
 
 // Payment token types and configuration
 export type PaymentToken = 'ROOTS' | 'USDC' | 'USDT';

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +14,6 @@ import { LocationPicker } from './LocationPicker';
 import { ImageUploader } from './ImageUploader';
 import { useToast } from '@/hooks/use-toast';
 import { useRegisterSeller } from '@/hooks/useRegisterSeller';
-import { WalletButton } from '@/components/WalletButton';
 import { uploadImage, uploadMetadata } from '@/lib/pinata';
 
 // Helper to convert base64 data URL to File
@@ -36,7 +36,8 @@ interface SellerRegistrationFormProps {
 export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { isConnected, address } = useAccount();
+  const { isConnected } = useAccount();
+  const { login, authenticated } = usePrivy();
   const { registerSeller, isPending, isSuccess, error, txHash } = useRegisterSeller();
 
   // Form state
@@ -51,6 +52,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   } | null>(null);
   const [offersDelivery, setOffersDelivery] = useState(false);
   const [offersPickup, setOffersPickup] = useState(true);
+  const [pickupAddress, setPickupAddress] = useState('');
   const [deliveryRadiusKm, setDeliveryRadiusKm] = useState(10);
   const [profileImageHash, setProfileImageHash] = useState<string | null>(null);
   const [showLocationWarning, setShowLocationWarning] = useState(false);
@@ -65,7 +67,8 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
       // Clear ambassador referral from localStorage
       localStorage.removeItem('ambassadorRef');
     }
-  }, [isSuccess, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuccess]);
 
   // Handle errors
   useEffect(() => {
@@ -76,27 +79,21 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
         variant: 'destructive',
       });
     }
-  }, [error, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   // For MVP, location is optional - we can collect it later
+  // Pickup address is required if offering pickup
   const isFormValid =
     name.trim().length > 0 &&
     description.trim().length > 0 &&
     email.trim().length > 0 &&
     email.includes('@') &&
-    (offersDelivery || offersPickup);
+    (offersDelivery || offersPickup) &&
+    (!offersPickup || pickupAddress.trim().length > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isConnected) {
-      toast({
-        title: 'Wallet not connected',
-        description: 'Please connect your wallet to register as a seller.',
-        variant: 'destructive',
-      });
-      return;
-    }
 
     if (!isFormValid) {
       toast({
@@ -104,6 +101,13 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
         description: 'Please fill in all required fields.',
         variant: 'destructive',
       });
+      return;
+    }
+
+    // If not connected, trigger Privy login with the email from the form
+    // User will need to click submit again after login
+    if (!authenticated) {
+      login({ prefill: { type: 'email', value: email.trim() } });
       return;
     }
 
@@ -138,6 +142,11 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
         imageUrl: finalImageUrl,
         createdAt: new Date().toISOString(),
       };
+
+      // Include pickup address if offering pickup
+      if (offersPickup && pickupAddress.trim()) {
+        metadata.address = pickupAddress.trim();
+      }
 
       // Include ambassador referral if present
       if (ambassadorId) {
@@ -280,7 +289,11 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
           <div className="pt-4 border-t space-y-4">
             <Label className="block">How will buyers get their produce? *</Label>
 
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
+              offersPickup
+                ? 'bg-roots-primary/10 border-roots-primary'
+                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+            }`}>
               <div>
                 <p className="font-medium">Pickup from my place</p>
                 <p className="text-sm text-roots-gray">
@@ -293,7 +306,28 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            {offersPickup && (
+              <div className="pl-4">
+                <Label htmlFor="pickupAddress">Pickup location *</Label>
+                <Input
+                  id="pickupAddress"
+                  value={pickupAddress}
+                  onChange={(e) => setPickupAddress(e.target.value)}
+                  placeholder="e.g., 123 Oak Street or Corner of Oak and Main"
+                  className="mt-1"
+                  required
+                />
+                <p className="text-xs text-roots-gray mt-1">
+                  Where should buyers meet you? This will be shown to buyers after they order.
+                </p>
+              </div>
+            )}
+
+            <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
+              offersDelivery
+                ? 'bg-roots-primary/10 border-roots-primary'
+                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+            }`}>
               <div>
                 <p className="font-medium">I can deliver</p>
                 <p className="text-sm text-roots-gray">
@@ -395,20 +429,19 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
             </div>
           )}
 
-          {/* Wallet Connection */}
-          {!isConnected && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-sm text-amber-800 mb-3">
-                Connect your wallet to register as a seller on the blockchain.
+          {/* Show status if logged in */}
+          {authenticated && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                Logged in and ready to register!
               </p>
-              <WalletButton />
             </div>
           )}
 
           {/* Submit */}
           <Button
             type="submit"
-            disabled={!isFormValid || isPending || !isConnected}
+            disabled={!isFormValid || isPending}
             className="w-full bg-roots-primary hover:bg-roots-primary/90"
           >
             {isPending ? (
@@ -435,8 +468,6 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
                 </svg>
                 Registering on blockchain...
               </>
-            ) : !isConnected ? (
-              'Connect Wallet to Register'
             ) : (
               'Create My Seller Profile'
             )}

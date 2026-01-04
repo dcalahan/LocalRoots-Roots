@@ -40,10 +40,15 @@ export async function uploadMetadata(
  * Get the gateway URL for an IPFS hash
  */
 export function getIpfsUrl(ipfsHash: string): string {
+  if (!ipfsHash) return '';
+
   if (ipfsHash.startsWith('ipfs://')) {
     ipfsHash = ipfsHash.replace('ipfs://', '');
   }
-  return `https://${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${ipfsHash}`;
+
+  // Use env var with fallback to public gateway
+  const gateway = process.env.NEXT_PUBLIC_PINATA_GATEWAY || 'gateway.pinata.cloud';
+  return `https://${gateway}/ipfs/${ipfsHash}`;
 }
 
 export { pinata };

@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
 import { useSellerStatus } from './useSellerStatus';
-import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
-import { useGaslessTransaction } from './useGaslessTransaction';
+import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
+import { usePrivyWallet } from './usePrivyWallet';
 import { getIpfsUrl } from '@/lib/pinata';
-import { OrderStatus } from '@/types/order';
+import { OrderStatus, DISPUTE_WINDOW_SECONDS } from '@/types/order';
 
 // Re-export OrderStatus for convenience
 export { OrderStatus };
@@ -149,8 +149,8 @@ export function useSellerOrders() {
             buyerInfoIpfs,
           ] = order;
 
-          // Only include orders for this seller
-          if (orderSellerId === sellerId) {
+          // Only include orders for this seller (compare as strings)
+          if (orderSellerId.toString() === sellerId) {
             // Fetch listing to get metadata IPFS
             let produceName = 'Unknown Product';
             try {
@@ -217,239 +217,348 @@ export function useSellerOrders() {
   return { orders, isLoading, error, refetch: fetchOrders };
 }
 
-// Hook for accepting an order (gasless by default)
+// Hook for accepting an order - uses gasless meta-transactions
 export function useAcceptOrder() {
-  const { connector } = useAccount();
-  const { writeContract, data: wagmiHash, isPending: isWagmiPending, error: wagmiError } = useWriteContract();
-  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
-  const [gaslessHash, setGaslessHash] = useState<`0x${string}` | null>(null);
-  const [directHash, setDirectHash] = useState<`0x${string}` | null>(null);
-  const [directError, setDirectError] = useState<Error | null>(null);
-  const [isDirectPending, setIsDirectPending] = useState(false);
+  const { authenticated } = usePrivy();
+  const { address: privyAddress, isReady, ensureWallet, isCreating } = usePrivyWallet();
+  const { executeGasless, isLoading, error: gaslessError } = usePrivyGaslessTransaction();
 
-  const hash = gaslessHash || directHash || wagmiHash;
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const isTestWallet = connector?.id === 'testWallet';
-  const isPending = isGaslessLoading || isDirectPending || isWagmiPending || isConfirming;
-  const error = directError || wagmiError || (gaslessError ? new Error(gaslessError) : null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const acceptOrder = useCallback(
-    async (orderId: bigint, useGasless: boolean = true) => {
-      setDirectError(null);
-      setGaslessHash(null);
+    async (orderId: bigint): Promise<boolean> => {
+      setError(null);
+      setIsSuccess(false);
 
-      if (isTestWallet && isTestWalletAvailable()) {
-        setIsDirectPending(true);
-        try {
-          const txHash = await testWalletWriteContract({
-            address: MARKETPLACE_ADDRESS,
-            abi: marketplaceAbi,
-            functionName: 'acceptOrder',
-            args: [orderId],
-            gas: 100000n,
-          });
-          setDirectHash(txHash);
-        } catch (err) {
-          setDirectError(err instanceof Error ? err : new Error(String(err)));
-        } finally {
-          setIsDirectPending(false);
+      console.log('[useAcceptOrder] ========== ACCEPT ORDER START ==========');
+      console.log('[useAcceptOrder] orderId:', orderId.toString());
+      console.log('[useAcceptOrder] isReady:', isReady);
+      console.log('[useAcceptOrder] privyAddress:', privyAddress);
+      console.log('[useAcceptOrder] authenticated:', authenticated);
+
+      // If authenticated but no wallet, try to create one
+      let walletAddress = privyAddress;
+      if (authenticated && !privyAddress) {
+        console.log('[useAcceptOrder] No wallet found, attempting to create...');
+        walletAddress = await ensureWallet() as `0x${string}` | undefined;
+        if (!walletAddress) {
+          console.error('[useAcceptOrder] Failed to create wallet!');
+          setError(new Error('Unable to set up your account. Please try logging out and back in.'));
+          return false;
         }
-        return;
+        console.log('[useAcceptOrder] Wallet created:', walletAddress);
       }
 
-      // Use gasless by default
-      if (useGasless) {
-        try {
-          const txHash = await executeGasless({
-            to: MARKETPLACE_ADDRESS,
-            abi: marketplaceAbi,
-            functionName: 'acceptOrder',
-            args: [orderId],
-            gas: 100000n,
-          });
-          if (txHash) {
-            setGaslessHash(txHash);
-          }
-        } catch (err) {
-          setDirectError(err instanceof Error ? err : new Error(String(err)));
-        }
-        return;
+      if (!authenticated || !walletAddress) {
+        console.error('[useAcceptOrder] Not authenticated or no wallet!');
+        setError(new Error('Please sign in first'));
+        return false;
       }
 
-      writeContract({
-        address: MARKETPLACE_ADDRESS,
-        abi: marketplaceAbi,
-        functionName: 'acceptOrder',
-        args: [orderId],
-        gas: 100000n,
-      });
+      try {
+        console.log('[useAcceptOrder] Sending gasless transaction...');
+
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'acceptOrder',
+          args: [orderId],
+          gas: 150000n,
+        });
+
+        if (txHash) {
+          console.log('[useAcceptOrder] Transaction confirmed:', txHash);
+          setIsSuccess(true);
+          console.log('[useAcceptOrder] ========== ACCEPT ORDER END ==========');
+          return true;
+        } else {
+          throw new Error(gaslessError || 'Transaction failed');
+        }
+      } catch (err) {
+        console.error('[useAcceptOrder] Transaction error:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        console.log('[useAcceptOrder] ========== ACCEPT ORDER END ==========');
+        return false;
+      }
     },
-    [writeContract, executeGasless, isTestWallet]
+    [executeGasless, authenticated, privyAddress, ensureWallet, gaslessError, isReady]
   );
+
+  const reset = useCallback(() => {
+    setIsSuccess(false);
+    setError(null);
+  }, []);
 
   return {
     acceptOrder,
-    isPending,
+    isPending: isLoading || isCreating,
     isSuccess,
-    error,
+    error: error || (gaslessError ? new Error(gaslessError) : null),
+    reset,
   };
 }
 
-// Hook for marking order ready for pickup (gasless by default)
+// Hook for marking order ready for pickup - uses gasless meta-transactions
 export function useMarkReadyForPickup() {
-  const { connector } = useAccount();
-  const { writeContract, data: wagmiHash, isPending: isWagmiPending, error: wagmiError } = useWriteContract();
-  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
-  const [gaslessHash, setGaslessHash] = useState<`0x${string}` | null>(null);
-  const [directHash, setDirectHash] = useState<`0x${string}` | null>(null);
-  const [directError, setDirectError] = useState<Error | null>(null);
-  const [isDirectPending, setIsDirectPending] = useState(false);
+  const { authenticated } = usePrivy();
+  const { address: privyAddress, ensureWallet, isCreating } = usePrivyWallet();
+  const { executeGasless, isLoading, error: gaslessError } = usePrivyGaslessTransaction();
 
-  const hash = gaslessHash || directHash || wagmiHash;
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const isTestWallet = connector?.id === 'testWallet';
-  const isPending = isGaslessLoading || isDirectPending || isWagmiPending || isConfirming;
-  const error = directError || wagmiError || (gaslessError ? new Error(gaslessError) : null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const markReady = useCallback(
-    async (orderId: bigint, proofIpfs: string, useGasless: boolean = true) => {
-      setDirectError(null);
-      setGaslessHash(null);
+    async (orderId: bigint, proofIpfs: string): Promise<boolean> => {
+      setError(null);
+      setIsSuccess(false);
 
-      if (isTestWallet && isTestWalletAvailable()) {
-        setIsDirectPending(true);
-        try {
-          const txHash = await testWalletWriteContract({
-            address: MARKETPLACE_ADDRESS,
-            abi: marketplaceAbi,
-            functionName: 'markReadyForPickup',
-            args: [orderId, proofIpfs],
-            gas: 300000n,
-          });
-          setDirectHash(txHash);
-        } catch (err) {
-          setDirectError(err instanceof Error ? err : new Error(String(err)));
-        } finally {
-          setIsDirectPending(false);
+      console.log('[useMarkReadyForPickup] Called with orderId:', orderId.toString());
+
+      // Ensure wallet exists
+      let walletAddress = privyAddress;
+      if (authenticated && !privyAddress) {
+        walletAddress = await ensureWallet() as `0x${string}` | undefined;
+        if (!walletAddress) {
+          setError(new Error('Unable to set up your account. Please try logging out and back in.'));
+          return false;
         }
-        return;
       }
 
-      // Use gasless by default
-      if (useGasless) {
-        try {
-          const txHash = await executeGasless({
-            to: MARKETPLACE_ADDRESS,
-            abi: marketplaceAbi,
-            functionName: 'markReadyForPickup',
-            args: [orderId, proofIpfs],
-            gas: 300000n,
-          });
-          if (txHash) {
-            setGaslessHash(txHash);
-          }
-        } catch (err) {
-          setDirectError(err instanceof Error ? err : new Error(String(err)));
-        }
-        return;
+      if (!authenticated || !walletAddress) {
+        setError(new Error('Please sign in first'));
+        return false;
       }
 
-      writeContract({
-        address: MARKETPLACE_ADDRESS,
-        abi: marketplaceAbi,
-        functionName: 'markReadyForPickup',
-        args: [orderId, proofIpfs],
-        gas: 300000n,
-      });
+      try {
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'markReadyForPickup',
+          args: [orderId, proofIpfs],
+          gas: 300000n,
+        });
+
+        if (txHash) {
+          console.log('[useMarkReadyForPickup] Transaction confirmed:', txHash);
+          setIsSuccess(true);
+          return true;
+        } else {
+          throw new Error(gaslessError || 'Transaction failed');
+        }
+      } catch (err) {
+        console.error('[useMarkReadyForPickup] Transaction error:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        return false;
+      }
     },
-    [writeContract, executeGasless, isTestWallet]
+    [executeGasless, authenticated, privyAddress, ensureWallet, gaslessError]
   );
+
+  const reset = useCallback(() => {
+    setIsSuccess(false);
+    setError(null);
+  }, []);
 
   return {
     markReady,
-    isPending,
+    isPending: isLoading || isCreating,
     isSuccess,
-    error,
+    error: error || (gaslessError ? new Error(gaslessError) : null),
+    reset,
   };
 }
 
-// Hook for marking order out for delivery (gasless by default)
+// Hook for marking order out for delivery - uses gasless meta-transactions
 export function useMarkOutForDelivery() {
-  const { connector } = useAccount();
-  const { writeContract, data: wagmiHash, isPending: isWagmiPending, error: wagmiError } = useWriteContract();
-  const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
-  const [gaslessHash, setGaslessHash] = useState<`0x${string}` | null>(null);
-  const [directHash, setDirectHash] = useState<`0x${string}` | null>(null);
-  const [directError, setDirectError] = useState<Error | null>(null);
-  const [isDirectPending, setIsDirectPending] = useState(false);
+  const { authenticated } = usePrivy();
+  const { address: privyAddress, ensureWallet, isCreating } = usePrivyWallet();
+  const { executeGasless, isLoading, error: gaslessError } = usePrivyGaslessTransaction();
 
-  const hash = gaslessHash || directHash || wagmiHash;
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const isTestWallet = connector?.id === 'testWallet';
-  const isPending = isGaslessLoading || isDirectPending || isWagmiPending || isConfirming;
-  const error = directError || wagmiError || (gaslessError ? new Error(gaslessError) : null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const markOutForDelivery = useCallback(
-    async (orderId: bigint, proofIpfs: string, useGasless: boolean = true) => {
-      setDirectError(null);
-      setGaslessHash(null);
+    async (orderId: bigint, proofIpfs: string): Promise<boolean> => {
+      setError(null);
+      setIsSuccess(false);
 
-      if (isTestWallet && isTestWalletAvailable()) {
-        setIsDirectPending(true);
-        try {
-          const txHash = await testWalletWriteContract({
-            address: MARKETPLACE_ADDRESS,
-            abi: marketplaceAbi,
-            functionName: 'markOutForDelivery',
-            args: [orderId, proofIpfs],
-            gas: 300000n,
-          });
-          setDirectHash(txHash);
-        } catch (err) {
-          setDirectError(err instanceof Error ? err : new Error(String(err)));
-        } finally {
-          setIsDirectPending(false);
+      console.log('[useMarkOutForDelivery] Called with orderId:', orderId.toString());
+
+      // Ensure wallet exists
+      let walletAddress = privyAddress;
+      if (authenticated && !privyAddress) {
+        walletAddress = await ensureWallet() as `0x${string}` | undefined;
+        if (!walletAddress) {
+          setError(new Error('Unable to set up your account. Please try logging out and back in.'));
+          return false;
         }
-        return;
       }
 
-      // Use gasless by default
-      if (useGasless) {
-        try {
-          const txHash = await executeGasless({
-            to: MARKETPLACE_ADDRESS,
-            abi: marketplaceAbi,
-            functionName: 'markOutForDelivery',
-            args: [orderId, proofIpfs],
-            gas: 300000n,
-          });
-          if (txHash) {
-            setGaslessHash(txHash);
-          }
-        } catch (err) {
-          setDirectError(err instanceof Error ? err : new Error(String(err)));
-        }
-        return;
+      if (!authenticated || !walletAddress) {
+        setError(new Error('Please sign in first'));
+        return false;
       }
 
-      writeContract({
-        address: MARKETPLACE_ADDRESS,
-        abi: marketplaceAbi,
-        functionName: 'markOutForDelivery',
-        args: [orderId, proofIpfs],
-        gas: 300000n,
-      });
+      try {
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'markOutForDelivery',
+          args: [orderId, proofIpfs],
+          gas: 300000n,
+        });
+
+        if (txHash) {
+          console.log('[useMarkOutForDelivery] Transaction confirmed:', txHash);
+          setIsSuccess(true);
+          return true;
+        } else {
+          throw new Error(gaslessError || 'Transaction failed');
+        }
+      } catch (err) {
+        console.error('[useMarkOutForDelivery] Transaction error:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        return false;
+      }
     },
-    [writeContract, executeGasless, isTestWallet]
+    [executeGasless, authenticated, privyAddress, ensureWallet, gaslessError]
   );
+
+  const reset = useCallback(() => {
+    setIsSuccess(false);
+    setError(null);
+  }, []);
 
   return {
     markOutForDelivery,
-    isPending,
+    isPending: isLoading || isCreating,
     isSuccess,
-    error,
+    error: error || (gaslessError ? new Error(gaslessError) : null),
+    reset,
   };
+}
+
+// Hook for claiming funds after dispute window expires - uses gasless meta-transactions
+export function useClaimFunds() {
+  const { authenticated } = usePrivy();
+  const { address: privyAddress, ensureWallet, isCreating } = usePrivyWallet();
+  const { executeGasless, isLoading, error: gaslessError } = usePrivyGaslessTransaction();
+
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const claimFunds = useCallback(
+    async (orderId: bigint): Promise<boolean> => {
+      setError(null);
+      setIsSuccess(false);
+
+      console.log('[useClaimFunds] Called with orderId:', orderId.toString());
+
+      // Ensure wallet exists
+      let walletAddress = privyAddress;
+      if (authenticated && !privyAddress) {
+        walletAddress = await ensureWallet() as `0x${string}` | undefined;
+        if (!walletAddress) {
+          setError(new Error('Unable to set up your account. Please try logging out and back in.'));
+          return false;
+        }
+      }
+
+      if (!authenticated || !walletAddress) {
+        setError(new Error('Please sign in first'));
+        return false;
+      }
+
+      try {
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'claimFunds',
+          args: [orderId],
+          gas: 300000n,
+        });
+
+        if (txHash) {
+          console.log('[useClaimFunds] Transaction confirmed:', txHash);
+          setIsSuccess(true);
+          return true;
+        } else {
+          throw new Error(gaslessError || 'Transaction failed');
+        }
+      } catch (err) {
+        console.error('[useClaimFunds] Transaction error:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+        return false;
+      }
+    },
+    [executeGasless, authenticated, privyAddress, ensureWallet, gaslessError]
+  );
+
+  const reset = useCallback(() => {
+    setIsSuccess(false);
+    setError(null);
+  }, []);
+
+  return {
+    claimFunds,
+    isPending: isLoading || isCreating,
+    isSuccess,
+    error: error || (gaslessError ? new Error(gaslessError) : null),
+    reset,
+  };
+}
+
+// Hook for auto-claiming funds for all eligible orders (past 48-hour window)
+export function useAutoClaimFunds(orders: SellerOrder[], onClaimed: () => void) {
+  const { claimFunds, isPending } = useClaimFunds();
+  const [claimingOrderIds, setClaimingOrderIds] = useState<Set<string>>(new Set());
+  const [claimedOrderIds, setClaimedOrderIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Find orders eligible for claiming:
+    // - Status is ReadyForPickup or OutForDelivery
+    // - Has proof uploaded
+    // - Proof uploaded more than 48 hours ago
+    // - Funds not yet released
+    // - Not already being claimed or claimed in this session
+    const eligibleOrders = orders.filter(order => {
+      if (order.fundsReleased) return false;
+      if (!order.proofUploadedAt) return false;
+      if (order.status !== OrderStatus.ReadyForPickup && order.status !== OrderStatus.OutForDelivery) return false;
+      if (claimingOrderIds.has(order.orderId) || claimedOrderIds.has(order.orderId)) return false;
+
+      const now = Date.now();
+      const releaseTime = order.proofUploadedAt.getTime() + (DISPUTE_WINDOW_SECONDS * 1000);
+      return now >= releaseTime;
+    });
+
+    if (eligibleOrders.length === 0 || isPending) return;
+
+    // Claim the first eligible order (we'll do them one at a time to avoid issues)
+    const orderToClaim = eligibleOrders[0];
+
+    const claimOrder = async () => {
+      console.log('[useAutoClaimFunds] Auto-claiming funds for order:', orderToClaim.orderId);
+      setClaimingOrderIds(prev => new Set(prev).add(orderToClaim.orderId));
+
+      const success = await claimFunds(BigInt(orderToClaim.orderId));
+
+      if (success) {
+        console.log('[useAutoClaimFunds] Successfully claimed order:', orderToClaim.orderId);
+        setClaimedOrderIds(prev => new Set(prev).add(orderToClaim.orderId));
+        onClaimed(); // Refresh orders list
+      }
+
+      setClaimingOrderIds(prev => {
+        const next = new Set(prev);
+        next.delete(orderToClaim.orderId);
+        return next;
+      });
+    };
+
+    claimOrder();
+  }, [orders, claimFunds, isPending, claimingOrderIds, claimedOrderIds, onClaimed]);
+
+  return { isAutoClaiming: isPending || claimingOrderIds.size > 0 };
 }

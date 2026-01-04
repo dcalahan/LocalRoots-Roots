@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSwitchChain } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
-import { useGaslessTransaction } from './useGaslessTransaction';
+import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
 import type { Hex } from 'viem';
 
 interface CreateListingParams {
@@ -22,13 +23,15 @@ interface CreateListingParams {
 export function useCreateListing() {
   const { chain, connector } = useAccount();
   const { switchChainAsync } = useSwitchChain();
+  const { authenticated } = usePrivy();
 
-  // Gasless transaction support
+  // Gasless transaction support - use Privy wallet for sellers
+  // This ensures listings are created under the Privy wallet (seller's identity)
   const {
     executeGasless,
     isLoading: isGaslessLoading,
     error: gaslessError,
-  } = useGaslessTransaction();
+  } = usePrivyGaslessTransaction();
 
   // State for gasless transactions
   const [gaslessTxHash, setGaslessTxHash] = useState<Hex | null>(null);
@@ -87,8 +90,15 @@ export function useCreateListing() {
     setDirectError(null);
     setGaslessTxHash(null);
 
+    // IMPORTANT: When Privy is authenticated, always use gasless transactions
+    // This ensures the Privy wallet (seller's identity) owns the listing
+    // The test wallet should only be used for BUYERS, not sellers
+    const shouldUseGasless = authenticated && useGasless;
+
+    console.log('[useCreateListing] Auth state:', { authenticated, useGasless, shouldUseGasless, isTestWallet });
+
     // Ensure we're on Base Sepolia (only for non-test/non-gasless wallets)
-    if (!isTestWallet && !useGasless && chain?.id !== baseSepolia.id) {
+    if (!isTestWallet && !shouldUseGasless && chain?.id !== baseSepolia.id) {
       console.log('[useCreateListing] Chain mismatch, attempting to switch...');
       try {
         await switchChainAsync({ chainId: baseSepolia.id });
@@ -99,9 +109,35 @@ export function useCreateListing() {
       }
     }
 
-    // Use direct viem method for test wallet (test wallets have ETH)
+    // Use gasless transaction when Privy is authenticated (seller's Privy wallet owns the listing)
+    if (shouldUseGasless) {
+      console.log('[useCreateListing] Using gasless meta-transaction (Privy wallet will own listing)');
+      try {
+        const txHash = await executeGasless({
+          to: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'createListing',
+          args: [
+            params.metadataIpfs,
+            params.pricePerUnit,
+            BigInt(params.quantityAvailable),
+          ],
+          gas: 500000n,
+        });
+        if (txHash) {
+          console.log('[useCreateListing] Gasless transaction sent:', txHash);
+          setGaslessTxHash(txHash);
+        }
+      } catch (err) {
+        console.error('[useCreateListing] Gasless transaction failed:', err);
+        setDirectError(err instanceof Error ? err : new Error(String(err)));
+      }
+      return;
+    }
+
+    // Use test wallet when Privy is NOT authenticated (dev-only fallback)
     if (isTestWallet && isTestWalletAvailable()) {
-      console.log('[useCreateListing] Using direct test wallet transaction');
+      console.log('[useCreateListing] Using test wallet (no Privy auth)');
       setIsDirectWriting(true);
       try {
         const txHash = await testWalletWriteContract({
@@ -122,32 +158,6 @@ export function useCreateListing() {
         setDirectError(err instanceof Error ? err : new Error(String(err)));
       } finally {
         setIsDirectWriting(false);
-      }
-      return;
-    }
-
-    // Use gasless transaction by default (no ETH needed!)
-    if (useGasless) {
-      console.log('[useCreateListing] Using gasless meta-transaction');
-      try {
-        const txHash = await executeGasless({
-          to: MARKETPLACE_ADDRESS,
-          abi: marketplaceAbi,
-          functionName: 'createListing',
-          args: [
-            params.metadataIpfs,
-            params.pricePerUnit,
-            BigInt(params.quantityAvailable),
-          ],
-          gas: 500000n,
-        });
-        if (txHash) {
-          console.log('[useCreateListing] Gasless transaction sent:', txHash);
-          setGaslessTxHash(txHash);
-        }
-      } catch (err) {
-        console.error('[useCreateListing] Gasless transaction failed:', err);
-        setDirectError(err instanceof Error ? err : new Error(String(err)));
       }
       return;
     }

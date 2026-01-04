@@ -1,25 +1,38 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { useAmbassadorStatus } from '@/hooks/useAmbassadorStatus';
-import { WalletButton } from '@/components/WalletButton';
 
 export default function AmbassadorPage() {
   const router = useRouter();
-  const { isConnected } = useAccount();
+  const { authenticated: isConnected } = usePrivy();
   const { isAmbassador, isLoading } = useAmbassadorStatus();
+  const [justLoggedOut, setJustLoggedOut] = useState(false);
 
-  // Auto-redirect to dashboard if already an ambassador
+  // Check if user just logged out (prevents auto-redirect loop)
   useEffect(() => {
-    if (!isLoading && isConnected && isAmbassador) {
+    const logoutFlag = sessionStorage.getItem('just_logged_out');
+    if (logoutFlag) {
+      setJustLoggedOut(true);
+      sessionStorage.removeItem('just_logged_out');
+    }
+  }, []);
+
+  // Only redirect to dashboard if already an ambassador
+  useEffect(() => {
+    if (justLoggedOut || isLoading || !isConnected) return;
+
+    if (isAmbassador) {
+      // Already an ambassador - go to dashboard
       router.push('/ambassador/dashboard');
     }
-  }, [isLoading, isConnected, isAmbassador, router]);
+    // If not an ambassador, stay on landing page - let them click to register
+  }, [isLoading, isConnected, isAmbassador, router, justLoggedOut]);
 
   // Show loading while checking status
   if (isConnected && isLoading) {
@@ -148,7 +161,7 @@ export default function AmbassadorPage() {
                     <span className="text-roots-primary text-lg">🚀</span> Get Them Started
                   </h4>
                   <ul className="text-sm text-roots-gray space-y-2">
-                    <li>• Walk them through wallet setup (be patient!)</li>
+                    <li>• Help them sign up with email or phone (easy!)</li>
                     <li>• Help create their first listing together</li>
                     <li>• Take good photos of their produce</li>
                     <li>• Show them how $ROOTS becomes real value</li>
@@ -299,7 +312,7 @@ export default function AmbassadorPage() {
                 <p className="text-roots-gray max-w-xl mx-auto">
                   <strong className="text-roots-primary">Anyone can become an Ambassador.</strong> No approval needed.
                   The more ambassadors we have, the faster we build community food resilience.
-                  Connect your wallet and start today.
+                  Sign up with your email or phone and start today - no crypto experience needed!
                 </p>
               </div>
 
@@ -308,9 +321,9 @@ export default function AmbassadorPage() {
                   <div className="w-10 h-10 bg-roots-primary text-white rounded-full flex items-center justify-center mx-auto mb-3 font-bold">
                     1
                   </div>
-                  <h4 className="font-semibold mb-1">Connect Wallet</h4>
+                  <h4 className="font-semibold mb-1">Sign Up</h4>
                   <p className="text-sm text-roots-gray">
-                    Connect your wallet to get started
+                    Use your email or phone - we'll create a wallet for you
                   </p>
                 </div>
                 <div className="text-center p-4">
@@ -344,19 +357,12 @@ export default function AmbassadorPage() {
                       Go to Ambassador Dashboard
                     </Button>
                   </Link>
-                ) : isConnected ? (
+                ) : (
                   <Link href="/ambassador/register">
                     <Button className="bg-roots-primary hover:bg-roots-primary/90">
                       Become an Ambassador
                     </Button>
                   </Link>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-sm text-roots-gray mb-4">
-                      Connect your wallet to become an ambassador.
-                    </p>
-                    <WalletButton />
-                  </div>
                 )}
               </div>
             </CardContent>

@@ -3,22 +3,34 @@ import { base, baseSepolia } from 'wagmi/chains';
 import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
 import { testWalletConnector, isTestWalletAvailable } from './testWalletConnector';
 
-// WalletConnect Project ID - get one free at https://cloud.walletconnect.com/
+// Chains configuration - used by both wagmi and Privy
+export const supportedChains = [baseSepolia, base] as const;
+
+// WalletConnect Project ID
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 
+// Check if test wallet is available (only on testnet/dev)
+const testWalletAvailable = isTestWalletAvailable();
+if (testWalletAvailable) {
+  console.log('[wagmi] Test wallet available: true');
+}
+
+// Create wagmi config with traditional connectors for external wallets
 export const config = createConfig({
-  chains: [baseSepolia, base],
+  chains: supportedChains,
   connectors: [
-    // Injected wallets (MetaMask extension, etc.)
+    // Test wallet for development/testing - pre-funded with testnet tokens
+    ...(testWalletAvailable ? [testWalletConnector()] : []),
+    // Injected wallets (browser extension wallets) - for external wallet users
     injected({
       shimDisconnect: true,
     }),
-    // Coinbase/Base Wallet - native app only, no web flow
+    // Coinbase/Base Wallet - for buyers
     coinbaseWallet({
       appName: 'Local Roots',
-      preference: 'eoaOnly', // Only connect to native wallet app, never coinbase.com
+      preference: 'eoaOnly',
     }),
-    // WalletConnect for mobile wallets (MetaMask, Trust, etc.)
+    // WalletConnect for mobile wallets - for buyers
     ...(walletConnectProjectId ? [
       walletConnect({
         projectId: walletConnectProjectId,
@@ -31,8 +43,6 @@ export const config = createConfig({
         showQrModal: true,
       }),
     ] : []),
-    // Test wallet for development (only if private key is configured)
-    ...(isTestWalletAvailable() ? [testWalletConnector()] : []),
   ],
   transports: {
     [baseSepolia.id]: http(),
@@ -41,7 +51,7 @@ export const config = createConfig({
   ssr: true,
 });
 
-// Contract addresses (update after deployment)
+// Contract addresses
 export const contracts = {
   rootsToken: {
     address: process.env.NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS as `0x${string}` | undefined,

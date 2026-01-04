@@ -3,14 +3,17 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAccount } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
+import { EarlyAdopterBanner } from '@/components/seeds/EarlyAdopterBanner';
+import { SellerMilestones } from '@/components/seeds/SellerMilestones';
+import { getMultiplierInfo, SEEDS_PER_DOLLAR_SELLER } from '@/components/seeds/PhaseConfig';
 
 export default function SellerPage() {
   const router = useRouter();
-  const { isConnected } = useAccount();
+  const { authenticated: isConnected } = usePrivy();
   const { isSeller, sellerId, isLoading } = useSellerStatus();
 
   // Redirect to dashboard if registered seller
@@ -52,9 +55,14 @@ export default function SellerPage() {
     );
   }
 
+  const multiplierInfo = getMultiplierInfo();
+
   // Default: Show marketing page (no wallet required)
   return (
     <div className="min-h-screen bg-roots-cream">
+      {/* Early Adopter Banner */}
+      <EarlyAdopterBanner />
+
       {/* Hero Section */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-16 md:py-24">
@@ -121,13 +129,46 @@ export default function SellerPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="font-heading text-xl font-bold mb-3">Earn From Your Garden</h3>
+              <h3 className="font-heading text-xl font-bold mb-3">Earn Cash + Rewards</h3>
               <p className="text-roots-gray">
-                Turn your extra harvest into extra income. You set your prices
-                and keep what you earn.
+                Get paid for your produce and earn {SEEDS_PER_DOLLAR_SELLER} Seeds loyalty points per $1 sold.
+                Seeds become redeemable rewards when our community program launches!
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Seeds Earning Section */}
+        <div className="mt-12 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Seeds Rate */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50">
+              <CardContent className="pt-8 pb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">🌱</span>
+                  <h3 className="font-heading text-xl font-bold">Earn Seeds on Every Sale</h3>
+                </div>
+                <div className="mb-4">
+                  <div className="text-4xl font-bold text-roots-primary">
+                    {SEEDS_PER_DOLLAR_SELLER}
+                  </div>
+                  <div className="text-gray-600">Seeds per $1 earned</div>
+                </div>
+                {multiplierInfo.isActive && (
+                  <div className="p-3 bg-amber-100 rounded-lg text-amber-800 text-sm">
+                    <span className="font-semibold">🔥 Early Seller Bonus:</span> Earn {multiplierInfo.multiplierDisplay} Seeds
+                    on all sales for the next {multiplierInfo.daysRemaining} days!
+                  </div>
+                )}
+                <p className="text-sm text-gray-600 mt-4">
+                  Seeds become redeemable rewards when our community program launches. Early sellers earn the most!
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Milestones */}
+            <SellerMilestones compact />
+          </div>
         </div>
       </div>
 
@@ -184,8 +225,57 @@ export default function SellerPage() {
         </div>
       </div>
 
-      {/* CTA Section */}
+      {/* Growing Guides Section */}
       <div className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="font-heading text-3xl font-bold mb-4">
+              Know What to Plant and When
+            </h2>
+            <p className="text-lg text-roots-gray">
+              Our Growing Guides help you plan your garden for maximum harvest and sales.
+            </p>
+          </div>
+
+          <Card className="border-roots-primary/20 bg-gradient-to-r from-roots-pale to-green-50">
+            <CardContent className="py-8">
+              <div className="grid md:grid-cols-3 gap-6 text-center">
+                <div>
+                  <div className="text-4xl mb-3">📅</div>
+                  <h3 className="font-heading font-bold mb-2">Planting Calendar</h3>
+                  <p className="text-sm text-roots-gray">
+                    Personalized monthly guide based on your growing zone and frost dates.
+                  </p>
+                </div>
+                <div>
+                  <div className="text-4xl mb-3">🌱</div>
+                  <h3 className="font-heading font-bold mb-2">95 Crop Guides</h3>
+                  <p className="text-sm text-roots-gray">
+                    Detailed growing info for every produce type we support.
+                  </p>
+                </div>
+                <div>
+                  <div className="text-4xl mb-3">📚</div>
+                  <h3 className="font-heading font-bold mb-2">Technique Guides</h3>
+                  <p className="text-sm text-roots-gray">
+                    Learn raised beds, seed starting, composting, and more.
+                  </p>
+                </div>
+              </div>
+              <div className="text-center mt-6">
+                <Link href="/grow">
+                  <Button variant="outline" className="border-roots-primary text-roots-primary hover:bg-roots-primary hover:text-white">
+                    Explore Growing Guides →
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="container mx-auto px-4 py-16 bg-gray-50 -mx-4 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="font-heading text-3xl font-bold mb-4">
             Ready to Get Started?
