@@ -26,10 +26,34 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 - Orders tied to their Privy wallet address
 
 ### Sellers & Ambassadors
-- Use **Privy embedded wallets** (email/phone login)
-- Gasless meta-transactions via ERC-2771 forwarder
-- All listings owned by Privy wallet address
-- Never pay gas fees
+
+Both sellers and ambassadors use Privy embedded wallets with gasless meta-transactions:
+
+**Authentication Flow:**
+1. User clicks "Login" on `/sell/*` or `/ambassador/*` routes
+2. Privy login modal appears (email, phone, or social login)
+3. Privy creates an embedded wallet tied to their identity
+4. User never needs ETH for gas - all transactions are gasless
+
+**Gasless Transaction Flow (ERC-2771):**
+1. User initiates action (register seller, create listing, register ambassador, etc.)
+2. `useGaslessTransaction` hook encodes the contract call
+3. User signs an EIP-712 typed message (ForwardRequest) via Privy wallet
+4. Signed request is sent to `/api/relay` endpoint
+5. Relayer wallet (funded with ETH) submits transaction to ERC2771Forwarder contract
+6. Forwarder calls target contract with user's address as `_msgSender()`
+7. User's action is recorded on-chain without them paying gas
+
+**Key Hooks:**
+- `useGaslessTransaction` - Core hook for all gasless operations
+- `useRegisterSeller` - Seller registration (gasless)
+- `useCreateListing` - Create product listings (gasless)
+- `useRegisterAmbassador` - Ambassador registration (gasless)
+
+**Important:**
+- Sellers/ambassadors should NEVER use wagmi's `useAccount()` - always use `usePrivy()` and `useWallets()`
+- The relayer wallet (`RELAYER_PRIVATE_KEY` env var) must have ETH to pay gas
+- All contracts must inherit from OpenZeppelin's `ERC2771Context` to support meta-transactions
 
 ### localStorage Tracking
 
