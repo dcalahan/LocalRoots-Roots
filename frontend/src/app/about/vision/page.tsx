@@ -37,7 +37,16 @@ export default function VisionPage() {
             </p>
             <p>
               Economists at ITR Economics have been warning for years that a significant economic
-              disruption is coming in the 2030s. Whether their timeline is exact or not, the underlying
+              disruption is coming in the 2030s (
+              <a
+                href="https://itreconomics.com/2030s-great-depression/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-roots-primary hover:underline"
+              >
+                learn more
+              </a>
+              ). Whether their timeline is exact or not, the underlying
               vulnerability is real. Communities that depend entirely on distant supply chains are exposed.
             </p>
           </div>
