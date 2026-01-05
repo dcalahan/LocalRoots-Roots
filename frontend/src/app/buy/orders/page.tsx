@@ -11,6 +11,7 @@ import { OrderStatus, OrderStatusLabels, canRaiseDispute, getDisputeTimeRemainin
 import { getIpfsUrl } from '@/lib/pinata';
 import { useToast } from '@/hooks/use-toast';
 import { DisputeModal } from '@/components/order/DisputeModal';
+import { BuyerWalletButton } from '@/components/BuyerWalletButton';
 
 // Helper to convert image reference to displayable URL
 function resolveImageUrl(imageRef: string | null | undefined): string | null {
@@ -248,9 +249,10 @@ export default function OrdersPage() {
       <div className="max-w-4xl mx-auto px-4 py-8 text-center">
         <div className="text-6xl mb-4">🔗</div>
         <h1 className="text-2xl font-heading font-bold mb-2">Connect Your Wallet</h1>
-        <p className="text-roots-gray">
+        <p className="text-roots-gray mb-4">
           Connect your wallet to view your orders
         </p>
+        <BuyerWalletButton />
       </div>
     );
   }
