@@ -100,6 +100,9 @@ export async function testWalletWriteContract<TAbi extends Abi>({
   }
 }
 
+// Key for persisting test wallet connection state
+const TEST_WALLET_CONNECTED_KEY = 'testWallet_connected';
+
 export function testWalletConnector() {
   if (!TEST_PRIVATE_KEY) {
     throw new Error('TEST_PRIVATE_KEY not configured');
@@ -126,6 +129,10 @@ export function testWalletConnector() {
 
     // @ts-expect-error - wagmi connector type is overly strict for test wallet
     async connect() {
+      // Persist connection state
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(TEST_WALLET_CONNECTED_KEY, 'true');
+      }
       return {
         accounts: [account.address],
         chainId: baseSepolia.id,
@@ -133,7 +140,10 @@ export function testWalletConnector() {
     },
 
     async disconnect() {
-      // No-op for test wallet
+      // Clear connection state
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(TEST_WALLET_CONNECTED_KEY);
+      }
     },
 
     async getAccounts() {
@@ -245,7 +255,10 @@ export function testWalletConnector() {
     },
 
     async isAuthorized() {
-      // NEVER auto-connect - test wallet only used at checkout
+      // Check if test wallet was previously connected in this session
+      if (typeof window !== 'undefined') {
+        return sessionStorage.getItem(TEST_WALLET_CONNECTED_KEY) === 'true';
+      }
       return false;
     },
 
