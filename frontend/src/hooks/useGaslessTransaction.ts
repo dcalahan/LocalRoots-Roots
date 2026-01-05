@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useAccount, useSignTypedData, usePublicClient, useSwitchChain } from 'wagmi';
+import { usePublicClient, useSwitchChain } from 'wagmi';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
 import { type Address, encodeFunctionData } from 'viem';
 import {
@@ -28,21 +29,20 @@ interface GaslessTransactionResult {
 
 /**
  * Hook for executing gasless transactions via ERC-2771 meta-transactions
- *
- * Usage:
- * const { executeGasless, isLoading, error } = useGaslessTransaction();
- *
- * const txHash = await executeGasless({
- *   to: MARKETPLACE_ADDRESS,
- *   abi: marketplaceAbi,
- *   functionName: 'registerSeller',
- *   args: [geohashBytes, storefrontIpfs, offersDelivery, offersPickup, deliveryRadiusKm],
- * });
+ * Uses Privy embedded wallet for signing
  */
 export function useGaslessTransaction(): GaslessTransactionResult {
-  const { address, isConnected, chainId } = useAccount();
+  // Use Privy for wallet access (not wagmi's useAccount)
+  const { authenticated } = usePrivy();
+  const { wallets, ready: walletsReady } = useWallets();
+
+  // Get Privy embedded wallet
+  const privyWallet = wallets.find(w => w.walletClientType === 'privy') || wallets[0];
+  const address = privyWallet?.address as Address | undefined;
+  const chainId = privyWallet?.chainId ? parseInt(privyWallet.chainId.split(':')[1] || '0') : undefined;
+  const isConnected = authenticated && walletsReady && !!address;
+
   const publicClient = usePublicClient();
-  const { signTypedDataAsync } = useSignTypedData();
   const { switchChainAsync } = useSwitchChain();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -50,18 +50,23 @@ export function useGaslessTransaction(): GaslessTransactionResult {
 
   const executeGasless = useCallback(
     async (params: GaslessTransactionParams): Promise<`0x${string}` | null> => {
+      console.log('[useGaslessTransaction] executeGasless called', { address, isConnected, hasPublicClient: !!publicClient });
+
       if (!isConnected || !address) {
+        console.log('[useGaslessTransaction] Wallet not connected');
         setError('Wallet not connected');
         return null;
       }
 
       if (!publicClient) {
+        console.log('[useGaslessTransaction] No public client');
         setError('Public client not available');
         return null;
       }
 
       setIsLoading(true);
       setError(null);
+      console.log('[useGaslessTransaction] Starting gasless transaction...');
 
       try {
         // 0. Ensure we're on Base Sepolia before signing
@@ -143,16 +148,39 @@ export function useGaslessTransaction(): GaslessTransactionResult {
           data: forwardRequest.data,
         };
 
-        console.log('[useGaslessTransaction] Signing EIP-712 typed data via wagmi...');
+        console.log('[useGaslessTransaction] Signing EIP-712 typed data via Privy wallet...');
 
         let signature: `0x${string}`;
         try {
-          signature = await signTypedDataAsync({
-            domain: forwarderDomain,
-            types: forwardRequestTypes,
-            primaryType: 'ForwardRequest',
-            message: messageToSign,
-          });
+          // Get the Privy wallet provider
+          if (!privyWallet) {
+            throw new Error('No Privy wallet available');
+          }
+
+          const provider = await privyWallet.getEthereumProvider();
+
+          // Sign typed data using EIP-712 via the provider
+          signature = await provider.request({
+            method: 'eth_signTypedData_v4',
+            params: [
+              address,
+              JSON.stringify({
+                types: {
+                  EIP712Domain: [
+                    { name: 'name', type: 'string' },
+                    { name: 'version', type: 'string' },
+                    { name: 'chainId', type: 'uint256' },
+                    { name: 'verifyingContract', type: 'address' },
+                  ],
+                  ...forwardRequestTypes,
+                },
+                primaryType: 'ForwardRequest',
+                domain: forwarderDomain,
+                message: messageToSign,
+              }),
+            ],
+          }) as `0x${string}`;
+
           console.log('[useGaslessTransaction] Signature obtained:', signature.slice(0, 20) + '...');
         } catch (signError) {
           console.error('[useGaslessTransaction] Signing failed:', signError);
@@ -205,7 +233,7 @@ export function useGaslessTransaction(): GaslessTransactionResult {
         setIsLoading(false);
       }
     },
-    [address, isConnected, publicClient, signTypedDataAsync, chainId, switchChainAsync]
+    [address, isConnected, publicClient, privyWallet, chainId, switchChainAsync]
   );
 
   return {

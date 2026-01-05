@@ -179,25 +179,70 @@ function AmbassadorRegisterContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerError]);
 
+  // Auto-continue registration after Privy login - restore form data only
+  // User will need to click "Become an Ambassador" to complete registration
+  const hasRestoredForm = useRef(false);
+  useEffect(() => {
+    if (!isConnected || hasRestoredForm.current) return;
+
+    const pendingData = sessionStorage.getItem('pendingAmbassadorRegistration');
+    if (!pendingData) return;
+
+    try {
+      const formData = JSON.parse(pendingData);
+      hasRestoredForm.current = true;
+
+      // Restore form fields so user doesn't have to re-enter
+      if (formData.name) setName(formData.name);
+      if (formData.bio) setBio(formData.bio);
+      if (formData.email) setEmail(formData.email);
+      if (formData.imageUrl) setImageUrl(formData.imageUrl);
+
+      // Clear the pending data
+      sessionStorage.removeItem('pendingAmbassadorRegistration');
+    } catch {
+      sessionStorage.removeItem('pendingAmbassadorRegistration');
+    }
+  }, [isConnected]);
+
 
   // The actual registration submission (called after login is confirmed)
-  const handleRegistrationSubmit = async () => {
-    if (uplineId === null || !isConnected) return;
+  // Can optionally pass form data directly (used for auto-continue after login)
+  const handleRegistrationSubmit = async (formData?: { name: string; bio: string; email: string; imageUrl: string }) => {
+    console.log('[handleRegistrationSubmit] Called. uplineId=', uplineId?.toString(), 'isConnected=', isConnected);
+    if (uplineId === null || !isConnected) {
+      console.log('[handleRegistrationSubmit] Early return - uplineId null or not connected');
+      return;
+    }
+
+    const profileName = formData?.name || name.trim();
+    const profileBio = formData?.bio || bio.trim();
+    const profileEmail = formData?.email || email.trim();
+    const profileImageUrl = formData?.imageUrl || imageUrl;
+
+    if (!profileName || !profileEmail) {
+      toast({
+        title: 'Missing info',
+        description: 'Name and email are required.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsUploadingProfile(true);
 
     try {
       // Create ambassador profile
       const profile: AmbassadorProfile = {
-        name: name.trim(),
-        bio: bio.trim() || undefined,
-        email: email.trim() || undefined,
-        imageUrl: imageUrl || undefined,
+        name: profileName,
+        bio: profileBio || undefined,
+        email: profileEmail || undefined,
+        imageUrl: profileImageUrl || undefined,
         createdAt: new Date().toISOString(),
       };
 
       // Upload profile to IPFS
-      const result = await uploadJson(profile as unknown as Record<string, unknown>, `ambassador-${name.trim()}.json`);
+      const result = await uploadJson(profile as unknown as Record<string, unknown>, `ambassador-${profileName}.json`);
       if (!result) {
         throw new Error('Failed to upload profile to IPFS');
       }
@@ -221,6 +266,8 @@ function AmbassadorRegisterContent() {
 
   // Handle button click - validate and either submit or trigger login
   const handleRegister = async () => {
+    console.log('[handleRegister] Called. isConnected=', isConnected, 'uplineId=', uplineId?.toString(), 'name=', name, 'email=', email);
+
     // uplineId can be 0n for independent registration, or null if still loading
     if (uplineId === null) {
       toast({
@@ -251,12 +298,23 @@ function AmbassadorRegisterContent() {
 
     // If already connected, submit directly
     if (isConnected) {
+      console.log('[handleRegister] isConnected=true, calling handleRegistrationSubmit...');
       await handleRegistrationSubmit();
       return;
     }
 
-    // If not connected, trigger Privy login - user will click button again after login
-    login({ prefill: { type: 'email', value: email.trim() } });
+    console.log('[handleRegister] isConnected=false, will trigger Privy login');
+
+    // If not connected, save form data and trigger Privy login
+    // Registration will continue after login completes (user clicks button again)
+    sessionStorage.setItem('pendingAmbassadorRegistration', JSON.stringify({
+      name: name.trim(),
+      bio: bio.trim(),
+      email: email.trim(),
+      imageUrl,
+    }));
+    // Defer login slightly to avoid state conflicts
+    setTimeout(() => login(), 100);
   };
 
   // Loading state
@@ -284,9 +342,15 @@ function AmbassadorRegisterContent() {
                 This referral link is not valid. The ambassador may no longer be active.
                 You can still register independently without a referral.
               </p>
-              <Link href="/ambassador/register">
-                <Button variant="outline">Register Without Referral</Button>
-              </Link>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  localStorage.removeItem('ambassadorRef');
+                  window.location.href = '/ambassador/register?ref=0';
+                }}
+              >
+                Register Without Referral
+              </Button>
             </CardContent>
           </Card>
         </div>

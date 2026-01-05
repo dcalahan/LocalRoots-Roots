@@ -358,11 +358,16 @@ export default function AmbassadorPage() {
                     </Button>
                   </Link>
                 ) : (
-                  <Link href="/ambassador/register">
-                    <Button className="bg-roots-primary hover:bg-roots-primary/90">
-                      Become an Ambassador
-                    </Button>
-                  </Link>
+                  <Button
+                    className="bg-roots-primary hover:bg-roots-primary/90"
+                    onClick={() => {
+                      // Clear any old referral data before registering
+                      localStorage.removeItem('ambassadorRef');
+                      window.location.href = '/ambassador/register';
+                    }}
+                  >
+                    Become an Ambassador
+                  </Button>
                 )}
               </div>
             </CardContent>
