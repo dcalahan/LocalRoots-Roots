@@ -1,23 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAccount, useDisconnect } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { BuyerWalletModal } from './BuyerWalletModal';
 
+// LocalStorage key for tracking buyer wallet type
+const BUYER_WALLET_TYPE_KEY = 'buyer_wallet_type';
+
+export type BuyerWalletType = 'external' | 'privy' | 'test' | null;
+
+export function getBuyerWalletType(): BuyerWalletType {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(BUYER_WALLET_TYPE_KEY) as BuyerWalletType;
+}
+
+export function setBuyerWalletType(type: BuyerWalletType) {
+  if (typeof window === 'undefined') return;
+  if (type) {
+    localStorage.setItem(BUYER_WALLET_TYPE_KEY, type);
+  } else {
+    localStorage.removeItem(BUYER_WALLET_TYPE_KEY);
+  }
+}
+
 /**
- * UnifiedWalletButton - Single wallet button for the entire app
+ * UnifiedWalletButton - Context-aware wallet button for the entire app
  *
- * Priority:
- * 1. If authenticated via Privy → Show Privy embedded wallet
- * 2. Else if connected via wagmi → Show wagmi wallet (external wallets)
- * 3. Else → Show login/connect options
+ * Routes:
+ * - /buy/* → Show buyer wallet options (external wallets, test wallet, or Privy for credit card users)
+ * - /sell/* → Show Privy login (sellers use embedded wallets)
+ * - /ambassador/* → Show Privy login (ambassadors use embedded wallets)
+ * - Other routes → Default based on localStorage buyer_wallet_type or show Privy
  */
 export function UnifiedWalletButton() {
+  const pathname = usePathname();
   const { authenticated, login, logout, ready: privyReady } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
-  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const [showBuyerModal, setShowBuyerModal] = useState(false);
 
@@ -25,10 +47,59 @@ export function UnifiedWalletButton() {
   const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
   const privyAddress = embeddedWallet?.address;
 
-  // Determine which wallet to show (Privy takes priority)
+  // Determine context based on route
+  const isBuyerRoute = pathname.startsWith('/buy');
+  const isSellerRoute = pathname.startsWith('/sell');
+  const isAmbassadorRoute = pathname.startsWith('/ambassador');
+
+  // Determine which wallet to show (Privy takes priority for sellers/ambassadors)
   const isPrivyUser = authenticated && privyReady;
-  const displayAddress = isPrivyUser ? privyAddress : (wagmiConnected ? wagmiAddress : null);
-  const isConnected = isPrivyUser || wagmiConnected;
+
+  // For buyer routes, prefer showing wagmi wallet; for seller/ambassador routes, prefer Privy
+  let displayAddress: string | undefined;
+  let isConnected: boolean;
+
+  if (isBuyerRoute) {
+    // On buyer routes, show wagmi wallet if connected, otherwise Privy if they used credit card
+    if (wagmiConnected && wagmiAddress) {
+      displayAddress = wagmiAddress;
+      isConnected = true;
+    } else if (isPrivyUser && privyAddress) {
+      displayAddress = privyAddress;
+      isConnected = true;
+    } else {
+      isConnected = false;
+    }
+  } else {
+    // On seller/ambassador routes, prefer Privy
+    if (isPrivyUser && privyAddress) {
+      displayAddress = privyAddress;
+      isConnected = true;
+    } else if (wagmiConnected && wagmiAddress) {
+      displayAddress = wagmiAddress;
+      isConnected = true;
+    } else {
+      isConnected = false;
+    }
+  }
+
+  // Track wallet type in localStorage when buyer connects
+  useEffect(() => {
+    if (isBuyerRoute && wagmiConnected && connector) {
+      if (connector.id === 'testWallet') {
+        setBuyerWalletType('test');
+      } else {
+        setBuyerWalletType('external');
+      }
+    }
+  }, [isBuyerRoute, wagmiConnected, connector]);
+
+  // Track when buyer uses Privy (for credit card)
+  useEffect(() => {
+    if (isBuyerRoute && isPrivyUser && !wagmiConnected) {
+      setBuyerWalletType('privy');
+    }
+  }, [isBuyerRoute, isPrivyUser, wagmiConnected]);
 
   // Loading state
   if (!privyReady) {
@@ -47,10 +118,18 @@ export function UnifiedWalletButton() {
   // Connected state - show wallet address and disconnect
   if (isConnected && displayAddress) {
     const handleDisconnect = async () => {
-      if (isPrivyUser) {
+      if (isPrivyUser && (!wagmiConnected || !isBuyerRoute)) {
+        // On seller/ambassador routes or if only Privy is connected, logout of Privy
         await logout();
-      } else {
+        if (isBuyerRoute) {
+          setBuyerWalletType(null);
+        }
+      }
+      if (wagmiConnected) {
         wagmiDisconnect();
+        if (isBuyerRoute) {
+          setBuyerWalletType(null);
+        }
       }
     };
 
@@ -90,19 +169,44 @@ export function UnifiedWalletButton() {
     );
   }
 
-  // Not connected - show connect options
+  // Not connected - show connect options based on context
+  const handleConnectClick = () => {
+    if (isBuyerRoute) {
+      // On buyer routes, show buyer wallet modal
+      setShowBuyerModal(true);
+    } else {
+      // On seller/ambassador routes, show Privy login
+      login();
+    }
+  };
+
+  // Handle successful buyer wallet connection
+  const handleBuyerConnect = () => {
+    setShowBuyerModal(false);
+  };
+
+  // Handle buyer choosing Privy (for credit card / email login)
+  const handleBuyerPrivyLogin = () => {
+    setShowBuyerModal(false);
+    setBuyerWalletType('privy');
+    login();
+  };
+
   return (
     <>
       <Button
-        onClick={login}
+        onClick={handleConnectClick}
         size="sm"
         className="bg-roots-primary hover:bg-roots-primary/90 text-xs md:text-sm px-2 md:px-4"
       >
-        Connect Wallet
+        {isBuyerRoute ? 'Sign In' : 'Login'}
       </Button>
       <BuyerWalletModal
         isOpen={showBuyerModal}
         onClose={() => setShowBuyerModal(false)}
+        onConnect={handleBuyerConnect}
+        showPrivyOption={true}
+        onPrivyLogin={handleBuyerPrivyLogin}
       />
     </>
   );

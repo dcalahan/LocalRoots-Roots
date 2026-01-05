@@ -11,6 +11,8 @@ interface BuyerWalletModalProps {
   showCreditCardOption?: boolean;
   onCreditCardSelect?: () => void;
   switchWallet?: boolean; // Show disconnect option for switching wallets
+  showPrivyOption?: boolean; // Show "Login with Email" option for credit card buyers to view orders
+  onPrivyLogin?: () => void; // Called when user chooses to login with email
 }
 
 type ModalStep = 'choice' | 'connecting';
@@ -22,6 +24,8 @@ export function BuyerWalletModal({
   showCreditCardOption = false,
   onCreditCardSelect,
   switchWallet = false,
+  showPrivyOption = false,
+  onPrivyLogin,
 }: BuyerWalletModalProps) {
   const { connect, connectors, isPending, error, reset } = useConnect();
   const { isConnected, address } = useAccount();
@@ -305,6 +309,38 @@ export function BuyerWalletModal({
                       </div>
                     </div>
                   </button>
+                )}
+
+                {/* Login with Email - for credit card buyers to view orders */}
+                {showPrivyOption && onPrivyLogin && (
+                  <>
+                    <div className="relative py-2">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200" />
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-white text-gray-500">Paid with credit card?</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={onPrivyLogin}
+                      className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold">Login with Email</div>
+                          <div className="text-sm text-roots-gray">
+                            View orders from credit card purchases
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  </>
                 )}
 
                 {/* No wallet detected message */}

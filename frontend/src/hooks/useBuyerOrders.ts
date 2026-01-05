@@ -257,7 +257,17 @@ async function fetchOrderIfBuyer(
 }
 
 export function useOrderDetail(orderId: string) {
-  const { address } = useAccount();
+  const { address: wagmiAddress } = useAccount();
+  const { user, authenticated } = usePrivy();
+  const { wallets, ready: walletsReady } = useWallets();
+
+  // Get Privy embedded wallet (for credit card buyers)
+  const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
+  const privyAddress = (embeddedWallet?.address || user?.wallet?.address) as `0x${string}` | undefined;
+
+  // Use wagmi address first (external wallet), then Privy (credit card buyers)
+  const address = wagmiAddress || privyAddress;
+
   const [order, setOrder] = useState<OrderWithMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
