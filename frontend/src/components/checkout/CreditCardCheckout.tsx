@@ -363,8 +363,35 @@ function CreditCardCheckoutInner({
   return null;
 }
 
+// Check if we're on testnet
+const isTestnet = baseSepolia.id === 84532; // Base Sepolia chain ID
+
 // Main component that wraps with ThirdwebProvider
 export function CreditCardCheckout(props: CreditCardCheckoutProps) {
+  // On testnet, credit card payments don't work (fiat on-ramps require mainnet)
+  if (isTestnet) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="pt-6 text-center">
+            <div className="text-4xl mb-3">🚧</div>
+            <p className="text-amber-800 font-medium mb-2">Credit Card Coming Soon</p>
+            <p className="text-sm text-amber-700 mb-4">
+              Credit card payments will be available once LocalRoots launches on mainnet.
+              This feature cannot work in the test environment.
+            </p>
+            <p className="text-sm text-amber-700 mb-4">
+              For now, please use the crypto wallet option to complete your purchase.
+            </p>
+            <Button onClick={props.onBack} className="bg-roots-primary hover:bg-roots-primary/90">
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Only render if thirdweb is configured
   if (!thirdwebClient) {
     return (
