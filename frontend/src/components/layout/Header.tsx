@@ -33,6 +33,7 @@ export function Header() {
     { href: '/buy', label: 'Shop' },
     { href: '/buy/orders', label: 'Orders' },
     { href: '/sell', label: 'Sell' },
+    { href: '/grow', label: 'Grow' },
     { href: '/ambassador', label: 'Ambassadors' },
     { href: '/about/vision', label: 'About' },
   ];
