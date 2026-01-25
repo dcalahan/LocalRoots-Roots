@@ -514,6 +514,7 @@ export function useAutoClaimFunds(orders: SellerOrder[], onClaimed: () => void) 
   const { claimFunds, isPending } = useClaimFunds();
   const [claimingOrderIds, setClaimingOrderIds] = useState<Set<string>>(new Set());
   const [claimedOrderIds, setClaimedOrderIds] = useState<Set<string>>(new Set());
+  const [failedOrderIds, setFailedOrderIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Find orders eligible for claiming:
@@ -521,12 +522,12 @@ export function useAutoClaimFunds(orders: SellerOrder[], onClaimed: () => void) 
     // - Has proof uploaded
     // - Proof uploaded more than 48 hours ago
     // - Funds not yet released
-    // - Not already being claimed or claimed in this session
+    // - Not already being claimed, claimed, or failed in this session
     const eligibleOrders = orders.filter(order => {
       if (order.fundsReleased) return false;
       if (!order.proofUploadedAt) return false;
       if (order.status !== OrderStatus.ReadyForPickup && order.status !== OrderStatus.OutForDelivery) return false;
-      if (claimingOrderIds.has(order.orderId) || claimedOrderIds.has(order.orderId)) return false;
+      if (claimingOrderIds.has(order.orderId) || claimedOrderIds.has(order.orderId) || failedOrderIds.has(order.orderId)) return false;
 
       const now = Date.now();
       const releaseTime = order.proofUploadedAt.getTime() + (DISPUTE_WINDOW_SECONDS * 1000);
@@ -548,6 +549,10 @@ export function useAutoClaimFunds(orders: SellerOrder[], onClaimed: () => void) 
         console.log('[useAutoClaimFunds] Successfully claimed order:', orderToClaim.orderId);
         setClaimedOrderIds(prev => new Set(prev).add(orderToClaim.orderId));
         onClaimed(); // Refresh orders list
+      } else {
+        // Track failed orders to prevent infinite retry loops
+        console.log('[useAutoClaimFunds] Failed to claim order:', orderToClaim.orderId);
+        setFailedOrderIds(prev => new Set(prev).add(orderToClaim.orderId));
       }
 
       setClaimingOrderIds(prev => {
@@ -558,7 +563,7 @@ export function useAutoClaimFunds(orders: SellerOrder[], onClaimed: () => void) 
     };
 
     claimOrder();
-  }, [orders, claimFunds, isPending, claimingOrderIds, claimedOrderIds, onClaimed]);
+  }, [orders, claimFunds, isPending, claimingOrderIds, claimedOrderIds, failedOrderIds, onClaimed]);
 
   return { isAutoClaiming: isPending || claimingOrderIds.size > 0 };
 }

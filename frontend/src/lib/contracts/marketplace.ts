@@ -153,6 +153,13 @@ export const marketplaceAbi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'function',
+    name: 'claimFunds',
+    inputs: [{ name: '_orderId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
   // Events
   {
     type: 'event',
