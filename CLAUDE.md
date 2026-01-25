@@ -93,8 +93,44 @@ Current deployment (2025-01-25):
 - `NEXT_PUBLIC_MARKETPLACE_ADDRESS` = `0xBAc288595e52AF2dDF560CEaEf90064463c08f0d`
 - `NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS` = `0xC596B9FcCAC989abf4B4244EC8c74CF8d50DDB91`
 - `NEXT_PUBLIC_FORWARDER_ADDRESS` = `0xd6632078F9ad1Fb03a9Babd2908cBA4D00D43F74`
+- `NEXT_PUBLIC_USDC_ADDRESS` = `0xBe0D90a4C6BBC99a37BA0A5aA9Ffaa894f826e06` (MockUSDC - mintable)
+- `NEXT_PUBLIC_USDT_ADDRESS` = `0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b` (MockUSDT - mintable)
 
 All contract addresses must be from the same deployment. If one changes, verify all are updated in `.env.local`.
+
+## Test Wallet Configuration
+
+The test wallet is the deployer wallet, pre-funded with tokens for testing:
+
+**Address:** `0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c`
+**Private Key:** Set via `NEXT_PUBLIC_TEST_WALLET_PRIVATE_KEY` in `.env.local`
+
+**Balances (replenish if needed):**
+- ETH: ~0.004 ETH (for gas on approvals/transactions)
+- ROOTS: ~650M ROOTS
+- USDC: 10,000 USDC (MockUSDC)
+- USDT: 10,000 USDT (MockUSDT)
+
+**Minting Test Stablecoins:**
+```bash
+# Mint USDC to test wallet
+cast send 0xBe0D90a4C6BBC99a37BA0A5aA9Ffaa894f826e06 "mint(address,uint256)" \
+  0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c 10000000000 \
+  --private-key $DEPLOYER_KEY --rpc-url https://sepolia.base.org
+
+# Mint USDT to test wallet
+cast send 0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b "mint(address,uint256)" \
+  0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c 10000000000 \
+  --private-key $DEPLOYER_KEY --rpc-url https://sepolia.base.org
+```
+
+**Adding Payment Tokens to Marketplace:**
+If deploying fresh contracts, payment tokens must be added to the marketplace:
+```bash
+MARKETPLACE=0xBAc288595e52AF2dDF560CEaEf90064463c08f0d
+cast send $MARKETPLACE "addPaymentToken(address)" <TOKEN_ADDRESS> \
+  --private-key $DEPLOYER_KEY --rpc-url https://sepolia.base.org
+```
 
 ## Production Deployment
 
