@@ -37,8 +37,8 @@ export const config = createConfig({
         metadata: {
           name: 'Local Roots',
           description: 'Neighbors Feeding Neighbors - Local produce marketplace',
-          url: 'https://localroots.app',
-          icons: ['https://localroots.app/icon.png'],
+          url: 'https://www.localroots.love',
+          icons: ['https://www.localroots.love/icon.png'],
         },
         showQrModal: true,
       }),

@@ -15,6 +15,7 @@ import { useTokenApproval } from '@/hooks/useTokenApproval';
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
+import { useChainValidation } from '@/hooks/useChainValidation';
 import { formatRoots, rootsToFiat, formatFiat } from '@/lib/pricing';
 import { uploadMetadata } from '@/lib/pinata';
 import { PaymentTokenSelector } from '@/components/buyer/PaymentTokenSelector';
@@ -29,6 +30,7 @@ type CheckoutStep = 'review' | 'processing' | 'complete';
 export default function CheckoutPage() {
   const router = useRouter();
   const { isConnected: wagmiConnected, chain } = useAccount();
+  const { isCorrectChain, chainName, requestSwitch, isSwitching } = useChainValidation();
 
   // Privy authentication and wallet
   const { authenticated: privyAuthenticated, ready: privyReady } = usePrivy();
@@ -46,8 +48,8 @@ export default function CheckoutPage() {
   const [mode, setMode] = useState<CheckoutMode>('select');
   const [showWalletModal, setShowWalletModal] = useState(false);
 
-  // Check if on correct network
-  const isCorrectNetwork = chain?.id === baseSepolia.id;
+  // Check if on correct network (use the hook for wagmi wallets)
+  const isCorrectNetwork = wagmiConnected ? isCorrectChain : (chain?.id === baseSepolia.id);
 
   const [step, setStep] = useState<CheckoutStep>('review');
   const [balance, setBalance] = useState<bigint>(0n);
@@ -301,19 +303,40 @@ export default function CheckoutPage() {
   }
 
   // Wallet/Privy checkout mode - check network
-  if ((mode === 'wallet' || mode === 'privy') && !isCorrectNetwork) {
+  if ((mode === 'wallet' || mode === 'privy') && !isCorrectNetwork && wagmiConnected) {
+    const handleSwitchNetwork = async () => {
+      const switched = await requestSwitch();
+      if (switched) {
+        // Network switched successfully, stay on this page
+        console.log('[Checkout] Network switched successfully');
+      }
+    };
+
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-        <div className="text-6xl mb-4">⚠️</div>
-        <h1 className="text-2xl font-heading font-bold mb-2">Network Issue</h1>
-        <p className="text-roots-gray mb-6">
-          There was a problem connecting. Please try a different payment method.
+        <div className="text-6xl mb-4">🔗</div>
+        <h1 className="text-2xl font-heading font-bold mb-2">Wrong Network</h1>
+        <p className="text-roots-gray mb-2">
+          Your wallet is connected to <strong>{chain?.name || 'an unsupported network'}</strong>.
         </p>
-        <div className="flex gap-3 justify-center">
+        <p className="text-roots-gray mb-6">
+          LocalRoots runs on <strong>{chainName}</strong>. Switch networks to continue.
+        </p>
+        <div className="flex flex-col gap-3 items-center">
+          <Button
+            onClick={handleSwitchNetwork}
+            className="bg-roots-primary"
+            disabled={isSwitching}
+          >
+            {isSwitching ? 'Switching...' : `Switch to ${chainName}`}
+          </Button>
           <Button variant="outline" onClick={() => setMode('select')}>
-            Choose Different Payment
+            Use Different Payment Method
           </Button>
         </div>
+        <p className="text-xs text-roots-gray mt-6">
+          If switching doesn't work, open your wallet app and manually switch to {chainName}.
+        </p>
       </div>
     );
   }
