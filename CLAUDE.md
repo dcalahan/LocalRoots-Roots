@@ -86,13 +86,48 @@ Both sellers and ambassadors use Privy embedded wallets with gasless meta-transa
 | `useBuyerOrders` | Fetches orders - supports both wagmi and Privy addresses |
 | `useGaslessTransaction` | Gasless meta-transactions for sellers/ambassadors via Privy wallet |
 
-## Contract Addresses
+## Contract Addresses (Base Sepolia Testnet)
 
-All contract addresses must be from the same deployment. If one changes, verify all are updated in `.env.local`:
-- `NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS`
-- `NEXT_PUBLIC_MARKETPLACE_ADDRESS`
-- `NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS`
-- `NEXT_PUBLIC_FORWARDER_ADDRESS`
+Current deployment (2025-01-25):
+- `NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS` = `0x21952Cb029da00902EDA5c83a01825Ae2E645e03`
+- `NEXT_PUBLIC_MARKETPLACE_ADDRESS` = `0xBAc288595e52AF2dDF560CEaEf90064463c08f0d`
+- `NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS` = `0xC596B9FcCAC989abf4B4244EC8c74CF8d50DDB91`
+- `NEXT_PUBLIC_FORWARDER_ADDRESS` = `0xd6632078F9ad1Fb03a9Babd2908cBA4D00D43F74`
+
+All contract addresses must be from the same deployment. If one changes, verify all are updated in `.env.local`.
+
+## Production Deployment
+
+**Hosting:** Vercel (free tier)
+**Domain:** localroots.love / www.localroots.love
+**DNS:** Managed by Vercel (nameservers: ns1.vercel-dns.com, ns2.vercel-dns.com)
+
+**Environment Variables (Vercel):**
+- All `NEXT_PUBLIC_*` contract addresses
+- `RELAYER_PRIVATE_KEY` - Wallet that pays gas for meta-transactions
+- `NEXT_PUBLIC_PRIVY_APP_ID` - Privy app ID
+- API keys for thirdweb, OpenAI, Pinata
+
+**Privy Configuration:**
+- Allowed domains must include: `localroots.love`, `localhost:3000`
+- Dashboard: https://dashboard.privy.io/
+
+## Credit Card Payments
+
+**Testnet Limitation:** Credit card payments via thirdweb Pay only work on mainnet. The testnet shows a "Coming Soon" message instead.
+
+**File:** `frontend/src/components/checkout/CreditCardCheckout.tsx`
+
+## Garden AI Chat
+
+The `GardenAIChat` component provides AI gardening assistance:
+- Available on `/grow` page (visible in navigation header)
+- Also available on all `/sell/*` pages via layout wrapper
+- Floating chat icon in bottom-right corner
+
+**Files:**
+- `frontend/src/components/grow/GardenAIChat.tsx` - Main component
+- `frontend/src/app/sell/layout.tsx` - Adds chat to sell pages
 
 ## Development
 
@@ -106,3 +141,26 @@ cloudflared tunnel --url http://localhost:3000
 # Smart contracts
 cd contracts && forge build
 ```
+
+## Redeploying Contracts
+
+```bash
+cd contracts
+
+# Set environment variables
+export PRIVATE_KEY=<deployer-private-key>
+export FOUNDER_ADDRESS=<founder-wallet>
+export LIQUIDITY_POOL_ADDRESS=<liquidity-pool-wallet>
+export TREASURY_ADDRESS=<treasury-wallet>
+export AIRDROP_ADDRESS=<airdrop-wallet>
+
+# Deploy all contracts
+forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --broadcast -vvv
+
+# Update frontend/.env.local with new addresses
+```
+
+## Known Issues
+
+- **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only
+- **DNS propagation:** After domain changes, can take up to 48 hours for full propagation
