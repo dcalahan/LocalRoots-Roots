@@ -120,27 +120,27 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           onClick={() => setIsOpen(!isOpen)}
           className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 ${
             isOpen
-              ? 'bg-gray-600 hover:bg-gray-700'
-              : 'bg-green-600 hover:bg-green-700'
+              ? 'bg-roots-gray hover:bg-roots-gray/80'
+              : 'bg-roots-secondary hover:bg-roots-secondary/90'
           } ${className}`}
           aria-label={isOpen ? 'Close garden assistant' : 'Open garden assistant'}
         >
           {isOpen ? (
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-roots-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
             <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
               <path
                 d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1.5-3 2-6 2-10 0-3-1-6-2-10z"
-                fill="white"
-                stroke="white"
+                fill="#F5F0EE"
+                stroke="#F5F0EE"
                 strokeWidth="0.5"
               />
               <path
                 d="M12 2c5.5 0 10 4.5 10 10s-4.5 10-10 10"
                 fill="none"
-                stroke="rgba(255,255,255,0.4)"
+                stroke="rgba(245,240,238,0.4)"
                 strokeWidth="1"
                 strokeDasharray="2 2"
               />
@@ -154,11 +154,11 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
              style={{ height: 'min(600px, calc(100vh - 8rem))' }}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 flex items-center gap-3">
+          <div className="bg-roots-secondary text-white px-4 py-3 flex items-center gap-3">
             <span className="text-2xl">🌱</span>
             <div className="flex-1">
               <h3 className="font-semibold">Garden Assistant</h3>
-              <p className="text-xs text-green-100">Ask me anything about growing!</p>
+              <p className="text-xs text-roots-cream/80">Ask me anything about growing!</p>
             </div>
             <button
               onClick={() => setIsOpen(false)}
