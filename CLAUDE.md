@@ -139,13 +139,27 @@ cast send $MARKETPLACE "addPaymentToken(address)" <TOKEN_ADDRESS> \
 **DNS:** Managed by Vercel (nameservers: ns1.vercel-dns.com, ns2.vercel-dns.com)
 
 **Environment Variables (Vercel):**
-- All `NEXT_PUBLIC_*` contract addresses
-- `RELAYER_PRIVATE_KEY` - Wallet that pays gas for meta-transactions
+
+Required for core functionality:
+- `NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS` - ROOTS token contract
+- `NEXT_PUBLIC_MARKETPLACE_ADDRESS` - Marketplace contract
+- `NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS` - Ambassador rewards contract
+- `NEXT_PUBLIC_FORWARDER_ADDRESS` - ERC2771 forwarder contract
+- `NEXT_PUBLIC_USDC_ADDRESS` - MockUSDC contract (testnet)
+- `NEXT_PUBLIC_USDT_ADDRESS` - MockUSDT contract (testnet)
+- `RELAYER_PRIVATE_KEY` - Wallet that pays gas for meta-transactions (NOT public!)
 - `NEXT_PUBLIC_PRIVY_APP_ID` - Privy app ID
-- API keys for thirdweb, OpenAI, Pinata
+- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` - WalletConnect project ID
+- `NEXT_PUBLIC_PINATA_JWT` - Pinata API token for IPFS uploads
+- `NEXT_PUBLIC_PINATA_GATEWAY` - Pinata gateway (gateway.pinata.cloud)
+- `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` - thirdweb client ID for Pay
+- `ANTHROPIC_API_KEY` - For Garden AI chat
+
+Optional for testing:
+- `NEXT_PUBLIC_TEST_WALLET_PRIVATE_KEY` - Shows "Test Funds" button (REMOVE BEFORE MAINNET!)
 
 **Privy Configuration:**
-- Allowed domains must include: `localroots.love`, `localhost:3000`
+- Allowed domains must include: `localroots.love`, `www.localroots.love`, `localhost:3000`
 - Dashboard: https://dashboard.privy.io/
 
 ## Credit Card Payments
