@@ -460,14 +460,18 @@ export default function SellerDashboard() {
   const pendingOrders = orders.filter(o =>
     o.status === OrderStatus.Pending || o.status === OrderStatus.Accepted
   );
+  // Active orders are Ready/OutForDelivery but funds NOT yet released
   const activeOrders = orders.filter(o =>
-    o.status === OrderStatus.ReadyForPickup || o.status === OrderStatus.OutForDelivery
+    (o.status === OrderStatus.ReadyForPickup || o.status === OrderStatus.OutForDelivery) &&
+    !o.fundsReleased
   );
+  // History includes completed, disputed, refunded, cancelled, OR any order with funds released
   const historyOrders = orders.filter(o =>
     o.status === OrderStatus.Completed ||
     o.status === OrderStatus.Disputed ||
     o.status === OrderStatus.Refunded ||
-    o.status === OrderStatus.Cancelled
+    o.status === OrderStatus.Cancelled ||
+    o.fundsReleased
   );
 
   const activeListings = listings.filter(l => l.active);
