@@ -86,6 +86,48 @@ Both sellers and ambassadors use Privy embedded wallets with gasless meta-transa
 | `useBuyerOrders` | Fetches orders - supports both wagmi and Privy addresses |
 | `useGaslessTransaction` | Gasless meta-transactions for sellers/ambassadors via Privy wallet |
 
+## Orders Architecture
+
+The app has two separate order viewing experiences based on authentication method:
+
+### Crypto Buyers (`/buy/orders`)
+- **All crypto purchases** (pickup AND delivery) use external wallets only
+- Connect wallet to view orders tied to that address
+- Delivery info stored on IPFS (`buyerInfoIpfs` field)
+- **No Privy needed**
+- Uses `useBuyerOrders` hook with wagmi address
+
+### Privy Users (`/orders`) - Unified Orders Hub
+Single email login shows role-based tabs:
+
+| Tab | Shows When | Hook |
+|-----|------------|------|
+| My Purchases | User has credit card orders | `useBuyerOrders` (Privy address) |
+| My Sales | User is registered seller | `useSellerOrders` |
+| My Referrals | User is registered ambassador | `useAmbassadorOrders` |
+
+**Role Detection:**
+- `useSellerStatus` - checks if Privy address is registered seller
+- `useAmbassadorStatus` - checks if Privy address is registered ambassador
+- Credit card orders detected by querying orders with Privy wallet as buyer
+
+**Key Files:**
+- `frontend/src/app/buy/orders/page.tsx` - Crypto buyer orders (external wallet)
+- `frontend/src/app/orders/page.tsx` - Unified orders hub (Privy users)
+- `frontend/src/hooks/useBuyerOrders.ts` - Supports both wagmi and Privy addresses
+- `frontend/src/hooks/useSellerOrders.ts` - Seller order management
+- `frontend/src/hooks/useAmbassadorOrders.ts` - Ambassador referral orders
+
+### Summary Table
+
+| User Type | Auth Method | Orders View |
+|-----------|-------------|-------------|
+| Crypto buyer (pickup) | External wallet | `/buy/orders` |
+| Crypto buyer (delivery) | External wallet | `/buy/orders` |
+| Credit card buyer | Privy (email) | `/orders` |
+| Seller | Privy (email) | `/orders` |
+| Ambassador | Privy (email) | `/orders` |
+
 ## Contract Addresses (Base Sepolia Testnet)
 
 Current deployment (2025-01-25):

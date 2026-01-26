@@ -26,12 +26,22 @@ export function Header() {
     if (path === '/buy') {
       return pathname === '/buy' || pathname === '/buy/listings' || pathname.startsWith('/buy/listings/') || pathname.startsWith('/buy/sellers/');
     }
+    // Orders can match either /orders or /buy/orders
+    if (path === '/orders' || path === '/buy/orders') {
+      return pathname === '/orders' || pathname.startsWith('/buy/orders');
+    }
     return pathname.startsWith(path);
   };
 
+  // Determine orders link based on current context
+  // - On /sell/* or /ambassador/* routes → link to unified /orders (Privy)
+  // - On /buy/* routes → link to /buy/orders (external wallet)
+  // - Default → /orders (unified hub with Privy login)
+  const ordersHref = pathname.startsWith('/buy') ? '/buy/orders' : '/orders';
+
   const navLinks = [
     { href: '/buy', label: 'Shop' },
-    { href: '/buy/orders', label: 'Orders' },
+    { href: ordersHref, label: 'Orders' },
     { href: '/sell', label: 'Sell' },
     { href: '/grow', label: 'Grow' },
     { href: '/ambassador', label: 'Ambassadors' },
