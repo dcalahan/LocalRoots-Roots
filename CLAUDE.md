@@ -259,6 +259,37 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 - [ ] Verify credit card payments work (thirdweb Pay requires mainnet)
 - [ ] Update Privy allowed domains if needed
 
+## Growth Strategy & Virality (Future)
+
+### Target Market
+- **Community gardens** with hundreds of gardeners (e.g., Heritage Farm at Sea Pines)
+- **Older neighbors** who may not be crypto-native but are active gardeners
+- **NextDoor users** - key channel for local community reach
+
+### Ambassador Sharing Tools Needed
+- [ ] One-click share to NextDoor, Facebook, email
+- [ ] Printable flyers/QR codes for farmers markets, community boards
+- [ ] SMS/text sharing with pre-written messages
+- [ ] Shareable profile links with referral code embedded
+
+### Ambassador Onboarding Tools
+- [ ] Step-by-step guide for recruiting non-tech-savvy neighbors
+- [ ] Video tutorials for common tasks (registering, listing, buying)
+- [ ] FAQ section addressing concerns (what is crypto? is it safe?)
+- [ ] "Invite a neighbor" flow optimized for simplicity
+
+### Community Garden Partnerships
+- Strategy: Recruit entire gardens as seller communities
+- Pitch: "Your garden already grows together - now sell together"
+- Target: Active community gardens with 50+ gardeners
+- First target: https://www.seapinesliving.com/property-owners/community-partners/heritage-farm/
+
+### Virality Mechanics (Learn from The Fitness Streak)
+- [ ] Referral bonuses for buyers (not just sellers)
+- [ ] Social sharing rewards (Seeds tokens)
+- [ ] Milestone-based incentives
+- [ ] Leaderboards with tangible rewards
+
 ## Known Issues
 
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only
