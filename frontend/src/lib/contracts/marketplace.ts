@@ -6,9 +6,18 @@ export const ROOTS_TOKEN_ADDRESS: Address = (process.env.NEXT_PUBLIC_ROOTS_TOKEN
 export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x13C20235BD86635627573e3027b6112a28dCfe3E') as Address;
 export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x63e7eb99daE531227dD690A031eAD1d8d5BeAc54') as Address;
 
-// Payment token addresses (Mock tokens for testnet) - Jan 2 fresh deployment
-export const USDC_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x1638264e592C58327fb3Fe7D74509d1Ca7c86F1d') as Address;
+// Payment token addresses (Mock tokens for testnet) - Jan 25 deployment
+export const USDC_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0xBe0D90a4C6BBC99a37BA0A5aA9Ffaa894f826e06') as Address;
 export const USDT_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDT_ADDRESS || '0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b') as Address;
+
+// Debug: Log token addresses at module load
+if (typeof window !== 'undefined') {
+  console.log('[Marketplace] Token addresses:', {
+    USDC: USDC_ADDRESS,
+    USDT: USDT_ADDRESS,
+    ROOTS: process.env.NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS,
+  });
+}
 export const SWAP_ROUTER_ADDRESS: Address = (process.env.NEXT_PUBLIC_SWAP_ROUTER_ADDRESS || '0x6e75366f3bda38C6Ba83082Ea94d0dC14345F772') as Address;
 
 // Payment token types and configuration

@@ -196,6 +196,13 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 # Update frontend/.env.local with new addresses
 ```
 
+## Mainnet Launch Checklist
+
+- [ ] Remove `NEXT_PUBLIC_TEST_WALLET_PRIVATE_KEY` from Vercel environment variables
+- [ ] Update contract addresses to mainnet deployments
+- [ ] Verify credit card payments work (thirdweb Pay requires mainnet)
+- [ ] Update Privy allowed domains if needed
+
 ## Known Issues
 
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only

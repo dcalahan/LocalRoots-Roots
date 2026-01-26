@@ -109,6 +109,16 @@ export function usePurchase() {
         paymentTokenAddress,
       ];
 
+      console.log('[usePurchase] Purchase args:', {
+        listingId: params.listingId.toString(),
+        quantity: params.quantity.toString(),
+        isDelivery: params.isDelivery,
+        buyerInfoIpfs: params.buyerInfoIpfs,
+        paymentTokenAddress,
+        isTestWallet,
+        marketplaceAddress: MARKETPLACE_ADDRESS,
+      });
+
       // Use direct viem method for test wallet
       if (isTestWallet && isTestWalletAvailable()) {
         console.log('[usePurchase] Using direct test wallet transaction');
@@ -182,8 +192,19 @@ export function usePurchase() {
         txHash: hash,
       };
     } catch (err: unknown) {
-      console.error('Purchase error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Purchase failed';
+      console.error('[usePurchase] Purchase error:', err);
+      // Extract detailed error message
+      let errorMessage = 'Purchase failed';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        // Log full error details
+        console.error('[usePurchase] Error details:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          cause: (err as any).cause,
+        });
+      }
       setError(errorMessage);
       return null;
     } finally {

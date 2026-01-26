@@ -21,7 +21,11 @@ export function useTokenApproval() {
    * @param tokenAddress Optional token address (defaults to ROOTS)
    */
   const checkAllowance = useCallback(async (tokenAddress?: Address): Promise<bigint> => {
-    if (!publicClient || !address) return 0n;
+    console.log('[useTokenApproval] checkAllowance called, address:', address, 'token:', tokenAddress);
+    if (!publicClient || !address) {
+      console.log('[useTokenApproval] No publicClient or address, returning 0');
+      return 0n;
+    }
 
     const token = tokenAddress || ROOTS_TOKEN_ADDRESS;
 
@@ -32,10 +36,10 @@ export function useTokenApproval() {
         functionName: 'allowance',
         args: [address, MARKETPLACE_ADDRESS],
       }) as bigint;
-
+      console.log('[useTokenApproval] Allowance:', allowance.toString());
       return allowance;
     } catch (err) {
-      console.error('Error checking allowance:', err);
+      console.error('[useTokenApproval] Error checking allowance:', err);
       return 0n;
     }
   }, [publicClient, address]);
@@ -100,7 +104,15 @@ export function useTokenApproval() {
 
       return true;
     } catch (err: unknown) {
-      console.error('Approval error:', err);
+      console.error('[useTokenApproval] Approval error:', err);
+      // Log detailed error
+      if (err instanceof Error) {
+        console.error('[useTokenApproval] Error details:', {
+          name: err.name,
+          message: err.message,
+          cause: (err as any).cause,
+        });
+      }
       const errorMessage = err instanceof Error ? err.message : 'Approval failed';
       setError(errorMessage);
       return false;
@@ -114,7 +126,11 @@ export function useTokenApproval() {
    * @param tokenAddress Optional token address (defaults to ROOTS)
    */
   const getBalance = useCallback(async (tokenAddress?: Address): Promise<bigint> => {
-    if (!publicClient || !address) return 0n;
+    console.log('[useTokenApproval] getBalance called, address:', address, 'token:', tokenAddress);
+    if (!publicClient || !address) {
+      console.log('[useTokenApproval] No publicClient or address, returning 0');
+      return 0n;
+    }
 
     const token = tokenAddress || ROOTS_TOKEN_ADDRESS;
 
@@ -125,10 +141,10 @@ export function useTokenApproval() {
         functionName: 'balanceOf',
         args: [address],
       }) as bigint;
-
+      console.log('[useTokenApproval] Balance:', balance.toString());
       return balance;
     } catch (err) {
-      console.error('Error getting balance:', err);
+      console.error('[useTokenApproval] Error getting balance:', err);
       return 0n;
     }
   }, [publicClient, address]);
