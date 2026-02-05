@@ -142,7 +142,8 @@ export default function TokenomicsPage() {
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
                     Sell $20 of tomatoes, earn 10,000 Seeds.
-                    Plus bonus Seeds for milestones like your first sale.
+                    Plus milestones: 10,000 Seeds for your first sale,
+                    25,000 at five sales, 50,000 at fifteen.
                   </p>
                 </div>
               </CardContent>
@@ -170,11 +171,11 @@ export default function TokenomicsPage() {
                 <div className="text-4xl mb-3">🌟</div>
                 <h3 className="text-lg font-bold mb-2">Build the Network</h3>
                 <div className="text-3xl font-bold text-roots-primary mb-1">25%</div>
-                <p className="text-sm text-roots-gray mb-4">of your sellers' Seeds</p>
+                <p className="text-sm text-roots-gray mb-4">of each sale as Seeds</p>
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
-                    Ambassadors recruit growers and earn a share
-                    of every sale their sellers make for a full year.
+                    Recruit a grower and earn Seeds worth 25% of every sale they make for a full year.
+                    You keep 80% — 20% goes to the ambassador who recruited you.
                   </p>
                 </div>
               </CardContent>
@@ -400,7 +401,8 @@ export default function TokenomicsPage() {
               <CardContent className="pt-6">
                 <h4 className="font-semibold mb-2">Can I lose my Seeds?</h4>
                 <p className="text-sm text-roots-gray">
-                  No. Seeds are recorded on the blockchain. They're yours.
+                  No. Every Seeds transaction is recorded on the Base blockchain as a permanent event.
+                  They can't be altered or taken away.
                 </p>
               </CardContent>
             </Card>
