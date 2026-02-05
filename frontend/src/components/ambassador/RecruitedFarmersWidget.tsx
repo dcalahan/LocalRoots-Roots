@@ -11,6 +11,7 @@ import type { Address } from 'viem';
 
 interface RecruitedFarmersWidgetProps {
   address: Address | undefined;
+  onShareListing?: (produceName: string, imageUrl?: string) => void;
 }
 
 function formatTimeAgo(timestamp: string): string {
@@ -36,7 +37,7 @@ function formatRoots(amount: bigint): string {
   return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-export function RecruitedFarmersWidget({ address }: RecruitedFarmersWidgetProps) {
+export function RecruitedFarmersWidget({ address, onShareListing }: RecruitedFarmersWidgetProps) {
   const { ambassador, ambassadorId } = useAmbassadorStatus();
   const { data: seedsData, isLoading: isSeedsLoading } = useSeeds(address);
   const { data: seedsHistory, isLoading: isHistoryLoading } = useSeedsHistory(address, 50);
@@ -229,6 +230,14 @@ export function RecruitedFarmersWidget({ address }: RecruitedFarmersWidgetProps)
                         <div className="text-xs text-amber-600">
                           +${formatUnits(commission, 6)} commission
                         </div>
+                        {onShareListing && (
+                          <button
+                            onClick={() => onShareListing('produce')}
+                            className="text-xs text-roots-primary hover:underline mt-1"
+                          >
+                            Share
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

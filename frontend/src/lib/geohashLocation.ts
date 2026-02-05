@@ -9,6 +9,15 @@ const BASE32 = '0123456789bcdefghjkmnpqrstuvwxyz';
 // Cache for reverse geocoding results
 const geocodeCache = new Map<string, string>();
 
+// Separate cache for neighborhood-level resolution (different zoom = different results)
+const neighborhoodCache = new Map<string, NeighborhoodResult>();
+
+export interface NeighborhoodResult {
+  neighborhood: string | null;
+  city: string;
+  state: string;
+}
+
 // US state approximations based on 2-character geohash prefixes
 // These are rough mappings - geohashes don't align perfectly with state boundaries
 const GEOHASH_TO_STATE: Record<string, string> = {
@@ -354,6 +363,77 @@ function getUSStateAbbreviation(stateName: string): string | null {
     'Wisconsin': 'WI', 'Wyoming': 'WY', 'District of Columbia': 'DC',
   };
   return abbreviations[stateName] || null;
+}
+
+/**
+ * Reverse geocode coordinates to get neighborhood-level location
+ * Uses Nominatim zoom=18 for granular results (neighbourhood, suburb, city_district)
+ * @param lat - Latitude
+ * @param lng - Longitude
+ * @returns NeighborhoodResult with neighborhood name (if available), city, and state
+ */
+export async function reverseGeocodeWithNeighborhood(lat: number, lng: number): Promise<NeighborhoodResult> {
+  // Cache key using geohash prefix (4 chars ≈ same neighborhood)
+  const cacheKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+
+  if (neighborhoodCache.has(cacheKey)) {
+    return neighborhoodCache.get(cacheKey)!;
+  }
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'LocalRoots-Marketplace/1.0 (https://localroots.love)',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Geocoding failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const address = data.address || {};
+
+    // Priority chain for neighborhood name
+    const neighborhood = address.neighbourhood || address.suburb || address.city_district || null;
+    const city = address.city || address.town || address.village || address.hamlet || address.municipality || '';
+    const stateName = address.state || '';
+    const stateAbbrev = getUSStateAbbreviation(stateName) || stateName;
+
+    const result: NeighborhoodResult = {
+      neighborhood,
+      city,
+      state: stateAbbrev,
+    };
+
+    neighborhoodCache.set(cacheKey, result);
+    return result;
+  } catch (error) {
+    console.error('[reverseGeocodeWithNeighborhood] Error:', error);
+    const fallback: NeighborhoodResult = { neighborhood: null, city: '', state: '' };
+    neighborhoodCache.set(cacheKey, fallback);
+    return fallback;
+  }
+}
+
+/**
+ * Format neighborhood result for display
+ * Returns "Haynes Manor, Atlanta" or "Atlanta, GA" or "GA" as fallback
+ */
+export function formatNeighborhoodDisplay(result: NeighborhoodResult): string {
+  if (result.neighborhood && result.city) {
+    return `${result.neighborhood}, ${result.city}`;
+  }
+  if (result.neighborhood) {
+    return result.neighborhood;
+  }
+  if (result.city && result.state) {
+    return `${result.city}, ${result.state}`;
+  }
+  return result.city || result.state || '';
 }
 
 /**

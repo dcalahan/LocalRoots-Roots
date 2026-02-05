@@ -20,6 +20,8 @@ import { uploadImage } from '@/lib/pinata';
 import { rootsToFiat, formatFiat, formatRoots } from '@/lib/pricing';
 import { SellerTierCard, SellerTierBadge } from '@/components/seeds/SellerTierBadge';
 import { EarlyAdopterBanner } from '@/components/seeds/EarlyAdopterBanner';
+import { ShareCardModal } from '@/components/ShareCardModal';
+import type { ShareCardData } from '@/lib/shareCards';
 import { GrowingProfileProvider } from '@/contexts/GrowingProfileContext';
 import { GrowingProfileCard, MonthlyCalendar, TechniqueGuideCard } from '@/components/grow';
 import guidesData from '../../../../../data/technique-guides.json';
@@ -416,6 +418,7 @@ export default function SellerDashboard() {
   const [editingListing, setEditingListing] = useState<SellerListing | null>(null);
   const [deletingListing, setDeletingListing] = useState<SellerListing | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [shareCardData, setShareCardData] = useState<ShareCardData | null>(null);
   const { toast } = useToast();
   const { preferences } = useUserPreferences();
   const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
@@ -774,6 +777,23 @@ export default function SellerDashboard() {
                           <Button
                             variant="outline"
                             size="sm"
+                            className="border-roots-secondary text-roots-secondary hover:bg-roots-secondary/5"
+                            onClick={() => {
+                              setShareCardData({
+                                type: 'seller-listing',
+                                produceName: listing.metadata?.produceName || 'Produce',
+                                price: `${formatPrice(listing.pricePerUnit).fiat}/${listing.metadata?.unit || 'unit'}`,
+                                sellerName: profile?.metadata?.name || '',
+                                neighborhood: '',
+                                imageUrl: listing.metadata?.imageUrl || undefined,
+                              });
+                            }}
+                          >
+                            Share
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="border-roots-primary text-roots-primary hover:bg-roots-primary/5"
                             onClick={() => setEditingListing(listing)}
                           >
@@ -1094,6 +1114,12 @@ export default function SellerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Share Card Modal */}
+      <ShareCardModal
+        data={shareCardData}
+        onClose={() => setShareCardData(null)}
+      />
     </div>
   );
 }

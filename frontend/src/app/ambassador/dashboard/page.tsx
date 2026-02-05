@@ -20,6 +20,8 @@ import { MultiplierBadge } from '@/components/seeds/MultiplierBadge';
 import { AmbassadorTierCard, AmbassadorTierBadge } from '@/components/seeds/AmbassadorTierBadge';
 import { getMultiplierInfo, AMBASSADOR_RECRUITMENT_BONUS, AMBASSADOR_COMMISSION_PERCENT } from '@/components/seeds/PhaseConfig';
 import { RecruitedFarmersWidget } from '@/components/ambassador/RecruitedFarmersWidget';
+import { ShareCardModal } from '@/components/ShareCardModal';
+import type { ShareCardData } from '@/lib/shareCards';
 import { formatUnits, type Address } from 'viem';
 
 function formatRoots(amount: bigint): string {
@@ -58,6 +60,7 @@ export default function AmbassadorDashboardPage() {
   };
 
   const [copied, setCopied] = useState(false);
+  const [shareCardData, setShareCardData] = useState<ShareCardData | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
@@ -176,6 +179,18 @@ export default function AmbassadorDashboardPage() {
       setTimeout(() => refetch(), 3000);
     }
   }, [refetch]);
+
+  // Auto-show share modal for new ambassadors once data loads
+  useEffect(() => {
+    if (justRegistered && isAmbassador && ambassadorId) {
+      const ambassadorName = profile?.name || '';
+      setShareCardData({
+        type: 'recruit-sellers',
+        ambassadorName,
+        ambassadorId: ambassadorId.toString(),
+      });
+    }
+  }, [justRegistered, isAmbassador, ambassadorId, profile?.name]);
 
   // Redirect if not an ambassador (but not if just registered)
   useEffect(() => {
@@ -552,6 +567,17 @@ export default function AmbassadorDashboardPage() {
                 >
                   {copied ? 'Copied!' : 'Copy'}
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShareCardData({
+                    type: 'recruit-sellers',
+                    ambassadorName: profile?.name || '',
+                    ambassadorId: ambassadorId?.toString() || '',
+                  })}
+                >
+                  Share
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -581,13 +607,32 @@ export default function AmbassadorDashboardPage() {
                 >
                   {copied ? 'Copied!' : 'Copy'}
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShareCardData({
+                    type: 'recruit-ambassadors',
+                    ambassadorName: profile?.name || '',
+                    ambassadorId: ambassadorId?.toString() || '',
+                  })}
+                >
+                  Share
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Recruited Farmers Activity Widget */}
-        <RecruitedFarmersWidget address={address} />
+        <RecruitedFarmersWidget
+          address={address}
+          onShareListing={(produceName, imageUrl) => setShareCardData({
+            type: 'ambassador-listing',
+            produceName,
+            neighborhood: '',
+            imageUrl,
+          })}
+        />
 
         {/* Quick Actions */}
         <Card>
@@ -650,6 +695,12 @@ export default function AmbassadorDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Share Card Modal */}
+      <ShareCardModal
+        data={shareCardData}
+        onClose={() => setShareCardData(null)}
+      />
     </div>
   );
 }

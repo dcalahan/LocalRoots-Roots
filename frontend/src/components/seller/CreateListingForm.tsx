@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/select';
 import { ProduceSelector } from './ProduceSelector';
 import { ImageUploader } from './ImageUploader';
+import { ShareCardModal } from '@/components/ShareCardModal';
+import type { ShareCardData } from '@/lib/shareCards';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateListing } from '@/hooks/useCreateListing';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
@@ -94,6 +96,9 @@ export function CreateListingForm() {
   const { createListing, isPending, isSuccess, error, reset } = useCreateListing();
 
   const units = getAllUnits();
+
+  // Share state
+  const [shareCardData, setShareCardData] = useState<ShareCardData | null>(null);
 
   // Form state
   const [selectedProduce, setSelectedProduce] = useState<ProduceItem | null>(null);
@@ -288,42 +293,68 @@ export function CreateListingForm() {
   // Handle successful listing creation
   if (isSuccess) {
     return (
-      <Card className="max-w-md mx-auto">
-        <CardContent className="pt-6 text-center">
-          <div className="w-16 h-16 bg-roots-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-roots-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <h3 className="text-xl font-heading font-bold mb-2">
-            Listing Created!
-          </h3>
-          <p className="text-roots-gray mb-4">
-            Your {selectedProduce?.name} listing is now live on the marketplace!
-          </p>
-          <div className="flex gap-3 justify-center">
-            <Button
-              variant="outline"
-              onClick={resetForm}
-            >
-              Add Another
-            </Button>
-            <Button onClick={() => router.push('/sell/dashboard')} className="bg-roots-primary">
-              View Dashboard
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6 text-center">
+            <div className="w-16 h-16 bg-roots-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-roots-secondary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-heading font-bold mb-2">
+              Listing Created!
+            </h3>
+            <p className="text-roots-gray mb-4">
+              Your {selectedProduce?.name} listing is now live on the marketplace!
+            </p>
+            <p className="text-sm text-roots-gray mb-4">
+              Tell your neighbors about it!
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button
+                className="w-full bg-roots-secondary hover:bg-roots-secondary/90"
+                onClick={() => setShareCardData({
+                  type: 'seller-listing',
+                  produceName: selectedProduce?.name || '',
+                  price: pricePerUnit ? `$${pricePerUnit}/${unitId}` : '',
+                  sellerName: '',
+                  neighborhood: '',
+                  imageUrl: imageHash && !imageHash.startsWith('data:')
+                    ? (imageHash.startsWith('http') ? imageHash : `https://gateway.pinata.cloud/ipfs/${imageHash}`)
+                    : undefined,
+                })}
+              >
+                Share Listing
+              </Button>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={resetForm}
+                >
+                  Add Another
+                </Button>
+                <Button onClick={() => router.push('/sell/dashboard')} className="bg-roots-primary">
+                  View Dashboard
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <ShareCardModal
+          data={shareCardData}
+          onClose={() => setShareCardData(null)}
+        />
+      </>
     );
   }
 

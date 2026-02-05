@@ -370,11 +370,44 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 - **Older neighbors** who may not be crypto-native but are active gardeners
 - **NextDoor users** - key channel for local community reach
 
-### Ambassador Sharing Tools Needed
-- [ ] One-click share to NextDoor, Facebook, email
+### Ambassador Sharing Tools — Shareable Cards (Implemented)
+
+**4 shareable card types** (canvas-generated 1080x1920 PNG, Instagram Stories format):
+
+| Card | Used By | Trigger | URL |
+|------|---------|---------|-----|
+| 1. Recruit Sellers | Ambassadors | After registration (auto-popup) + dashboard | `/sell/register?ref={id}` |
+| 2. Recruit Ambassadors | Ambassadors / Founder | Dashboard | `/ambassador/register?ref={id}` |
+| 3. Seller Listing | Sellers | After listing creation + dashboard | `/buy` |
+| 4. Ambassador Promotes Listing | Ambassadors | Dashboard per-order | `/buy` |
+
+**Key Files:**
+- `frontend/src/lib/shareCards.ts` — Canvas engine + share utilities + pre-written text
+- `frontend/src/components/ShareCardModal.tsx` — Reusable modal (preview, channel buttons, loading)
+- `frontend/src/lib/geohashLocation.ts` — `reverseGeocodeWithNeighborhood()` for Cards 3 & 4
+
+**Share Channels:** Native share (mobile), Copy Link, SMS, Facebook, Email, NextDoor (Cards 1/3/4 only), Download Image
+
+**NextDoor UX:** No API exists. Flow: copy text to clipboard → open `nextdoor.com/post/` in new tab → toast instruction to paste.
+
+**Neighborhood Resolution:** `reverseGeocodeWithNeighborhood()` uses Nominatim `zoom=18` → extracts `neighbourhood` → `suburb` → `city_district` → `city`. Separate cache from city-level `reverseGeocode()`. Display: "Haynes Manor, Atlanta" or fallback "Atlanta, GA".
+
+**Data Sources:**
+- Seller name: `useSellerProfile().profile.metadata.name`
+- Ambassador name: `useAmbassadorProfile()` via `ambassador.profileIpfs`
+- Ambassador ID: `useAmbassadorStatus().ambassadorId` (string)
+- Listing data: `useSellerListings()` → `listing.metadata` (produceName, images, unit)
+- Geohash: `seller.geohash` on-chain → decoded to lat/lng → neighborhood
+
+**Technical Notes:**
+- Canvas runs client-side only (not SSR)
+- Produce photos loaded via `new Image()` with CORS — emoji fallback on load fail
+- Data URLs converted to File objects for Web Share API
+- `navigator.canShare({ files })` check before file share attempt
+- Nominatim rate limit: 1 req/sec, cache by geohash prefix
+
+### Ambassador Sharing Tools — Future
 - [ ] Printable flyers/QR codes for farmers markets, community boards
-- [ ] SMS/text sharing with pre-written messages
-- [ ] Shareable profile links with referral code embedded
 
 ### Ambassador Onboarding Tools
 - [ ] Step-by-step guide for recruiting non-tech-savvy neighbors
