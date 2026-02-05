@@ -196,12 +196,7 @@ export default function Home() {
           <div className="bg-white rounded-lg p-6 mb-8 shadow-sm border border-roots-secondary/30 flex flex-col md:flex-row items-center gap-6">
             <div className="flex-shrink-0">
               <div className="w-16 h-16 rounded-full bg-roots-secondary flex items-center justify-center shadow-md">
-                <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 22V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M12 13C12 9 9 6 5 5c0 4.5 3 8 7 8z" fill="white" stroke="#333" strokeWidth="0.75" />
-                  <path d="M12 10c0-3.5 3-6.5 7-7-0.5 4-3 7-7 7z" fill="white" stroke="#333" strokeWidth="0.75" />
-                  <path d="M12 22V11" stroke="#333" strokeWidth="0.75" strokeLinecap="round" />
-                </svg>
+                <span className="text-3xl">🌱</span>
               </div>
             </div>
             <div className="flex-1 text-center md:text-left">
