@@ -196,7 +196,11 @@ export default function Home() {
           <div className="bg-white rounded-lg p-6 mb-8 shadow-sm border border-roots-secondary/30 flex flex-col md:flex-row items-center gap-6">
             <div className="flex-shrink-0">
               <div className="w-16 h-16 rounded-full bg-roots-secondary flex items-center justify-center shadow-md">
-                <span className="text-3xl">🌱</span>
+                <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 22V13" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M12 15c0-4.5-3.5-7.5-7-8.5 0 5 3.5 8.5 7 8.5z" fill="white" stroke="#6B7280" strokeWidth="1" strokeLinejoin="round" />
+                  <path d="M12 12c0-4 3.5-7 7-7.5-0.5 4.5-3.5 7.5-7 7.5z" fill="white" stroke="#6B7280" strokeWidth="1" strokeLinejoin="round" />
+                </svg>
               </div>
             </div>
             <div className="flex-1 text-center md:text-left">
@@ -248,6 +252,7 @@ export default function Home() {
                 <li><Link href="/buy" className="text-gray-600 hover:text-roots-primary transition-colors">Browse Produce</Link></li>
                 <li><Link href="/sell" className="text-gray-600 hover:text-roots-primary transition-colors">Start Selling</Link></li>
                 <li><Link href="/ambassador" className="text-gray-600 hover:text-roots-primary transition-colors">Become an Ambassador</Link></li>
+                <li><Link href="/about/tokenomics" className="text-gray-600 hover:text-roots-primary transition-colors">Seeds & Tokenomics</Link></li>
               </ul>
             </div>
 
