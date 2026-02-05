@@ -255,6 +255,49 @@ cloudflared tunnel --url http://localhost:3000
 cd contracts && forge build
 ```
 
+## E2E Testing
+
+End-to-end tests run directly against Base Sepolia contracts using vitest + viem. Tests the full marketplace lifecycle without needing a browser (Privy OAuth can't be automated).
+
+**Two-phase model** (48-hour dispute window can't be fast-forwarded on live testnet):
+- Phase 1: `npm run test:e2e` — Full lifecycle (~50s)
+- Phase 2: `npm run test:e2e:settle` — Run 48+ hours later to claim funds
+
+**What's tested:**
+1. Ambassador registration (gasless)
+2. Seller registration with ambassador referral (gasless)
+3. Listing creation (gasless)
+4. Buyer purchases (pickup + delivery, ROOTS payment)
+5. Order acceptance + proof uploads (gasless)
+6. Dispute window enforcement (early claim rejected)
+7. Financial verification
+
+**Key files:**
+```
+frontend/tests/e2e/
+  .env.test              # Test wallet PKs, contract addresses
+  .test-state.json       # Auto-generated: persists state between phases
+  vitest.config.ts       # Config with 5-min timeout, env loading
+  lifecycle.test.ts      # Phase 1: 13 tests
+  settlement.test.ts     # Phase 2: claim funds after dispute window
+  lib/
+    clients.ts           # Viem clients for all roles
+    contracts.ts         # ABIs + addresses (re-exports from src/)
+    gasless.ts           # EIP-712 signing + relay API
+    assertions.ts        # Balance checks, contract state readers
+```
+
+**Test wallets** (Base Sepolia TESTNET only):
+- Deployer: `0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c`
+- Seller: `0xde061f740C49BD9Dc0c25e4FC5eF9E0CF6ED00e0`
+- Buyer: `0x0C0f738485B07bd98b6f0633C62C2c87e1b366c0`
+- Ambassador: `0x76CDc4B652AB397D345F893f5bdE14dE4632a8Eb`
+
+**Notes:**
+- Uses production relay API (`https://www.localroots.love/api/relay`)
+- Includes 3s delays after writes for RPC node sync
+- Idempotent: ambassador/seller skip registration if already exists
+
 ## Redeploying Contracts
 
 ```bash

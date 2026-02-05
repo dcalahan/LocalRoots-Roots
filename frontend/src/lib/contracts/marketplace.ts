@@ -222,6 +222,7 @@ export const marketplaceAbi = [
       { name: 'proofUploadedAt', type: 'uint256' },
       { name: 'fundsReleased', type: 'bool' },
       { name: 'buyerInfoIpfs', type: 'string' },
+      { name: 'paymentToken', type: 'address' },
     ],
     stateMutability: 'view',
   },

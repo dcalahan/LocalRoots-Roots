@@ -37,6 +37,8 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
+frontend/tests/e2e/.test-state.json
+frontend/tests/e2e/.env.test
 
 # Misc
 *.log
