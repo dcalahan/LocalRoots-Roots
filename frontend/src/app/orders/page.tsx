@@ -229,13 +229,13 @@ export default function UnifiedOrdersPage() {
         <div className="text-6xl mb-4">🔐</div>
         <h1 className="text-2xl font-heading font-bold mb-2">Sign In to View Orders</h1>
         <p className="text-roots-gray mb-6">
-          Login with your email to view your orders, sales, and referrals.
+          Sign in with Google, Apple, or email to view your orders, sales, and referrals.
         </p>
         <Button
           onClick={login}
           className="bg-roots-primary hover:bg-roots-primary/90"
         >
-          Login with Email
+          Sign In
         </Button>
         <div className="mt-6 pt-6 border-t">
           <p className="text-sm text-roots-gray mb-3">

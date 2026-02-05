@@ -131,19 +131,9 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             </svg>
           ) : (
             <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1.5-3 2-6 2-10 0-3-1-6-2-10z"
-                fill="#F5F0EE"
-                stroke="#F5F0EE"
-                strokeWidth="0.5"
-              />
-              <path
-                d="M12 2c5.5 0 10 4.5 10 10s-4.5 10-10 10"
-                fill="none"
-                stroke="rgba(245,240,238,0.4)"
-                strokeWidth="1"
-                strokeDasharray="2 2"
-              />
+              <path d="M12 22V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M12 13C12 9 9 6 5 5c0 4.5 3 8 7 8z" fill="white" />
+              <path d="M12 10c0-3.5 3-6.5 7-7-0.5 4-3 7-7 7z" fill="white" />
             </svg>
           )}
         </button>

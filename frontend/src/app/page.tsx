@@ -192,6 +192,33 @@ export default function Home() {
               </p>
             </div>
           </div>
+          {/* Garden Assistant Highlight */}
+          <div className="bg-white rounded-lg p-6 mb-8 shadow-sm border border-green-200 flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0">
+              <div className="w-16 h-16 rounded-full bg-roots-secondary flex items-center justify-center shadow-md">
+                <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 22V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M12 13C12 9 9 6 5 5c0 4.5 3 8 7 8z" fill="white" />
+                  <path d="M12 10c0-3.5 3-6.5 7-7-0.5 4-3 7-7 7z" fill="white" />
+                </svg>
+              </div>
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h4 className="font-semibold text-lg mb-1">Garden Assistant</h4>
+              <p className="text-sm text-roots-gray">
+                Not sure what to plant? Have a pest problem? Ask our AI-powered Garden Assistant anything about growing.
+                It knows your zone, frost dates, and growing season.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <Link href="/grow">
+                <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-600 hover:text-white">
+                  Try It Free
+                </Button>
+              </Link>
+            </div>
+          </div>
+
           <div className="text-center">
             <Link href="/grow">
               <Button className="bg-green-600 hover:bg-green-700">

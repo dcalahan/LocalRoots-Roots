@@ -45,8 +45,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           accentColor: '#EB6851', // roots-primary coral/orange
           logo: 'https://ipfs.io/ipfs/Qmek6d4AUdvUqhmSoLg5m2U9SAKHdKuDLb9eW9kE7SEQQX',
         },
-        // Login methods - email and wallet
-        loginMethods: ['email', 'wallet', 'sms'],
+        // Login methods - social options first for non-crypto-native users
+        loginMethods: ['google', 'apple', 'instagram', 'email', 'sms'],
         // Wallet connect project ID for external wallets
         walletConnectCloudProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
       }}

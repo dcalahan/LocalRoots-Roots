@@ -221,6 +221,16 @@ The `GardenAIChat` component provides AI gardening assistance:
 - `frontend/src/components/grow/GardenAIChat.tsx` - Main component
 - `frontend/src/app/sell/layout.tsx` - Adds chat to sell pages
 
+## Deployment Workflow - IMPORTANT
+
+**Always deploy after making changes.** The user tests exclusively on `www.localroots.love`, not locally. After every change:
+
+1. Commit changes to `main`
+2. Push to `origin/main`
+3. Vercel auto-deploys from the push
+
+This will change when we go into soft launch or launch. Until then, always deploy.
+
 ## Development
 
 ```bash
@@ -259,6 +269,89 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 - [ ] Verify credit card payments work (thirdweb Pay requires mainnet)
 - [ ] Update Privy allowed domains if needed
 
+## Decentralization Roadmap
+
+**Goal:** Friendly to users, but defensible. Eventually self-sustaining without any single operator.
+
+### Principle: Progressive Decentralization
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   USER EXPERIENCE                    │
+│                                                      │
+│   Grandma types localroots.love → it just works     │
+│                                                      │
+├─────────────────────────────────────────────────────┤
+│                   UNDER THE HOOD                     │
+│                                                      │
+│   Domain: Privacy jurisdiction (can migrate fast)   │
+│   Backup: Blockchain domain (can't be seized)       │
+│   Frontend: IPFS (can't be taken down)              │
+│   Contracts: On-chain (already unstoppable)         │
+│   Relayers: Multiple (no single point of failure)   │
+│                                                      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Phase 1: Reduce Single Points of Failure (Current Priority)
+
+| Component | Current | Target |
+|-----------|---------|--------|
+| Domain Registrar | Vercel DNS (US) | Njalla (Nevis) or Iceland-based |
+| Blockchain Domain | None | `localroots.eth` or `localroots.crypto` |
+| DNS | Vercel | Keep for now (easy to migrate) |
+| Hosting | Vercel | Keep for now (user-friendly) |
+| Smart Contracts | Base Sepolia | Base Mainnet |
+
+**Checklist:**
+- [ ] Audit current domain registrar setup
+- [ ] Secure `localroots.eth` (~$15/yr) or `localroots.crypto` (~$40 one-time)
+- [ ] Transfer `.love` domain to Njalla or Iceland registrar (Orangewebsite, 1984 Hosting)
+- [ ] Document fallback access methods
+
+**Privacy-Friendly Registrar Options:**
+- **Njalla** (Nevis) - Acts as proxy owner, strongest privacy
+- **Orangewebsite** (Iceland) - Strong free speech laws, accepts crypto
+- **1984 Hosting** (Iceland) - Privacy-focused, transparent
+
+### Phase 2: Decentralized Fallbacks (Medium-term)
+
+| Component | Action |
+|-----------|--------|
+| Frontend | Deploy to IPFS via Fleek alongside Vercel |
+| Blockchain domain | Point ENS/Unstoppable to IPFS hash |
+| Documentation | "How to access if site is down" guide for users |
+| Multiple gateways | localroots.love, localroots.eth.limo, IPFS gateway |
+
+**Checklist:**
+- [ ] Set up Fleek for automatic IPFS deployments
+- [ ] Configure ENS to point to IPFS content hash
+- [ ] Write user guide for alternative access methods
+- [ ] Test all access paths work correctly
+
+### Phase 3: Distribute Operations (Long-term)
+
+| Component | Action |
+|-----------|--------|
+| Relayer | Multiple community-run relayers (not just founder wallet) |
+| Treasury | Multi-sig with trusted community members |
+| Governance | DAO for protocol upgrades, fee changes |
+| Code | Fully open-source, documented so anyone can deploy |
+
+**Checklist:**
+- [ ] Open-source all code with deployment documentation
+- [ ] Set up multi-sig treasury (Gnosis Safe or similar)
+- [ ] Create relayer documentation for community operators
+- [ ] Design governance token/DAO structure
+
+### Phase 4: Full Autonomy (Eventual)
+
+- Multiple frontends exist (run by different people/orgs)
+- Protocol upgrades via on-chain governance
+- Treasury controlled by token holders
+- Founder is one voice among many
+- LocalRoots continues even if founder disappears
+
 ## Growth Strategy & Virality (Future)
 
 ### Target Market
@@ -289,6 +382,19 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 - [ ] Social sharing rewards (Seeds tokens)
 - [ ] Milestone-based incentives
 - [ ] Leaderboards with tangible rewards
+
+## Social Login Configuration
+
+**Enabled Methods:** Google, Apple, Instagram, Email, SMS
+
+**Order in Privy modal:** Social options first (for non-crypto-native target audience)
+
+**Note:** Facebook is NOT supported by Privy.
+
+**Adding providers:**
+1. Enable in Privy Dashboard > Login Methods
+2. Update `loginMethods` array in `providers.tsx`
+3. Configure OAuth credentials in Privy Dashboard
 
 ## Known Issues
 

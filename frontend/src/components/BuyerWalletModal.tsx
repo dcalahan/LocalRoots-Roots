@@ -319,7 +319,7 @@ export function BuyerWalletModal({
                         <div className="w-full border-t border-gray-200" />
                       </div>
                       <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white text-gray-500">Paid with credit card?</span>
+                        <span className="px-2 bg-white text-gray-500">No crypto wallet?</span>
                       </div>
                     </div>
                     <button
@@ -333,9 +333,9 @@ export function BuyerWalletModal({
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <div className="font-semibold">Login with Email</div>
+                          <div className="font-semibold">Sign In</div>
                           <div className="text-sm text-roots-gray">
-                            View orders from credit card purchases
+                            Use Google, Apple, or email
                           </div>
                         </div>
                       </div>
