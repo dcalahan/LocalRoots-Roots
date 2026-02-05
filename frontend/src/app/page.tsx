@@ -160,7 +160,7 @@ export default function Home() {
         </div>
 
         {/* Growing Guides Section */}
-        <div className="card bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+        <div className="card bg-gradient-to-br from-roots-secondary/5 to-roots-secondary/10 border-roots-secondary/30">
           <div className="text-center mb-8">
             <div className="text-4xl mb-4">📅</div>
             <h2 className="text-3xl font-bold mb-3">Know What to Plant & When</h2>
@@ -193,13 +193,14 @@ export default function Home() {
             </div>
           </div>
           {/* Garden Assistant Highlight */}
-          <div className="bg-white rounded-lg p-6 mb-8 shadow-sm border border-green-200 flex flex-col md:flex-row items-center gap-6">
+          <div className="bg-white rounded-lg p-6 mb-8 shadow-sm border border-roots-secondary/30 flex flex-col md:flex-row items-center gap-6">
             <div className="flex-shrink-0">
               <div className="w-16 h-16 rounded-full bg-roots-secondary flex items-center justify-center shadow-md">
                 <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none">
                   <path d="M12 22V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M12 13C12 9 9 6 5 5c0 4.5 3 8 7 8z" fill="white" />
-                  <path d="M12 10c0-3.5 3-6.5 7-7-0.5 4-3 7-7 7z" fill="white" />
+                  <path d="M12 13C12 9 9 6 5 5c0 4.5 3 8 7 8z" fill="white" stroke="#333" strokeWidth="0.75" />
+                  <path d="M12 10c0-3.5 3-6.5 7-7-0.5 4-3 7-7 7z" fill="white" stroke="#333" strokeWidth="0.75" />
+                  <path d="M12 22V11" stroke="#333" strokeWidth="0.75" strokeLinecap="round" />
                 </svg>
               </div>
             </div>
@@ -212,7 +213,7 @@ export default function Home() {
             </div>
             <div className="flex-shrink-0">
               <Link href="/grow">
-                <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-600 hover:text-white">
+                <Button variant="outline" className="border-roots-secondary text-roots-secondary hover:bg-roots-secondary hover:text-white">
                   Try It Free
                 </Button>
               </Link>
@@ -221,7 +222,7 @@ export default function Home() {
 
           <div className="text-center">
             <Link href="/grow">
-              <Button className="bg-green-600 hover:bg-green-700">
+              <Button className="bg-roots-secondary hover:bg-roots-secondary/90">
                 Explore Growing Guides
               </Button>
             </Link>

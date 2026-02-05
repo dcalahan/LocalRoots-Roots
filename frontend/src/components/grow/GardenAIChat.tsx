@@ -132,8 +132,9 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           ) : (
             <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
               <path d="M12 22V11" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M12 13C12 9 9 6 5 5c0 4.5 3 8 7 8z" fill="white" />
-              <path d="M12 10c0-3.5 3-6.5 7-7-0.5 4-3 7-7 7z" fill="white" />
+              <path d="M12 13C12 9 9 6 5 5c0 4.5 3 8 7 8z" fill="white" stroke="#333" strokeWidth="0.75" />
+              <path d="M12 10c0-3.5 3-6.5 7-7-0.5 4-3 7-7 7z" fill="white" stroke="#333" strokeWidth="0.75" />
+              <path d="M12 22V11" stroke="#333" strokeWidth="0.75" strokeLinecap="round" />
             </svg>
           )}
         </button>
@@ -177,7 +178,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                         setInput(question);
                         inputRef.current?.focus();
                       }}
-                      className="block w-full text-left text-sm px-3 py-2 bg-green-50 hover:bg-green-100 rounded-lg text-green-800 transition-colors"
+                      className="block w-full text-left text-sm px-3 py-2 bg-roots-secondary/10 hover:bg-roots-secondary/20 rounded-lg text-roots-secondary transition-colors"
                     >
                       {question}
                     </button>
@@ -193,7 +194,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-2 ${
                       message.role === 'user'
-                        ? 'bg-green-600 text-white rounded-br-md'
+                        ? 'bg-roots-secondary text-white rounded-br-md'
                         : 'bg-gray-100 text-gray-800 rounded-bl-md'
                     }`}
                   >
@@ -234,13 +235,13 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about planting, pests, soil..."
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-roots-secondary focus:ring-1 focus:ring-roots-secondary"
                 disabled={isLoading}
               />
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || isLoading}
-                className="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-10 h-10 rounded-full bg-roots-secondary text-white flex items-center justify-center hover:bg-roots-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

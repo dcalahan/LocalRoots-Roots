@@ -1,5 +1,16 @@
 # LocalRoots Project Guidelines
 
+## Color Palette - ALWAYS USE THESE
+
+Never use generic Tailwind colors (green-600, emerald-50, etc.). Always use the brand palette:
+
+- `roots-primary` (`#EB6851`) - Coral/orange. Primary actions, CTAs.
+- `roots-secondary` (`#3EBFAC`) - Teal. Garden/grow features, secondary actions.
+- `roots-cream` (`#F5F0EE`) - Light background, text on dark backgrounds.
+- `roots-gray` (`#818181`) - Body text, muted content.
+
+Use opacity variants (e.g., `bg-roots-secondary/10`) for lighter shades instead of separate color classes.
+
 ## Wallet Architecture - CRITICAL
 
 ### Route-Based Wallet Context
