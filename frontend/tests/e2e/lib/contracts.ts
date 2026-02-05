@@ -11,6 +11,50 @@ export { marketplaceAbi } from '../../../src/lib/contracts/marketplace';
 export { ambassadorAbi } from '../../../src/lib/contracts/ambassador';
 export { forwarderAbi, forwarderDomain, forwardRequestTypes } from '../../../src/lib/contracts/forwarder';
 
+// Alias exports for consistency across test files
+export { ROOTS_TOKEN_ADDRESS as rootsTokenAddress };
+export { MARKETPLACE_ADDRESS as marketplaceAddress };
+export { AMBASSADOR_REWARDS_ADDRESS as ambassadorRewardsAddress };
+export { FORWARDER_ADDRESS as forwarderAddress };
+
+// ROOTS token ABI (alias for erc20Abi)
+export const rootsTokenAbi = [
+  {
+    type: 'function',
+    name: 'approve',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'allowance',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'balanceOf',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'decimals',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+] as const;
+
 // ERC20 ABI with transfer (extended from the app's erc20Abi which only has approve/allowance/balanceOf)
 export const erc20Abi = [
   {

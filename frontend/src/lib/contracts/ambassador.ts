@@ -91,6 +91,35 @@ export const ambassadorAbi = [
     outputs: [{ name: '', type: 'uint256[]' }],
     stateMutability: 'view',
   },
+  // Seller activation functions
+  {
+    type: 'function',
+    name: 'isSellerActivated',
+    inputs: [{ name: '_sellerId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getSellerRecruitment',
+    inputs: [{ name: '_sellerId', type: 'uint256' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'ambassadorId', type: 'uint256' },
+          { name: 'recruitedAt', type: 'uint256' },
+          { name: 'totalSalesVolume', type: 'uint256' },
+          { name: 'totalRewardsPaid', type: 'uint256' },
+          { name: 'completedOrderCount', type: 'uint256' },
+          { name: 'uniqueBuyerCount', type: 'uint256' },
+          { name: 'activated', type: 'bool' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
   // Write functions
   {
     type: 'function',

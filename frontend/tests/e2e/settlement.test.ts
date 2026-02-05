@@ -1,12 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { formatUnits } from 'viem';
 import {
+  publicClient,
   sellerAccount,
   sellerAddress,
   buyerAddress,
+  buyer2Address,
   ambassadorAddress,
 } from './lib/clients';
-import { MARKETPLACE_ADDRESS, marketplaceAbi } from './lib/contracts';
+import {
+  MARKETPLACE_ADDRESS,
+  AMBASSADOR_REWARDS_ADDRESS,
+  marketplaceAbi,
+  ambassadorAbi,
+} from './lib/contracts';
 import { executeGasless } from './lib/gasless';
 import {
   readOrder,
@@ -119,6 +126,121 @@ describe('Step 6 — Claim Funds', () => {
     expect(orderAfter.fundsReleased).toBe(true);
     console.log(`[Step 6] Delivery order funds released`);
   });
+
+  it('should claim funds for buyer2 order (if exists)', async () => {
+    const state = readState()!;
+    if (!state.buyer2OrderId) {
+      console.log('[Step 6] No buyer2 order — skipping (run activation.test.ts first for full activation test)');
+      return;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const disputeWindow = await getDisputeWindow();
+    // Use buyer2ProofUploadedAt if available, otherwise fall back to original
+    const proofTime = state.buyer2ProofUploadedAt || state.proofUploadedAt;
+    const claimableAt = proofTime + Number(disputeWindow);
+    if (now < claimableAt) {
+      console.log('[Step 6] Skipping — dispute window not expired for buyer2 order');
+      return;
+    }
+
+    const buyer2OrderId = BigInt(state.buyer2OrderId);
+    const orderBefore = await readOrder(buyer2OrderId);
+
+    if (orderBefore.fundsReleased) {
+      console.log('[Step 6] Buyer2 order funds already released');
+      return;
+    }
+
+    console.log(`[Step 6] Claiming funds for buyer2 order #${buyer2OrderId}...`);
+    await executeGasless({
+      account: sellerAccount,
+      to: MARKETPLACE_ADDRESS,
+      abi: marketplaceAbi,
+      functionName: 'claimFunds',
+      args: [buyer2OrderId],
+    });
+
+    const orderAfter = await readOrder(buyer2OrderId);
+    expect(orderAfter.fundsReleased).toBe(true);
+    console.log(`[Step 6] Buyer2 order funds released`);
+  });
+});
+
+describe('Step 6b — Seller Activation Verification', () => {
+  it('should verify seller is activated after claims (2 unique buyers)', async () => {
+    const state = readState()!;
+    if (!state.buyer2OrderId) {
+      console.log('[Step 6b] No buyer2 order — cannot verify activation');
+      return;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const disputeWindow = await getDisputeWindow();
+    const claimableAt = state.proofUploadedAt + Number(disputeWindow);
+    if (now < claimableAt) {
+      console.log('[Step 6b] Skipping — dispute window not expired');
+      return;
+    }
+
+    const sellerId = BigInt(state.sellerId);
+
+    // Check activation status
+    const isActivated = await publicClient.readContract({
+      address: AMBASSADOR_REWARDS_ADDRESS,
+      abi: ambassadorAbi,
+      functionName: 'isSellerActivated',
+      args: [sellerId],
+    });
+
+    console.log(`[Step 6b] isSellerActivated(${sellerId}): ${isActivated}`);
+    expect(isActivated).toBe(true);
+  });
+
+  it('should verify recruitment stats show 2 unique buyers', async () => {
+    const state = readState()!;
+    if (!state.buyer2OrderId) {
+      console.log('[Step 6b] No buyer2 order — cannot verify recruitment stats');
+      return;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const disputeWindow = await getDisputeWindow();
+    const claimableAt = state.proofUploadedAt + Number(disputeWindow);
+    if (now < claimableAt) {
+      console.log('[Step 6b] Skipping — dispute window not expired');
+      return;
+    }
+
+    const sellerId = BigInt(state.sellerId);
+
+    const recruitment = await publicClient.readContract({
+      address: AMBASSADOR_REWARDS_ADDRESS,
+      abi: ambassadorAbi,
+      functionName: 'getSellerRecruitment',
+      args: [sellerId],
+    }) as {
+      ambassadorId: bigint;
+      recruitedAt: bigint;
+      totalSalesVolume: bigint;
+      totalRewardsPaid: bigint;
+      completedOrderCount: bigint;
+      uniqueBuyerCount: bigint;
+      activated: boolean;
+    };
+
+    console.log('[Step 6b] Recruitment stats after claims:');
+    console.log(`  ambassadorId: ${recruitment.ambassadorId}`);
+    console.log(`  completedOrderCount: ${recruitment.completedOrderCount}`);
+    console.log(`  uniqueBuyerCount: ${recruitment.uniqueBuyerCount}`);
+    console.log(`  totalSalesVolume: ${formatUnits(recruitment.totalSalesVolume, 18)} ROOTS`);
+    console.log(`  activated: ${recruitment.activated}`);
+
+    // With buyer1's 2 orders + buyer2's 1 order = 3 completed, 2 unique buyers
+    expect(recruitment.completedOrderCount).toBeGreaterThanOrEqual(2n);
+    expect(recruitment.uniqueBuyerCount).toBeGreaterThanOrEqual(2n);
+    expect(recruitment.activated).toBe(true);
+  });
 });
 
 describe('Step 7 — Final Financial Verification', () => {
@@ -154,10 +276,14 @@ describe('Step 7 — Final Financial Verification', () => {
     console.log(`  Total Pending: ${formatUnits(ambassador.totalPending, 18)} ROOTS`);
     console.log(`  Recruited Sellers: ${ambassador.recruitedSellers}`);
 
-    // Note: Ambassador activation requires 2 unique buyers.
-    // With only 1 test buyer, rewards will NOT be queued.
-    // This is expected behavior — we verify it here.
-    console.log('[Step 7] Note: Ambassador rewards require 2 unique buyers for activation');
+    // With buyer2 order, seller should now be activated and rewards should queue
+    if (state.buyer2OrderId) {
+      console.log('[Step 7] Seller was activated — ambassador rewards should be queueing');
+      // After activation, future sales will queue rewards. Already-completed sales
+      // before activation do NOT retroactively earn rewards.
+    } else {
+      console.log('[Step 7] Note: Run activation.test.ts to add buyer2 and enable rewards');
+    }
   });
 
   it('should check Seeds balances (expect no new events in Phase 2 ROOTS mode)', async () => {
@@ -198,16 +324,33 @@ describe('Step 7 — Final Financial Verification', () => {
 
     const pickupOrder = await readOrder(BigInt(state.pickupOrderId));
     const deliveryOrder = await readOrder(BigInt(state.deliveryOrderId));
+    const buyer2Order = state.buyer2OrderId ? await readOrder(BigInt(state.buyer2OrderId)) : null;
     const sellerBal = await getRootsBalance(sellerAddress);
     const ambassadorId = BigInt(state.ambassadorId);
     const ambassador = await readAmbassador(ambassadorId);
+    const sellerId = BigInt(state.sellerId);
+
+    // Get activation status
+    let isActivated = false;
+    if (state.buyer2OrderId) {
+      isActivated = await publicClient.readContract({
+        address: AMBASSADOR_REWARDS_ADDRESS,
+        abi: ambassadorAbi,
+        functionName: 'isSellerActivated',
+        args: [sellerId],
+      }) as boolean;
+    }
 
     console.log('\n═══════════════════════════════════════');
     console.log('  SETTLEMENT COMPLETE');
     console.log('═══════════════════════════════════════');
-    console.log(`Pickup Order #${state.pickupOrderId}:  funds=${pickupOrder.fundsReleased}`);
+    console.log(`Pickup Order #${state.pickupOrderId}:   funds=${pickupOrder.fundsReleased}`);
     console.log(`Delivery Order #${state.deliveryOrderId}: funds=${deliveryOrder.fundsReleased}`);
+    if (buyer2Order) {
+      console.log(`Buyer2 Order #${state.buyer2OrderId}:    funds=${buyer2Order.fundsReleased}`);
+    }
     console.log(`Seller ROOTS balance: ${formatUnits(sellerBal, 18)}`);
+    console.log(`Seller activated: ${isActivated}`);
     console.log(`Ambassador earned: ${formatUnits(ambassador.totalEarned, 18)} ROOTS`);
     console.log(`Ambassador pending: ${formatUnits(ambassador.totalPending, 18)} ROOTS`);
     console.log('Seeds: No new events (expected in Phase 2 ROOTS mode)');
