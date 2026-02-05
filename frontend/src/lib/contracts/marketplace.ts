@@ -272,6 +272,20 @@ export const marketplaceAbi = [
     outputs: [{ name: '', type: 'address[]' }],
     stateMutability: 'view',
   },
+  {
+    type: 'function',
+    name: 'currentPhase',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'swapRouter',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
   // Buyer write functions
   {
     type: 'function',
