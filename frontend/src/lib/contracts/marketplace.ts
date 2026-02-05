@@ -300,6 +300,13 @@ export const marketplaceAbi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'function',
+    name: 'refundBuyer',
+    inputs: [{ name: '_orderId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
   // Buyer events
   {
     type: 'event',
