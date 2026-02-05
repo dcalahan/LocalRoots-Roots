@@ -45,7 +45,7 @@ export const sellerClient = createWalletClient({
 export const sellerAddress = sellerAccount.address;
 export { sellerAccount };
 
-// Buyer
+// Buyer 1
 const buyerAccount = privateKeyToAccount(
   process.env.BUYER_PRIVATE_KEY as `0x${string}`
 );
@@ -57,9 +57,22 @@ export const buyerClient = createWalletClient({
 export const buyerAddress = buyerAccount.address;
 export { buyerAccount };
 
+// Buyer 2 (for seller activation tests - need 2 unique buyers)
+const buyer2Account = privateKeyToAccount(
+  process.env.BUYER2_PRIVATE_KEY as `0x${string}`
+);
+export const buyer2Client = createWalletClient({
+  account: buyer2Account,
+  chain: baseSepolia,
+  transport: http(RPC_URL),
+});
+export const buyer2Address = buyer2Account.address;
+export { buyer2Account };
+
 // Log addresses on import for debugging
 console.log('[E2E] Test wallets:');
 console.log('  Deployer:', deployerAddress);
 console.log('  Ambassador:', ambassadorAddress);
 console.log('  Seller:', sellerAddress);
 console.log('  Buyer:', buyerAddress);
+console.log('  Buyer2:', buyer2Address);

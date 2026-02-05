@@ -291,12 +291,35 @@ frontend/tests/e2e/
 - Deployer: `0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c`
 - Seller: `0xde061f740C49BD9Dc0c25e4FC5eF9E0CF6ED00e0`
 - Buyer: `0x0C0f738485B07bd98b6f0633C62C2c87e1b366c0`
+- Buyer2: `0xe2f32e89b47C9eAe7429B70007f223303452Ff5b` (for activation tests)
 - Ambassador: `0x76CDc4B652AB397D345F893f5bdE14dE4632a8Eb`
 
 **Notes:**
 - Uses production relay API (`https://www.localroots.love/api/relay`)
 - Includes 3s delays after writes for RPC node sync
 - Idempotent: ambassador/seller skip registration if already exists
+
+**E2E Tests In Progress (Tier 1 & 2):**
+- Seller activation test (2 unique buyers required) — needs Buyer2 wallet
+- Dispute & refund flow (raiseDispute, refundBuyer)
+- Order state machine edge cases (invalid transitions)
+- Seller suspension (admin suspendSeller/unsuspendSeller)
+- Listing deactivation (seller deactivates listing)
+- Stablecoin payments (USDC/USDT if swap router configured)
+
+**Future E2E Tests (Tier 3 — implement later):**
+- Ambassador Governance (flagging/voting) — No frontend hooks, 3-day voting window
+- Ambassador Cooldown (24h) — Can't fast-forward on live testnet
+- Geohash Discovery — Not used in current UI
+- Circuit Breakers (daily/weekly caps) — Requires massive treasury manipulation
+- Phase Transition (Phase 1 → Phase 2) — One-time operation, already in Phase 2
+
+**Key Contract Facts for Tests:**
+- Seller activation: 2 orders + 2 unique buyers required before rewards queue
+- `sellerRecruitments[sellerId].activated` — check via `isSellerActivated(sellerId)`
+- `getSellerRecruitment(sellerId)` returns: ambassadorId, recruitedAt, totalSalesVolume, totalRewardsPaid, completedOrderCount, uniqueBuyerCount, activated
+- Order completes via `claimFunds` after 48h dispute window (proofUploadedAt + DISPUTE_WINDOW)
+- Marketplace ABI `orders` has 15 fields including `paymentToken` at end
 
 ## Redeploying Contracts
 
