@@ -259,36 +259,56 @@ cd contracts && forge build
 
 End-to-end tests run directly against Base Sepolia contracts using vitest + viem. Tests the full marketplace lifecycle without needing a browser (Privy OAuth can't be automated).
 
-**Two-phase model** (48-hour dispute window can't be fast-forwarded on live testnet):
-- Phase 1: `npm run test:e2e` — Full lifecycle (~50s)
-- Phase 2: `npm run test:e2e:settle` — Run 48+ hours later to claim funds
+**Running tests:**
+```bash
+cd frontend
 
-**What's tested:**
-1. Ambassador registration (gasless)
-2. Seller registration with ambassador referral (gasless)
-3. Listing creation (gasless)
-4. Buyer purchases (pickup + delivery, ROOTS payment)
-5. Order acceptance + proof uploads (gasless)
-6. Dispute window enforcement (early claim rejected)
-7. Financial verification
+# Core lifecycle (ambassador → seller → listing → purchases → fulfillment)
+npm run test:e2e              # ~50 seconds
+
+# Individual test suites
+npm run test:e2e:activation   # Seller activation (2 unique buyers)
+npm run test:e2e:dispute      # Dispute → refund flow
+npm run test:e2e:state        # Order state machine edge cases
+npm run test:e2e:suspension   # Admin seller suspension
+npm run test:e2e:listing      # Listing deactivation
+npm run test:e2e:payment      # Payment token configuration
+
+# Full suite (lifecycle + activation + dispute)
+npm run test:e2e:full
+
+# Settlement (run 48+ hours after lifecycle)
+npm run test:e2e:settle
+```
+
+**Test suite summary (85 total tests):**
+
+| Test File | Tests | Purpose |
+|-----------|-------|---------|
+| lifecycle.test.ts | 13 | Full marketplace flow: register → list → buy → fulfill |
+| activation.test.ts | 10 | Seller activation with 2 unique buyers |
+| dispute.test.ts | 14 | Buyer dispute → seller refund flow |
+| state-machine.test.ts | 16 | Invalid state transitions & auth checks |
+| suspension.test.ts | 15 | Admin suspend/unsuspend seller |
+| listing.test.ts | 9 | Seller deactivate/reactivate listing |
+| payment-tokens.test.ts | 8 | Phase 2 ROOTS payment, stablecoin requirements |
+| settlement.test.ts | varies | Claim funds after 48h dispute window |
 
 **Key files:**
 ```
 frontend/tests/e2e/
-  .env.test              # Test wallet PKs, contract addresses
+  .env.test              # Test wallet PKs, contract addresses (gitignored)
   .test-state.json       # Auto-generated: persists state between phases
   vitest.config.ts       # Config with 5-min timeout, env loading
-  lifecycle.test.ts      # Phase 1: 13 tests
-  settlement.test.ts     # Phase 2: claim funds after dispute window
   lib/
-    clients.ts           # Viem clients for all roles
+    clients.ts           # Viem clients for all roles (5 wallets)
     contracts.ts         # ABIs + addresses (re-exports from src/)
     gasless.ts           # EIP-712 signing + relay API
     assertions.ts        # Balance checks, contract state readers
 ```
 
 **Test wallets** (Base Sepolia TESTNET only):
-- Deployer: `0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c`
+- Deployer: `0x40b98F81f19eF4e64633D791F24C886Ce8dcF99c` (also admin)
 - Seller: `0xde061f740C49BD9Dc0c25e4FC5eF9E0CF6ED00e0`
 - Buyer: `0x0C0f738485B07bd98b6f0633C62C2c87e1b366c0`
 - Buyer2: `0xe2f32e89b47C9eAe7429B70007f223303452Ff5b` (for activation tests)
@@ -297,15 +317,15 @@ frontend/tests/e2e/
 **Notes:**
 - Uses production relay API (`https://www.localroots.love/api/relay`)
 - Includes 3s delays after writes for RPC node sync
-- Idempotent: ambassador/seller skip registration if already exists
+- Tests are idempotent (handle re-runs gracefully)
+- Buyer/Buyer2 need ETH for gas + ROOTS for purchases
 
-**E2E Tests In Progress (Tier 1 & 2):**
-- Seller activation test (2 unique buyers required) — needs Buyer2 wallet
-- Dispute & refund flow (raiseDispute, refundBuyer)
-- Order state machine edge cases (invalid transitions)
-- Seller suspension (admin suspendSeller/unsuspendSeller)
-- Listing deactivation (seller deactivates listing)
-- Stablecoin payments (USDC/USDT if swap router configured)
+**Key contract behaviors verified:**
+- Suspended sellers CAN accept existing orders (buyer protection)
+- Suspended sellers cannot create listings or receive new purchases
+- Stablecoin payments require swap router (not currently configured)
+- Seller activation requires 2 completed orders from 2 unique buyers
+- Dispute window (48h) must pass before seller can claim funds
 
 **Future E2E Tests (Tier 3 — implement later):**
 - Ambassador Governance (flagging/voting) — No frontend hooks, 3-day voting window
@@ -313,13 +333,6 @@ frontend/tests/e2e/
 - Geohash Discovery — Not used in current UI
 - Circuit Breakers (daily/weekly caps) — Requires massive treasury manipulation
 - Phase Transition (Phase 1 → Phase 2) — One-time operation, already in Phase 2
-
-**Key Contract Facts for Tests:**
-- Seller activation: 2 orders + 2 unique buyers required before rewards queue
-- `sellerRecruitments[sellerId].activated` — check via `isSellerActivated(sellerId)`
-- `getSellerRecruitment(sellerId)` returns: ambassadorId, recruitedAt, totalSalesVolume, totalRewardsPaid, completedOrderCount, uniqueBuyerCount, activated
-- Order completes via `claimFunds` after 48h dispute window (proofUploadedAt + DISPUTE_WINDOW)
-- Marketplace ABI `orders` has 15 fields including `paymentToken` at end
 
 ## Redeploying Contracts
 
