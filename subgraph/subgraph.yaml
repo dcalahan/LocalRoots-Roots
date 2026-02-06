@@ -127,9 +127,9 @@ dataSources:
         - name: DisputeResolution
           file: ../contracts/out/DisputeResolution.sol/DisputeResolution.json
       eventHandlers:
-        - event: DisputeOpened(indexed uint256,indexed uint256,indexed uint256,string,string)
+        - event: DisputeOpened(indexed uint256,indexed uint256,indexed address,uint256,string)
           handler: handleDisputeOpened
-        - event: SellerResponseSubmitted(indexed uint256,string,string)
+        - event: SellerResponseSubmitted(indexed uint256,indexed uint256,string)
           handler: handleSellerResponseSubmitted
         - event: DisputeVoteCast(indexed uint256,indexed uint256,bool,string,uint256)
           handler: handleDisputeVoteCast
@@ -137,10 +137,8 @@ dataSources:
           handler: handleDisputeResolved
         - event: DisputeAdminResolved(indexed uint256,bool,string)
           handler: handleDisputeAdminResolved
-        - event: SellerStrikeAdded(indexed address,uint256)
-          handler: handleSellerStrikeAdded
-        - event: BuyerStrikeAdded(indexed address,uint256)
-          handler: handleBuyerStrikeAdded
+        - event: StrikeAdded(indexed address,bool,uint256)
+          handler: handleStrikeAdded
       file: ./src/disputeResolution.ts
 
   - kind: ethereum
@@ -164,9 +162,9 @@ dataSources:
       eventHandlers:
         - event: RequestSubmitted(indexed uint256,indexed address,string,string,string)
           handler: handleRequestSubmitted
-        - event: RequestVoteCast(indexed uint256,indexed uint256,bool)
+        - event: RequestVoteCast(indexed uint256,indexed uint256,bool,uint256)
           handler: handleRequestVoteCast
-        - event: RequestResolved(indexed uint256,bool,uint256,uint256)
+        - event: RequestResolved(indexed uint256,bool,uint256)
           handler: handleRequestResolved
         - event: RequestAdminResolved(indexed uint256,bool,string)
           handler: handleRequestAdminResolved

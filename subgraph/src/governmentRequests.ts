@@ -55,7 +55,7 @@ export function handleRequestVoteCast(event: RequestVoteCast): void {
   vote.request = event.params.requestId.toString();
   vote.ambassadorId = event.params.ambassadorId;
   vote.ambassadorWallet = event.transaction.from;
-  vote.approved = event.params.approved;
+  vote.approved = event.params.votedApprove;
   vote.timestamp = event.block.timestamp;
   vote.txHash = event.transaction.hash;
   vote.save();
@@ -63,7 +63,7 @@ export function handleRequestVoteCast(event: RequestVoteCast): void {
   // Update request vote counts
   let request = GovernmentRequest.load(event.params.requestId.toString());
   if (request) {
-    if (event.params.approved) {
+    if (event.params.votedApprove) {
       request.votesApprove = request.votesApprove.plus(BigInt.fromI32(1));
     } else {
       request.votesDeny = request.votesDeny.plus(BigInt.fromI32(1));

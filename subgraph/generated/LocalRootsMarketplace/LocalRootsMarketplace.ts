@@ -1047,6 +1047,29 @@ export class LocalRootsMarketplace extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toI32());
   }
 
+  disputeResolution(): Address {
+    let result = super.call(
+      "disputeResolution",
+      "disputeResolution():(address)",
+      [],
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_disputeResolution(): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "disputeResolution",
+      "disputeResolution():(address)",
+      [],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
   getAcceptedPaymentTokens(): Array<Address> {
     let result = super.call(
       "getAcceptedPaymentTokens",
@@ -2146,6 +2169,40 @@ export class CreateListingCall__Outputs {
   }
 }
 
+export class ExecuteDisputeResolutionCall extends ethereum.Call {
+  get inputs(): ExecuteDisputeResolutionCall__Inputs {
+    return new ExecuteDisputeResolutionCall__Inputs(this);
+  }
+
+  get outputs(): ExecuteDisputeResolutionCall__Outputs {
+    return new ExecuteDisputeResolutionCall__Outputs(this);
+  }
+}
+
+export class ExecuteDisputeResolutionCall__Inputs {
+  _call: ExecuteDisputeResolutionCall;
+
+  constructor(call: ExecuteDisputeResolutionCall) {
+    this._call = call;
+  }
+
+  get _orderId(): BigInt {
+    return this._call.inputValues[0].value.toBigInt();
+  }
+
+  get _buyerWins(): boolean {
+    return this._call.inputValues[1].value.toBoolean();
+  }
+}
+
+export class ExecuteDisputeResolutionCall__Outputs {
+  _call: ExecuteDisputeResolutionCall;
+
+  constructor(call: ExecuteDisputeResolutionCall) {
+    this._call = call;
+  }
+}
+
 export class MarkOutForDeliveryCall extends ethereum.Call {
   get inputs(): MarkOutForDeliveryCall__Inputs {
     return new MarkOutForDeliveryCall__Inputs(this);
@@ -2283,6 +2340,14 @@ export class RaiseDisputeCall__Inputs {
 
   get _orderId(): BigInt {
     return this._call.inputValues[0].value.toBigInt();
+  }
+
+  get _reason(): string {
+    return this._call.inputValues[1].value.toString();
+  }
+
+  get _evidenceIpfs(): string {
+    return this._call.inputValues[2].value.toString();
   }
 }
 
@@ -2464,6 +2529,36 @@ export class SetAmbassadorRewardsCall__Outputs {
   _call: SetAmbassadorRewardsCall;
 
   constructor(call: SetAmbassadorRewardsCall) {
+    this._call = call;
+  }
+}
+
+export class SetDisputeResolutionCall extends ethereum.Call {
+  get inputs(): SetDisputeResolutionCall__Inputs {
+    return new SetDisputeResolutionCall__Inputs(this);
+  }
+
+  get outputs(): SetDisputeResolutionCall__Outputs {
+    return new SetDisputeResolutionCall__Outputs(this);
+  }
+}
+
+export class SetDisputeResolutionCall__Inputs {
+  _call: SetDisputeResolutionCall;
+
+  constructor(call: SetDisputeResolutionCall) {
+    this._call = call;
+  }
+
+  get _disputeResolution(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+}
+
+export class SetDisputeResolutionCall__Outputs {
+  _call: SetDisputeResolutionCall;
+
+  constructor(call: SetDisputeResolutionCall) {
     this._call = call;
   }
 }

@@ -5,8 +5,7 @@ import {
   DisputeVoteCast,
   DisputeResolved,
   DisputeAdminResolved,
-  SellerStrikeAdded,
-  BuyerStrikeAdded,
+  StrikeAdded,
 } from "../generated/DisputeResolution/DisputeResolution";
 import { Dispute, DisputeVote, UserStrikes, GovernanceStats } from "../generated/schema";
 
@@ -46,7 +45,7 @@ export function handleDisputeOpened(event: DisputeOpened): void {
   dispute.orderId = event.params.orderId;
   dispute.sellerId = event.params.sellerId;
   dispute.buyerReason = event.params.reason;
-  dispute.buyerEvidenceIpfs = event.params.evidenceIpfs;
+  dispute.buyerEvidenceIpfs = null; // Evidence stored in contract, not in event
   dispute.sellerResponse = null;
   dispute.sellerEvidenceIpfs = null;
   dispute.createdAt = event.block.timestamp;
@@ -69,7 +68,7 @@ export function handleSellerResponseSubmitted(event: SellerResponseSubmitted): v
   let dispute = Dispute.load(event.params.disputeId.toString());
   if (dispute) {
     dispute.sellerResponse = event.params.response;
-    dispute.sellerEvidenceIpfs = event.params.evidenceIpfs;
+    // Evidence stored in contract, not in event
     dispute.save();
   }
 }
@@ -141,16 +140,13 @@ export function handleDisputeAdminResolved(event: DisputeAdminResolved): void {
   stats.save();
 }
 
-export function handleSellerStrikeAdded(event: SellerStrikeAdded): void {
-  let strikes = getOrCreateUserStrikes(event.params.seller);
-  strikes.sellerStrikes = event.params.totalStrikes;
-  strikes.lastStrikeAt = event.block.timestamp;
-  strikes.save();
-}
-
-export function handleBuyerStrikeAdded(event: BuyerStrikeAdded): void {
-  let strikes = getOrCreateUserStrikes(event.params.buyer);
-  strikes.buyerStrikes = event.params.totalStrikes;
+export function handleStrikeAdded(event: StrikeAdded): void {
+  let strikes = getOrCreateUserStrikes(event.params.user);
+  if (event.params.isSeller) {
+    strikes.sellerStrikes = event.params.totalStrikes;
+  } else {
+    strikes.buyerStrikes = event.params.totalStrikes;
+  }
   strikes.lastStrikeAt = event.block.timestamp;
   strikes.save();
 }

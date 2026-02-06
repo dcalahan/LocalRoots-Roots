@@ -102,3 +102,66 @@ dataSources:
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
       file: RootsToken/RootsToken.wasm
+  - kind: ethereum
+    name: DisputeResolution
+    network: base-sepolia
+    source:
+      address: "0x8A311F9065D90bA328D297aDfc90951e6076762E"
+      abi: DisputeResolution
+      startBlock: 22500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Dispute
+        - DisputeVote
+        - UserStrikes
+        - GovernanceStats
+      abis:
+        - name: DisputeResolution
+          file: contracts/out/DisputeResolution.sol/DisputeResolution.json
+      eventHandlers:
+        - event: DisputeOpened(indexed uint256,indexed uint256,indexed address,uint256,string)
+          handler: handleDisputeOpened
+        - event: SellerResponseSubmitted(indexed uint256,indexed uint256,string)
+          handler: handleSellerResponseSubmitted
+        - event: DisputeVoteCast(indexed uint256,indexed uint256,bool,string,uint256)
+          handler: handleDisputeVoteCast
+        - event: DisputeResolved(indexed uint256,indexed uint256,bool,uint256)
+          handler: handleDisputeResolved
+        - event: DisputeAdminResolved(indexed uint256,bool,string)
+          handler: handleDisputeAdminResolved
+        - event: StrikeAdded(indexed address,bool,uint256)
+          handler: handleStrikeAdded
+      file: DisputeResolution/DisputeResolution.wasm
+  - kind: ethereum
+    name: GovernmentRequests
+    network: base-sepolia
+    source:
+      address: "0x8FD009B0F383AD22f6c3d49A46e1ff004dA17E0D"
+      abi: GovernmentRequests
+      startBlock: 22500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - GovernmentRequest
+        - GovernmentRequestVote
+        - GovernanceStats
+      abis:
+        - name: GovernmentRequests
+          file: contracts/out/GovernmentRequests.sol/GovernmentRequests.json
+      eventHandlers:
+        - event: RequestSubmitted(indexed uint256,indexed address,string,string,string)
+          handler: handleRequestSubmitted
+        - event: RequestVoteCast(indexed uint256,indexed uint256,bool,uint256)
+          handler: handleRequestVoteCast
+        - event: RequestResolved(indexed uint256,bool,uint256)
+          handler: handleRequestResolved
+        - event: RequestAdminResolved(indexed uint256,bool,string)
+          handler: handleRequestAdminResolved
+        - event: DataExportUploaded(indexed uint256,string)
+          handler: handleDataExportUploaded
+      file: GovernmentRequests/GovernmentRequests.wasm
