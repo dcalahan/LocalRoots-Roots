@@ -519,6 +519,93 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 2. Update `loginMethods` array in `providers.tsx`
 3. Configure OAuth credentials in Privy Dashboard
 
+## Ambassador Governance
+
+### Dispute Resolution
+
+Ambassadors vote on buyer disputes to determine outcomes (refund buyer or release funds to seller).
+
+**Flow:**
+1. Buyer disputes order with reason + optional IPFS evidence
+2. Seller responds with reason + optional IPFS evidence
+3. 72-hour voting window opens
+4. Ambassadors vote (must have 1+ activated seller to vote)
+5. Majority wins (minimum 5 votes required)
+6. If no quorum: extend 48h, then auto-refund buyer
+
+**Vote Reason Requirement:** Ambassadors must provide a reason (minimum 20 characters) when voting.
+
+**Seeds Rewards:**
+- 100 Seeds per vote
+- +50 bonus Seeds if voted with majority
+
+**Strike System:**
+- Seller loses dispute → +1 strike
+- 3 strikes → auto-suspension
+- Buyer wins frivolous dispute → +1 buyer strike
+
+**Admin Override:** Admins can resolve disputes directly with a required reason (for early-stage or urgent cases).
+
+**Routes:**
+- `/ambassador/disputes` — Ambassador disputes dashboard (vote on open disputes)
+
+**Hooks:**
+- `useDisputes()` — Fetch all disputes
+- `useVoteOnDispute()` — Cast vote with reason (gasless)
+- `useResolveDispute()` — Finalize after voting ends
+
+**Files:**
+- `frontend/src/app/ambassador/disputes/page.tsx` — Disputes dashboard
+- `frontend/src/components/disputes/DisputeCard.tsx` — Dispute display card
+- `frontend/src/components/disputes/DisputeVoteModal.tsx` — Voting UI with reason field
+- `frontend/src/components/disputes/DisputeEvidence.tsx` — Evidence display
+- `frontend/src/hooks/useDisputes.ts` — Fetch disputes from contract
+- `frontend/src/hooks/useVoteOnDispute.ts` — Vote + resolve hooks
+- `frontend/src/lib/contracts/disputeResolution.ts` — ABI + address
+
+### Government Data Requests
+
+Government agencies can request transaction data for food safety; ambassadors vote on legitimacy.
+
+**Flow:**
+1. Government submits request (credentials, justification, jurisdiction)
+2. 5-day voting window opens
+3. Ambassadors vote approve/deny (minimum 10 votes)
+4. If approved: admin uploads data export
+5. All requests publicly logged for transparency
+
+**Admin Override:** Admins can approve/deny requests directly with a reason.
+
+**Routes:**
+- `/government` — Public government relations page
+- `/government/request` — Submit new request form
+- `/government/requests` — Public request log (transparency)
+- `/ambassador/governance` — Ambassador voting on government requests
+
+**Hooks:**
+- `useGovernmentRequests()` — Fetch all requests
+- `useVoteOnGovRequest()` — Cast vote (gasless)
+
+**Files:**
+- `frontend/src/app/government/page.tsx` — Public landing page
+- `frontend/src/app/government/request/page.tsx` — Request submission form
+- `frontend/src/app/government/requests/page.tsx` — Public request log
+- `frontend/src/app/ambassador/governance/page.tsx` — Ambassador voting page
+- `frontend/src/hooks/useGovernmentRequests.ts` — Fetch requests
+- `frontend/src/hooks/useVoteOnGovRequest.ts` — Vote hook
+- `frontend/src/lib/contracts/governmentRequests.ts` — ABI + address
+
+### Governance Contracts (Pending Deployment)
+
+Contracts exist but are not yet deployed:
+- `DisputeResolution.sol` — Ambassador voting on order disputes
+- `GovernmentRequests.sol` — Government data request voting
+
+**Subgraph entities:**
+- `Dispute`, `DisputeVote`, `UserStrikes` — Dispute tracking
+- `GovernmentRequest`, `GovernmentRequestVote` — Request tracking
+- `GovernanceStats` — Aggregate statistics
+
 ## Known Issues
 
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only
