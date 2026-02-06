@@ -161,3 +161,90 @@ type SeedsLeaderboard @entity {
   topEarners: [SeedsBalance!]!
   lastUpdated: BigInt!
 }
+
+# ============ Dispute Resolution Entities ============
+
+type Dispute @entity {
+  id: ID! # disputeId
+  orderId: BigInt!
+  sellerId: BigInt!
+  buyerReason: String!
+  buyerEvidenceIpfs: String
+  sellerResponse: String
+  sellerEvidenceIpfs: String
+  createdAt: BigInt!
+  votingEndsAt: BigInt!
+  votesForBuyer: BigInt!
+  votesForSeller: BigInt!
+  resolved: Boolean!
+  buyerWon: Boolean!
+  extended: Boolean!
+  adminResolved: Boolean!
+  adminReason: String
+  votes: [DisputeVote!]! @derivedFrom(field: "dispute")
+}
+
+type DisputeVote @entity {
+  id: ID! # disputeId-ambassadorId
+  dispute: Dispute!
+  ambassadorId: BigInt!
+  ambassadorWallet: Bytes!
+  votedForBuyer: Boolean!
+  seedsEarned: BigInt!
+  timestamp: BigInt!
+  txHash: Bytes!
+}
+
+type UserStrikes @entity {
+  id: ID! # user address (lowercase)
+  user: Bytes!
+  sellerStrikes: BigInt!
+  buyerStrikes: BigInt!
+  lastStrikeAt: BigInt!
+}
+
+# ============ Government Data Request Entities ============
+
+type GovernmentRequest @entity {
+  id: ID! # requestId
+  requester: Bytes!
+  agencyName: String!
+  agencyEmail: String!
+  jurisdiction: String!
+  requestType: String!
+  justification: String!
+  credentialsIpfs: String!
+  createdAt: BigInt!
+  votingEndsAt: BigInt!
+  votesApprove: BigInt!
+  votesDeny: BigInt!
+  resolved: Boolean!
+  approved: Boolean!
+  dataExportIpfs: String
+  votes: [GovernmentRequestVote!]! @derivedFrom(field: "request")
+}
+
+type GovernmentRequestVote @entity {
+  id: ID! # requestId-ambassadorId
+  request: GovernmentRequest!
+  ambassadorId: BigInt!
+  ambassadorWallet: Bytes!
+  approved: Boolean!
+  timestamp: BigInt!
+  txHash: Bytes!
+}
+
+# Aggregated Governance Stats
+type GovernanceStats @entity {
+  id: ID! # "global"
+  totalDisputes: BigInt!
+  totalDisputesResolved: BigInt!
+  totalDisputesBuyerWon: BigInt!
+  totalDisputesSellerWon: BigInt!
+  totalDisputeVotes: BigInt!
+  totalGovernmentRequests: BigInt!
+  totalGovernmentRequestsResolved: BigInt!
+  totalGovernmentRequestsApproved: BigInt!
+  totalGovernmentRequestsDenied: BigInt!
+  totalGovernmentRequestVotes: BigInt!
+}

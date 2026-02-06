@@ -21,6 +21,8 @@ import { AmbassadorTierCard, AmbassadorTierBadge } from '@/components/seeds/Amba
 import { getMultiplierInfo, AMBASSADOR_RECRUITMENT_BONUS, AMBASSADOR_COMMISSION_PERCENT } from '@/components/seeds/PhaseConfig';
 import { RecruitedFarmersWidget } from '@/components/ambassador/RecruitedFarmersWidget';
 import { ShareCardModal } from '@/components/ShareCardModal';
+import { useOpenDisputeCount } from '@/hooks/useDisputes';
+import { useActiveRequestCount } from '@/hooks/useGovernmentRequests';
 import type { ShareCardData } from '@/lib/shareCards';
 import { formatUnits, type Address } from 'viem';
 
@@ -46,6 +48,12 @@ export default function AmbassadorDashboardPage() {
   // Phase 1: Fetch Seeds data
   const { data: seedsData, isLoading: isSeedsLoading } = useSeeds(address as Address);
   const multiplierInfo = getMultiplierInfo();
+
+  // Disputes count for badge
+  const { count: openDisputeCount, isLoading: isLoadingDisputeCount } = useOpenDisputeCount();
+
+  // Government requests count for badge
+  const { count: activeGovRequestCount, isLoading: isLoadingGovCount } = useActiveRequestCount();
 
   const handleLogout = async () => {
     try {
@@ -490,6 +498,56 @@ export default function AmbassadorDashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Active Disputes Widget */}
+        {openDisputeCount > 0 && (
+          <Card className="mb-8 border-2 border-red-200 bg-gradient-to-br from-red-50 to-orange-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <span className="text-2xl">⚖️</span> Active Disputes
+                <span className="ml-auto px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                  {openDisputeCount} need{openDisputeCount === 1 ? 's' : ''} your vote
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-roots-gray mb-3">
+                Help resolve disputes between buyers and sellers. Earn <strong>100 Seeds</strong> per vote,
+                plus <strong>50 bonus</strong> if you vote with the majority.
+              </p>
+              <Link href="/ambassador/disputes">
+                <Button className="bg-roots-primary hover:bg-roots-primary/90">
+                  Review Disputes
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Active Government Requests Widget */}
+        {activeGovRequestCount > 0 && (
+          <Card className="mb-8 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <span className="text-2xl">🏛️</span> Government Requests
+                <span className="ml-auto px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                  {activeGovRequestCount} pending
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-roots-gray mb-3">
+                Review government data access requests. Help protect user privacy by
+                voting on whether each request is legitimate.
+              </p>
+              <Link href="/ambassador/governance">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Review Requests
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Seeds Breakdown Card */}
         <Card className="mb-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">

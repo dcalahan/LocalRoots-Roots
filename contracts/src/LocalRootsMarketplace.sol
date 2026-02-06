@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import "./interfaces/ISwapRouter.sol";
+import "./interfaces/IDisputeResolution.sol";
 
 interface IAmbassadorRewards {
     function hasSufficientTreasury(uint256 amount) external view returns (bool);
@@ -38,6 +39,7 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
 
     IERC20 public rootsToken;  // Can be address(0) for Phase 1
     address public ambassadorRewards;
+    address public disputeResolution;
 
     // Note: No platform fees charged. Ambassador rewards come from treasury fund.
     uint256 public constant DISPUTE_WINDOW = 2 days;
@@ -610,8 +612,11 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
      * @notice Raise a dispute (within dispute window)
      * @dev This triggers clawback of any pending ambassador rewards
      *      Can dispute from Pending/Accepted (funds in escrow) or after delivery proof
+     * @param _orderId Order ID to dispute
+     * @param _reason Reason for the dispute
+     * @param _evidenceIpfs IPFS hash of evidence (photos, etc.)
      */
-    function raiseDispute(uint256 _orderId) external {
+    function raiseDispute(uint256 _orderId, string calldata _reason, string calldata _evidenceIpfs) external {
         Order storage order = orders[_orderId];
         require(order.buyer == _msgSender(), "Not order buyer");
         require(
@@ -642,8 +647,81 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
             }
         }
 
+        // Open dispute in resolution contract if configured
+        if (disputeResolution != address(0)) {
+            try IDisputeResolution(disputeResolution).openDispute(
+                _orderId,
+                _msgSender(),
+                order.sellerId,
+                _reason,
+                _evidenceIpfs
+            ) {} catch {
+                // If dispute resolution fails, dispute still proceeds
+            }
+        }
+
         emit DisputeRaised(_orderId, _msgSender());
         emit OrderStatusChanged(_orderId, OrderStatus.Disputed);
+    }
+
+    /**
+     * @notice Execute dispute resolution (called by DisputeResolution contract)
+     * @dev Either refunds buyer or releases funds to seller based on vote outcome
+     * @param _orderId Order ID that was disputed
+     * @param _buyerWins True if buyer won the dispute, false if seller won
+     */
+    function executeDisputeResolution(uint256 _orderId, bool _buyerWins) external nonReentrant {
+        require(msg.sender == disputeResolution, "Only dispute resolution");
+
+        Order storage order = orders[_orderId];
+        require(order.status == OrderStatus.Disputed, "Order not disputed");
+        require(!order.fundsReleased, "Funds already released");
+
+        if (_buyerWins) {
+            // Refund buyer
+            _refundOrder(_orderId);
+        } else {
+            // Release to seller
+            _releaseFundsToSeller(_orderId);
+        }
+    }
+
+    /**
+     * @notice Internal function to refund an order to buyer
+     */
+    function _refundOrder(uint256 _orderId) internal {
+        Order storage order = orders[_orderId];
+        order.fundsReleased = true;
+        order.status = OrderStatus.Refunded;
+
+        if (order.paymentToken == USDC_ADDRESS) {
+            IERC20(USDC_ADDRESS).safeTransfer(order.buyer, order.totalPrice);
+        } else {
+            rootsToken.safeTransfer(order.buyer, order.totalPrice);
+        }
+
+        emit FundsRefunded(_orderId, order.buyer, order.totalPrice);
+        emit OrderStatusChanged(_orderId, OrderStatus.Refunded);
+    }
+
+    /**
+     * @notice Internal function to release funds to seller after dispute won
+     */
+    function _releaseFundsToSeller(uint256 _orderId) internal {
+        Order storage order = orders[_orderId];
+        Seller storage seller = sellers[order.sellerId];
+
+        order.fundsReleased = true;
+        order.status = OrderStatus.Completed;
+
+        if (order.paymentToken == USDC_ADDRESS) {
+            IERC20(USDC_ADDRESS).safeTransfer(seller.owner, order.totalPrice);
+        } else {
+            rootsToken.safeTransfer(seller.owner, order.totalPrice);
+        }
+
+        emit FundsReleased(_orderId, seller.owner, order.totalPrice);
+        emit OrderStatusChanged(_orderId, OrderStatus.Completed);
     }
 
     // ============ Escrow Functions ============
@@ -814,7 +892,11 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
      * @param _sellerId Seller ID to suspend
      * @param _reason Reason for suspension
      */
-    function suspendSeller(uint256 _sellerId, string calldata _reason) external onlyAdmin {
+    function suspendSeller(uint256 _sellerId, string calldata _reason) external {
+        require(
+            isAdmin[_msgSender()] || msg.sender == disputeResolution,
+            "Not authorized"
+        );
         require(sellers[_sellerId].owner != address(0), "Seller does not exist");
         require(!sellerSuspended[_sellerId], "Already suspended");
 
@@ -968,5 +1050,13 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
      */
     function setAmbassadorRewards(address _ambassadorRewards) external onlyAdmin {
         ambassadorRewards = _ambassadorRewards;
+    }
+
+    /**
+     * @notice Set dispute resolution contract (admin only)
+     * @param _disputeResolution New dispute resolution contract address
+     */
+    function setDisputeResolution(address _disputeResolution) external onlyAdmin {
+        disputeResolution = _disputeResolution;
     }
 }

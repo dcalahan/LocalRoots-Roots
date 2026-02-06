@@ -691,7 +691,7 @@ contract LocalRootsMarketplaceTest is Test {
         vm.stopPrank();
 
         vm.prank(buyer1);
-        marketplace.raiseDispute(orderId);
+        marketplace.raiseDispute(orderId, "Test dispute", "");
 
         LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
         assertEq(uint8(order.status), uint8(LocalRootsMarketplace.OrderStatus.Disputed));
@@ -710,7 +710,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         // Can dispute within 2 days
         vm.warp(block.timestamp + 1 days);
-        marketplace.raiseDispute(orderId);
+        marketplace.raiseDispute(orderId, "Test dispute", "");
         vm.stopPrank();
 
         LocalRootsMarketplace.Order memory order = marketplace.getOrder(orderId);
@@ -731,7 +731,7 @@ contract LocalRootsMarketplaceTest is Test {
         // Try to dispute after 2 days
         vm.warp(block.timestamp + 3 days);
         vm.expectRevert("Dispute window expired");
-        marketplace.raiseDispute(orderId);
+        marketplace.raiseDispute(orderId, "Test dispute", "");
         vm.stopPrank();
     }
 
@@ -743,7 +743,7 @@ contract LocalRootsMarketplaceTest is Test {
         marketplace.markReadyForPickup(orderId, "ipfs://proof");
 
         vm.expectRevert("Not order buyer");
-        marketplace.raiseDispute(orderId);
+        marketplace.raiseDispute(orderId, "Test dispute", "");
         vm.stopPrank();
     }
 
@@ -761,7 +761,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         // Buyer disputes before seller provides proof (funds still in escrow)
         vm.prank(buyer1);
-        marketplace.raiseDispute(orderId);
+        marketplace.raiseDispute(orderId, "Test dispute", "");
 
         // Seller voluntarily refunds
         vm.prank(seller1);
@@ -796,7 +796,7 @@ contract LocalRootsMarketplaceTest is Test {
 
         // Buyer raises dispute before window expires
         vm.prank(buyer1);
-        marketplace.raiseDispute(orderId);
+        marketplace.raiseDispute(orderId, "Test dispute", "");
 
         // Even after dispute window expires, seller can't claim disputed order
         // (Disputed status is not in allowed statuses list)

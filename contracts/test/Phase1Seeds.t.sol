@@ -304,7 +304,7 @@ contract Phase1SeedsTest is Test {
 
         // Buyer raises dispute
         vm.prank(buyer1);
-        marketplace.raiseDispute(orderId);
+        marketplace.raiseDispute(orderId, "Test dispute", "");
 
         // Seller refunds
         vm.prank(seller1);
