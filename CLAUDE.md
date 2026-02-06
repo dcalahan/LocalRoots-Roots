@@ -149,6 +149,10 @@ Current deployment (2025-01-25):
 - `NEXT_PUBLIC_USDC_ADDRESS` = `0xBe0D90a4C6BBC99a37BA0A5aA9Ffaa894f826e06` (MockUSDC - mintable)
 - `NEXT_PUBLIC_USDT_ADDRESS` = `0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b` (MockUSDT - mintable)
 
+Governance contracts (2026-02-06):
+- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0x8A311F9065D90bA328D297aDfc90951e6076762E`
+- `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS` = `0x8FD009B0F383AD22f6c3d49A46e1ff004dA17E0D`
+
 All contract addresses must be from the same deployment. If one changes, verify all are updated in `.env.local`.
 
 ## Test Wallet Configuration
@@ -595,11 +599,11 @@ Government agencies can request transaction data for food safety; ambassadors vo
 - `frontend/src/hooks/useVoteOnGovRequest.ts` — Vote hook
 - `frontend/src/lib/contracts/governmentRequests.ts` — ABI + address
 
-### Governance Contracts (Pending Deployment)
+### Governance Contracts (Base Sepolia)
 
-Contracts exist but are not yet deployed:
-- `DisputeResolution.sol` — Ambassador voting on order disputes
-- `GovernmentRequests.sol` — Government data request voting
+Deployed Feb 6 2026:
+- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0x8A311F9065D90bA328D297aDfc90951e6076762E`
+- `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS` = `0x8FD009B0F383AD22f6c3d49A46e1ff004dA17E0D`
 
 **Subgraph entities:**
 - `Dispute`, `DisputeVote`, `UserStrikes` — Dispute tracking
