@@ -84,8 +84,8 @@ export default function AmbassadorDisputesPage() {
     }
   };
 
-  const handleVoteSubmit = async (disputeId: bigint, voteForBuyer: boolean): Promise<boolean> => {
-    const success = await vote(disputeId, voteForBuyer);
+  const handleVoteSubmit = async (disputeId: bigint, voteForBuyer: boolean, reason: string): Promise<boolean> => {
+    const success = await vote(disputeId, voteForBuyer, reason);
     if (success) {
       toast({
         title: 'Vote submitted!',

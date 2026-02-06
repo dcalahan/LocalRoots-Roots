@@ -65,8 +65,16 @@ interface IDisputeResolution {
      * @notice Ambassador votes on a dispute
      * @param disputeId The dispute ID
      * @param voteForBuyer True to vote for buyer, false for seller
+     * @param reason Required explanation for the vote (min 20 characters)
      */
-    function vote(uint256 disputeId, bool voteForBuyer) external;
+    function vote(uint256 disputeId, bool voteForBuyer, string calldata reason) external;
+
+    /**
+     * @notice Get the reason for an ambassador's vote
+     * @param disputeId The dispute ID
+     * @param ambassadorId The ambassador ID
+     */
+    function getVoteReason(uint256 disputeId, uint256 ambassadorId) external view returns (string memory);
 
     /**
      * @notice Resolve a dispute after voting ends

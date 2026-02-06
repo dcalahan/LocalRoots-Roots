@@ -8,22 +8,28 @@ import {
 } from '@/lib/contracts/disputeResolution';
 
 interface VoteOnDisputeResult {
-  vote: (disputeId: bigint, voteForBuyer: boolean) => Promise<boolean>;
+  vote: (disputeId: bigint, voteForBuyer: boolean, reason: string) => Promise<boolean>;
   isLoading: boolean;
   error: string | null;
 }
 
 /**
  * Hook for ambassadors to vote on disputes (gasless)
+ * @param reason Required explanation for the vote (min 20 characters)
  */
 export function useVoteOnDispute(): VoteOnDisputeResult {
   const { executeGasless, isLoading: gaslessLoading, error: gaslessError } = useGaslessTransaction();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const vote = useCallback(async (disputeId: bigint, voteForBuyer: boolean): Promise<boolean> => {
+  const vote = useCallback(async (disputeId: bigint, voteForBuyer: boolean, reason: string): Promise<boolean> => {
     if (DISPUTE_RESOLUTION_ADDRESS === '0x0000000000000000000000000000000000000000') {
       setError('Dispute resolution contract not configured');
+      return false;
+    }
+
+    if (reason.length < 20) {
+      setError('Reason must be at least 20 characters');
       return false;
     }
 
@@ -35,7 +41,7 @@ export function useVoteOnDispute(): VoteOnDisputeResult {
         to: DISPUTE_RESOLUTION_ADDRESS,
         abi: disputeResolutionAbi,
         functionName: 'vote',
-        args: [disputeId, voteForBuyer],
+        args: [disputeId, voteForBuyer, reason],
       });
 
       if (!txHash) {

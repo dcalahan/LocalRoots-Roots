@@ -8,9 +8,11 @@ import type { Dispute } from '@/lib/contracts/disputeResolution';
 interface DisputeVoteModalProps {
   dispute: Dispute & { id: bigint };
   onClose: () => void;
-  onVote: (disputeId: bigint, voteForBuyer: boolean) => Promise<boolean>;
+  onVote: (disputeId: bigint, voteForBuyer: boolean, reason: string) => Promise<boolean>;
   isVoting: boolean;
 }
+
+const MIN_REASON_LENGTH = 20;
 
 export function DisputeVoteModal({
   dispute,
@@ -19,6 +21,7 @@ export function DisputeVoteModal({
   isVoting,
 }: DisputeVoteModalProps) {
   const [selectedVote, setSelectedVote] = useState<'buyer' | 'seller' | null>(null);
+  const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const now = Date.now() / 1000;
@@ -44,8 +47,13 @@ export function DisputeVoteModal({
   const handleVote = async () => {
     if (!selectedVote) return;
 
+    if (reason.trim().length < MIN_REASON_LENGTH) {
+      setError(`Please provide a reason (at least ${MIN_REASON_LENGTH} characters)`);
+      return;
+    }
+
     setError(null);
-    const success = await onVote(dispute.id, selectedVote === 'buyer');
+    const success = await onVote(dispute.id, selectedVote === 'buyer', reason.trim());
 
     if (success) {
       onClose();
@@ -55,6 +63,7 @@ export function DisputeVoteModal({
   };
 
   const totalVotes = Number(dispute.votesForBuyer + dispute.votesForSeller);
+  const reasonIsValid = reason.trim().length >= MIN_REASON_LENGTH;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -175,6 +184,38 @@ export function DisputeVoteModal({
                 </div>
               </div>
 
+              {/* Reason input */}
+              {selectedVote && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">
+                    Explain your decision <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder={
+                      selectedVote === 'buyer'
+                        ? "Explain why you believe the buyer's claim is valid..."
+                        : "Explain why you believe the seller fulfilled their obligations..."
+                    }
+                    className={`w-full p-3 border rounded-lg h-24 resize-none focus:ring-2 focus:ring-roots-primary focus:border-transparent ${
+                      reason.length > 0 && !reasonIsValid
+                        ? 'border-red-300'
+                        : 'border-gray-300'
+                    }`}
+                    disabled={isVoting}
+                  />
+                  <p className={`text-xs mt-1 ${
+                    reason.length > 0 && !reasonIsValid
+                      ? 'text-red-500'
+                      : 'text-roots-gray'
+                  }`}>
+                    {reason.length}/{MIN_REASON_LENGTH} characters minimum
+                    {reasonIsValid && ' ✓'}
+                  </p>
+                </div>
+              )}
+
               {/* Seeds reward notice */}
               <div className="bg-roots-cream rounded-lg p-3 mb-4">
                 <p className="text-sm text-roots-gray">
@@ -203,7 +244,7 @@ export function DisputeVoteModal({
                 <Button
                   className="flex-1 bg-roots-primary hover:bg-roots-primary/90"
                   onClick={handleVote}
-                  disabled={isVoting || !selectedVote}
+                  disabled={isVoting || !selectedVote || !reasonIsValid}
                 >
                   {isVoting ? 'Submitting...' : 'Submit Vote'}
                 </Button>

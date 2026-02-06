@@ -81,6 +81,7 @@ export function handleDisputeVoteCast(event: DisputeVoteCast): void {
   vote.ambassadorId = event.params.ambassadorId;
   vote.ambassadorWallet = event.transaction.from;
   vote.votedForBuyer = event.params.votedForBuyer;
+  vote.reason = event.params.reason;
   vote.seedsEarned = event.params.seedsEarned;
   vote.timestamp = event.block.timestamp;
   vote.txHash = event.transaction.hash;

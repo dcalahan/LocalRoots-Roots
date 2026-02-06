@@ -101,6 +101,7 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
     mapping(uint256 => Dispute) public disputes;
     mapping(uint256 => mapping(uint256 => bool)) public disputeVotes; // disputeId => ambassadorId => hasVoted
     mapping(uint256 => mapping(uint256 => bool)) public disputeVoteChoice; // disputeId => ambassadorId => votedForBuyer
+    mapping(uint256 => mapping(uint256 => string)) public disputeVoteReasons; // disputeId => ambassadorId => reason
     mapping(address => UserStrikes) public userStrikes;
     mapping(uint256 => uint256) public orderToDispute; // orderId => disputeId
 
@@ -124,6 +125,7 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         uint256 indexed disputeId,
         uint256 indexed ambassadorId,
         bool votedForBuyer,
+        string reason,
         uint256 seedsEarned
     );
 
@@ -268,8 +270,13 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
 
     /**
      * @notice Ambassador casts vote on dispute
+     * @param disputeId The dispute to vote on
+     * @param voteForBuyer True to side with buyer, false to side with seller
+     * @param reason Required explanation for the vote (min 20 characters)
      */
-    function vote(uint256 disputeId, bool voteForBuyer) external canVoteOnDisputes nonReentrant {
+    function vote(uint256 disputeId, bool voteForBuyer, string calldata reason) external canVoteOnDisputes nonReentrant {
+        require(bytes(reason).length >= 20, "Reason must be at least 20 characters");
+
         Dispute storage dispute = disputes[disputeId];
         require(dispute.orderId != 0, "Dispute does not exist");
         require(!dispute.resolved, "Dispute already resolved");
@@ -281,6 +288,7 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         // Record vote
         disputeVotes[disputeId][ambassadorId] = true;
         disputeVoteChoice[disputeId][ambassadorId] = voteForBuyer;
+        disputeVoteReasons[disputeId][ambassadorId] = reason;
 
         if (voteForBuyer) {
             dispute.votesForBuyer++;
@@ -289,7 +297,14 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         }
 
         // Base Seeds reward for voting
-        emit DisputeVoteCast(disputeId, ambassadorId, voteForBuyer, SEEDS_PER_VOTE);
+        emit DisputeVoteCast(disputeId, ambassadorId, voteForBuyer, reason, SEEDS_PER_VOTE);
+    }
+
+    /**
+     * @notice Get the reason for an ambassador's vote
+     */
+    function getVoteReason(uint256 disputeId, uint256 ambassadorId) external view returns (string memory) {
+        return disputeVoteReasons[disputeId][ambassadorId];
     }
 
     /**

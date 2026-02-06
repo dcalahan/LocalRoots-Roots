@@ -175,9 +175,20 @@ export const disputeResolutionAbi = [
     inputs: [
       { name: 'disputeId', type: 'uint256' },
       { name: 'voteForBuyer', type: 'bool' },
+      { name: 'reason', type: 'string' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'getVoteReason',
+    inputs: [
+      { name: 'disputeId', type: 'uint256' },
+      { name: 'ambassadorId', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -225,6 +236,7 @@ export const disputeResolutionAbi = [
       { name: 'disputeId', type: 'uint256', indexed: true },
       { name: 'ambassadorId', type: 'uint256', indexed: true },
       { name: 'votedForBuyer', type: 'bool', indexed: false },
+      { name: 'reason', type: 'string', indexed: false },
       { name: 'seedsEarned', type: 'uint256', indexed: false },
     ],
   },

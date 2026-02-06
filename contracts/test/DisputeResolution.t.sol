@@ -275,7 +275,7 @@ contract DisputeResolutionTest is Test {
         uint256 disputeId = 1;
 
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);  // Vote for buyer
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");  // Vote for buyer
 
         assertTrue(disputeResolution.hasVoted(disputeId, 2));  // Ambassador1 ID is 2
 
@@ -289,13 +289,13 @@ contract DisputeResolutionTest is Test {
         uint256 disputeId = 1;
 
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);  // For buyer
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");  // For buyer
 
         vm.prank(ambassador2);
-        disputeResolution.vote(disputeId, true);  // For buyer
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");  // For buyer
 
         vm.prank(ambassador3);
-        disputeResolution.vote(disputeId, false); // For seller
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly"); // For seller
 
         IDisputeResolution.Dispute memory dispute = disputeResolution.getDispute(disputeId);
         assertEq(dispute.votesForBuyer, 2);
@@ -308,7 +308,7 @@ contract DisputeResolutionTest is Test {
 
         vm.prank(buyer1);
         vm.expectRevert("Not an ambassador");
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
     }
 
     function test_RevertVote_AlreadyVoted() public {
@@ -316,11 +316,11 @@ contract DisputeResolutionTest is Test {
         uint256 disputeId = 1;
 
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
 
         vm.prank(ambassador1);
         vm.expectRevert("Already voted");
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
     }
 
     function test_RevertVote_VotingEnded() public {
@@ -332,7 +332,28 @@ contract DisputeResolutionTest is Test {
 
         vm.prank(ambassador1);
         vm.expectRevert("Voting period ended");
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
+    }
+
+    function test_RevertVote_ReasonTooShort() public {
+        uint256 orderId = _createDisputedOrder();
+        uint256 disputeId = 1;
+
+        vm.prank(ambassador1);
+        vm.expectRevert("Reason must be at least 20 characters");
+        disputeResolution.vote(disputeId, true, "Too short");
+    }
+
+    function test_GetVoteReason() public {
+        uint256 orderId = _createDisputedOrder();
+        uint256 disputeId = 1;
+        string memory reason = "The buyer's evidence clearly shows the product was not as described";
+
+        vm.prank(ambassador1);
+        disputeResolution.vote(disputeId, true, reason);
+
+        string memory storedReason = disputeResolution.getVoteReason(disputeId, 2);  // Ambassador1 ID is 2
+        assertEq(storedReason, reason);
     }
 
     // ============ Resolution Tests ============
@@ -343,15 +364,15 @@ contract DisputeResolutionTest is Test {
 
         // Get 5 votes for buyer (quorum)
         vm.prank(stateFounder);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador2);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador3);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador4);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
 
         // Fast forward past voting period
         vm.warp(block.timestamp + VOTE_DURATION + 1);
@@ -374,15 +395,15 @@ contract DisputeResolutionTest is Test {
 
         // Get 5 votes for seller (quorum)
         vm.prank(stateFounder);
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
         vm.prank(ambassador2);
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
         vm.prank(ambassador3);
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
         vm.prank(ambassador4);
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
 
         // Fast forward past voting period
         vm.warp(block.timestamp + VOTE_DURATION + 1);
@@ -405,9 +426,9 @@ contract DisputeResolutionTest is Test {
 
         // Only 2 votes (below quorum of 5)
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador2);
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
 
         // Fast forward past voting period
         vm.warp(block.timestamp + VOTE_DURATION + 1);
@@ -430,9 +451,9 @@ contract DisputeResolutionTest is Test {
 
         // Only 2 votes
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador2);
-        disputeResolution.vote(disputeId, false);
+        disputeResolution.vote(disputeId, false, "The seller provided adequate proof that the product was delivered correctly");
 
         // Fast forward past voting period
         vm.warp(block.timestamp + VOTE_DURATION + 1);
@@ -470,15 +491,15 @@ contract DisputeResolutionTest is Test {
 
         // Get quorum and resolve
         vm.prank(stateFounder);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador2);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador3);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador4);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
 
         vm.warp(block.timestamp + VOTE_DURATION + 1);
         disputeResolution.resolveDispute(disputeId);
@@ -495,15 +516,15 @@ contract DisputeResolutionTest is Test {
 
         // 5 votes for buyer
         vm.prank(stateFounder);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador1);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador2);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador3);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador4);
-        disputeResolution.vote(disputeId, true);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
 
         vm.warp(block.timestamp + VOTE_DURATION + 1);
         disputeResolution.resolveDispute(disputeId);
@@ -534,15 +555,15 @@ contract DisputeResolutionTest is Test {
 
         // 5 votes for buyer
         vm.prank(stateFounder);
-        disputeResolution.vote(expectedDisputeId, true);
+        disputeResolution.vote(expectedDisputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador1);
-        disputeResolution.vote(expectedDisputeId, true);
+        disputeResolution.vote(expectedDisputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador2);
-        disputeResolution.vote(expectedDisputeId, true);
+        disputeResolution.vote(expectedDisputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador3);
-        disputeResolution.vote(expectedDisputeId, true);
+        disputeResolution.vote(expectedDisputeId, true, "The buyer's evidence clearly shows the product was not as described");
         vm.prank(ambassador4);
-        disputeResolution.vote(expectedDisputeId, true);
+        disputeResolution.vote(expectedDisputeId, true, "The buyer's evidence clearly shows the product was not as described");
 
         vm.warp(block.timestamp + VOTE_DURATION + 1);
         disputeResolution.resolveDispute(expectedDisputeId);

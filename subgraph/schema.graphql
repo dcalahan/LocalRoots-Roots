@@ -190,6 +190,7 @@ type DisputeVote @entity {
   ambassadorId: BigInt!
   ambassadorWallet: Bytes!
   votedForBuyer: Boolean!
+  reason: String!
   seedsEarned: BigInt!
   timestamp: BigInt!
   txHash: Bytes!
