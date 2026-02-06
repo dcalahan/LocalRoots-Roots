@@ -130,7 +130,7 @@ export function useSellerOrders() {
             abi: marketplaceAbi,
             functionName: 'orders',
             args: [i],
-          }) as [bigint, bigint, string, bigint, bigint, boolean, number, bigint, bigint, boolean, string, bigint, boolean, string];
+          }) as unknown as [bigint, bigint, string, bigint, bigint, boolean, number, bigint, bigint, boolean, string, bigint, boolean, string, string];
 
           const [
             listingId,
@@ -147,6 +147,7 @@ export function useSellerOrders() {
             proofUploadedAt,
             fundsReleased,
             buyerInfoIpfs,
+            _paymentToken,
           ] = order;
 
           // Only include orders for this seller (compare as strings)

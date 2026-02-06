@@ -12,11 +12,18 @@ import { UserPreferencesProvider } from '@/contexts/UserPreferencesContext';
 import { DemoModeProvider } from '@/contexts/DemoModeContext';
 import { useState } from 'react';
 import { useWalletRedirect } from '@/hooks/useWalletRedirect';
+import { useAutoFund } from '@/hooks/useAutoFund';
 import { baseSepolia } from 'viem/chains';
 
 // Component that uses the wallet redirect hook
 function WalletRedirectHandler({ children }: { children: React.ReactNode }) {
   useWalletRedirect();
+  return <>{children}</>;
+}
+
+// Component that auto-funds new wallets on testnet
+function AutoFundHandler({ children }: { children: React.ReactNode }) {
+  useAutoFund();
   return <>{children}</>;
 }
 
@@ -55,11 +62,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <WagmiProvider config={config}>
           <DemoModeProvider>
             <WalletRedirectHandler>
-              <UserPreferencesProvider>
-                <CartProvider>
-                  {children}
-                </CartProvider>
-              </UserPreferencesProvider>
+              <AutoFundHandler>
+                <UserPreferencesProvider>
+                  <CartProvider>
+                    {children}
+                  </CartProvider>
+                </UserPreferencesProvider>
+              </AutoFundHandler>
             </WalletRedirectHandler>
           </DemoModeProvider>
         </WagmiProvider>

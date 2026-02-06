@@ -199,9 +199,9 @@ export function useAdminOrders() {
                 abi: marketplaceAbi,
                 functionName: 'orders',
                 args: [BigInt(i)],
-              }) as [bigint, bigint, string, bigint, bigint, boolean, number, bigint, bigint, boolean, string, bigint, boolean, string];
+              }) as unknown as [bigint, bigint, string, bigint, bigint, boolean, number, bigint, bigint, boolean, string, bigint, boolean, string, string];
 
-              const [listingId, sellerId, buyer, quantity, totalPrice, isDelivery, status, createdAt, completedAt, rewardQueued, proofIpfs, proofUploadedAt, fundsReleased, buyerInfoIpfs] = orderData;
+              const [listingId, sellerId, buyer, quantity, totalPrice, isDelivery, status, createdAt, completedAt, rewardQueued, proofIpfs, proofUploadedAt, fundsReleased, buyerInfoIpfs, _paymentToken] = orderData;
 
               // Skip empty orders (buyer is zero address)
               if (buyer === '0x0000000000000000000000000000000000000000') {

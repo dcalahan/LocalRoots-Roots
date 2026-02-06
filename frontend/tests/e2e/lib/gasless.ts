@@ -1,5 +1,5 @@
 import { encodeFunctionData, type Address } from 'viem';
-import type { Account } from 'viem/accounts';
+import type { PrivateKeyAccount } from 'viem/accounts';
 import { publicClient } from './clients';
 import {
   FORWARDER_ADDRESS,
@@ -11,7 +11,7 @@ import {
 const RELAY_API_URL = process.env.RELAY_API_URL || 'https://www.localroots.love/api/relay';
 
 interface GaslessParams {
-  account: Account;
+  account: PrivateKeyAccount;
   to: Address;
   abi: readonly unknown[];
   functionName: string;

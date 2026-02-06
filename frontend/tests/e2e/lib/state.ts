@@ -12,6 +12,9 @@ export interface TestState {
   deliveryOrderId: string;
   proofUploadedAt: number;
   balancesBefore: Record<string, string>;
+  // Activation test fields
+  buyer2OrderId?: string;
+  buyer2ProofUploadedAt?: number;
 }
 
 export function readState(): TestState | null {

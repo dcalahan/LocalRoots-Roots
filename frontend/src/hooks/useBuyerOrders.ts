@@ -195,11 +195,11 @@ async function fetchOrderIfBuyer(
       abi: marketplaceAbi,
       functionName: 'orders',
       args: [orderId],
-    }) as [bigint, bigint, string, bigint, bigint, boolean, number, bigint, bigint, boolean, string, bigint, boolean, string];
+    }) as unknown as [bigint, bigint, string, bigint, bigint, boolean, number, bigint, bigint, boolean, string, bigint, boolean, string, string];
 
     const [
       listingId, sellerId, buyer, quantity, totalPrice, isDelivery,
-      status, createdAt, completedAt, rewardQueued, proofIpfs, proofUploadedAt, fundsReleased, buyerInfoIpfs
+      status, createdAt, completedAt, rewardQueued, proofIpfs, proofUploadedAt, fundsReleased, buyerInfoIpfs, _paymentToken
     ] = order;
 
     // Check if this order belongs to the buyer
