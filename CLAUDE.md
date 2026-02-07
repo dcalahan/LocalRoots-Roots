@@ -108,15 +108,38 @@ Both sellers and ambassadors use Privy embedded wallets with gasless meta-transa
 
 **Tabs:**
 - **Live Activity** - Real-time feed of sellers, listings, orders
-- **Registrations** - View/suspend sellers and ambassadors
+- **Registrations** - View/suspend/unsuspend sellers and ambassadors
 - **Orders** - View orders, cancel with refund
-- **Admin Management** - Add/remove admins
+- **Disputes** - View all disputes, admin resolve with reason
+- **Admin Management** - Add/remove admins, manage voter whitelist
 - **Operations Treasury** - Gnosis Safe for USDC payments
 
 **Key files:**
 - `frontend/src/app/admin/page.tsx` - Main admin dashboard
 - `frontend/src/hooks/useAdminStatus.ts` - Admin check (wagmi + Privy)
-- `frontend/src/components/admin/*` - Tab components
+- `frontend/src/hooks/useAdminActions.ts` - Admin write actions (suspend, unsuspend, etc.)
+- `frontend/src/components/admin/DisputesTab.tsx` - Dispute management
+- `frontend/src/components/admin/RegistrationsTab.tsx` - Seller/ambassador management
+- `frontend/src/components/admin/AdminManagementTab.tsx` - Admin + voter whitelist management
+- `frontend/src/components/admin/OrdersTab.tsx` - Order management
+- `frontend/src/components/admin/operations/*` - Operations Treasury (Gnosis Safe)
+
+## Ambassador Payments (Pre-Launch)
+
+Before $ROOTS token launch, ambassadors earn Seeds (points) but can't redeem them. To incentivize early ambassadors:
+
+**Manual Payment Process via Operations Treasury:**
+1. Monthly review of ambassador activity in admin dashboard (Registrations tab)
+2. Identify top performers by:
+   - Recruited sellers count
+   - Sales volume from recruited sellers
+   - Active participation in dispute voting
+3. Use Operations Treasury tab to pay USDC via Gnosis Safe
+4. Document payment in treasury records
+
+**No new code needed** - use existing Operations Treasury + manual review.
+
+**Seeds remain the long-term $ROOTS incentive** - ambassadors will convert Seeds to $ROOTS at mainnet launch.
 
 ## Orders Architecture
 
