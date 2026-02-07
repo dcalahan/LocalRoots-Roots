@@ -362,6 +362,8 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 - [ ] Update contract addresses to mainnet deployments
 - [ ] Verify credit card payments work (thirdweb Pay requires mainnet)
 - [ ] Update Privy allowed domains if needed
+- [ ] Set `INITIAL_ADMIN` env var to your mainnet wallet address (separate from deployer)
+- [ ] Consider multi-sig (Gnosis Safe) as admin for added security
 
 ## Decentralization Roadmap
 

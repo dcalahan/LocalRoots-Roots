@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAccount } from 'wagmi';
 import { parseAbiItem } from 'viem';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,8 +23,7 @@ interface ActivityEvent {
 type Tab = 'activity' | 'registrations' | 'orders' | 'admins' | 'operations';
 
 export default function AdminDashboard() {
-  const { address, isConnected } = useAccount();
-  const { isAdmin, isLoading: checkingAdmin } = useAdminStatus();
+  const { isAdmin, isLoading: checkingAdmin, isConnected, address } = useAdminStatus();
   const [activeTab, setActiveTab] = useState<Tab>('activity');
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
