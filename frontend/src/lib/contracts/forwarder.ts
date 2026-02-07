@@ -1,5 +1,7 @@
 import { type Address } from 'viem';
 import { MARKETPLACE_ADDRESS, AMBASSADOR_REWARDS_ADDRESS } from './marketplace';
+import { DISPUTE_RESOLUTION_ADDRESS } from './disputeResolution';
+import { GOVERNMENT_REQUESTS_ADDRESS } from './governmentRequests';
 
 // ERC2771Forwarder contract address on Base Sepolia - loaded from environment variable
 export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x63e7eb99daE531227dD690A031eAD1d8d5BeAc54') as Address;
@@ -8,6 +10,8 @@ export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADD
 export const ALLOWED_TARGETS: Address[] = [
   MARKETPLACE_ADDRESS,
   AMBASSADOR_REWARDS_ADDRESS,
+  DISPUTE_RESOLUTION_ADDRESS,
+  GOVERNMENT_REQUESTS_ADDRESS,
 ];
 
 // ERC2771Forwarder ABI (only the functions we need)
