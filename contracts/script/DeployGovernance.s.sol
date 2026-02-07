@@ -52,18 +52,25 @@ contract DeployGovernance is Script {
             deployer  // Initial admin
         );
 
+        // Add deployer to whitelist on both contracts (early-stage voting)
+        disputeResolution.addWhitelistedVoter(deployer);
+        governmentRequests.addWhitelistedVoter(deployer);
+
         console.log("");
         console.log("=== Deployment Complete ===");
         console.log("DisputeResolution:", address(disputeResolution));
         console.log("GovernmentRequests:", address(governmentRequests));
+        console.log("");
+        console.log("Whitelisted voter (founder):", deployer);
         console.log("");
         console.log("=== Next Steps ===");
         console.log("1. Update frontend/.env.local with:");
         console.log("   NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS=", address(disputeResolution));
         console.log("   NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS=", address(governmentRequests));
         console.log("");
-        console.log("2. Update subgraph/subgraph.yaml with new addresses");
-        console.log("3. Deploy updated subgraph");
+        console.log("2. Update Vercel environment variables");
+        console.log("3. Update subgraph/subgraph.yaml with new addresses");
+        console.log("4. Deploy updated subgraph");
 
         vm.stopBroadcast();
     }

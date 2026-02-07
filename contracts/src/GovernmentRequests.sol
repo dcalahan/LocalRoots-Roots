@@ -59,6 +59,11 @@ contract GovernmentRequests is ReentrancyGuard, ERC2771Context {
     address[] public admins;
     mapping(address => bool) public isAdmin;
 
+    // Early-stage whitelist - bypasses "recruited seller" requirement for voting
+    // Used during early growth when not enough qualified voters exist
+    // Should be emptied when platform has sufficient qualified ambassadors
+    mapping(address => bool) public whitelistedVoters;
+
     // ============ Constants ============
 
     uint256 public constant VOTE_DURATION = 5 days;
@@ -133,6 +138,10 @@ contract GovernmentRequests is ReentrancyGuard, ERC2771Context {
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
 
+    // Whitelist events
+    event VoterWhitelisted(address indexed voter, address indexed addedBy);
+    event VoterRemovedFromWhitelist(address indexed voter, address indexed removedBy);
+
     // ============ Modifiers ============
 
     modifier onlyAdmin() {
@@ -147,7 +156,11 @@ contract GovernmentRequests is ReentrancyGuard, ERC2771Context {
         IAmbassadorRewardsForGov.Ambassador memory amb = ambassadorRewards.getAmbassador(ambassadorId);
         require(amb.active, "Not active");
         require(!amb.suspended, "Suspended");
-        require(amb.recruitedSellers >= 1, "Must have 1+ recruited seller");
+
+        // WHITELIST BYPASS: Skip recruited seller check for early-stage trusted voters
+        if (!whitelistedVoters[_msgSender()]) {
+            require(amb.recruitedSellers >= 1, "Must have 1+ recruited seller");
+        }
         _;
     }
 
@@ -358,6 +371,25 @@ contract GovernmentRequests is ReentrancyGuard, ERC2771Context {
         }
 
         return count;
+    }
+
+    // ============ Whitelist Functions ============
+
+    /**
+     * @notice Add address to voter whitelist (bypasses recruited seller requirement)
+     * @dev Used during early stage when not enough qualified voters exist
+     */
+    function addWhitelistedVoter(address voter) external onlyAdmin {
+        whitelistedVoters[voter] = true;
+        emit VoterWhitelisted(voter, _msgSender());
+    }
+
+    /**
+     * @notice Remove address from voter whitelist
+     */
+    function removeWhitelistedVoter(address voter) external onlyAdmin {
+        whitelistedVoters[voter] = false;
+        emit VoterRemovedFromWhitelist(voter, _msgSender());
     }
 
     // ============ Admin Functions ============

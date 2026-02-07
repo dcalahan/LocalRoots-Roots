@@ -587,4 +587,92 @@ contract GovernmentRequestsTest is Test {
         vm.prank(ambassador9);
         governmentRequests.voteOnRequest(requestId, false);
     }
+
+    // ============ Whitelist Tests ============
+
+    function test_AddWhitelistedVoter() public {
+        address newVoter = address(0x888);
+
+        vm.prank(admin);
+        governmentRequests.addWhitelistedVoter(newVoter);
+
+        assertTrue(governmentRequests.whitelistedVoters(newVoter));
+    }
+
+    function test_RemoveWhitelistedVoter() public {
+        address newVoter = address(0x888);
+
+        vm.prank(admin);
+        governmentRequests.addWhitelistedVoter(newVoter);
+        assertTrue(governmentRequests.whitelistedVoters(newVoter));
+
+        vm.prank(admin);
+        governmentRequests.removeWhitelistedVoter(newVoter);
+        assertFalse(governmentRequests.whitelistedVoters(newVoter));
+    }
+
+    function test_RevertAddWhitelistedVoter_NotAdmin() public {
+        address newVoter = address(0x888);
+
+        vm.prank(buyer1);
+        vm.expectRevert("Not an admin");
+        governmentRequests.addWhitelistedVoter(newVoter);
+    }
+
+    function test_RevertRemoveWhitelistedVoter_NotAdmin() public {
+        address newVoter = address(0x888);
+
+        vm.prank(admin);
+        governmentRequests.addWhitelistedVoter(newVoter);
+
+        vm.prank(buyer1);
+        vm.expectRevert("Not an admin");
+        governmentRequests.removeWhitelistedVoter(newVoter);
+    }
+
+    function test_WhitelistedVoterCanVoteWithoutRecruitedSeller() public {
+        // Create a new ambassador without any recruited sellers
+        address newAmbassador = address(0x999);
+        vm.prank(newAmbassador);
+        ambassadorRewards.registerAmbassador(1, "");  // Under state founder
+
+        // Wait for cooldown
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
+
+        // Create a request
+        _createRequest();
+
+        // newAmbassador can't vote without recruited seller
+        vm.prank(newAmbassador);
+        vm.expectRevert("Must have 1+ recruited seller");
+        governmentRequests.voteOnRequest(1, true);
+
+        // Whitelist the new ambassador
+        vm.prank(admin);
+        governmentRequests.addWhitelistedVoter(newAmbassador);
+
+        // Now they can vote
+        vm.prank(newAmbassador);
+        governmentRequests.voteOnRequest(1, true);
+
+        assertTrue(governmentRequests.hasVotedOnRequest(1, 12));  // newAmbassador ID is 12 (after 11 existing)
+    }
+
+    function test_NonWhitelistedVoterStillRequiresRecruitedSeller() public {
+        // Create a new ambassador without any recruited sellers
+        address newAmbassador = address(0x999);
+        vm.prank(newAmbassador);
+        ambassadorRewards.registerAmbassador(1, "");  // Under state founder
+
+        // Wait for cooldown
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
+
+        // Create a request
+        _createRequest();
+
+        // newAmbassador can't vote without recruited seller (not whitelisted)
+        vm.prank(newAmbassador);
+        vm.expectRevert("Must have 1+ recruited seller");
+        governmentRequests.voteOnRequest(1, true);
+    }
 }

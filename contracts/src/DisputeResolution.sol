@@ -85,6 +85,11 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
     address[] public admins;
     mapping(address => bool) public isAdmin;
 
+    // Early-stage whitelist - bypasses "activated seller" requirement for voting
+    // Used during early growth when not enough qualified voters exist
+    // Should be emptied when platform has sufficient qualified ambassadors
+    mapping(address => bool) public whitelistedVoters;
+
     // ============ Constants ============
 
     uint256 public constant VOTE_DURATION = 3 days;
@@ -162,6 +167,10 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
 
+    // Whitelist events
+    event VoterWhitelisted(address indexed voter, address indexed addedBy);
+    event VoterRemovedFromWhitelist(address indexed voter, address indexed removedBy);
+
     // ============ Modifiers ============
 
     modifier onlyMarketplace() {
@@ -181,8 +190,12 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         IAmbassadorRewardsForDisputes.Ambassador memory amb = ambassadorRewards.getAmbassador(ambassadorId);
         require(amb.active, "Not active");
         require(!amb.suspended, "Suspended");
-        require(amb.recruitedSellers >= 1, "Must have 1+ recruited seller");
-        require(_hasActivatedSeller(ambassadorId), "Must have 1+ activated seller to vote");
+
+        // WHITELIST BYPASS: Skip recruited/activated seller check for early-stage trusted voters
+        if (!whitelistedVoters[_msgSender()]) {
+            require(amb.recruitedSellers >= 1, "Must have 1+ recruited seller");
+            require(_hasActivatedSeller(ambassadorId), "Must have 1+ activated seller to vote");
+        }
         _;
     }
 
@@ -489,6 +502,25 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         }
 
         return openDisputeIds;
+    }
+
+    // ============ Whitelist Functions ============
+
+    /**
+     * @notice Add address to voter whitelist (bypasses activated seller requirement)
+     * @dev Used during early stage when not enough qualified voters exist
+     */
+    function addWhitelistedVoter(address voter) external onlyAdmin {
+        whitelistedVoters[voter] = true;
+        emit VoterWhitelisted(voter, _msgSender());
+    }
+
+    /**
+     * @notice Remove address from voter whitelist
+     */
+    function removeWhitelistedVoter(address voter) external onlyAdmin {
+        whitelistedVoters[voter] = false;
+        emit VoterRemovedFromWhitelist(voter, _msgSender());
     }
 
     // ============ Admin Functions ============

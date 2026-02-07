@@ -653,4 +653,94 @@ contract DisputeResolutionTest is Test {
         vm.expectRevert("Cannot remove last admin");
         disputeResolution.removeAdmin(admin);
     }
+
+    // ============ Whitelist Tests ============
+
+    function test_AddWhitelistedVoter() public {
+        address newVoter = address(0x888);
+
+        vm.prank(admin);
+        disputeResolution.addWhitelistedVoter(newVoter);
+
+        assertTrue(disputeResolution.whitelistedVoters(newVoter));
+    }
+
+    function test_RemoveWhitelistedVoter() public {
+        address newVoter = address(0x888);
+
+        vm.prank(admin);
+        disputeResolution.addWhitelistedVoter(newVoter);
+        assertTrue(disputeResolution.whitelistedVoters(newVoter));
+
+        vm.prank(admin);
+        disputeResolution.removeWhitelistedVoter(newVoter);
+        assertFalse(disputeResolution.whitelistedVoters(newVoter));
+    }
+
+    function test_RevertAddWhitelistedVoter_NotAdmin() public {
+        address newVoter = address(0x888);
+
+        vm.prank(buyer1);
+        vm.expectRevert("Not an admin");
+        disputeResolution.addWhitelistedVoter(newVoter);
+    }
+
+    function test_RevertRemoveWhitelistedVoter_NotAdmin() public {
+        address newVoter = address(0x888);
+
+        vm.prank(admin);
+        disputeResolution.addWhitelistedVoter(newVoter);
+
+        vm.prank(buyer1);
+        vm.expectRevert("Not an admin");
+        disputeResolution.removeWhitelistedVoter(newVoter);
+    }
+
+    function test_WhitelistedVoterCanVoteWithoutActivatedSeller() public {
+        // Create a new ambassador without any recruited sellers
+        address newAmbassador = address(0x999);
+        vm.prank(newAmbassador);
+        ambassadorRewards.registerAmbassador(1, "");  // Under state founder
+
+        // Wait for cooldown
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
+
+        // Create a dispute
+        uint256 orderId = _createDisputedOrder();
+        uint256 disputeId = 1;
+
+        // newAmbassador can't vote without recruited seller
+        vm.prank(newAmbassador);
+        vm.expectRevert("Must have 1+ recruited seller");
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
+
+        // Whitelist the new ambassador
+        vm.prank(admin);
+        disputeResolution.addWhitelistedVoter(newAmbassador);
+
+        // Now they can vote
+        vm.prank(newAmbassador);
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
+
+        assertTrue(disputeResolution.hasVoted(disputeId, 7));  // newAmbassador ID is 7
+    }
+
+    function test_NonWhitelistedVoterStillRequiresActivatedSeller() public {
+        // Create a new ambassador without any recruited sellers
+        address newAmbassador = address(0x999);
+        vm.prank(newAmbassador);
+        ambassadorRewards.registerAmbassador(1, "");  // Under state founder
+
+        // Wait for cooldown
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
+
+        // Create a dispute
+        uint256 orderId = _createDisputedOrder();
+        uint256 disputeId = 1;
+
+        // newAmbassador can't vote without recruited seller (not whitelisted)
+        vm.prank(newAmbassador);
+        vm.expectRevert("Must have 1+ recruited seller");
+        disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
+    }
 }

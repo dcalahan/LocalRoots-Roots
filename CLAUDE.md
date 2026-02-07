@@ -149,9 +149,9 @@ Current deployment (2025-01-25):
 - `NEXT_PUBLIC_USDC_ADDRESS` = `0xBe0D90a4C6BBC99a37BA0A5aA9Ffaa894f826e06` (MockUSDC - mintable)
 - `NEXT_PUBLIC_USDT_ADDRESS` = `0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b` (MockUSDT - mintable)
 
-Governance contracts (2026-02-06):
-- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0x8A311F9065D90bA328D297aDfc90951e6076762E`
-- `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS` = `0x8FD009B0F383AD22f6c3d49A46e1ff004dA17E0D`
+Governance contracts (2026-02-07, with voter whitelist):
+- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0xa0C993bB951E3a6dF0C96602439bb6557acfBB41`
+- `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS` = `0x9464B2b76047Da4eb6fD8E60245998f1c747DC33`
 
 All contract addresses must be from the same deployment. If one changes, verify all are updated in `.env.local`.
 
@@ -601,14 +601,49 @@ Government agencies can request transaction data for food safety; ambassadors vo
 
 ### Governance Contracts (Base Sepolia)
 
-Deployed Feb 6 2026:
-- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0x8A311F9065D90bA328D297aDfc90951e6076762E`
-- `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS` = `0x8FD009B0F383AD22f6c3d49A46e1ff004dA17E0D`
+Deployed Feb 7 2026 (with voter whitelist):
+- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0xa0C993bB951E3a6dF0C96602439bb6557acfBB41`
+- `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS` = `0x9464B2b76047Da4eb6fD8E60245998f1c747DC33`
 
 **Subgraph entities:**
 - `Dispute`, `DisputeVote`, `UserStrikes` — Dispute tracking
 - `GovernmentRequest`, `GovernmentRequestVote` — Request tracking
 - `GovernanceStats` — Aggregate statistics
+
+### Early-Stage Voter Whitelist
+
+**Philosophy:** Once LocalRoots converts to $ROOTS tokens, there must be NO admin override. The platform must be fully decentralized - no founder control over dispute outcomes.
+
+**Why whitelist instead of admin override:**
+- Admin override creates two classes of resolution: "voted" vs "admin resolved"
+- Sets precedent that admin can override community decisions
+- Must be removed for true decentralization
+- Whitelisted voters participate normally in voting, just bypassing the "activated seller" requirement
+
+**Contract feature:** `whitelistedVoters` mapping on DisputeResolution and GovernmentRequests contracts:
+- Whitelisted addresses can vote like any ambassador
+- No special "admin resolved" flag - just normal votes
+- Can be emptied when enough qualified voters exist
+- Completely removable for full decentralization
+
+**Admin functions:**
+- `addWhitelistedVoter(address voter)` — Add address to whitelist
+- `removeWhitelistedVoter(address voter)` — Remove address from whitelist
+- `whitelistedVoters(address)` — Check if address is whitelisted
+
+**Decentralization roadmap:**
+
+| Phase | Whitelist Status | Voting |
+|-------|------------------|--------|
+| Early Stage (NOW) | Founder + trusted early ambassadors | All votes equal, no "admin resolved" |
+| Growth (10+ Qualified) | Shrink whitelist as ambassadors qualify naturally | Founder becomes 1 of many |
+| Crypto Launch ($ROOTS) | Empty whitelist | All voters must be qualified |
+| Geographic Voting (50+) | No whitelist | Regional routing, local quorum |
+
+**Key principle:** The whitelist is a TEMPORARY bridge, not a permanent feature. It exists only because:
+1. Platform is new, not enough qualified voters
+2. Someone needs to resolve disputes
+3. We don't want "admin override" precedent
 
 ## Known Issues
 
