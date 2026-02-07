@@ -571,7 +571,7 @@ Ambassadors vote on buyer disputes to determine outcomes (refund buyer or releas
 - 3 strikes → auto-suspension
 - Buyer wins frivolous dispute → +1 buyer strike
 
-**Admin Override:** Admins can resolve disputes directly with a required reason (for early-stage or urgent cases).
+**Admin Override:** Contract has admin resolve function for emergencies, but we avoid using it. Instead, use the voter whitelist (see "Early-Stage Voter Whitelist" below) so all resolutions appear as normal votes, maintaining decentralization precedent.
 
 **Routes:**
 - `/ambassador/disputes` — Ambassador disputes dashboard (vote on open disputes)
@@ -601,7 +601,7 @@ Government agencies can request transaction data for food safety; ambassadors vo
 4. If approved: admin uploads data export
 5. All requests publicly logged for transparency
 
-**Admin Override:** Admins can approve/deny requests directly with a reason.
+**Admin Override:** Contract has admin resolve function for emergencies, but we avoid using it. Instead, use the voter whitelist (see "Early-Stage Voter Whitelist" below) so all resolutions appear as normal votes, maintaining decentralization precedent.
 
 **Routes:**
 - `/government` — Public government relations page

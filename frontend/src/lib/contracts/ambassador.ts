@@ -226,6 +226,13 @@ export const ambassadorAbi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  {
+    type: 'function',
+    name: 'adminUnsuspendAmbassador',
+    inputs: [{ name: '_ambassadorId', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
   // Admin events
   {
     type: 'event',
@@ -251,6 +258,16 @@ export const ambassadorAbi = [
       { name: 'admin', type: 'address', indexed: true },
       { name: 'reason', type: 'string', indexed: false },
     ],
+  },
+  {
+    type: 'event',
+    name: 'AmbassadorSuspended',
+    inputs: [{ name: 'ambassadorId', type: 'uint256', indexed: true }],
+  },
+  {
+    type: 'event',
+    name: 'AmbassadorUnsuspended',
+    inputs: [{ name: 'ambassadorId', type: 'uint256', indexed: true }],
   },
 ] as const;
 

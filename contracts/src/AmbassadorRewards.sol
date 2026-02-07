@@ -174,6 +174,7 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     event VoteCast(uint256 indexed flagId, uint256 indexed ambassadorId, bool voteToSuspend);
     event FraudFlagResolved(uint256 indexed flagId, uint256 indexed targetAmbassadorId, bool suspended);
     event AmbassadorSuspended(uint256 indexed ambassadorId);
+    event AmbassadorUnsuspended(uint256 indexed ambassadorId);
     event DailyCapReached(uint256 indexed day, uint256 amount);
     event WeeklyCapReached(uint256 indexed ambassadorId, uint256 indexed week, uint256 amount);
     event TreasuryInitialized(uint256 amount);
@@ -314,6 +315,19 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         _clawbackAllPending(_ambassadorId);
 
         emit AmbassadorSuspended(_ambassadorId);
+    }
+
+    /**
+     * @notice Unsuspend a previously suspended ambassador
+     * @param _ambassadorId Ambassador to unsuspend
+     */
+    function adminUnsuspendAmbassador(uint256 _ambassadorId) external onlyAdmin {
+        require(ambassadors[_ambassadorId].wallet != address(0), "Ambassador does not exist");
+        require(ambassadors[_ambassadorId].suspended, "Not suspended");
+
+        ambassadors[_ambassadorId].suspended = false;
+
+        emit AmbassadorUnsuspended(_ambassadorId);
     }
 
     function initializeTreasury() external {
