@@ -112,15 +112,14 @@ export default function FounderStoryPage() {
               And I'm taking a deliberate approach:
             </p>
             <p className="mb-4">
-              <strong>Right now:</strong> The marketplace is live on Base Sepolia testnet. You can
-              buy and sell using $ROOTS tokens. Every transaction earns "Seeds" — points that track
-              your contribution to the network. Sellers, buyers, and ambassadors all earn Seeds for
-              their activity.
+              <strong>Right now:</strong> The marketplace is live in preview mode on a test network.
+              Explore freely — buy, sell, try everything. Nothing costs real money. Seeds earned
+              during this preview phase are just for testing and won't carry over.
             </p>
             <p className="mb-4">
-              <strong>At launch:</strong> When we move to mainnet and market conditions are right,
-              $ROOTS becomes a real tradeable token. Everyone's Seeds convert 1:1 to $ROOTS. The
-              people who helped build the network early get rewarded for taking the risk.
+              <strong>At launch:</strong> When we go live on mainnet, everyone starts fresh. That's
+              when Seeds count for real. Your Seeds determine your share of the $ROOTS airdrop —
+              the more you contribute to the network, the bigger your share.
             </p>
             <p>
               This version is built on Base (Coinbase's L2 network). Transactions are gasless for
