@@ -35,7 +35,7 @@ export function useAmbassadorStatus(): AmbassadorStatus {
   ) as `0x${string}` | undefined;
 
   // Debug logging
-  console.log(`[useAmbassadorStatus] auth=${authenticated} ready=${walletsReady} wallets=${wallets.length} types=${wallets.map(w => w.walletClientType).join(',')} addr=${privyAddress}`);
+  console.log(`[useAmbassadorStatus] auth=${authenticated} ready=${walletsReady} wallets=${wallets.length} types=${wallets.map(w => w.walletClientType).join(',')} addr=${privyAddress} contract=${AMBASSADOR_REWARDS_ADDRESS}`);
 
   // Ambassadors MUST use Privy wallet - do NOT fall back to wagmi
   const address = privyAddress;
