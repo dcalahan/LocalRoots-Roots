@@ -109,21 +109,23 @@ export default function FounderStoryPage() {
               tomorrow, the networks we've helped create should continue. That's the point.
             </p>
             <p className="mb-4">
-              And I'm taking a two-phase approach:
+              And I'm taking a deliberate approach:
             </p>
             <p className="mb-4">
-              <strong>Phase 1:</strong> Launch the marketplace with stablecoin (USDC) payments.
-              Prove that it works. Build a real community of sellers and buyers. Track everyone's
-              activity with a points system we call "Seeds."
+              <strong>Right now:</strong> The marketplace is live on Base Sepolia testnet. You can
+              buy and sell using $ROOTS tokens. Every transaction earns "Seeds" — points that track
+              your contribution to the network. Sellers, buyers, and ambassadors all earn Seeds for
+              their activity.
             </p>
             <p className="mb-4">
-              <strong>Phase 2:</strong> Once the marketplace has traction and market conditions
-              are right, launch the $ROOTS token. Airdrop tokens to everyone who helped build
-              the network early. Their Seeds convert to real tokens.
+              <strong>At launch:</strong> When we move to mainnet and market conditions are right,
+              $ROOTS becomes a real tradeable token. Everyone's Seeds convert 1:1 to $ROOTS. The
+              people who helped build the network early get rewarded for taking the risk.
             </p>
             <p>
-              This version is built on Base (Coinbase's L2 network). The approach is slower,
-              but smarter. We prove the value before we tokenize it.
+              This version is built on Base (Coinbase's L2 network). Transactions are gasless for
+              sellers — they don't need to understand crypto or hold ETH. Just log in with email,
+              list your produce, and sell.
             </p>
           </div>
         </section>
