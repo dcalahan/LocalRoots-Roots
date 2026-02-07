@@ -124,22 +124,28 @@ Both sellers and ambassadors use Privy embedded wallets with gasless meta-transa
 - `frontend/src/components/admin/OrdersTab.tsx` - Order management
 - `frontend/src/components/admin/operations/*` - Operations Treasury (Gnosis Safe)
 
-## Ambassador Payments (Pre-Launch)
+## Ambassador Compensation (Pre-Launch)
 
-Before $ROOTS token launch, ambassadors earn Seeds (points) but can't redeem them. To incentivize early ambassadors:
+Ambassadors receive **two forms of compensation**:
 
-**Manual Payment Process via Operations Treasury:**
-1. Monthly review of ambassador activity in admin dashboard (Registrations tab)
-2. Identify top performers by:
-   - Recruited sellers count
-   - Sales volume from recruited sellers
-   - Active participation in dispute voting
-3. Use Operations Treasury tab to pay USDC via Gnosis Safe
+| Reward | Amount | Paid Via | Timing |
+|--------|--------|----------|--------|
+| **USDC Commission** | 25% of sale value | Operations Treasury (Gnosis Safe) | Now |
+| **Seeds** | 25% of sale value | On-chain events (indexed by subgraph) | Converts to $ROOTS at launch |
+
+**How it works:**
+- When a recruited seller makes a sale, the ambassador chain earns 25% as USDC commission
+- The same 25% is ALSO recorded as Seeds on-chain
+- USDC is paid manually via Operations Treasury; Seeds are automatic
+- 80/20 split up the chain: recruiter keeps 80%, passes 20% to upline
+
+**USDC Payment Process (Operations Treasury):**
+1. Review ambassador activity in admin dashboard (Registrations tab)
+2. Calculate 25% commission owed based on sales volume
+3. Pay USDC via Gnosis Safe in Operations Treasury tab
 4. Document payment in treasury records
 
-**No new code needed** - use existing Operations Treasury + manual review.
-
-**Seeds remain the long-term $ROOTS incentive** - ambassadors will convert Seeds to $ROOTS at mainnet launch.
+**Why both?** Ambassadors get real money now (USDC) plus equity upside (Seeds → $ROOTS). This rewards early ambassadors who are taking a risk on an unproven platform.
 
 ## Orders Architecture
 
