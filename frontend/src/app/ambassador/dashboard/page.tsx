@@ -21,8 +21,7 @@ import { AmbassadorTierCard, AmbassadorTierBadge } from '@/components/seeds/Amba
 import { getMultiplierInfo, AMBASSADOR_RECRUITMENT_BONUS, AMBASSADOR_COMMISSION_PERCENT } from '@/components/seeds/PhaseConfig';
 import { RecruitedFarmersWidget } from '@/components/ambassador/RecruitedFarmersWidget';
 import { ShareCardModal } from '@/components/ShareCardModal';
-import { useOpenDisputeCount } from '@/hooks/useDisputes';
-import { useActiveRequestCount } from '@/hooks/useGovernmentRequests';
+import { useGovernanceStats } from '@/hooks/useGovernanceStats';
 import type { ShareCardData } from '@/lib/shareCards';
 import { formatUnits, type Address } from 'viem';
 
@@ -49,11 +48,16 @@ export default function AmbassadorDashboardPage() {
   const { data: seedsData, isLoading: isSeedsLoading } = useSeeds(address as Address);
   const multiplierInfo = getMultiplierInfo();
 
-  // Disputes count for badge
-  const { count: openDisputeCount, isLoading: isLoadingDisputeCount } = useOpenDisputeCount();
-
-  // Government requests count for badge
-  const { count: activeGovRequestCount, isLoading: isLoadingGovCount } = useActiveRequestCount();
+  // Governance stats for dashboard
+  const {
+    totalDisputes,
+    openDisputes: openDisputeCount,
+    resolvedDisputes,
+    qualifiedVoters,
+    totalGovRequests,
+    activeGovRequests: activeGovRequestCount,
+    isLoading: isLoadingGovernance,
+  } = useGovernanceStats();
 
   const handleLogout = async () => {
     try {
@@ -499,56 +503,6 @@ export default function AmbassadorDashboardPage() {
           </Card>
         </div>
 
-        {/* Active Disputes Widget */}
-        {openDisputeCount > 0 && (
-          <Card className="mb-8 border-2 border-red-200 bg-gradient-to-br from-red-50 to-orange-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <span className="text-2xl">⚖️</span> Active Disputes
-                <span className="ml-auto px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                  {openDisputeCount} need{openDisputeCount === 1 ? 's' : ''} your vote
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-roots-gray mb-3">
-                Help resolve disputes between buyers and sellers. Earn <strong>100 Seeds</strong> per vote,
-                plus <strong>50 bonus</strong> if you vote with the majority.
-              </p>
-              <Link href="/ambassador/disputes">
-                <Button className="bg-roots-primary hover:bg-roots-primary/90">
-                  Review Disputes
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Active Government Requests Widget */}
-        {activeGovRequestCount > 0 && (
-          <Card className="mb-8 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <span className="text-2xl">🏛️</span> Government Requests
-                <span className="ml-auto px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
-                  {activeGovRequestCount} pending
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-roots-gray mb-3">
-                Review government data access requests. Help protect user privacy by
-                voting on whether each request is legitimate.
-              </p>
-              <Link href="/ambassador/governance">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Review Requests
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Seeds Breakdown Card */}
         <Card className="mb-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
           <CardHeader className="pb-2">
@@ -692,44 +646,82 @@ export default function AmbassadorDashboardPage() {
           })}
         />
 
-        {/* Governance Section - Always visible */}
-        <Card className="mb-8">
-          <CardHeader>
+        {/* Governance Section - Always visible with stats */}
+        <Card className="mb-8 border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
+          <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <span>⚖️</span> Ambassador Governance
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-roots-gray mb-4">
-              As an ambassador, you help govern LocalRoots by voting on disputes and reviewing data requests.
+              Help govern LocalRoots by voting on disputes and reviewing data requests. Earn Seeds for participating.
             </p>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              <div className="text-center p-2 bg-white rounded-lg">
+                <div className="text-xl font-bold text-roots-primary">
+                  {isLoadingGovernance ? '...' : openDisputeCount}
+                </div>
+                <div className="text-xs text-roots-gray">Open Disputes</div>
+              </div>
+              <div className="text-center p-2 bg-white rounded-lg">
+                <div className="text-xl font-bold text-green-600">
+                  {isLoadingGovernance ? '...' : resolvedDisputes}
+                </div>
+                <div className="text-xs text-roots-gray">Resolved</div>
+              </div>
+              <div className="text-center p-2 bg-white rounded-lg">
+                <div className="text-xl font-bold text-blue-600">
+                  {isLoadingGovernance ? '...' : activeGovRequestCount}
+                </div>
+                <div className="text-xs text-roots-gray">Gov Requests</div>
+              </div>
+              <div className="text-center p-2 bg-white rounded-lg">
+                <div className="text-xl font-bold text-purple-600">
+                  {isLoadingGovernance ? '...' : qualifiedVoters}
+                </div>
+                <div className="text-xs text-roots-gray">Voters</div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
             <div className="grid md:grid-cols-2 gap-4">
               <Link href="/ambassador/disputes">
-                <div className="p-4 border rounded-lg hover:border-roots-primary hover:bg-roots-primary/5 transition-colors cursor-pointer">
+                <div className="p-4 bg-white border rounded-lg hover:border-roots-primary hover:shadow-md transition-all cursor-pointer">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium flex items-center gap-2">
                       <span>🗳️</span> Dispute Resolution
                     </h4>
-                    {openDisputeCount > 0 && (
-                      <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
-                        {openDisputeCount} open
+                    {openDisputeCount > 0 ? (
+                      <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full animate-pulse">
+                        {openDisputeCount} need votes
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                        All clear
                       </span>
                     )}
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Vote on buyer/seller disputes. Earn 100 Seeds per vote.
+                    Vote on buyer/seller disputes. <span className="text-amber-600 font-medium">100 Seeds per vote</span>
                   </p>
                 </div>
               </Link>
               <Link href="/ambassador/governance">
-                <div className="p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
+                <div className="p-4 bg-white border rounded-lg hover:border-blue-500 hover:shadow-md transition-all cursor-pointer">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium flex items-center gap-2">
                       <span>🏛️</span> Government Requests
                     </h4>
-                    {activeGovRequestCount > 0 && (
+                    {activeGovRequestCount > 0 ? (
                       <span className="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
                         {activeGovRequestCount} pending
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                        None pending
                       </span>
                     )}
                   </div>

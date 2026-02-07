@@ -49,3 +49,5 @@ contracts/broadcast/
 
 # TypeScript build info
 *.tsbuildinfo
+.vercel
+.env*.local
