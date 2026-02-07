@@ -45,6 +45,7 @@ export async function uploadMetadata(
 
 /**
  * Get the gateway URL for an IPFS hash
+ * Uses ipfs.io as default since Pinata public gateway has aggressive rate limits
  */
 export function getIpfsUrl(ipfsHash: string): string {
   if (!ipfsHash) return '';
@@ -53,9 +54,9 @@ export function getIpfsUrl(ipfsHash: string): string {
     ipfsHash = ipfsHash.replace('ipfs://', '');
   }
 
-  // Use env var with fallback to public gateway
-  const gateway = process.env.NEXT_PUBLIC_PINATA_GATEWAY || 'gateway.pinata.cloud';
-  return `https://${gateway}/ipfs/${ipfsHash}`;
+  // Use ipfs.io for reads (more permissive rate limits than Pinata public gateway)
+  // Pinata gateway is rate-limited and has Cloudflare bot protection
+  return `https://ipfs.io/ipfs/${ipfsHash}`;
 }
 
 export { pinata };
