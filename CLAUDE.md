@@ -309,6 +309,27 @@ cloudflared tunnel --url http://localhost:3000
 cd contracts && forge build
 ```
 
+## Debugging Production Issues
+
+**Debug Banner Pattern:** When a page isn't working correctly in production, add a temporary visible debug banner showing key state variables. This is faster than asking users to open browser console.
+
+Example:
+```tsx
+{/* Debug Banner - REMOVE BEFORE LAUNCH */}
+<div className="bg-yellow-100 border-b border-yellow-300 px-4 py-2 text-xs font-mono">
+  <strong>DEBUG:</strong> connected={String(isConnected)} | loading={String(isLoading)} |
+  isAmbassador={String(isAmbassador)} | error={error || 'none'}
+</div>
+```
+
+**Common Issues Found via Debug Banners:**
+- Trailing spaces in env vars (viem error: `Address "0x123... " is invalid`)
+- Wrong contract address (fallback vs env var mismatch)
+- Wallet address mismatch (Privy vs wagmi)
+- Loading state stuck (async hook not resolving)
+
+**Env Var Gotcha:** When setting env vars via CLI or dashboard, trailing/leading whitespace can cause silent failures. Viem will show "Address is invalid" if there's whitespace.
+
 ## E2E Testing
 
 End-to-end tests run directly against Base Sepolia contracts using vitest + viem. Tests the full marketplace lifecycle without needing a browser (Privy OAuth can't be automated).
