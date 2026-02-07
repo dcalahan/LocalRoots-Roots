@@ -70,7 +70,7 @@ export default function SeedsLeaderboardPage() {
             <h1 className="text-3xl md:text-4xl font-bold">Seeds Leaderboard</h1>
           </div>
           <p className="text-amber-100 max-w-2xl">
-            Track the top Seeds earners in the Local Roots community. Seeds convert to $ROOTS tokens at Phase 2 launch.
+            Track the top Seeds earners in the Local Roots community. This is preview mode — Seeds earned now are for testing only and won't carry over to mainnet launch.
           </p>
           {isUsingMockData && (
             <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-amber-600/50 border border-amber-400">
@@ -242,14 +242,15 @@ export default function SeedsLeaderboardPage() {
             </div>
           </div>
 
-          {/* Early Adopter Bonus */}
+          {/* Preview Mode Note */}
           <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">⏰</span>
-              <span className="font-medium text-amber-800">Early Adopter Bonus Active!</span>
+              <span className="text-xl">🧪</span>
+              <span className="font-medium text-amber-800">Preview Mode</span>
             </div>
             <p className="text-sm text-amber-700">
-              Join now to earn <strong>2x Seeds</strong> during the first 90 days, then <strong>1.5x</strong> until day 180.
+              Seeds earned now are for testing only. When we launch on mainnet, everyone starts fresh —
+              that's when early adopters will earn <strong>2x Seeds</strong> for the first 90 days.
             </p>
           </div>
         </section>

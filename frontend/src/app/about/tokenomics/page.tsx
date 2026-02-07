@@ -51,51 +51,51 @@ export default function TokenomicsPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 mt-6">
-            {/* Phase 1 */}
-            <Card className="border-t-4 border-roots-secondary">
+            {/* Preview */}
+            <Card className="border-t-4 border-amber-500">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-roots-secondary/10 rounded-full flex items-center justify-center">
-                    <span className="text-xl">🌱</span>
+                  <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
+                    <span className="text-xl">🧪</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">Phase 1: Seeds</h3>
-                    <p className="text-roots-secondary font-medium text-sm">November 2026</p>
+                    <h3 className="text-xl font-bold">Now: Preview Mode</h3>
+                    <p className="text-amber-600 font-medium text-sm">Testing & building</p>
                   </div>
                 </div>
                 <div className="prose text-roots-gray text-sm">
                   <p className="mb-3">
-                    The marketplace launches. You buy and sell with regular currency (USDC).
-                    Every transaction earns Seeds.
+                    We're in preview mode on a test network. Explore the marketplace,
+                    try buying and selling — nothing costs real money.
                   </p>
                   <p>
-                    No token to worry about. No price chart. Just a community of neighbors
-                    trading food and earning rewards for being part of it.
+                    Seeds earned now are just for testing and won't carry over to launch.
+                    This is your chance to learn the platform risk-free.
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Phase 2 */}
+            {/* Launch */}
             <Card className="border-t-4 border-roots-primary">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-roots-primary/10 rounded-full flex items-center justify-center">
-                    <span className="text-xl">🌳</span>
+                    <span className="text-xl">🚀</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">Phase 2: $ROOTS</h3>
-                    <p className="text-roots-primary font-medium text-sm">When the community is ready</p>
+                    <h3 className="text-xl font-bold">Launch: Seeds That Count</h3>
+                    <p className="text-roots-primary font-medium text-sm">Coming soon</p>
                   </div>
                 </div>
                 <div className="prose text-roots-gray text-sm">
                   <p className="mb-3">
-                    Once the marketplace has real traction — real sellers, real buyers, real
-                    transactions — we launch the $ROOTS token.
+                    When we go live on mainnet, everyone starts fresh. That's when
+                    Seeds count for real.
                   </p>
                   <p>
-                    Your Seeds convert to $ROOTS tokens. The more Seeds you earned,
-                    the more $ROOTS you receive. Early believers get rewarded.
+                    Your Seeds determine your share of the $ROOTS airdrop. The more
+                    you contribute to the network, the bigger your share.
                   </p>
                 </div>
               </CardContent>
@@ -316,14 +316,15 @@ export default function TokenomicsPage() {
           <div className="space-y-6">
             <div className="flex gap-4">
               <div className="flex flex-col items-center">
-                <div className="w-3 h-3 bg-roots-gray rounded-full" />
+                <div className="w-3 h-3 bg-amber-500 rounded-full" />
                 <div className="w-0.5 flex-1 bg-roots-gray/20" />
               </div>
               <div className="pb-6">
-                <div className="text-sm text-roots-gray">Now – Q3 2026</div>
-                <div className="font-bold text-gray-900">Building & Testing</div>
+                <div className="text-sm text-amber-600 font-medium">Now</div>
+                <div className="font-bold text-gray-900">Preview Mode</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  Smart contracts, frontend, and growing tools. Getting it right before launch.
+                  Testing on a test network. Explore freely — nothing costs real money.
+                  Seeds earned now are just for practice.
                 </p>
               </div>
             </div>
@@ -334,10 +335,11 @@ export default function TokenomicsPage() {
                 <div className="w-0.5 flex-1 bg-roots-gray/20" />
               </div>
               <div className="pb-6">
-                <div className="text-sm text-roots-secondary font-medium">November 2026</div>
-                <div className="font-bold text-gray-900">Phase 1 Launch</div>
+                <div className="text-sm text-roots-secondary font-medium">Coming Soon</div>
+                <div className="font-bold text-gray-900">Mainnet Launch</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  Marketplace goes live. Start buying, selling, and earning Seeds.
+                  Marketplace goes live for real. Start buying, selling, and earning Seeds that count.
+                  Early adopters earn 2x Seeds.
                 </p>
               </div>
             </div>
@@ -348,7 +350,7 @@ export default function TokenomicsPage() {
                 <div className="w-0.5 flex-1 bg-roots-gray/20" />
               </div>
               <div className="pb-6">
-                <div className="text-sm text-roots-gray">2027 – 2028</div>
+                <div className="text-sm text-roots-gray">After Launch</div>
                 <div className="font-bold text-gray-900">Community Growth</div>
                 <p className="text-sm text-roots-gray mt-1">
                   More neighborhoods, more growers, more transactions. Proving the model works.
@@ -362,10 +364,10 @@ export default function TokenomicsPage() {
               </div>
               <div>
                 <div className="text-sm text-roots-primary font-medium">When the community is ready</div>
-                <div className="font-bold text-gray-900">Phase 2: $ROOTS Token</div>
+                <div className="font-bold text-gray-900">$ROOTS Token Airdrop</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  Token launches. Seeds convert to $ROOTS. The people who helped build
-                  the network get their share of it.
+                  100M $ROOTS distributed to Seeds holders based on their share.
+                  The people who helped build the network get rewarded.
                 </p>
               </div>
             </div>
@@ -390,9 +392,10 @@ export default function TokenomicsPage() {
               <CardContent className="pt-6">
                 <h4 className="font-semibold mb-2">Are Seeds worth money right now?</h4>
                 <p className="text-sm text-roots-gray">
-                  Not today. Seeds are loyalty rewards that track your contributions.
-                  When $ROOTS launches in Phase 2, your Seeds will convert to real tokens.
-                  The more Seeds you've earned, the more $ROOTS you'll receive.
+                  Not yet. We're currently in preview mode on a test network — Seeds
+                  earned now are just for testing. When we launch on mainnet, that's
+                  when Seeds count. Your mainnet Seeds will determine your share of
+                  the $ROOTS airdrop.
                 </p>
               </CardContent>
             </Card>
@@ -409,11 +412,11 @@ export default function TokenomicsPage() {
 
             <Card>
               <CardContent className="pt-6">
-                <h4 className="font-semibold mb-2">Why earn 2x Seeds now instead of waiting?</h4>
+                <h4 className="font-semibold mb-2">Will there be an early adopter bonus?</h4>
                 <p className="text-sm text-roots-gray">
-                  The early adopter bonus is our way of rewarding the people who take a chance on something
-                  new. The first 90 days after launch earn 2x Seeds, days 91–180 earn 1.5x.
-                  After that, it's 1x. If you believe in what we're building, now is the time.
+                  Yes! When we launch on mainnet, early participants will earn bonus Seeds.
+                  The first 90 days after mainnet launch earn 2x Seeds, days 91–180 earn 1.5x.
+                  After that, it's 1x. The people who help build the network early get rewarded.
                 </p>
               </CardContent>
             </Card>
