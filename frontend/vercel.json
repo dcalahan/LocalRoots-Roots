@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "localroots.love"
+        }
+      ],
+      "destination": "https://www.localroots.love/$1",
+      "permanent": true
+    }
+  ]
+}
