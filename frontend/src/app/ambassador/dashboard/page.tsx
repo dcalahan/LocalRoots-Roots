@@ -692,6 +692,56 @@ export default function AmbassadorDashboardPage() {
           })}
         />
 
+        {/* Governance Section - Always visible */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span>⚖️</span> Ambassador Governance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-roots-gray mb-4">
+              As an ambassador, you help govern LocalRoots by voting on disputes and reviewing data requests.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <Link href="/ambassador/disputes">
+                <div className="p-4 border rounded-lg hover:border-roots-primary hover:bg-roots-primary/5 transition-colors cursor-pointer">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <span>🗳️</span> Dispute Resolution
+                    </h4>
+                    {openDisputeCount > 0 && (
+                      <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                        {openDisputeCount} open
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-roots-gray">
+                    Vote on buyer/seller disputes. Earn 100 Seeds per vote.
+                  </p>
+                </div>
+              </Link>
+              <Link href="/ambassador/governance">
+                <div className="p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <span>🏛️</span> Government Requests
+                    </h4>
+                    {activeGovRequestCount > 0 && (
+                      <span className="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                        {activeGovRequestCount} pending
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-roots-gray">
+                    Review government data access requests.
+                  </p>
+                </div>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Quick Actions */}
         <Card>
           <CardHeader>
