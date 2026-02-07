@@ -96,6 +96,27 @@ Both sellers and ambassadors use Privy embedded wallets with gasless meta-transa
 | `useAccount` (wagmi) | External wallet state for crypto buyers |
 | `useBuyerOrders` | Fetches orders - supports both wagmi and Privy addresses |
 | `useGaslessTransaction` | Gasless meta-transactions for sellers/ambassadors via Privy wallet |
+| `useAdminStatus` | Checks admin status - supports both wagmi AND Privy wallets |
+
+## Admin Dashboard
+
+**Route:** `/admin`
+
+**Access:** Must be in the `isAdmin` mapping on the LocalRootsMarketplace contract. Supports both external wallets (wagmi) and Privy embedded wallets.
+
+**Adding admins:** Use `addAdmin(address)` on the marketplace contract from an existing admin wallet.
+
+**Tabs:**
+- **Live Activity** - Real-time feed of sellers, listings, orders
+- **Registrations** - View/suspend sellers and ambassadors
+- **Orders** - View orders, cancel with refund
+- **Admin Management** - Add/remove admins
+- **Operations Treasury** - Gnosis Safe for USDC payments
+
+**Key files:**
+- `frontend/src/app/admin/page.tsx` - Main admin dashboard
+- `frontend/src/hooks/useAdminStatus.ts` - Admin check (wagmi + Privy)
+- `frontend/src/components/admin/*` - Tab components
 
 ## Orders Architecture
 
