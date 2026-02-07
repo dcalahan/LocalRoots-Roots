@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/Header';
+import { TestnetBanner } from '@/components/layout/TestnetBanner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
+          <TestnetBanner />
           <Header />
           {children}
           <Toaster />
