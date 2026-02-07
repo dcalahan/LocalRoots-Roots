@@ -328,7 +328,22 @@ Example:
 - Wallet address mismatch (Privy vs wagmi)
 - Loading state stuck (async hook not resolving)
 
-**Env Var Gotcha:** When setting env vars via CLI or dashboard, trailing/leading whitespace can cause silent failures. Viem will show "Address is invalid" if there's whitespace.
+**Env Var Gotcha:** When setting env vars via CLI, trailing whitespace or newlines cause silent failures. Viem shows "Address is invalid" if there's whitespace.
+
+**Safe way to set Vercel env vars:**
+```bash
+# DON'T use echo or here-strings (they add newlines):
+echo "0x123..." | npx vercel env add VAR production  # BAD - adds \n
+
+# DO use printf to a temp file:
+printf '0x4C5c8765b1a5fbed6fAf2Bd9F1adBee587d92154' > /tmp/val.txt
+cat /tmp/val.txt | npx vercel env add NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS production
+rm /tmp/val.txt
+
+# Verify with env pull:
+npx vercel env pull .env.check --environment=production
+grep YOUR_VAR .env.check  # Should show no \n inside quotes
+```
 
 ## E2E Testing
 

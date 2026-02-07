@@ -10,13 +10,9 @@ import { useAmbassadorStatus } from '@/hooks/useAmbassadorStatus';
 
 export default function AmbassadorPage() {
   const router = useRouter();
-  const { authenticated: isConnected, user } = usePrivy();
-  const { isAmbassador, isLoading, ambassadorId, error } = useAmbassadorStatus();
+  const { authenticated: isConnected } = usePrivy();
+  const { isAmbassador, isLoading } = useAmbassadorStatus();
   const [justLoggedOut, setJustLoggedOut] = useState(false);
-
-  // Debug: log state on every render
-  const privyAddress = user?.wallet?.address;
-  console.log(`[AmbassadorPage] connected=${isConnected} loading=${isLoading} isAmb=${isAmbassador} ambId=${ambassadorId} addr=${privyAddress} error=${error}`);
 
   // Check if user just logged out (prevents auto-redirect loop)
   useEffect(() => {
@@ -49,12 +45,6 @@ export default function AmbassadorPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Debug Banner - REMOVE BEFORE LAUNCH */}
-      {process.env.NODE_ENV !== 'production' || true ? (
-        <div className="bg-yellow-100 border-b border-yellow-300 px-4 py-2 text-xs font-mono">
-          <strong>DEBUG:</strong> connected={String(isConnected)} | loading={String(isLoading)} | isAmbassador={String(isAmbassador)} | ambId={ambassadorId || 'null'} | addr={privyAddress?.slice(0, 10)}... | error={error || 'none'}
-        </div>
-      ) : null}
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-roots-primary/10 to-white">
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
