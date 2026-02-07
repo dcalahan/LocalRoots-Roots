@@ -406,14 +406,75 @@ forge script script/Deploy.s.sol:DeployAll --rpc-url https://sepolia.base.org --
 # Update frontend/.env.local with new addresses
 ```
 
+### CRITICAL: Update Fallback Addresses in TypeScript
+
+**Problem:** Each contract TypeScript file has a hardcoded fallback address used if the env var fails to load. If you redeploy a contract but don't update the fallback, the frontend may silently query the OLD contract.
+
+**After any contract redeploy, update these files:**
+
+| Contract | TypeScript File | Variable |
+|----------|-----------------|----------|
+| Marketplace | `frontend/src/lib/contracts/marketplace.ts` | `MARKETPLACE_ADDRESS` |
+| AmbassadorRewards | `frontend/src/lib/contracts/ambassador.ts` | `AMBASSADOR_REWARDS_ADDRESS` |
+| DisputeResolution | `frontend/src/lib/contracts/disputeResolution.ts` | `DISPUTE_RESOLUTION_ADDRESS` |
+| GovernmentRequests | `frontend/src/lib/contracts/governmentRequests.ts` | `GOVERNMENT_REQUESTS_ADDRESS` |
+| ERC2771Forwarder | `frontend/src/lib/contracts/forwarder.ts` | `FORWARDER_ADDRESS` |
+| OperationsTreasury | `frontend/src/lib/contracts/operationsTreasury.ts` | `OPERATIONS_TREASURY_ADDRESS` |
+
+**Example pattern in each file:**
+```typescript
+export const AMBASSADOR_REWARDS_ADDRESS: Address = (
+  process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS ||
+  '0x4C5c8765b1a5fbed6fAf2Bd9F1adBee587d92154'  // <-- UPDATE THIS!
+) as Address;
+```
+
+**Full redeploy checklist:**
+1. Deploy new contract(s) via forge
+2. Update `frontend/.env.local` with new address(es)
+3. Update Vercel env vars: `npx vercel env add NEXT_PUBLIC_<CONTRACT>_ADDRESS`
+4. **Update fallback address in TypeScript file(s)**
+5. Update this CLAUDE.md "Contract Addresses" section
+6. Commit and push to trigger Vercel redeploy
+
 ## Mainnet Launch Checklist
 
-- [ ] Remove `NEXT_PUBLIC_TEST_WALLET_PRIVATE_KEY` from Vercel environment variables
-- [ ] Update contract addresses to mainnet deployments
+### Environment & Secrets
+- [ ] Remove `NEXT_PUBLIC_TEST_WALLET_PRIVATE_KEY` from Vercel (disables test wallet)
+- [ ] Set `INITIAL_ADMIN` env var to your mainnet wallet address (separate from deployer)
+- [ ] Generate fresh `RELAYER_PRIVATE_KEY` for mainnet relayer wallet
+- [ ] Fund mainnet relayer wallet with ETH for gas
+
+### Contract Addresses (Critical!)
+- [ ] Deploy all contracts to Base Mainnet
+- [ ] Update ALL Vercel env vars with mainnet addresses:
+  - `NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS`
+  - `NEXT_PUBLIC_MARKETPLACE_ADDRESS`
+  - `NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS`
+  - `NEXT_PUBLIC_FORWARDER_ADDRESS`
+  - `NEXT_PUBLIC_USDC_ADDRESS` (real USDC on Base)
+  - `NEXT_PUBLIC_USDT_ADDRESS` (real USDT on Base)
+  - `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS`
+  - `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS`
+- [ ] **Update fallback addresses in ALL TypeScript files** (see "Redeploying Contracts" section)
+  - `frontend/src/lib/contracts/marketplace.ts`
+  - `frontend/src/lib/contracts/ambassador.ts`
+  - `frontend/src/lib/contracts/disputeResolution.ts`
+  - `frontend/src/lib/contracts/governmentRequests.ts`
+  - `frontend/src/lib/contracts/forwarder.ts`
+  - `frontend/src/lib/contracts/operationsTreasury.ts`
+- [ ] Update RPC URL: `NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL` → `NEXT_PUBLIC_BASE_RPC_URL` (or rename)
+- [ ] Update BaseScan links in UI (sepolia.basescan.org → basescan.org)
+
+### Third-Party Services
 - [ ] Verify credit card payments work (thirdweb Pay requires mainnet)
 - [ ] Update Privy allowed domains if needed
-- [ ] Set `INITIAL_ADMIN` env var to your mainnet wallet address (separate from deployer)
+- [ ] Update The Graph subgraph URL to mainnet deployment
+
+### Security
 - [ ] Consider multi-sig (Gnosis Safe) as admin for added security
+- [ ] Audit relayer wallet permissions
+- [ ] Verify all admin addresses are correct before first transaction
 
 ## Decentralization Roadmap
 
