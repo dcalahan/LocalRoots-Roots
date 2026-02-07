@@ -208,6 +208,28 @@ export const disputeResolutionAbi = [
     outputs: [],
     stateMutability: 'nonpayable',
   },
+  // Voter whitelist functions
+  {
+    type: 'function',
+    name: 'whitelistedVoters',
+    inputs: [{ name: 'voter', type: 'address' }],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'addWhitelistedVoter',
+    inputs: [{ name: 'voter', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'removeWhitelistedVoter',
+    inputs: [{ name: 'voter', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
   // Events
   {
     type: 'event',

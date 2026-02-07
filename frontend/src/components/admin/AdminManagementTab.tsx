@@ -1,20 +1,87 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
 import { useAdminActions } from '@/hooks/useAdminActions';
+import { useGaslessTransaction } from '@/hooks/useGaslessTransaction';
 import { useAccount } from 'wagmi';
 import { isAddress, type Address } from 'viem';
+import { publicClient } from '@/lib/viemClient';
+import { DISPUTE_RESOLUTION_ADDRESS, disputeResolutionAbi } from '@/lib/contracts/disputeResolution';
 
 export function AdminManagementTab() {
   const { address } = useAccount();
   const { adminList, isLoading: loadingAdmins, refetch } = useAdminStatus();
   const { addAdmin, removeAdmin, isLoading: actionLoading, error } = useAdminActions();
+  const { executeGasless, isLoading: whitelistLoading } = useGaslessTransaction();
 
   const [newAdminAddress, setNewAdminAddress] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [removeModal, setRemoveModal] = useState<string | null>(null);
+
+  // Whitelist state
+  const [whitelistAddress, setWhitelistAddress] = useState('');
+  const [whitelistCheckAddress, setWhitelistCheckAddress] = useState('');
+  const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null);
+  const [whitelistError, setWhitelistError] = useState<string | null>(null);
+
+  const checkWhitelist = useCallback(async () => {
+    if (!isAddress(whitelistCheckAddress)) {
+      setWhitelistError('Invalid address');
+      return;
+    }
+    setWhitelistError(null);
+    try {
+      const result = await publicClient.readContract({
+        address: DISPUTE_RESOLUTION_ADDRESS,
+        abi: disputeResolutionAbi,
+        functionName: 'whitelistedVoters',
+        args: [whitelistCheckAddress as Address],
+      });
+      setIsWhitelisted(result as boolean);
+    } catch (err) {
+      setWhitelistError('Failed to check whitelist');
+    }
+  }, [whitelistCheckAddress]);
+
+  const handleAddToWhitelist = async () => {
+    if (!isAddress(whitelistAddress)) return;
+    setWhitelistError(null);
+    try {
+      const txHash = await executeGasless({
+        to: DISPUTE_RESOLUTION_ADDRESS,
+        abi: disputeResolutionAbi,
+        functionName: 'addWhitelistedVoter',
+        args: [whitelistAddress as Address],
+      });
+      if (txHash) {
+        setWhitelistAddress('');
+        setWhitelistError(null);
+      }
+    } catch (err) {
+      setWhitelistError(err instanceof Error ? err.message : 'Failed to add to whitelist');
+    }
+  };
+
+  const handleRemoveFromWhitelist = async () => {
+    if (!isAddress(whitelistAddress)) return;
+    setWhitelistError(null);
+    try {
+      const txHash = await executeGasless({
+        to: DISPUTE_RESOLUTION_ADDRESS,
+        abi: disputeResolutionAbi,
+        functionName: 'removeWhitelistedVoter',
+        args: [whitelistAddress as Address],
+      });
+      if (txHash) {
+        setWhitelistAddress('');
+        setWhitelistError(null);
+      }
+    } catch (err) {
+      setWhitelistError(err instanceof Error ? err.message : 'Failed to remove from whitelist');
+    }
+  };
 
   const handleAddAdmin = async () => {
     if (!isAddress(newAdminAddress)) {
@@ -129,6 +196,78 @@ export function AdminManagementTab() {
           <li>- Cancel fraudulent orders (refund buyer, clawback rewards)</li>
           <li>- View all marketplace data and activity</li>
         </ul>
+      </div>
+
+      {/* Voter Whitelist Section */}
+      <div className="mt-6 bg-gray-50 rounded-xl p-6">
+        <h3 className="font-medium mb-2">Voter Whitelist (Disputes &amp; Government Requests)</h3>
+        <p className="text-sm text-roots-gray mb-4">
+          Whitelisted voters can vote on disputes and government requests without needing an activated seller.
+          Use during early stage before enough qualified voters exist.
+        </p>
+
+        {/* Check if address is whitelisted */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">Check Whitelist Status</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={whitelistCheckAddress}
+              onChange={(e) => {
+                setWhitelistCheckAddress(e.target.value);
+                setIsWhitelisted(null);
+              }}
+              placeholder="0x..."
+              className="flex-1 p-2 border rounded-lg font-mono text-sm"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={checkWhitelist}
+              disabled={!whitelistCheckAddress}
+            >
+              Check
+            </Button>
+          </div>
+          {isWhitelisted !== null && (
+            <p className={`text-sm mt-2 ${isWhitelisted ? 'text-green-600' : 'text-roots-gray'}`}>
+              {isWhitelisted ? 'Address is whitelisted' : 'Address is NOT whitelisted'}
+            </p>
+          )}
+        </div>
+
+        {/* Add/Remove from whitelist */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Add/Remove Voter</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={whitelistAddress}
+              onChange={(e) => setWhitelistAddress(e.target.value)}
+              placeholder="0x..."
+              className="flex-1 p-2 border rounded-lg font-mono text-sm"
+            />
+            <Button
+              size="sm"
+              onClick={handleAddToWhitelist}
+              disabled={whitelistLoading || !isAddress(whitelistAddress)}
+            >
+              {whitelistLoading ? '...' : 'Add'}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleRemoveFromWhitelist}
+              disabled={whitelistLoading || !isAddress(whitelistAddress)}
+            >
+              {whitelistLoading ? '...' : 'Remove'}
+            </Button>
+          </div>
+        </div>
+
+        {whitelistError && (
+          <p className="text-sm text-red-600 mt-2">{whitelistError}</p>
+        )}
       </div>
 
       {error && (

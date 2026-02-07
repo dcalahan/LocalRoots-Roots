@@ -12,7 +12,7 @@ export function RegistrationsTab() {
   const [viewType, setViewType] = useState<RegistrationType>('sellers');
   const { sellers, isLoading: loadingSellers, refetch: refetchSellers } = useAdminSellers();
   const { ambassadors, isLoading: loadingAmbassadors, refetch: refetchAmbassadors } = useAdminAmbassadors();
-  const { suspendSeller, unsuspendSeller, suspendAmbassador, isLoading: actionLoading } = useAdminActions();
+  const { suspendSeller, unsuspendSeller, suspendAmbassador, unsuspendAmbassador, isLoading: actionLoading } = useAdminActions();
 
   const [suspendModal, setSuspendModal] = useState<{
     type: 'seller' | 'ambassador';
@@ -44,6 +44,13 @@ export function RegistrationsTab() {
     if (success) {
       setSuspendModal(null);
       setSuspendReason('');
+      refetchAmbassadors();
+    }
+  };
+
+  const handleUnsuspendAmbassador = async (ambassadorId: bigint) => {
+    const success = await unsuspendAmbassador(ambassadorId);
+    if (success) {
       refetchAmbassadors();
     }
   };
@@ -152,6 +159,7 @@ export function RegistrationsTab() {
                       key={ambassador.id.toString()}
                       ambassador={ambassador}
                       onSuspend={() => setSuspendModal({ type: 'ambassador', id: ambassador.id, name: `Ambassador #${ambassador.id}` })}
+                      onUnsuspend={() => handleUnsuspendAmbassador(ambassador.id)}
                       isLoading={actionLoading}
                     />
                   ))}
@@ -286,10 +294,12 @@ function SellerRow({
 function AmbassadorRow({
   ambassador,
   onSuspend,
+  onUnsuspend,
   isLoading,
 }: {
   ambassador: AmbassadorWithLocation;
   onSuspend: () => void;
+  onUnsuspend: () => void;
   isLoading: boolean;
 }) {
   const totalEarnedRoots = Number(ambassador.totalEarned) / 1e18;
@@ -332,18 +342,24 @@ function AmbassadorRow({
         {formatDistanceToNow(new Date(Number(ambassador.createdAt) * 1000), { addSuffix: true })}
       </td>
       <td className="py-4">
-        {!ambassador.suspended && (
+        {ambassador.suspended ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onUnsuspend}
+            disabled={isLoading}
+          >
+            Unsuspend
+          </Button>
+        ) : (
           <Button
             variant="destructive"
             size="sm"
             onClick={onSuspend}
-            disabled={isLoading || ambassador.suspended}
+            disabled={isLoading}
           >
             Suspend
           </Button>
-        )}
-        {ambassador.suspended && (
-          <span className="text-xs text-roots-gray">Contact owner</span>
         )}
       </td>
     </tr>

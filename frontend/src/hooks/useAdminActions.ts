@@ -15,6 +15,7 @@ interface AdminActionsResult {
   unsuspendSeller: (sellerId: bigint) => Promise<boolean>;
   // Ambassador actions
   suspendAmbassador: (ambassadorId: bigint, reason: string) => Promise<boolean>;
+  unsuspendAmbassador: (ambassadorId: bigint) => Promise<boolean>;
   // Order actions
   cancelOrder: (orderId: bigint, reason: string) => Promise<boolean>;
   // State
@@ -197,6 +198,39 @@ export function useAdminActions(): AdminActionsResult {
     [executeGasless]
   );
 
+  // Unsuspend an ambassador (requires contract with adminUnsuspendAmbassador)
+  const unsuspendAmbassador = useCallback(
+    async (ambassadorId: bigint): Promise<boolean> => {
+      setIsLoading(true);
+      setError(null);
+      setLastTxHash(null);
+
+      try {
+        const txHash = await executeGasless({
+          to: AMBASSADOR_REWARDS_ADDRESS,
+          abi: ambassadorAbi,
+          functionName: 'adminUnsuspendAmbassador',
+          args: [ambassadorId],
+        });
+
+        if (txHash) {
+          setLastTxHash(txHash);
+          console.log('[useAdminActions] Ambassador unsuspended:', ambassadorId.toString(), 'tx:', txHash);
+          return true;
+        }
+        return false;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to unsuspend ambassador';
+        setError(message);
+        console.error('[useAdminActions] unsuspendAmbassador error:', err);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [executeGasless]
+  );
+
   // Cancel an order (refunds buyer, claws back rewards)
   const cancelOrder = useCallback(
     async (orderId: bigint, reason: string): Promise<boolean> => {
@@ -237,6 +271,7 @@ export function useAdminActions(): AdminActionsResult {
     suspendSeller,
     unsuspendSeller,
     suspendAmbassador,
+    unsuspendAmbassador,
     cancelOrder,
     isLoading: isLoading || isGaslessLoading,
     error: error || gaslessError,
