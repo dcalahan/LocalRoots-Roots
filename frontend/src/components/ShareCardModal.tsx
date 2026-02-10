@@ -163,10 +163,10 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
           </button>
         </div>
 
-        {/* Card Preview */}
-        <div className="p-4">
+        {/* Card Preview - smaller to show share buttons */}
+        <div className="px-4 pt-2">
           {isGenerating ? (
-            <div className="aspect-[9/16] bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
               <div className="text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-roots-primary border-t-transparent rounded-full mx-auto mb-3" />
                 <p className="text-sm text-roots-gray">Generating card...</p>
@@ -176,91 +176,86 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
             <img
               src={cardImage}
               alt="Share card preview"
-              className="w-full rounded-lg shadow-sm"
+              className="w-full max-h-64 object-contain rounded-lg shadow-sm mx-auto"
             />
           ) : (
-            <div className="aspect-[9/16] bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
               <p className="text-sm text-roots-gray">Failed to generate card</p>
             </div>
           )}
         </div>
 
         {/* Share Buttons */}
-        <div className="px-4 pb-4 space-y-3">
-          {/* Primary share (native) */}
-          <Button
-            onClick={handleShare}
-            disabled={!cardImage}
-            className="w-full bg-roots-primary hover:bg-roots-primary/90 text-white"
-          >
-            Share
-          </Button>
-
-          {/* Save for social media - downloads image with instructions */}
-          <p className="text-xs text-roots-gray text-center mb-2">Save image, then post to:</p>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <button
-              onClick={handleSaveForInstagram}
-              disabled={!cardImage}
-              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <span className="text-xl">{'\u{1F4F7}'}</span>
-              <span className="text-xs text-roots-gray">Instagram</span>
-            </button>
-
-            <button
-              onClick={handleSaveForFacebook}
-              disabled={!cardImage}
-              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <span className="text-xl">{'\u{1F4F1}'}</span>
-              <span className="text-xs text-roots-gray">Facebook</span>
-            </button>
-
-            {showNextDoor && (
+        <div className="px-4 pb-4 pt-3">
+          {/* Prominent social share section */}
+          <div className="bg-roots-primary/10 border-2 border-roots-primary/30 rounded-xl p-4 mb-4">
+            <p className="text-sm font-semibold text-roots-primary text-center mb-3">
+              Save image & post to:
+            </p>
+            <div className={`grid gap-2 ${showNextDoor ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <button
-                onClick={handlePostToNextDoor}
-                className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                onClick={handleSaveForInstagram}
+                disabled={!cardImage}
+                className="flex flex-col items-center gap-1 p-3 rounded-lg bg-white border-2 border-roots-primary/20 hover:border-roots-primary hover:bg-roots-primary/5 transition-colors disabled:opacity-50"
               >
-                <span className="text-xl">{'\u{1F3E0}'}</span>
-                <span className="text-xs text-roots-gray">NextDoor</span>
+                <span className="text-2xl">{'\u{1F4F7}'}</span>
+                <span className="text-xs font-medium">Instagram</span>
               </button>
-            )}
+
+              <button
+                onClick={handleSaveForFacebook}
+                disabled={!cardImage}
+                className="flex flex-col items-center gap-1 p-3 rounded-lg bg-white border-2 border-roots-primary/20 hover:border-roots-primary hover:bg-roots-primary/5 transition-colors disabled:opacity-50"
+              >
+                <span className="text-2xl">{'\u{1F4F1}'}</span>
+                <span className="text-xs font-medium">Facebook</span>
+              </button>
+
+              {showNextDoor && (
+                <button
+                  onClick={handlePostToNextDoor}
+                  className="flex flex-col items-center gap-1 p-3 rounded-lg bg-white border-2 border-roots-primary/20 hover:border-roots-primary hover:bg-roots-primary/5 transition-colors"
+                >
+                  <span className="text-2xl">{'\u{1F3E0}'}</span>
+                  <span className="text-xs font-medium">NextDoor</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Text-based sharing */}
+          {/* Secondary options */}
           <p className="text-xs text-roots-gray text-center mb-2">Or share via:</p>
           <div className="grid grid-cols-4 gap-2">
             <button
               onClick={handleCopyLink}
-              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+              className="flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-gray-50 transition-colors"
             >
-              <span className="text-xl">{copiedLink ? '\u2705' : '\u{1F517}'}</span>
+              <span className="text-lg">{copiedLink ? '\u2705' : '\u{1F517}'}</span>
               <span className="text-xs text-roots-gray">{copiedLink ? 'Copied!' : 'Link'}</span>
             </button>
 
             <button
               onClick={handleSms}
-              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+              className="flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-gray-50 transition-colors"
             >
-              <span className="text-xl">{'\u{1F4AC}'}</span>
+              <span className="text-lg">{'\u{1F4AC}'}</span>
               <span className="text-xs text-roots-gray">SMS</span>
             </button>
 
             <button
               onClick={handleEmail}
-              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+              className="flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-gray-50 transition-colors"
             >
-              <span className="text-xl">{'\u2709\uFE0F'}</span>
+              <span className="text-lg">{'\u2709\uFE0F'}</span>
               <span className="text-xs text-roots-gray">Email</span>
             </button>
 
             <button
               onClick={handleDownload}
               disabled={!cardImage}
-              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              <span className="text-xl">{'\u2B07\uFE0F'}</span>
+              <span className="text-lg">{'\u2B07\uFE0F'}</span>
               <span className="text-xs text-roots-gray">Save</span>
             </button>
           </div>
