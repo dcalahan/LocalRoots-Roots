@@ -182,40 +182,63 @@ export async function generateRecruitSellerCard(data: RecruitSellersData): Promi
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext('2d')!;
 
-  drawGradientBackground(ctx);
-  drawBranding(ctx);
-
-  // Sprout emoji area
-  ctx.font = '180px system-ui, -apple-system, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('\u{1F331}', CARD_WIDTH / 2, 480);
-
-  // Ambassador name
+  // Cream background (matches app feel)
   ctx.fillStyle = ROOTS_CREAM;
-  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
-  ctx.textAlign = 'center';
-  const displayName = data.ambassadorName || 'A Local Roots Ambassador';
-  wrapText(ctx, displayName, CARD_WIDTH / 2, 620, CARD_WIDTH - 160, 64);
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  // Main message
-  ctx.font = '44px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  wrapText(ctx, "I'm helping neighbors sell homegrown produce", CARD_WIDTH / 2, 760, CARD_WIDTH - 160, 56);
+  // Coral accent bar at top
+  ctx.fillStyle = ROOTS_PRIMARY;
+  ctx.fillRect(0, 0, CARD_WIDTH, 200);
 
-  // Big question
-  ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
+  // LOCAL ROOTS branding in accent bar
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('Got a garden?', CARD_WIDTH / 2, 1050);
+  ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOCAL ROOTS', CARD_WIDTH / 2, 130);
 
-  // Sub-text
-  ctx.font = '38px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  wrapText(ctx, 'No fees. All local. Sell what you grow to your neighbors.', CARD_WIDTH / 2, 1160, CARD_WIDTH - 160, 50);
+  // Big produce emoji cluster
+  ctx.font = '140px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u{1F345}\u{1F33D}\u{1F966}', CARD_WIDTH / 2, 420);
 
-  // CTA pill
-  drawCtaPill(ctx, 'Start selling!', 1380);
+  // Main headline - mission focused
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = 'bold 72px system-ui, -apple-system, sans-serif';
+  wrapText(ctx, 'Help feed your neighbors', CARD_WIDTH / 2, 580, CARD_WIDTH - 120, 86);
 
-  drawDomainFooter(ctx);
+  // Sub-headline
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '48px system-ui, -apple-system, sans-serif';
+  wrapText(ctx, 'Sell your extra produce locally', CARD_WIDTH / 2, 780, CARD_WIDTH - 140, 60);
+
+  // Benefits section with teal accent
+  const benefitsY = 920;
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.font = 'bold 42px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u2713 No fees', CARD_WIDTH / 2, benefitsY);
+  ctx.fillText('\u2713 Takes 2 minutes', CARD_WIDTH / 2, benefitsY + 70);
+  ctx.fillText('\u2713 100% local', CARD_WIDTH / 2, benefitsY + 140);
+
+  // CTA button (coral)
+  const ctaY = 1280;
+  const ctaWidth = 500;
+  const ctaHeight = 100;
+  const ctaX = (CARD_WIDTH - ctaWidth) / 2;
+  ctx.fillStyle = ROOTS_PRIMARY;
+  ctx.beginPath();
+  ctx.roundRect(ctaX, ctaY, ctaWidth, ctaHeight, 50);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Start selling', CARD_WIDTH / 2, ctaY + 68);
+
+  // Footer
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '36px system-ui, -apple-system, sans-serif';
+  ctx.fillText('localroots.love', CARD_WIDTH / 2, CARD_HEIGHT - 100);
+
+  // Sprout icon next to domain
+  ctx.font = '44px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u{1F331}', CARD_WIDTH / 2, CARD_HEIGHT - 160);
 
   return canvas.toDataURL('image/png');
 }

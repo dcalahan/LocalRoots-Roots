@@ -9,9 +9,7 @@ import {
   downloadImage,
   copyToClipboard,
   getSmsShareUrl,
-  getFacebookShareUrl,
   getEmailShareUrl,
-  getNextDoorShareUrl,
   getCardShareUrl,
   getShareText,
   getEmailSubject,
@@ -108,24 +106,10 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     window.open(getSmsShareUrl(text), '_blank');
   };
 
-  const handleFacebook = () => {
-    window.open(getFacebookShareUrl(shareUrl), '_blank', 'width=600,height=400');
-  };
-
   const handleEmail = () => {
     const subject = getEmailSubject(data);
     const body = getShareText(data, 'email');
     window.location.href = getEmailShareUrl(subject, body);
-  };
-
-  const handleNextDoor = async () => {
-    const text = getShareText(data, 'nextdoor');
-    await copyToClipboard(text);
-    window.open(getNextDoorShareUrl(), '_blank');
-    toast({
-      title: 'Text copied!',
-      description: 'Paste it into your NextDoor post.',
-    });
   };
 
   const handleDownload = () => {
@@ -133,6 +117,36 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     const filename = `localroots-${data.type}-${Date.now()}.png`;
     downloadImage(cardImage, filename);
     toast({ title: 'Image downloaded!' });
+  };
+
+  const handleSaveForInstagram = () => {
+    if (!cardImage) return;
+    const filename = `localroots-${data.type}-${Date.now()}.png`;
+    downloadImage(cardImage, filename);
+    toast({
+      title: 'Saved!',
+      description: 'Open Instagram and share from your camera roll',
+    });
+  };
+
+  const handleSaveForFacebook = () => {
+    if (!cardImage) return;
+    const filename = `localroots-${data.type}-${Date.now()}.png`;
+    downloadImage(cardImage, filename);
+    toast({
+      title: 'Saved!',
+      description: 'Open Facebook and attach the image to your post',
+    });
+  };
+
+  const handlePostToNextDoor = async () => {
+    const text = getShareText(data, 'nextdoor');
+    await copyToClipboard(text);
+    window.open('https://nextdoor.com', '_blank');
+    toast({
+      title: 'Text copied!',
+      description: 'Create a post on NextDoor and paste your message',
+    });
   };
 
   return (
@@ -182,14 +196,47 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
             Share
           </Button>
 
-          {/* Channel grid */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* Save for social media - downloads image with instructions */}
+          <p className="text-xs text-roots-gray text-center mb-2">Save image, then post to:</p>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <button
+              onClick={handleSaveForInstagram}
+              disabled={!cardImage}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <span className="text-xl">{'\u{1F4F7}'}</span>
+              <span className="text-xs text-roots-gray">Instagram</span>
+            </button>
+
+            <button
+              onClick={handleSaveForFacebook}
+              disabled={!cardImage}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <span className="text-xl">{'\u{1F4F1}'}</span>
+              <span className="text-xs text-roots-gray">Facebook</span>
+            </button>
+
+            {showNextDoor && (
+              <button
+                onClick={handlePostToNextDoor}
+                className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+              >
+                <span className="text-xl">{'\u{1F3E0}'}</span>
+                <span className="text-xs text-roots-gray">NextDoor</span>
+              </button>
+            )}
+          </div>
+
+          {/* Text-based sharing */}
+          <p className="text-xs text-roots-gray text-center mb-2">Or share via:</p>
+          <div className="grid grid-cols-4 gap-2">
             <button
               onClick={handleCopyLink}
               className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
             >
               <span className="text-xl">{copiedLink ? '\u2705' : '\u{1F517}'}</span>
-              <span className="text-xs text-roots-gray">{copiedLink ? 'Copied!' : 'Copy Link'}</span>
+              <span className="text-xs text-roots-gray">{copiedLink ? 'Copied!' : 'Link'}</span>
             </button>
 
             <button
@@ -201,14 +248,6 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
             </button>
 
             <button
-              onClick={handleFacebook}
-              className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-xl">{'\u{1F310}'}</span>
-              <span className="text-xs text-roots-gray">Facebook</span>
-            </button>
-
-            <button
               onClick={handleEmail}
               className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
             >
@@ -216,23 +255,13 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
               <span className="text-xs text-roots-gray">Email</span>
             </button>
 
-            {showNextDoor && (
-              <button
-                onClick={handleNextDoor}
-                className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-              >
-                <span className="text-xl">{'\u{1F3E0}'}</span>
-                <span className="text-xs text-roots-gray">NextDoor</span>
-              </button>
-            )}
-
             <button
               onClick={handleDownload}
               disabled={!cardImage}
               className="flex flex-col items-center gap-1 p-3 rounded-lg border hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <span className="text-xl">{'\u2B07\uFE0F'}</span>
-              <span className="text-xs text-roots-gray">Download</span>
+              <span className="text-xs text-roots-gray">Save</span>
             </button>
           </div>
         </div>
