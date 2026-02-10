@@ -249,39 +249,75 @@ export async function generateRecruitAmbassadorCard(data: RecruitAmbassadorsData
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext('2d')!;
 
-  drawGradientBackground(ctx);
-  drawBranding(ctx);
-
-  // Star emoji
-  ctx.font = '180px system-ui, -apple-system, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('\u{2B50}', CARD_WIDTH / 2, 480);
-
-  // Ambassador name
+  // Cream background
   ctx.fillStyle = ROOTS_CREAM;
-  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
-  const displayName = data.ambassadorName || 'A Local Roots Ambassador';
-  wrapText(ctx, displayName, CARD_WIDTH / 2, 620, CARD_WIDTH - 160, 64);
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  // Main message
-  ctx.font = '44px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  wrapText(ctx, 'Help your neighbors grow and sell food', CARD_WIDTH / 2, 760, CARD_WIDTH - 160, 56);
+  // Teal accent bar at top
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.fillRect(0, 0, CARD_WIDTH, 200);
 
-  // Earn highlight
-  ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
+  // LOCAL ROOTS branding
   ctx.fillStyle = '#FFFFFF';
-  wrapText(ctx, 'Earn 25% from every sale in your network', CARD_WIDTH / 2, 960, CARD_WIDTH - 140, 70);
+  ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOCAL ROOTS', CARD_WIDTH / 2, 130);
 
-  // Sub-text
-  ctx.font = '38px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  wrapText(ctx, 'Support local food. Build community. Earn rewards.', CARD_WIDTH / 2, 1180, CARD_WIDTH - 160, 50);
+  // Star + hands emoji cluster
+  ctx.font = '120px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u{1F331}\u{1F91D}\u{1F331}', CARD_WIDTH / 2, 400);
 
-  // CTA pill
-  drawCtaPill(ctx, 'Become an Ambassador', 1380);
+  // Main headline
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = 'bold 68px system-ui, -apple-system, sans-serif';
+  wrapText(ctx, 'Help neighbors grow & sell food', CARD_WIDTH / 2, 540, CARD_WIDTH - 120, 82);
 
-  drawDomainFooter(ctx);
+  // Earn highlight box
+  const boxY = 720;
+  const boxWidth = CARD_WIDTH - 120;
+  const boxX = 60;
+  ctx.fillStyle = ROOTS_SECONDARY + '15'; // 15% opacity
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxWidth, 200, 20);
+  ctx.fill();
+  ctx.strokeStyle = ROOTS_SECONDARY;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Earn 25%', CARD_WIDTH / 2, boxY + 80);
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '40px system-ui, -apple-system, sans-serif';
+  ctx.fillText('from every sale in your network', CARD_WIDTH / 2, boxY + 150);
+
+  // Benefits
+  const benefitsY = 1000;
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = '40px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u2713 Support local food resilience', CARD_WIDTH / 2, benefitsY);
+  ctx.fillText('\u2713 Build your community', CARD_WIDTH / 2, benefitsY + 60);
+  ctx.fillText('\u2713 Earn while you help', CARD_WIDTH / 2, benefitsY + 120);
+
+  // CTA button
+  const ctaY = 1280;
+  const ctaWidth = 580;
+  const ctaHeight = 100;
+  const ctaX = (CARD_WIDTH - ctaWidth) / 2;
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.beginPath();
+  ctx.roundRect(ctaX, ctaY, ctaWidth, ctaHeight, 50);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 46px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Become an Ambassador', CARD_WIDTH / 2, ctaY + 68);
+
+  // Footer
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '36px system-ui, -apple-system, sans-serif';
+  ctx.fillText('localroots.love', CARD_WIDTH / 2, CARD_HEIGHT - 100);
+  ctx.font = '44px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u{1F331}', CARD_WIDTH / 2, CARD_HEIGHT - 160);
 
   return canvas.toDataURL('image/png');
 }
@@ -292,75 +328,108 @@ export async function generateSellerListingCard(data: SellerListingData): Promis
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext('2d')!;
 
-  drawGradientBackground(ctx);
-  drawBranding(ctx);
+  // Cream background
+  ctx.fillStyle = ROOTS_CREAM;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  // Produce image or emoji
+  // Teal accent bar at top (seller = teal theme)
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.fillRect(0, 0, CARD_WIDTH, 180);
+
+  // LOCAL ROOTS branding
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOCAL ROOTS', CARD_WIDTH / 2, 115);
+
+  // Produce image or emoji - larger, rounded rectangle
   let imageDrawn = false;
+  const imgSize = 420;
+  const imgX = (CARD_WIDTH - imgSize) / 2;
+  const imgY = 240;
+
   if (data.imageUrl) {
     const img = await loadImage(data.imageUrl);
     if (img) {
-      // Draw circular produce image
-      const imgSize = 360;
-      const imgX = (CARD_WIDTH - imgSize) / 2;
-      const imgY = 260;
       ctx.save();
       ctx.beginPath();
-      ctx.arc(imgX + imgSize / 2, imgY + imgSize / 2, imgSize / 2, 0, Math.PI * 2);
+      ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
       ctx.closePath();
       ctx.clip();
-      // Cover the circle with the image
       const aspect = img.width / img.height;
       let drawW = imgSize, drawH = imgSize;
       if (aspect > 1) { drawW = imgSize * aspect; } else { drawH = imgSize / aspect; }
       ctx.drawImage(img, imgX - (drawW - imgSize) / 2, imgY - (drawH - imgSize) / 2, drawW, drawH);
       ctx.restore();
-      // White border
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-      ctx.lineWidth = 6;
+      // Border
+      ctx.strokeStyle = ROOTS_SECONDARY;
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.arc(imgX + imgSize / 2, imgY + imgSize / 2, imgSize / 2, 0, Math.PI * 2);
+      ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
       ctx.stroke();
       imageDrawn = true;
     }
   }
 
   if (!imageDrawn) {
+    // Emoji fallback with background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
+    ctx.fill();
+    ctx.strokeStyle = ROOTS_SECONDARY;
+    ctx.lineWidth = 4;
+    ctx.stroke();
     const emoji = getProduceEmoji(data.produceName);
-    ctx.font = '200px system-ui, -apple-system, sans-serif';
+    ctx.font = '180px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(emoji, CARD_WIDTH / 2, 520);
+    ctx.fillText(emoji, CARD_WIDTH / 2, imgY + imgSize / 2 + 60);
   }
 
-  const textStartY = imageDrawn ? 720 : 680;
+  const textStartY = imgY + imgSize + 80;
 
-  // Produce name + price
-  ctx.fillStyle = '#FFFFFF';
+  // "Fresh from your neighbor"
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '40px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Fresh from your neighbor', CARD_WIDTH / 2, textStartY);
+
+  // Produce name
+  ctx.fillStyle = '#1a1a1a';
   ctx.font = 'bold 64px system-ui, -apple-system, sans-serif';
-  ctx.textAlign = 'center';
-  const nameY = wrapText(ctx, data.produceName, CARD_WIDTH / 2, textStartY, CARD_WIDTH - 160, 76);
+  const nameY = wrapText(ctx, data.produceName, CARD_WIDTH / 2, textStartY + 80, CARD_WIDTH - 140, 76);
 
-  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = ROOTS_CREAM;
-  ctx.fillText(data.price, CARD_WIDTH / 2, nameY + 80);
+  // Price badge
+  ctx.fillStyle = ROOTS_PRIMARY;
+  ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
+  ctx.fillText(data.price, CARD_WIDTH / 2, nameY + 90);
 
-  // Grown by
-  ctx.font = '42px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  const grownBy = `Grown by ${data.sellerName || 'a local gardener'}`;
-  ctx.fillText(grownBy, CARD_WIDTH / 2, nameY + 170);
+  // Seller name and location
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '38px system-ui, -apple-system, sans-serif';
+  const sellerText = `Grown by ${data.sellerName || 'a local gardener'}`;
+  ctx.fillText(sellerText, CARD_WIDTH / 2, nameY + 170);
 
-  // Neighborhood
   if (data.neighborhood) {
-    ctx.font = '38px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    ctx.fillText(`\u{1F4CD} ${data.neighborhood}`, CARD_WIDTH / 2, nameY + 240);
+    ctx.fillText(`\u{1F4CD} ${data.neighborhood}`, CARD_WIDTH / 2, nameY + 230);
   }
 
-  // CTA pill
-  drawCtaPill(ctx, 'Shop local!', 1380);
+  // CTA button
+  const ctaY = 1320;
+  const ctaWidth = 450;
+  const ctaHeight = 90;
+  const ctaX = (CARD_WIDTH - ctaWidth) / 2;
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.beginPath();
+  ctx.roundRect(ctaX, ctaY, ctaWidth, ctaHeight, 45);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 44px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Order now', CARD_WIDTH / 2, ctaY + 62);
 
-  drawDomainFooter(ctx);
+  // Footer
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '34px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u{1F331} localroots.love', CARD_WIDTH / 2, CARD_HEIGHT - 80);
 
   return canvas.toDataURL('image/png');
 }
@@ -371,20 +440,32 @@ export async function generateAmbassadorListingCard(data: AmbassadorListingData)
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext('2d')!;
 
-  drawGradientBackground(ctx);
-  drawBranding(ctx);
+  // Cream background
+  ctx.fillStyle = ROOTS_CREAM;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  // Produce image or emoji
+  // Coral accent bar at top (ambassador promoting = coral theme)
+  ctx.fillStyle = ROOTS_PRIMARY;
+  ctx.fillRect(0, 0, CARD_WIDTH, 180);
+
+  // LOCAL ROOTS branding
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOCAL ROOTS', CARD_WIDTH / 2, 115);
+
+  // Produce image or emoji - larger, rounded rectangle
   let imageDrawn = false;
+  const imgSize = 420;
+  const imgX = (CARD_WIDTH - imgSize) / 2;
+  const imgY = 240;
+
   if (data.imageUrl) {
     const img = await loadImage(data.imageUrl);
     if (img) {
-      const imgSize = 360;
-      const imgX = (CARD_WIDTH - imgSize) / 2;
-      const imgY = 260;
       ctx.save();
       ctx.beginPath();
-      ctx.arc(imgX + imgSize / 2, imgY + imgSize / 2, imgSize / 2, 0, Math.PI * 2);
+      ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
       ctx.closePath();
       ctx.clip();
       const aspect = img.width / img.height;
@@ -392,47 +473,73 @@ export async function generateAmbassadorListingCard(data: AmbassadorListingData)
       if (aspect > 1) { drawW = imgSize * aspect; } else { drawH = imgSize / aspect; }
       ctx.drawImage(img, imgX - (drawW - imgSize) / 2, imgY - (drawH - imgSize) / 2, drawW, drawH);
       ctx.restore();
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-      ctx.lineWidth = 6;
+      // Border
+      ctx.strokeStyle = ROOTS_PRIMARY;
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.arc(imgX + imgSize / 2, imgY + imgSize / 2, imgSize / 2, 0, Math.PI * 2);
+      ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
       ctx.stroke();
       imageDrawn = true;
     }
   }
 
   if (!imageDrawn) {
+    // Emoji fallback with background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
+    ctx.fill();
+    ctx.strokeStyle = ROOTS_PRIMARY;
+    ctx.lineWidth = 4;
+    ctx.stroke();
     const emoji = getProduceEmoji(data.produceName);
-    ctx.font = '200px system-ui, -apple-system, sans-serif';
+    ctx.font = '180px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(emoji, CARD_WIDTH / 2, 520);
+    ctx.fillText(emoji, CARD_WIDTH / 2, imgY + imgSize / 2 + 60);
   }
 
-  const textStartY = imageDrawn ? 720 : 680;
+  const textStartY = imgY + imgSize + 80;
 
-  // Fresh {produce} from my neighbor
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 56px system-ui, -apple-system, sans-serif';
-  ctx.textAlign = 'center';
-  const titleY = wrapText(ctx, `Fresh ${data.produceName} from my neighbor`, CARD_WIDTH / 2, textStartY, CARD_WIDTH - 140, 70);
+  // "My neighbor is selling"
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '40px system-ui, -apple-system, sans-serif';
+  ctx.fillText('My neighbor is selling', CARD_WIDTH / 2, textStartY);
+
+  // Produce name
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = 'bold 64px system-ui, -apple-system, sans-serif';
+  const nameY = wrapText(ctx, `Fresh ${data.produceName}`, CARD_WIDTH / 2, textStartY + 80, CARD_WIDTH - 140, 76);
 
   // Neighborhood
   if (data.neighborhood) {
-    ctx.font = '44px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillText(`in ${data.neighborhood}`, CARD_WIDTH / 2, titleY + 80);
+    ctx.fillStyle = ROOTS_GRAY;
+    ctx.font = '42px system-ui, -apple-system, sans-serif';
+    ctx.fillText(`\u{1F4CD} ${data.neighborhood}`, CARD_WIDTH / 2, nameY + 80);
   }
 
   // Support message
-  ctx.font = '42px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  const supportY = data.neighborhood ? titleY + 170 : titleY + 100;
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.font = 'bold 44px system-ui, -apple-system, sans-serif';
+  const supportY = data.neighborhood ? nameY + 170 : nameY + 100;
   ctx.fillText('Support local growers!', CARD_WIDTH / 2, supportY);
 
-  // CTA pill
-  drawCtaPill(ctx, 'Shop now!', 1380);
+  // CTA button
+  const ctaY = 1320;
+  const ctaWidth = 450;
+  const ctaHeight = 90;
+  const ctaX = (CARD_WIDTH - ctaWidth) / 2;
+  ctx.fillStyle = ROOTS_PRIMARY;
+  ctx.beginPath();
+  ctx.roundRect(ctaX, ctaY, ctaWidth, ctaHeight, 45);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 44px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Shop local', CARD_WIDTH / 2, ctaY + 62);
 
-  drawDomainFooter(ctx);
+  // Footer
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '34px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u{1F331} localroots.love', CARD_WIDTH / 2, CARD_HEIGHT - 80);
 
   return canvas.toDataURL('image/png');
 }
