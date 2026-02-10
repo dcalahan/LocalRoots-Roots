@@ -597,6 +597,24 @@ export const AMBASSADOR_REWARDS_ADDRESS: Address = (
 
 ## Growth Strategy & Virality (Future)
 
+### Ambassador Persona — Who Can Be an Ambassador?
+
+**Anyone, anywhere in the world.** Common patterns:
+
+| Pattern | Example | Key Challenge |
+|---------|---------|---------------|
+| **Remote Recruiters** | College students recruiting in hometown remotely, expats, digital nomads | Can't sit with gardeners in person |
+| **Local Recruiters** | Community members recruiting their neighbors | Building trust face-to-face |
+| **Crypto-Native Pioneers** | Found LocalRoots online, starting it fresh in their area | No existing network |
+
+**The ambassador tools and guides must work for ALL of these.** Don't assume ambassadors are local to their recruits.
+
+**What ambassadors need:**
+- Clear messaging about LocalRoots' mission (food resilience, not "crypto app")
+- Tactics for finding gardeners (online groups, community gardens, word of mouth)
+- Patience scripts for non-tech-savvy gardeners
+- Remote support tools (shareable cards, referral links, video call guidance)
+
 ### Target Market
 - **Community gardens** with hundreds of gardeners (e.g., Heritage Farm at Sea Pines)
 - **Older neighbors** who may not be crypto-native but are active gardeners

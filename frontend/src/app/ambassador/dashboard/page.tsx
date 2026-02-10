@@ -455,6 +455,49 @@ export default function AmbassadorDashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Quick Actions - Clickable Guide Links */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-4">
+              <Link href="/ambassador/guide/find-gardeners">
+                <div className="p-4 bg-roots-primary/5 rounded-lg hover:bg-roots-primary/10 transition cursor-pointer h-full">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="text-2xl">🌾</span> Find Local Gardeners
+                  </h4>
+                  <p className="text-sm text-roots-gray">
+                    Action plans for recruiting sellers — whether you're local or remote
+                  </p>
+                </div>
+              </Link>
+
+              <Link href="/ambassador/guide/help-register">
+                <div className="p-4 bg-roots-secondary/5 rounded-lg hover:bg-roots-secondary/10 transition cursor-pointer h-full">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="text-2xl">📱</span> Help Them Register
+                  </h4>
+                  <p className="text-sm text-roots-gray">
+                    Step-by-step guide to walking someone through seller signup
+                  </p>
+                </div>
+              </Link>
+
+              <Link href="/ambassador/guide/first-listing">
+                <div className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition cursor-pointer h-full">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <span className="text-2xl">📸</span> First Listing Support
+                  </h4>
+                  <p className="text-sm text-roots-gray">
+                    Help farmers create listings that sell — photos, pricing, tips
+                  </p>
+                </div>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Ambassador Tier Progress Card */}
         <AmbassadorTierCard
           recruitedSellers={Number(ambassador?.recruitedSellers || 0n)}
@@ -730,52 +773,6 @@ export default function AmbassadorDashboardPage() {
                   </p>
                 </div>
               </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="p-4 bg-roots-primary/5 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <span>🌾</span> Find Local Gardeners
-                </h4>
-                <p className="text-sm text-roots-gray mb-3">
-                  Look for neighbors with gardens, or check Nextdoor for "extra produce" posts.
-                </p>
-                <p className="text-xs text-roots-primary font-medium">
-                  Tip: Farmers markets are great places to find growers!
-                </p>
-              </div>
-
-              <div className="p-4 bg-roots-secondary/5 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <span>📱</span> Help Them Register
-                </h4>
-                <p className="text-sm text-roots-gray mb-3">
-                  Walk them through wallet setup and seller registration. Use your farmer referral link!
-                </p>
-                <p className="text-xs text-roots-secondary font-medium">
-                  Tip: Be patient - many farmers are new to crypto.
-                </p>
-              </div>
-
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <span>📸</span> First Listing Support
-                </h4>
-                <p className="text-sm text-roots-gray mb-3">
-                  Help them create their first listing. Good photos = more sales!
-                </p>
-                <p className="text-xs text-green-700 font-medium">
-                  Tip: Fresh produce photos in natural light work best.
-                </p>
-              </div>
             </div>
           </CardContent>
         </Card>

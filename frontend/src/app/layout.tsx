@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { TestnetBanner } from '@/components/layout/TestnetBanner';
 import './globals.css';
 
@@ -27,11 +28,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="min-h-screen flex flex-col">
         <Providers>
           <TestnetBanner />
           <Header />
-          {children}
+          <main className="flex-1">{children}</main>
+          <Footer />
           <Toaster />
         </Providers>
       </body>
