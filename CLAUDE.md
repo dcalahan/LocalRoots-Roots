@@ -617,23 +617,38 @@ Don't assume ambassadors are local to the gardeners they recruit. They might be:
 
 **4 shareable card types** (canvas-generated 1080x1920 PNG, Instagram Stories format):
 
-| Card | Used By | Trigger | URL |
-|------|---------|---------|-----|
-| 1. Recruit Sellers | Ambassadors | After registration (auto-popup) + dashboard | `/sell/register?ref={id}` |
-| 2. Recruit Ambassadors | Ambassadors / Founder | Dashboard | `/ambassador/register?ref={id}` |
-| 3. Seller Listing | Sellers | After listing creation + dashboard | `/buy` |
-| 4. Ambassador Promotes Listing | Ambassadors | Dashboard per-order | `/buy` |
+| Card | Theme | Headline | CTA | URL |
+|------|-------|----------|-----|-----|
+| Recruit Sellers | Coral | "Help feed your neighbors" | "Start selling" | `/sell/register?ref={id}` |
+| Recruit Ambassadors | Teal | "Earn 25%" highlight box | "Become an Ambassador" | `/ambassador/register?ref={id}` |
+| Seller Listing | Teal | "Fresh from your neighbor" + price | "Order now" | `/buy` |
+| Ambassador Listing | Coral | "My neighbor is selling" | "Shop local" | `/buy` |
+
+**Card Design (consistent across all types):**
+- Cream background (`#F5F0EE`) matching app style
+- Brand color accent bar at top (coral or teal)
+- Rounded rectangle produce images (24px radius)
+- Clear typography hierarchy
+- Colored CTA buttons (not white pills)
+- Sprout emoji + `localroots.love` footer
 
 **Key Files:**
 - `frontend/src/lib/shareCards.ts` — Canvas engine + share utilities + pre-written text
 - `frontend/src/components/ShareCardModal.tsx` — Reusable modal (preview, channel buttons, loading)
-- `frontend/src/lib/geohashLocation.ts` — `reverseGeocodeWithNeighborhood()` for Cards 3 & 4
+- `frontend/src/lib/geohashLocation.ts` — `reverseGeocodeWithNeighborhood()` for listing cards
 
-**Share Channels:** Native share (mobile), Copy Link, SMS, Facebook, Email, NextDoor (Cards 1/3/4 only), Download Image
+**Share Channels (two tiers):**
 
-**NextDoor UX:** No API exists. Flow: copy text to clipboard → open `nextdoor.com/post/` in new tab → toast instruction to paste.
+| Tier | Channels | Behavior |
+|------|----------|----------|
+| Image-based | Instagram, Facebook, NextDoor | Downloads image + toast with instructions |
+| Text-based | Copy Link, SMS, Email, Save | Opens share intent or copies link |
 
-**Neighborhood Resolution:** `reverseGeocodeWithNeighborhood()` uses Nominatim `zoom=18` → extracts `neighbourhood` → `suburb` → `city_district` → `city`. Separate cache from city-level `reverseGeocode()`. Display: "Haynes Manor, Atlanta" or fallback "Atlanta, GA".
+**Platform Notes:**
+- Instagram/Facebook have no web share API for images — must download and post manually
+- NextDoor has no create-post URL — opens `nextdoor.com` + copies text to clipboard
+- SMS/Email use `sms:` and `mailto:` links (text only, no image attachment)
+- Native Share button uses Web Share API with file (works on mobile)
 
 **Data Sources:**
 - Seller name: `useSellerProfile().profile.metadata.name`
@@ -652,11 +667,21 @@ Don't assume ambassadors are local to the gardeners they recruit. They might be:
 ### Ambassador Sharing Tools — Future
 - [ ] Printable flyers/QR codes for farmers markets, community boards
 
-### Ambassador Onboarding Tools
-- [ ] Step-by-step guide for recruiting non-tech-savvy neighbors
-- [ ] Video tutorials for common tasks (registering, listing, buying)
-- [ ] FAQ section addressing concerns (what is crypto? is it safe?)
-- [ ] "Invite a neighbor" flow optimized for simplicity
+### Ambassador Onboarding Tools (Implemented)
+
+**Guide pages** at `/ambassador/guide/*`:
+
+| Route | Purpose |
+|-------|---------|
+| `/ambassador/guide/find-gardeners` | Comprehensive guide: vision, inspire new growers, connect existing, how to reach people |
+| `/ambassador/guide/help-register` | Step-by-step registration walkthrough, tips, common issues |
+| `/ambassador/guide/first-listing` | Listing creation guide, photo tips, pricing advice |
+
+**Quick Actions** on dashboard link to these guides. All guides include share card integration.
+
+**Still needed:**
+- [ ] Video tutorials for common tasks
+- [ ] FAQ section addressing crypto concerns
 
 ### Community Garden Partnerships
 - Strategy: Recruit entire gardens as seller communities
