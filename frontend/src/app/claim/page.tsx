@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAirdropClaim, formatSeedsForDisplay, formatRootsForDisplay } from '@/hooks/useAirdropClaim';
-import { UnifiedWalletButton } from '@/components/header/UnifiedWalletButton';
+import { UnifiedWalletButton } from '@/components/UnifiedWalletButton';
 import { ExternalLink, Check, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 

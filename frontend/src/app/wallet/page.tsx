@@ -5,7 +5,7 @@ import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WalletDashboard } from '@/components/wallet/WalletDashboard';
-import { UnifiedWalletButton } from '@/components/header/UnifiedWalletButton';
+import { UnifiedWalletButton } from '@/components/UnifiedWalletButton';
 import { Wallet } from 'lucide-react';
 
 export default function WalletPage() {
