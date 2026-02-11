@@ -3,7 +3,7 @@
  * Calculates planting schedules based on growing profile and crop data
  */
 
-import cropGrowingData from '../../../data/crop-growing-data.json';
+import cropGrowingData from '@/data/crop-growing-data.json';
 import { GrowingProfile, calculatePlantingDate } from './growingZones';
 
 // Types

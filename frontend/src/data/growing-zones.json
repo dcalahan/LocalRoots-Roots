@@ -1,0 +1,349 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-01-01",
+  "description": "USDA Hardiness Zones and frost date data for growing calendar calculations",
+
+  "zoneData": {
+    "1a": { "lastSpringFrost": "06-15", "firstFallFrost": "07-15", "growingSeasonDays": 30 },
+    "1b": { "lastSpringFrost": "06-10", "firstFallFrost": "07-20", "growingSeasonDays": 40 },
+    "2a": { "lastSpringFrost": "06-01", "firstFallFrost": "08-01", "growingSeasonDays": 60 },
+    "2b": { "lastSpringFrost": "05-25", "firstFallFrost": "08-10", "growingSeasonDays": 75 },
+    "3a": { "lastSpringFrost": "05-15", "firstFallFrost": "09-01", "growingSeasonDays": 100 },
+    "3b": { "lastSpringFrost": "05-10", "firstFallFrost": "09-10", "growingSeasonDays": 120 },
+    "4a": { "lastSpringFrost": "05-01", "firstFallFrost": "09-20", "growingSeasonDays": 140 },
+    "4b": { "lastSpringFrost": "04-25", "firstFallFrost": "09-25", "growingSeasonDays": 150 },
+    "5a": { "lastSpringFrost": "04-15", "firstFallFrost": "10-05", "growingSeasonDays": 170 },
+    "5b": { "lastSpringFrost": "04-10", "firstFallFrost": "10-10", "growingSeasonDays": 180 },
+    "6a": { "lastSpringFrost": "04-01", "firstFallFrost": "10-15", "growingSeasonDays": 195 },
+    "6b": { "lastSpringFrost": "03-25", "firstFallFrost": "10-20", "growingSeasonDays": 205 },
+    "7a": { "lastSpringFrost": "03-15", "firstFallFrost": "10-25", "growingSeasonDays": 220 },
+    "7b": { "lastSpringFrost": "03-10", "firstFallFrost": "11-01", "growingSeasonDays": 235 },
+    "8a": { "lastSpringFrost": "03-01", "firstFallFrost": "11-10", "growingSeasonDays": 250 },
+    "8b": { "lastSpringFrost": "02-20", "firstFallFrost": "11-15", "growingSeasonDays": 265 },
+    "9a": { "lastSpringFrost": "02-10", "firstFallFrost": "11-25", "growingSeasonDays": 285 },
+    "9b": { "lastSpringFrost": "02-01", "firstFallFrost": "12-05", "growingSeasonDays": 305 },
+    "10a": { "lastSpringFrost": "01-20", "firstFallFrost": "12-15", "growingSeasonDays": 325 },
+    "10b": { "lastSpringFrost": "01-10", "firstFallFrost": "12-20", "growingSeasonDays": 340 },
+    "11a": { "lastSpringFrost": null, "firstFallFrost": null, "growingSeasonDays": 365, "frostFree": true },
+    "11b": { "lastSpringFrost": null, "firstFallFrost": null, "growingSeasonDays": 365, "frostFree": true },
+    "12a": { "lastSpringFrost": null, "firstFallFrost": null, "growingSeasonDays": 365, "frostFree": true },
+    "12b": { "lastSpringFrost": null, "firstFallFrost": null, "growingSeasonDays": 365, "frostFree": true },
+    "13a": { "lastSpringFrost": null, "firstFallFrost": null, "growingSeasonDays": 365, "frostFree": true },
+    "13b": { "lastSpringFrost": null, "firstFallFrost": null, "growingSeasonDays": 365, "frostFree": true }
+  },
+
+  "usCanadaZones": {
+    "c20": { "zone": "3a", "region": "Alaska Interior" },
+    "c21": { "zone": "3b", "region": "Alaska" },
+    "c22": { "zone": "4a", "region": "Alaska Southeast" },
+    "c23": { "zone": "5a", "region": "British Columbia Coast" },
+    "c2d": { "zone": "4b", "region": "Alberta South" },
+    "c2e": { "zone": "3a", "region": "Saskatchewan" },
+    "c2f": { "zone": "3a", "region": "Manitoba" },
+    "c2g": { "zone": "4a", "region": "Ontario North" },
+    "c2h": { "zone": "5b", "region": "Ontario South" },
+    "c2j": { "zone": "5a", "region": "Quebec South" },
+    "c2k": { "zone": "4b", "region": "Quebec North" },
+    "c2m": { "zone": "5b", "region": "New Brunswick" },
+    "c2n": { "zone": "6a", "region": "Nova Scotia" },
+    "c2p": { "zone": "5b", "region": "Newfoundland" },
+
+    "9q8": { "zone": "10a", "region": "San Francisco Bay Area" },
+    "9q9": { "zone": "10b", "region": "Oakland/Berkeley" },
+    "9qa": { "zone": "9b", "region": "Sacramento" },
+    "9qb": { "zone": "9a", "region": "Central Valley" },
+    "9qc": { "zone": "9b", "region": "Fresno" },
+    "9qd": { "zone": "10a", "region": "Monterey" },
+    "9qe": { "zone": "10b", "region": "Santa Cruz" },
+    "9qf": { "zone": "9b", "region": "San Jose South" },
+    "9qg": { "zone": "10a", "region": "San Jose" },
+    "9qh": { "zone": "9a", "region": "Modesto" },
+    "9qj": { "zone": "8b", "region": "Sierra Foothills" },
+    "9qk": { "zone": "7b", "region": "Sierra Nevada" },
+    "9qm": { "zone": "9b", "region": "Bakersfield" },
+    "9qn": { "zone": "10a", "region": "Ventura" },
+    "9qp": { "zone": "10b", "region": "Los Angeles" },
+    "9qr": { "zone": "10b", "region": "Orange County" },
+    "9qs": { "zone": "10a", "region": "San Diego North" },
+    "9qt": { "zone": "10b", "region": "San Diego" },
+    "9qu": { "zone": "11a", "region": "Imperial Valley" },
+    "9qv": { "zone": "9b", "region": "Palm Springs" },
+    "9qw": { "zone": "9a", "region": "Riverside" },
+    "9qx": { "zone": "10a", "region": "San Bernardino" },
+    "9qy": { "zone": "10a", "region": "LA Metro" },
+    "9qz": { "zone": "10b", "region": "Long Beach" },
+
+    "9r0": { "zone": "6b", "region": "Reno" },
+    "9r1": { "zone": "6a", "region": "Lake Tahoe" },
+    "9r2": { "zone": "7a", "region": "Carson City" },
+    "9r3": { "zone": "7b", "region": "Las Vegas North" },
+    "9r4": { "zone": "8b", "region": "Las Vegas" },
+    "9r5": { "zone": "9a", "region": "Las Vegas South" },
+    "9r6": { "zone": "9b", "region": "Mojave" },
+    "9r7": { "zone": "8a", "region": "Death Valley" },
+    "9r8": { "zone": "9a", "region": "Phoenix North" },
+    "9r9": { "zone": "9b", "region": "Phoenix" },
+    "9ra": { "zone": "10a", "region": "Phoenix South" },
+    "9rb": { "zone": "10b", "region": "Tucson" },
+    "9rc": { "zone": "9a", "region": "Flagstaff Area" },
+    "9rd": { "zone": "7a", "region": "Flagstaff" },
+
+    "9tb": { "zone": "7a", "region": "Albuquerque" },
+    "9tc": { "zone": "7b", "region": "Santa Fe" },
+    "9td": { "zone": "6b", "region": "Taos" },
+    "9te": { "zone": "8a", "region": "El Paso" },
+    "9tf": { "zone": "8b", "region": "Las Cruces" },
+
+    "9v0": { "zone": "5b", "region": "Denver" },
+    "9v1": { "zone": "5a", "region": "Boulder" },
+    "9v2": { "zone": "4b", "region": "Fort Collins" },
+    "9v3": { "zone": "5a", "region": "Colorado Springs" },
+    "9v4": { "zone": "6a", "region": "Pueblo" },
+    "9v5": { "zone": "5b", "region": "Grand Junction" },
+
+    "9x0": { "zone": "6b", "region": "Salt Lake City" },
+    "9x1": { "zone": "6a", "region": "Ogden" },
+    "9x2": { "zone": "5b", "region": "Park City" },
+    "9x3": { "zone": "7a", "region": "St George" },
+    "9x4": { "zone": "6b", "region": "Provo" },
+
+    "9y0": { "zone": "5a", "region": "Boise" },
+    "9y1": { "zone": "6b", "region": "Twin Falls" },
+    "9y2": { "zone": "5b", "region": "Idaho Falls" },
+    "9y3": { "zone": "4b", "region": "Pocatello" },
+
+    "9z0": { "zone": "5b", "region": "Missoula" },
+    "9z1": { "zone": "4b", "region": "Great Falls" },
+    "9z2": { "zone": "4a", "region": "Billings" },
+    "9z3": { "zone": "3b", "region": "Helena" },
+
+    "c20": { "zone": "8b", "region": "Seattle" },
+    "c21": { "zone": "8a", "region": "Tacoma" },
+    "c22": { "zone": "8b", "region": "Portland" },
+    "c23": { "zone": "9a", "region": "Eugene" },
+    "c24": { "zone": "8a", "region": "Spokane" },
+    "c25": { "zone": "7b", "region": "Yakima" },
+
+    "dn0": { "zone": "5b", "region": "Omaha" },
+    "dn1": { "zone": "5a", "region": "Lincoln" },
+    "dn2": { "zone": "5b", "region": "Kansas City" },
+    "dn3": { "zone": "6a", "region": "Wichita" },
+    "dn4": { "zone": "6b", "region": "Oklahoma City" },
+    "dn5": { "zone": "7a", "region": "Tulsa" },
+
+    "dp0": { "zone": "5a", "region": "Minneapolis" },
+    "dp1": { "zone": "4b", "region": "St Paul" },
+    "dp2": { "zone": "4a", "region": "Duluth" },
+    "dp3": { "zone": "5a", "region": "Rochester MN" },
+    "dp4": { "zone": "4b", "region": "Fargo" },
+    "dp5": { "zone": "4a", "region": "Sioux Falls" },
+
+    "dq0": { "zone": "5b", "region": "Des Moines" },
+    "dq1": { "zone": "5a", "region": "Cedar Rapids" },
+    "dq2": { "zone": "5b", "region": "Davenport" },
+
+    "dp6": { "zone": "5a", "region": "Madison WI" },
+    "dp7": { "zone": "5b", "region": "Milwaukee" },
+    "dp8": { "zone": "5a", "region": "Green Bay" },
+
+    "dpc": { "zone": "5b", "region": "Chicago" },
+    "dpd": { "zone": "5a", "region": "Aurora IL" },
+    "dpe": { "zone": "5b", "region": "Rockford" },
+    "dpf": { "zone": "6a", "region": "Springfield IL" },
+    "dpg": { "zone": "6b", "region": "St Louis" },
+
+    "dph": { "zone": "5b", "region": "Indianapolis" },
+    "dpi": { "zone": "6a", "region": "Louisville" },
+    "dpj": { "zone": "6a", "region": "Cincinnati" },
+    "dpk": { "zone": "6a", "region": "Columbus OH" },
+    "dpm": { "zone": "6a", "region": "Cleveland" },
+    "dpn": { "zone": "5b", "region": "Detroit" },
+
+    "dpp": { "zone": "5b", "region": "Pittsburgh" },
+    "dpq": { "zone": "6b", "region": "Philadelphia" },
+    "dpr": { "zone": "7a", "region": "Baltimore" },
+    "dps": { "zone": "7a", "region": "Washington DC" },
+    "dpt": { "zone": "7b", "region": "Richmond VA" },
+    "dpu": { "zone": "7a", "region": "Norfolk VA" },
+
+    "dq3": { "zone": "7a", "region": "Raleigh" },
+    "dq4": { "zone": "7b", "region": "Charlotte" },
+    "dq5": { "zone": "8a", "region": "Columbia SC" },
+    "dq6": { "zone": "8a", "region": "Charleston SC" },
+    "dq7": { "zone": "8b", "region": "Savannah" },
+    "dq8": { "zone": "8b", "region": "Jacksonville" },
+    "dq9": { "zone": "9a", "region": "Orlando" },
+    "dqa": { "zone": "9b", "region": "Tampa" },
+    "dqb": { "zone": "10a", "region": "Fort Myers" },
+    "dqc": { "zone": "10b", "region": "Miami" },
+    "dqd": { "zone": "11a", "region": "Key West" },
+
+    "dqe": { "zone": "8b", "region": "New Orleans" },
+    "dqf": { "zone": "8a", "region": "Baton Rouge" },
+    "dqg": { "zone": "8b", "region": "Houston" },
+    "dqh": { "zone": "8a", "region": "San Antonio" },
+    "dqi": { "zone": "8b", "region": "Austin" },
+    "dqj": { "zone": "7b", "region": "Dallas" },
+    "dqk": { "zone": "7a", "region": "Fort Worth" },
+
+    "dqm": { "zone": "7a", "region": "Nashville" },
+    "dqn": { "zone": "7b", "region": "Knoxville" },
+    "dqp": { "zone": "7a", "region": "Memphis" },
+    "dqq": { "zone": "7b", "region": "Atlanta" },
+    "dqr": { "zone": "8a", "region": "Birmingham" },
+    "dqs": { "zone": "8a", "region": "Montgomery" },
+    "dqt": { "zone": "8b", "region": "Mobile" },
+
+    "dr0": { "zone": "6a", "region": "Buffalo" },
+    "dr1": { "zone": "5b", "region": "Rochester NY" },
+    "dr2": { "zone": "5b", "region": "Syracuse" },
+    "dr3": { "zone": "5a", "region": "Albany" },
+    "dr4": { "zone": "7a", "region": "New York City" },
+    "dr5": { "zone": "6b", "region": "Hartford" },
+    "dr6": { "zone": "6b", "region": "Boston" },
+    "dr7": { "zone": "5b", "region": "Portland ME" },
+    "dr8": { "zone": "5a", "region": "Burlington VT" },
+    "dr9": { "zone": "4b", "region": "Montpelier" },
+    "dra": { "zone": "6a", "region": "Providence" },
+    "drb": { "zone": "7a", "region": "Long Island" }
+  },
+
+  "latitudeZones": [
+    {
+      "minLat": 60,
+      "maxLat": 90,
+      "defaultZone": "1a",
+      "description": "Arctic/Subarctic"
+    },
+    {
+      "minLat": 55,
+      "maxLat": 60,
+      "defaultZone": "2b",
+      "description": "Northern Canada/Alaska"
+    },
+    {
+      "minLat": 50,
+      "maxLat": 55,
+      "defaultZone": "4a",
+      "description": "Southern Canada"
+    },
+    {
+      "minLat": 45,
+      "maxLat": 50,
+      "defaultZone": "5a",
+      "description": "Northern US/Southern Canada"
+    },
+    {
+      "minLat": 40,
+      "maxLat": 45,
+      "defaultZone": "6a",
+      "description": "Northern US"
+    },
+    {
+      "minLat": 35,
+      "maxLat": 40,
+      "defaultZone": "7a",
+      "description": "Central US"
+    },
+    {
+      "minLat": 30,
+      "maxLat": 35,
+      "defaultZone": "8a",
+      "description": "Southern US"
+    },
+    {
+      "minLat": 25,
+      "maxLat": 30,
+      "defaultZone": "9b",
+      "description": "Gulf Coast/Florida"
+    },
+    {
+      "minLat": 23.5,
+      "maxLat": 25,
+      "defaultZone": "10b",
+      "description": "Subtropical"
+    },
+    {
+      "minLat": -23.5,
+      "maxLat": 23.5,
+      "defaultZone": "13a",
+      "description": "Tropical",
+      "isTropical": true
+    },
+    {
+      "minLat": -35,
+      "maxLat": -23.5,
+      "defaultZone": "9a",
+      "description": "Southern Subtropical"
+    },
+    {
+      "minLat": -45,
+      "maxLat": -35,
+      "defaultZone": "8a",
+      "description": "Southern Temperate"
+    },
+    {
+      "minLat": -55,
+      "maxLat": -45,
+      "defaultZone": "6a",
+      "description": "Southern Cool Temperate"
+    },
+    {
+      "minLat": -90,
+      "maxLat": -55,
+      "defaultZone": "3a",
+      "description": "Antarctic/Subantarctic"
+    }
+  ],
+
+  "tropicalSeasons": {
+    "northernTropics": {
+      "minLat": 0,
+      "maxLat": 23.5,
+      "wetSeasonStart": 5,
+      "wetSeasonEnd": 10,
+      "drySeasonStart": 11,
+      "drySeasonEnd": 4,
+      "description": "Northern tropics (wet May-Oct)"
+    },
+    "southernTropics": {
+      "minLat": -23.5,
+      "maxLat": 0,
+      "wetSeasonStart": 11,
+      "wetSeasonEnd": 4,
+      "drySeasonStart": 5,
+      "drySeasonEnd": 10,
+      "description": "Southern tropics (wet Nov-Apr)"
+    }
+  },
+
+  "internationalZones": {
+    "UK": {
+      "zones": ["7a", "7b", "8a", "8b", "9a"],
+      "defaultZone": "8a",
+      "frostDates": { "lastSpringFrost": "04-15", "firstFallFrost": "10-15" }
+    },
+    "Germany": {
+      "zones": ["6a", "6b", "7a", "7b"],
+      "defaultZone": "7a",
+      "frostDates": { "lastSpringFrost": "04-20", "firstFallFrost": "10-10" }
+    },
+    "France": {
+      "zones": ["7a", "7b", "8a", "8b", "9a"],
+      "defaultZone": "8a",
+      "frostDates": { "lastSpringFrost": "04-10", "firstFallFrost": "10-20" }
+    },
+    "Australia": {
+      "zones": ["8a", "9a", "10a", "11a", "12a"],
+      "defaultZone": "9b",
+      "frostDates": { "lastSpringFrost": "09-15", "firstFallFrost": "05-15" },
+      "southernHemisphere": true
+    },
+    "NewZealand": {
+      "zones": ["8a", "9a", "10a"],
+      "defaultZone": "9a",
+      "frostDates": { "lastSpringFrost": "10-01", "firstFallFrost": "05-01" },
+      "southernHemisphere": true
+    }
+  }
+}

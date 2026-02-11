@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TechniqueGuideCard, GardenAIChat } from '@/components/grow';
-import guidesData from '../../../../../data/technique-guides.json';
+import guidesData from '@/data/technique-guides.json';
 
 interface Guide {
   title: string;

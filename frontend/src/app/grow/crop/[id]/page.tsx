@@ -14,7 +14,7 @@ import {
   getOptimalPlantingWindow,
   formatAction,
 } from '@/lib/plantingCalendar';
-import produceData from '../../../../../../data/produce-seeds.json';
+import produceData from '@/data/produce-seeds.json';
 
 function CropDetailContent() {
   const params = useParams();

@@ -26,7 +26,7 @@ import { ShareCardModal } from '@/components/ShareCardModal';
 import type { ShareCardData } from '@/lib/shareCards';
 import { GrowingProfileProvider } from '@/contexts/GrowingProfileContext';
 import { GrowingProfileCard, MonthlyCalendar, TechniqueGuideCard } from '@/components/grow';
-import guidesData from '../../../../../data/technique-guides.json';
+import guidesData from '@/data/technique-guides.json';
 import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
 // Helper to convert base64 data URL to File

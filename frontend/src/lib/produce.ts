@@ -1,4 +1,4 @@
-import produceData from '@/../../data/produce-seeds.json';
+import produceData from '@/data/produce-seeds.json';
 
 export interface ProduceItem {
   id: string;

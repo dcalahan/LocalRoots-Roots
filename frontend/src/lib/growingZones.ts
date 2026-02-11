@@ -3,7 +3,7 @@
  * Determines hardiness zones and frost dates from location data
  */
 
-import growingZonesData from '../../../data/growing-zones.json';
+import growingZonesData from '@/data/growing-zones.json';
 import { decodeGeohash, encodeGeohash } from './geohashLocation';
 
 // Types

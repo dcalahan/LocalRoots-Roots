@@ -2,7 +2,7 @@
 
 import { PlantingEvent, PlantingAction, formatAction } from '@/lib/plantingCalendar';
 import { CropCard } from './CropCard';
-import produceData from '../../../../data/produce-seeds.json';
+import produceData from '@/data/produce-seeds.json';
 
 interface PlantingCategoryListProps {
   title: string;
