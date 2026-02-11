@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAccount, useDisconnect } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
@@ -135,9 +136,12 @@ export function UnifiedWalletButton() {
 
     return (
       <div className="flex items-center gap-1 md:gap-2">
-        <span className="text-xs md:text-sm text-roots-gray hidden sm:inline">
+        <Link
+          href="/wallet"
+          className="text-xs md:text-sm text-roots-gray hover:text-roots-primary hidden sm:inline transition-colors"
+        >
           {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
-        </span>
+        </Link>
         <Button
           variant="outline"
           size="sm"

@@ -40,11 +40,9 @@ export function Header() {
   const ordersHref = pathname.startsWith('/buy') ? '/buy/orders' : '/orders';
 
   const navLinks = [
-    { href: '/buy', label: 'Shop' },
-    { href: ordersHref, label: 'Orders' },
-    { href: '/wallet', label: 'Wallet' },
-    { href: '/sell', label: 'Sell' },
     { href: '/grow', label: 'Grow' },
+    { href: '/buy', label: 'Shop' },
+    { href: '/sell', label: 'Sell' },
     { href: '/ambassador', label: 'Ambassadors' },
     { href: '/about/vision', label: 'About' },
   ];
