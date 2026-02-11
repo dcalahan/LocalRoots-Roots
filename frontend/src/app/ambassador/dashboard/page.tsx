@@ -20,6 +20,7 @@ import { MultiplierBadge } from '@/components/seeds/MultiplierBadge';
 import { AmbassadorTierCard, AmbassadorTierBadge } from '@/components/seeds/AmbassadorTierBadge';
 import { getMultiplierInfo, AMBASSADOR_RECRUITMENT_BONUS, AMBASSADOR_COMMISSION_PERCENT } from '@/components/seeds/PhaseConfig';
 import { RecruitedFarmersWidget } from '@/components/ambassador/RecruitedFarmersWidget';
+import { PaymentStatusCard } from '@/components/ambassador/PaymentStatusCard';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import { useGovernanceStats } from '@/hooks/useGovernanceStats';
 import type { ShareCardData } from '@/lib/shareCards';
@@ -497,6 +498,13 @@ export default function AmbassadorDashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Payment Status Card - TEMPORARY until $ROOTS launch */}
+        <PaymentStatusCard
+          ambassadorId={ambassadorId}
+          profile={profile}
+          onProfileUpdate={refetch}
+        />
 
         {/* Ambassador Tier Progress Card */}
         <AmbassadorTierCard

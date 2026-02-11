@@ -293,4 +293,27 @@ export interface AmbassadorProfile {
   email?: string;
   imageUrl?: string;
   createdAt: string;
+  // Payment preferences (TEMPORARY - until $ROOTS launch)
+  paymentMethod?: 'venmo' | 'paypal' | 'zelle';
+  paymentHandle?: string; // @username for Venmo, email for PayPal/Zelle
+}
+
+// Payment record (stored in Vercel KV) - TEMPORARY until $ROOTS launch
+export interface PaymentRecord {
+  id: string;                   // payment:{ambassadorId}:{timestamp}
+  ambassadorId: string;
+  amount: number;               // USD cents
+  method: 'venmo' | 'paypal' | 'zelle';
+  transactionId?: string;       // Venmo transaction ID, etc.
+  note?: string;                // "January 2026 commission"
+  paidAt: number;               // Unix timestamp (seconds)
+  paidBy: string;               // Admin wallet address
+}
+
+// Payment summary (stored in Vercel KV) - TEMPORARY until $ROOTS launch
+export interface PaymentSummary {
+  ambassadorId: string;
+  totalPaid: number;            // USD cents - sum of payment records
+  lastPaidAt?: number;          // Most recent payment timestamp
+  lastPaymentAmount?: number;   // Most recent payment amount in cents
 }

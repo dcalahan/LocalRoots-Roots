@@ -12,6 +12,7 @@ import { OrdersTab } from '@/components/admin/OrdersTab';
 import { AdminManagementTab } from '@/components/admin/AdminManagementTab';
 import { OperationsTab } from '@/components/admin/operations';
 import { DisputesTab } from '@/components/admin/DisputesTab';
+import { AmbassadorPaymentsTab } from '@/components/admin/AmbassadorPaymentsTab';
 
 interface ActivityEvent {
   type: 'seller_registered' | 'listing_created' | 'order_placed' | 'order_status' | 'funds_released';
@@ -21,7 +22,7 @@ interface ActivityEvent {
   details: Record<string, string | number>;
 }
 
-type Tab = 'activity' | 'registrations' | 'orders' | 'disputes' | 'admins' | 'operations';
+type Tab = 'activity' | 'registrations' | 'orders' | 'disputes' | 'payments' | 'admins' | 'operations';
 
 export default function AdminDashboard() {
   const { isAdmin, isLoading: checkingAdmin, isConnected, address } = useAdminStatus();
@@ -245,6 +246,7 @@ export default function AdminDashboard() {
           { id: 'registrations', label: 'Registrations' },
           { id: 'orders', label: 'Orders' },
           { id: 'disputes', label: 'Disputes' },
+          { id: 'payments', label: 'Ambassador Payments' },
           { id: 'admins', label: 'Admin Management' },
           { id: 'operations', label: 'Operations Treasury' },
         ] as { id: Tab; label: string }[]).map((tab) => (
@@ -334,6 +336,7 @@ export default function AdminDashboard() {
           {activeTab === 'registrations' && <RegistrationsTab />}
           {activeTab === 'orders' && <OrdersTab />}
           {activeTab === 'disputes' && <DisputesTab />}
+          {activeTab === 'payments' && <AmbassadorPaymentsTab />}
           {activeTab === 'admins' && <AdminManagementTab />}
           {activeTab === 'operations' && <OperationsTab />}
         </CardContent>

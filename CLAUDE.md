@@ -126,26 +126,39 @@ Both sellers and ambassadors use Privy embedded wallets with gasless meta-transa
 
 ## Ambassador Compensation (Pre-Launch)
 
-Ambassadors receive **two forms of compensation**:
+**CRITICAL: Cash payments are TEMPORARY.** Once $ROOTS token launches, ambassadors are paid ONLY in $ROOTS tokens automatically on-chain. All cash payment tracking code will be deleted.
 
-| Reward | Amount | Paid Via | Timing |
-|--------|--------|----------|--------|
-| **USDC Commission** | 25% of sale value | Operations Treasury (Gnosis Safe) | Now |
-| **Seeds** | 25% of sale value | On-chain events (indexed by subgraph) | Converts to $ROOTS at launch |
+Ambassadors receive **two forms of compensation** during pre-launch:
+
+| Reward | Amount | Paid Via | Timing | Status |
+|--------|--------|----------|--------|--------|
+| **Cash Commission** | 25% of sale value | Venmo / PayPal / Zelle (manual) | Now | TEMPORARY |
+| **Seeds** | 25% of sale value | On-chain events (automatic) | Converts to $ROOTS at launch | Permanent |
 
 **How it works:**
-- When a recruited seller makes a sale, the ambassador chain earns 25% as USDC commission
-- The same 25% is ALSO recorded as Seeds on-chain
-- USDC is paid manually via Operations Treasury; Seeds are automatic
+- When a recruited seller makes a sale, the ambassador chain earns 25% as cash commission
+- The same 25% is ALSO recorded as Seeds on-chain (automatic)
+- Cash is paid manually via Venmo/PayPal/Zelle - founder tracks and pays directly
 - 80/20 split up the chain: recruiter keeps 80%, passes 20% to upline
 
-**USDC Payment Process (Operations Treasury):**
-1. Review ambassador activity in admin dashboard (Registrations tab)
-2. Calculate 25% commission owed based on sales volume
-3. Pay USDC via Gnosis Safe in Operations Treasury tab
-4. Document payment in treasury records
+**Cash Payment Tracking System (TEMPORARY):**
+- Uses Vercel KV for simple key-value storage (easy to tear down)
+- Ambassador sets payment preferences in their profile (stored in IPFS)
+- Admin sees all ambassadors and balances in Admin Dashboard → Ambassador Payments tab
+- Admin manually marks payments as sent after paying via Venmo/PayPal/Zelle
 
-**Why both?** Ambassadors get real money now (USDC) plus equity upside (Seeds → $ROOTS). This rewards early ambassadors who are taking a risk on an unproven platform.
+**Key Files (DELETE at $ROOTS launch):**
+- `frontend/src/app/api/payments/route.ts` - Payment CRUD API
+- `frontend/src/hooks/useAmbassadorPayments.ts` - Fetch payment records
+- `frontend/src/hooks/useRecordPayment.ts` - Admin record payment
+- `frontend/src/components/ambassador/PaymentStatusCard.tsx` - Ambassador dashboard
+- `frontend/src/components/ambassador/PaymentPreferencesModal.tsx` - Set Venmo/PayPal/Zelle
+- `frontend/src/components/admin/AmbassadorPaymentsTab.tsx` - Admin payment management
+- `frontend/src/components/admin/MarkPaidModal.tsx` - Record payment modal
+
+**Why cash instead of crypto?** Target ambassadors (college students, non-crypto-native people) use Venmo, not crypto wallets. Meet them where they are.
+
+**Why both cash and Seeds?** Ambassadors get real money now (cash) plus equity upside (Seeds → $ROOTS). This rewards early ambassadors who are taking a risk on an unproven platform.
 
 ## Orders Architecture
 
