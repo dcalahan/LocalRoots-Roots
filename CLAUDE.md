@@ -376,6 +376,7 @@ npm run test:e2e:state        # Order state machine edge cases
 npm run test:e2e:suspension   # Admin seller suspension
 npm run test:e2e:listing      # Listing deactivation
 npm run test:e2e:payment      # Payment token configuration
+npm run test:e2e:payments     # Ambassador cash payments (TEMPORARY)
 
 # Full suite (lifecycle + activation + dispute)
 npm run test:e2e:full
@@ -384,7 +385,7 @@ npm run test:e2e:full
 npm run test:e2e:settle
 ```
 
-**Test suite summary (85 total tests):**
+**Test suite summary (98 total tests):**
 
 | Test File | Tests | Purpose |
 |-----------|-------|---------|
@@ -395,6 +396,7 @@ npm run test:e2e:settle
 | suspension.test.ts | 15 | Admin suspend/unsuspend seller |
 | listing.test.ts | 9 | Seller deactivate/reactivate listing |
 | payment-tokens.test.ts | 8 | Phase 2 ROOTS payment, stablecoin requirements |
+| payments.test.ts | 13 | Ambassador cash payment tracking (TEMPORARY) |
 | settlement.test.ts | varies | Claim funds after 48h dispute window |
 
 **Key files:**
