@@ -849,3 +849,24 @@ Deployed Feb 7 2026 (with voter whitelist):
 
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only
 - **DNS propagation:** After domain changes, can take up to 48 hours for full propagation
+- **Seller earnings page uses mock data:** FIXED (Feb 2026) - Now uses real data from `useSellerOrders()`
+
+## Seeds vs ROOTS Tokens - CRITICAL DISTINCTION
+
+**During pre-launch (NOW):** Sellers and ambassadors earn **Seeds**, NOT $ROOTS tokens.
+
+- Seeds are on-chain events tracked in the subgraph
+- Seeds convert to $ROOTS tokens at a fixed ratio when the token launches
+- The UI should say "Seeds" everywhere, NOT "ROOTS" or "$ROOTS"
+
+**At $ROOTS launch (FUTURE):** Seeds become $ROOTS tokens via airdrop. After launch, participants earn $ROOTS directly.
+
+**Correct terminology:**
+| Context | Pre-Launch (NOW) | Post-Launch |
+|---------|------------------|-------------|
+| What sellers earn | Seeds | $ROOTS |
+| What ambassadors earn | Seeds + cash | $ROOTS |
+| Dashboard label | "Seeds earned" | "$ROOTS earned" |
+| Balance label | "Seeds balance" | "$ROOTS balance" |
+
+**Terminology fixed (Feb 2026):** Both `/sell/dashboard/page.tsx` and `/sell/earnings/page.tsx` now correctly use "Seeds" terminology.

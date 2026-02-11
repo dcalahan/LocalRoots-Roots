@@ -636,7 +636,7 @@ export default function SellerDashboard() {
                   {isLoadingOrders ? '...' : (
                     <>
                       {formatFiat(rootsToFiat(BigInt(Math.floor(totalEarnings * 1e18))))}
-                      <span className="block text-sm font-normal text-roots-gray">{formatRoots(BigInt(Math.floor(totalEarnings * 1e18)))} ROOTS</span>
+                      <span className="block text-sm font-normal text-roots-gray">{formatRoots(BigInt(Math.floor(totalEarnings * 1e18)))} Seeds</span>
                     </>
                   )}
                 </p>
@@ -758,7 +758,7 @@ export default function SellerDashboard() {
                               <span className="font-semibold text-roots-primary">{formatPrice(listing.pricePerUnit).fiat}</span>
                               <span className="text-roots-gray"> / {listing.metadata?.unit || 'unit'}</span>
                             </p>
-                            <p className="text-xs text-roots-gray">{formatPrice(listing.pricePerUnit).roots} ROOTS</p>
+                            <p className="text-xs text-roots-gray">{formatPrice(listing.pricePerUnit).roots} Seeds</p>
                             <p className={`text-xs ${listing.quantityAvailable > 5 ? 'text-green-600' : listing.quantityAvailable > 0 ? 'text-amber-600' : 'text-red-600'}`}>
                               {listing.quantityAvailable} available
                             </p>
@@ -903,7 +903,7 @@ export default function SellerDashboard() {
                                 </p>
                               </div>
                               <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
-                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} ROOTS</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} Seeds</p>
                             </div>
                             {/* Delivery address */}
                             {order.isDelivery && order.deliveryInfo && (
@@ -968,7 +968,7 @@ export default function SellerDashboard() {
                               </div>
                               <div className="text-right">
                                 <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
-                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} ROOTS</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} Seeds</p>
                                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                   order.status === OrderStatus.ReadyForPickup
                                     ? 'bg-yellow-100 text-yellow-700'
@@ -1048,7 +1048,7 @@ export default function SellerDashboard() {
                             </td>
                             <td className="py-3 text-right">
                               <div className="font-medium">{formatPrice(order.totalPrice).fiat}</div>
-                              <div className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} ROOTS</div>
+                              <div className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} Seeds</div>
                             </td>
                           </tr>
                         ))}
