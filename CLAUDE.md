@@ -870,3 +870,137 @@ Deployed Feb 7 2026 (with voter whitelist):
 | Balance label | "Seeds balance" | "$ROOTS balance" |
 
 **Terminology fixed (Feb 2026):** Both `/sell/dashboard/page.tsx` and `/sell/earnings/page.tsx` now correctly use "Seeds" terminology.
+
+## $ROOTS Token Launch — Distribution & Wallet
+
+### Token Distribution Strategy
+
+Two distribution methods based on wallet type:
+
+| User Type | Wallet Type | Distribution Method | User Action |
+|-----------|-------------|---------------------|-------------|
+| Sellers | Privy (email) | Auto-distribute | None — see balance on login |
+| Ambassadors | Privy (email) | Auto-distribute | None — see balance on login |
+| Credit Card Buyers | Privy (email) | Auto-distribute | None — see balance on login |
+| Crypto Buyers | External (MetaMask, etc.) | Merkle claim | Go to `/claim`, connect wallet, claim |
+
+**Why two methods?**
+- Privy users: We have their wallet addresses, can batch-transfer directly
+- External users: No direct access, need Merkle proof for trustless claims
+
+### Distribution Scripts
+
+**Directory:** `scripts/distribution/`
+
+| Script | Purpose |
+|--------|---------|
+| `fetchPrivyUsers.ts` | Query Privy Management API for all Privy wallet addresses |
+| `calculateAllocations.ts` | Calculate ROOTS from Seeds snapshot (subgraph query) |
+| `batchTransfer.ts` | Execute batch ROOTS transfers to Privy wallets |
+
+**Execution flow:**
+1. Snapshot Seeds from subgraph → all earners with balances
+2. Query Privy API → get all Privy-created wallet addresses
+3. Separate: Privy wallets vs External wallets
+4. Privy users → Batch transfer ROOTS directly (50 per tx)
+5. External users → Generate Merkle tree for `/claim` page
+
+**Environment variables (server-side only):**
+```bash
+PRIVY_API_SECRET=xxx          # Privy Management API (never expose publicly)
+DEPLOYER_PRIVATE_KEY=xxx      # For batch transfers from treasury
+```
+
+### Wallet Page
+
+**Route:** `/wallet`
+
+Unified wallet dashboard for all users (Privy and external).
+
+**Layout:**
+```
+┌─────────────────────────────────────────┐
+│            Your Wallet                   │
+├─────────────────────────────────────────┤
+│ TOKEN BALANCES                           │
+│  🔸 ROOTS    12,450.00    $124.50       │
+│  💵 USDC        150.00    $150.00       │
+│  💵 USDT         25.00     $25.00       │
+│  ⚡ ETH          0.0234    $87.50       │
+├─────────────────────────────────────────┤
+│ RECEIVE        │  SEND                   │
+│ [QR Code]      │  [Select Token ▼]      │
+│ 0x40b9...cF99  │  Recipient: [______]   │
+│ [📋 Copy]      │  Amount: [___] [MAX]   │
+│                │  [Send ROOTS]           │
+├─────────────────────────────────────────┤
+│ SWAP (Coming Soon)                       │
+│ Swap ROOTS ↔ USDC on Aerodrome          │
+└─────────────────────────────────────────┘
+```
+
+**Components:**
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `WalletDashboard` | `components/wallet/WalletDashboard.tsx` | Main container |
+| `SendTokenModal` | `components/wallet/SendTokenModal.tsx` | Modal for sending tokens |
+| `ReceiveTokenSection` | `components/wallet/ReceiveTokenSection.tsx` | Address + QR code |
+| `SwapWidget` | `components/wallet/SwapWidget.tsx` | Swap UI (post-launch) |
+
+**Hooks:**
+
+| Hook | File | Purpose |
+|------|------|---------|
+| `useWalletBalances` | `hooks/useWalletBalances.ts` | Fetch ROOTS, USDC, USDT, ETH balances |
+| `useSendToken` | `hooks/useSendToken.ts` | Execute ERC20/ETH transfers |
+| `useAerodromeSwap` | `hooks/useAerodromeSwap.ts` | Swap via Aerodrome (post-launch) |
+
+### Aerodrome DEX Integration
+
+**Choice:** Aerodrome — native Base DEX with largest TVL, ve(3,3) model for liquidity incentives.
+
+**Contract:** `frontend/src/lib/contracts/aerodrome.ts`
+```typescript
+// Aerodrome Router on Base Mainnet
+export const AERODROME_ROUTER_ADDRESS = '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43';
+```
+
+**Swap flow:**
+1. User selects ROOTS → USDC (or vice versa)
+2. `getAmountsOut()` → show estimated output
+3. User confirms with slippage tolerance
+4. `approve()` ROOTS to Aerodrome router (if needed)
+5. `swapExactTokensForTokens()` → execute swap
+6. Show success with new balances
+
+**Environment variable:**
+```bash
+NEXT_PUBLIC_AERODROME_ROUTER_ADDRESS=0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43
+```
+
+### Phase Transition Infrastructure (Already Completed)
+
+The following v1 infrastructure is already implemented:
+
+- `usePhase` hook for phase detection (Phase 1 = Seeds, Phase 2 = ROOTS)
+- Phase-aware labels in dashboard/earnings pages
+- `/claim` page for Merkle-based airdrop
+- `useAirdropClaim` hook
+- `seedsAirdrop.ts` contract library
+- Phase transition E2E tests
+- Airdrop E2E tests
+- `DeployPhase2.s.sol` deployment scripts
+- `GenerateMerkleTree.ts` script
+
+### Key Files for Token Launch
+
+| Purpose | File Path |
+|---------|-----------|
+| Subgraph queries | `frontend/src/hooks/useSeeds.ts` |
+| ERC20 operations | `frontend/src/hooks/useTokenApproval.ts` |
+| Balance display | `frontend/src/components/FundsAvailable.tsx` |
+| Privy wallet signing | `frontend/src/hooks/useGaslessTransaction.ts` |
+| Merkle tree generation | `contracts/script/GenerateMerkleTree.ts` |
+| Phase detection | `frontend/src/hooks/usePhase.ts` |
+| Airdrop claims | `frontend/src/hooks/useAirdropClaim.ts` |

@@ -2,9 +2,14 @@
  * GenerateMerkleTree.ts
  *
  * Generates a Merkle tree from Seeds balances snapshot for the Phase 2 airdrop.
+ * Only includes EXTERNAL wallet users - Privy users receive direct transfers.
  *
  * Usage:
  *   npx ts-node script/GenerateMerkleTree.ts
+ *
+ * Prerequisites:
+ *   Run scripts/distribution/fetchPrivyUsers.ts first to generate privy-wallets.json
+ *   (Optional - if not found, all users will be included in Merkle tree)
  *
  * Environment Variables:
  *   SUBGRAPH_URL - The Graph subgraph URL for Seeds data
@@ -41,6 +46,37 @@ interface ClaimEntry {
   seedsEarned: string;
   rootsAmount: string;
   proof: `0x${string}`[];
+}
+
+/**
+ * Load Privy wallet addresses to exclude from Merkle tree
+ * These users receive direct transfers instead of Merkle claims
+ */
+function loadPrivyWallets(): Set<string> {
+  // Try multiple possible locations for the privy wallets file
+  const possiblePaths = [
+    path.join(__dirname, '../../distribution-data/privy-wallets.json'),
+    path.join(__dirname, '../distribution-data/privy-wallets.json'),
+    path.join(__dirname, '../../scripts/distribution-data/privy-wallets.json'),
+  ];
+
+  for (const walletsPath of possiblePaths) {
+    if (fs.existsSync(walletsPath)) {
+      try {
+        const wallets: string[] = JSON.parse(fs.readFileSync(walletsPath, 'utf-8'));
+        console.log(`Loaded ${wallets.length} Privy wallets to exclude from Merkle tree`);
+        console.log(`  Source: ${walletsPath}`);
+        // Normalize to lowercase
+        return new Set(wallets.map((w) => w.toLowerCase()));
+      } catch (error) {
+        console.warn(`Warning: Could not parse ${walletsPath}:`, error);
+      }
+    }
+  }
+
+  console.log('Note: privy-wallets.json not found. All users will be included in Merkle tree.');
+  console.log('  Run scripts/distribution/fetchPrivyUsers.ts first to separate Privy users.');
+  return new Set();
 }
 
 /**
@@ -216,18 +252,36 @@ function createLeaf(address: string, amount: bigint): `0x${string}` {
 async function main() {
   console.log('=== Seeds Airdrop Merkle Tree Generator ===\n');
 
-  // 1. Fetch Seeds balances
-  const balances = await fetchSeedsBalances();
+  // 1. Load Privy wallets to exclude
+  const privyWallets = loadPrivyWallets();
 
-  if (balances.length === 0) {
+  // 2. Fetch Seeds balances
+  const allBalances = await fetchSeedsBalances();
+
+  if (allBalances.length === 0) {
     console.error('No Seeds balances found!');
     process.exit(1);
   }
 
-  // 2. Calculate ROOTS amounts
+  // 3. Filter out Privy users (they get direct transfers, not Merkle claims)
+  const balances = allBalances.filter((b) => !privyWallets.has(b.user.toLowerCase()));
+  const excludedCount = allBalances.length - balances.length;
+
+  console.log(`\nFiltering results:`);
+  console.log(`  Total earners: ${allBalances.length}`);
+  console.log(`  Privy users excluded: ${excludedCount}`);
+  console.log(`  External users for Merkle tree: ${balances.length}`);
+
+  if (balances.length === 0) {
+    console.log('\nNo external users to include in Merkle tree.');
+    console.log('All users are Privy users and will receive direct transfers.');
+    process.exit(0);
+  }
+
+  // 4. Calculate ROOTS amounts (only for external users)
   const amounts = calculateRootsAmounts(balances, AIRDROP_ROOTS_AMOUNT);
 
-  // 3. Build Merkle tree
+  // 5. Build Merkle tree
   console.log('\nBuilding Merkle tree...');
   const leaves: `0x${string}`[] = [];
   const leafToEntry = new Map<string, { address: string; seeds: bigint; roots: bigint }>();
@@ -244,7 +298,7 @@ async function main() {
   console.log(`  Merkle root: ${merkleRoot}`);
   console.log(`  Total eligible addresses: ${leaves.length}`);
 
-  // 4. Generate proofs for all addresses
+  // 6. Generate proofs for all addresses
   console.log('\nGenerating proofs...');
   const proofs: Record<string, ClaimEntry> = {};
 
@@ -258,7 +312,7 @@ async function main() {
     };
   }
 
-  // 5. Save outputs
+  // 7. Save outputs
   const outputDir = path.join(__dirname, '../airdrop-data');
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
@@ -281,6 +335,12 @@ async function main() {
   // Snapshot (for verification)
   const snapshot = {
     timestamp: new Date().toISOString(),
+    note: 'Merkle tree for EXTERNAL wallets only. Privy users receive direct transfers.',
+    filtering: {
+      totalEarnersFromSubgraph: allBalances.length,
+      privyUsersExcluded: excludedCount,
+      externalUsersIncluded: balances.length,
+    },
     totalSeeds: balances.reduce((sum, b) => BigInt(sum) + BigInt(b.total), 0n).toString(),
     totalRoots: AIRDROP_ROOTS_AMOUNT.toString(),
     eligibleAddresses: leaves.length,

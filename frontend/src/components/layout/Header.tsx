@@ -42,6 +42,7 @@ export function Header() {
   const navLinks = [
     { href: '/buy', label: 'Shop' },
     { href: ordersHref, label: 'Orders' },
+    { href: '/wallet', label: 'Wallet' },
     { href: '/sell', label: 'Sell' },
     { href: '/grow', label: 'Grow' },
     { href: '/ambassador', label: 'Ambassadors' },
