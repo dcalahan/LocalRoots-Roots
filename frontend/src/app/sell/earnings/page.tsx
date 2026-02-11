@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useSellerOrders, OrderStatus } from '@/hooks/useSellerOrders';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
+import { usePhase } from '@/hooks/usePhase';
+import { getRewardLabel } from '@/components/seeds/PhaseConfig';
 import { rootsToFiat, formatFiat, formatRoots } from '@/lib/pricing';
 import Link from 'next/link';
 
@@ -12,6 +14,8 @@ export default function EarningsPage() {
   const router = useRouter();
   const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
   const { orders, isLoading: isLoadingOrders } = useSellerOrders();
+  const { isPhase2 } = usePhase();
+  const rewardLabel = getRewardLabel(isPhase2);
 
   // Calculate earnings from real order data
   const completedOrders = orders.filter(o => o.status === OrderStatus.Completed);
@@ -79,7 +83,7 @@ export default function EarningsPage() {
               Back to Dashboard
             </button>
             <h1 className="font-heading text-3xl font-bold">Your Earnings</h1>
-            <p className="text-roots-gray">Track your sales and Seeds rewards</p>
+            <p className="text-roots-gray">Track your sales and {rewardLabel} rewards</p>
           </div>
 
           {/* Summary Cards */}
@@ -102,58 +106,60 @@ export default function EarningsPage() {
               </CardContent>
             </Card>
 
-            {/* Seeds Balance */}
+            {/* Rewards Balance */}
             <Card className="border-roots-secondary/20 bg-roots-secondary/5">
               <CardContent className="pt-6">
-                <p className="text-sm text-roots-gray mb-1">Seeds Earned</p>
+                <p className="text-sm text-roots-gray mb-1">{rewardLabel} Earned</p>
                 <p className="text-3xl font-heading font-bold text-roots-secondary">
                   {isLoadingOrders ? '...' : formatRoots(totalSeeds)}
-                  <span className="text-lg ml-1">Seeds</span>
+                  <span className="text-lg ml-1">{rewardLabel}</span>
                 </p>
                 <p className="text-sm text-roots-gray mt-1">
-                  Converts to $ROOTS at token launch
+                  {isPhase2 ? 'Direct token rewards' : 'Converts to $ROOTS at token launch'}
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Seeds Info */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="font-heading flex items-center gap-2">
-                <div className="w-8 h-8 bg-roots-secondary rounded-full flex items-center justify-center">
-                  <span className="text-white text-lg">🌱</span>
-                </div>
-                What are Seeds?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-roots-gray mb-4">
-                Seeds are loyalty points you earn with every sale. When LocalRoots launches the $ROOTS token,
-                your Seeds will convert to real $ROOTS tokens at a fixed rate.
-              </p>
-              <ul className="space-y-2 text-roots-gray">
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span><strong>Earn automatically</strong> - Seeds are recorded on-chain with every sale</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span><strong>Early adopter bonus</strong> - Early sellers get more Seeds per dollar earned</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span><strong>Convert to $ROOTS</strong> - At token launch, claim your $ROOTS airdrop</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+          {/* Rewards Info - different content for Phase 1 vs Phase 2 */}
+          {!isPhase2 && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="font-heading flex items-center gap-2">
+                  <div className="w-8 h-8 bg-roots-secondary rounded-full flex items-center justify-center">
+                    <span className="text-white text-lg">🌱</span>
+                  </div>
+                  What are Seeds?
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-roots-gray mb-4">
+                  Seeds are loyalty points you earn with every sale. When LocalRoots launches the $ROOTS token,
+                  your Seeds will convert to real $ROOTS tokens at a fixed rate.
+                </p>
+                <ul className="space-y-2 text-roots-gray">
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span><strong>Earn automatically</strong> - Seeds are recorded on-chain with every sale</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span><strong>Early adopter bonus</strong> - Early sellers get more Seeds per dollar earned</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span><strong>Convert to $ROOTS</strong> - At token launch, claim your $ROOTS airdrop</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Recent Sales */}
           <Card>
@@ -183,7 +189,7 @@ export default function EarningsPage() {
                         <th className="pb-3 font-medium text-roots-gray">Item</th>
                         <th className="pb-3 font-medium text-roots-gray text-right">Qty</th>
                         <th className="pb-3 font-medium text-roots-gray text-right">Earned</th>
-                        <th className="pb-3 font-medium text-roots-gray text-right">Seeds</th>
+                        <th className="pb-3 font-medium text-roots-gray text-right">{rewardLabel}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -225,9 +231,11 @@ export default function EarningsPage() {
             <p>
               Payments are received directly to your wallet when orders are completed.
             </p>
-            <p className="mt-1">
-              Seeds are tracked on-chain and will be converted to $ROOTS at token launch.
-            </p>
+            {!isPhase2 && (
+              <p className="mt-1">
+                Seeds are tracked on-chain and will be converted to $ROOTS at token launch.
+              </p>
+            )}
           </div>
         </div>
       </div>

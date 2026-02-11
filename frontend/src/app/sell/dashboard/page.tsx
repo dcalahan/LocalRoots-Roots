@@ -20,6 +20,8 @@ import { uploadImage } from '@/lib/pinata';
 import { rootsToFiat, formatFiat, formatRoots } from '@/lib/pricing';
 import { SellerTierCard, SellerTierBadge } from '@/components/seeds/SellerTierBadge';
 import { EarlyAdopterBanner } from '@/components/seeds/EarlyAdopterBanner';
+import { getRewardLabel } from '@/components/seeds/PhaseConfig';
+import { usePhase } from '@/hooks/usePhase';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import type { ShareCardData } from '@/lib/shareCards';
 import { GrowingProfileProvider } from '@/contexts/GrowingProfileContext';
@@ -426,6 +428,8 @@ export default function SellerDashboard() {
   const { listings, isLoading: isLoadingListings, refetch: refetchListings } = useSellerListings();
   const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSellerOrders();
   const { deleteListing, isPending: isDeleting, isSuccess: deleteSuccess, error: deleteError, reset: resetDelete } = useDeleteListing();
+  const { isPhase2 } = usePhase();
+  const rewardLabel = getRewardLabel(isPhase2);
 
   // Auto-claim funds for orders past 48-hour dispute window
   const { isAutoClaiming } = useAutoClaimFunds(orders, refetchOrders);
@@ -515,8 +519,8 @@ export default function SellerDashboard() {
 
   return (
     <div className="min-h-screen bg-roots-cream">
-      {/* Early Adopter Banner */}
-      <EarlyAdopterBanner />
+      {/* Early Adopter Banner - hidden in Phase 2 */}
+      <EarlyAdopterBanner isPhase2={isPhase2} />
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -636,7 +640,7 @@ export default function SellerDashboard() {
                   {isLoadingOrders ? '...' : (
                     <>
                       {formatFiat(rootsToFiat(BigInt(Math.floor(totalEarnings * 1e18))))}
-                      <span className="block text-sm font-normal text-roots-gray">{formatRoots(BigInt(Math.floor(totalEarnings * 1e18)))} Seeds</span>
+                      <span className="block text-sm font-normal text-roots-gray">{formatRoots(BigInt(Math.floor(totalEarnings * 1e18)))} {rewardLabel}</span>
                     </>
                   )}
                 </p>
@@ -758,7 +762,7 @@ export default function SellerDashboard() {
                               <span className="font-semibold text-roots-primary">{formatPrice(listing.pricePerUnit).fiat}</span>
                               <span className="text-roots-gray"> / {listing.metadata?.unit || 'unit'}</span>
                             </p>
-                            <p className="text-xs text-roots-gray">{formatPrice(listing.pricePerUnit).roots} Seeds</p>
+                            <p className="text-xs text-roots-gray">{formatPrice(listing.pricePerUnit).roots} {rewardLabel}</p>
                             <p className={`text-xs ${listing.quantityAvailable > 5 ? 'text-green-600' : listing.quantityAvailable > 0 ? 'text-amber-600' : 'text-red-600'}`}>
                               {listing.quantityAvailable} available
                             </p>
@@ -903,7 +907,7 @@ export default function SellerDashboard() {
                                 </p>
                               </div>
                               <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
-                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} Seeds</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} {rewardLabel}</p>
                             </div>
                             {/* Delivery address */}
                             {order.isDelivery && order.deliveryInfo && (
@@ -968,7 +972,7 @@ export default function SellerDashboard() {
                               </div>
                               <div className="text-right">
                                 <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
-                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} Seeds</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} {rewardLabel}</p>
                                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                   order.status === OrderStatus.ReadyForPickup
                                     ? 'bg-yellow-100 text-yellow-700'
@@ -1048,7 +1052,7 @@ export default function SellerDashboard() {
                             </td>
                             <td className="py-3 text-right">
                               <div className="font-medium">{formatPrice(order.totalPrice).fiat}</div>
-                              <div className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} Seeds</div>
+                              <div className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} {rewardLabel}</div>
                             </td>
                           </tr>
                         ))}

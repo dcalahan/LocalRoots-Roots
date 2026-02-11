@@ -8,6 +8,13 @@ export const ambassadorAbi = [
   // Read functions
   {
     type: 'function',
+    name: 'currentPhase',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'ambassadorIdByWallet',
     inputs: [{ name: '', type: 'address' }],
     outputs: [{ name: '', type: 'uint256' }],
@@ -268,6 +275,50 @@ export const ambassadorAbi = [
     type: 'event',
     name: 'AmbassadorUnsuspended',
     inputs: [{ name: 'ambassadorId', type: 'uint256', indexed: true }],
+  },
+  // Phase transition functions
+  {
+    type: 'function',
+    name: 'transitionToPhase2',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    name: 'PhaseTransitioned',
+    inputs: [
+      { name: 'newPhase', type: 'uint8', indexed: false },
+    ],
+  },
+  // Phase 2 treasury functions
+  {
+    type: 'function',
+    name: 'treasuryBalance',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'treasuryInitialized',
+    inputs: [],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getRemainingWeeklyAllowance',
+    inputs: [{ name: '_ambassadorId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getRemainingDailyAllowance',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
   },
 ] as const;
 

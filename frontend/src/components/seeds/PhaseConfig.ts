@@ -1,9 +1,60 @@
-// Phase 1 configuration constants
+// Phase configuration constants
 
 // Phase 1 launch date (November 1, 2026)
 export const PHASE1_LAUNCH = new Date('2026-11-01T00:00:00Z');
 export const DAY_90 = new Date(PHASE1_LAUNCH.getTime() + 90 * 24 * 60 * 60 * 1000);
 export const DAY_180 = new Date(PHASE1_LAUNCH.getTime() + 180 * 24 * 60 * 60 * 1000);
+
+// Phase 2 terminology
+export const PHASE2_LABEL = '$ROOTS';
+export const PHASE1_LABEL = 'Seeds';
+
+/**
+ * Get the reward label based on current phase
+ * @param isPhase2 - Whether we're in Phase 2
+ * @returns "Seeds" in Phase 1, "$ROOTS" in Phase 2
+ */
+export function getRewardLabel(isPhase2: boolean): string {
+  return isPhase2 ? PHASE2_LABEL : PHASE1_LABEL;
+}
+
+/**
+ * Format reward amount based on phase
+ * Phase 1: Seeds have 6 decimals, display as whole numbers
+ * Phase 2: ROOTS have 18 decimals, display with 2 decimal places
+ */
+export function formatRewardAmount(amount: bigint | string | number, isPhase2: boolean): string {
+  const num = typeof amount === 'bigint' ? amount : BigInt(amount);
+
+  if (isPhase2) {
+    // ROOTS: 18 decimals, display with 2 decimal places
+    const whole = num / BigInt(1e18);
+    const remainder = num % BigInt(1e18);
+    const decimal = Number(remainder) / 1e18;
+    const total = Number(whole) + decimal;
+
+    if (total >= 1000000) {
+      return (total / 1000000).toFixed(1) + 'M';
+    }
+    if (total >= 1000) {
+      return (total / 1000).toFixed(1) + 'K';
+    }
+    return total.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  } else {
+    // Seeds: 6 decimals, display as whole number
+    const whole = num / BigInt(1e6);
+    if (whole >= 1000000n) {
+      return (Number(whole) / 1000000).toFixed(1) + 'M';
+    }
+    if (whole >= 1000n) {
+      return (Number(whole) / 1000).toFixed(1) + 'K';
+    }
+    return Number(whole).toLocaleString();
+  }
+}
 
 // Seeds rates
 export const SEEDS_PER_DOLLAR_SELLER = 500;

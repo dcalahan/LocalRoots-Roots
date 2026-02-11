@@ -6,10 +6,17 @@ import { getMultiplierInfo } from './PhaseConfig';
 interface EarlyAdopterBannerProps {
   showLink?: boolean;
   className?: string;
+  /** Whether we're in Phase 2 ($ROOTS token economy). Banner is hidden in Phase 2. */
+  isPhase2?: boolean;
 }
 
-export function EarlyAdopterBanner({ showLink = true, className = '' }: EarlyAdopterBannerProps) {
+export function EarlyAdopterBanner({ showLink = true, className = '', isPhase2 = false }: EarlyAdopterBannerProps) {
   const info = getMultiplierInfo();
+
+  // Hide banner in Phase 2 - no more early adopter bonuses
+  if (isPhase2) {
+    return null;
+  }
 
   if (!info.isActive && info.multiplier === 1.0) {
     return null;

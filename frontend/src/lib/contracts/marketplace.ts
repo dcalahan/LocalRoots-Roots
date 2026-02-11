@@ -471,6 +471,35 @@ export const marketplaceAbi = [
       { name: 'reason', type: 'string', indexed: false },
     ],
   },
+  // Phase transition functions
+  {
+    type: 'function',
+    name: 'transitionToPhase2',
+    inputs: [{ name: '_rootsToken', type: 'address' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'phaseTransitionLocked',
+    inputs: [],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'rootsToken',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    name: 'PhaseTransitioned',
+    inputs: [
+      { name: 'newPhase', type: 'uint8', indexed: false },
+    ],
+  },
 ] as const;
 
 // ERC20 ABI for token approval and balance checking

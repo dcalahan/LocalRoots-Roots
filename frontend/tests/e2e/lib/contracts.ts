@@ -6,9 +6,13 @@ export const MARKETPLACE_ADDRESS = (process.env.MARKETPLACE_ADDRESS || '0xBAc288
 export const AMBASSADOR_REWARDS_ADDRESS = (process.env.AMBASSADOR_REWARDS_ADDRESS || '0xC596B9FcCAC989abf4B4244EC8c74CF8d50DDB91') as Address;
 export const FORWARDER_ADDRESS = (process.env.FORWARDER_ADDRESS || '0xd6632078F9ad1Fb03a9Babd2908cBA4D00D43F74') as Address;
 
+// SeedsAirdrop address (will be set when deployed for Phase 2)
+export const SEEDS_AIRDROP_ADDRESS = (process.env.SEEDS_AIRDROP_ADDRESS || '0x0000000000000000000000000000000000000000') as Address;
+
 // Re-export ABIs from the app source
 export { marketplaceAbi } from '../../../src/lib/contracts/marketplace';
 export { ambassadorAbi } from '../../../src/lib/contracts/ambassador';
+export { seedsAirdropAbi } from '../../../src/lib/contracts/seedsAirdrop';
 export { forwarderAbi, forwarderDomain, forwardRequestTypes } from '../../../src/lib/contracts/forwarder';
 
 // Alias exports for consistency across test files
