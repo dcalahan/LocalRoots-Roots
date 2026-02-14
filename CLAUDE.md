@@ -2,12 +2,18 @@
 
 ## Session Startup - DO THIS FIRST
 
-**At the start of every new session, automatically start the Background Slack Listener:**
+**At the start of every new session, start the Background Slack Listener:**
 
-Launch a background agent to poll Slack channel `#claude-localroots` (C0AELQC8GDV) every 60 seconds. The agent should:
-- Poll silently without outputting status messages
-- Only surface messages when Doug sends something new
-- Keep running indefinitely in the background
+Run the Slack polling script in background:
+```bash
+# Create and run the Slack poller for #claude-localroots (C0AELQC8GDV)
+rm -f /tmp/slack-localroots-messages /tmp/slack-localroots-last-ts
+nohup /tmp/slack-poll-localroots.sh > /tmp/slack-poll-localroots.log 2>&1 &
+```
+
+If the script doesn't exist, create it first (see `/tmp/slack-poll-localroots.sh` for reference).
+
+To check for new Slack messages: `cat /tmp/slack-localroots-messages`
 
 This allows Doug to communicate via Slack while Claude works on tasks.
 
