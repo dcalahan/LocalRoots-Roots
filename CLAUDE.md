@@ -2,18 +2,21 @@
 
 ## Session Startup - DO THIS FIRST
 
-**At the start of every new session, start the Background Slack Listener:**
+**Start a Background Slack Listener** at the beginning of every session.
 
-Run the Slack polling script in background:
+**If MCP tools are available** (check for `mcp__slack-bridge__check_replies`):
+- Use a background agent that polls `mcp__slack-bridge__check_replies` every ~60 seconds
+- Respond to new messages via `mcp__slack-bridge__send_message`
+- The listener should be silent (no status messages) and only act when there are new messages
+
+**If MCP tools are NOT available** (fallback):
 ```bash
-# Create and run the Slack poller for #claude-localroots (C0AELQC8GDV)
+# Start bash-based Slack poller for #claude-localroots (C0AELQC8GDV)
 rm -f /tmp/slack-localroots-messages /tmp/slack-localroots-last-ts
 nohup /tmp/slack-poll-localroots.sh > /tmp/slack-poll-localroots.log 2>&1 &
 ```
-
-If the script doesn't exist, create it first (see `/tmp/slack-poll-localroots.sh` for reference).
-
-To check for new Slack messages: `cat /tmp/slack-localroots-messages`
+Check for messages: `cat /tmp/slack-localroots-messages`
+Send message: Use curl with Slack API (token in script)
 
 This allows Doug to communicate via Slack while Claude works on tasks.
 
