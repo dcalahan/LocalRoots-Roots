@@ -1,5 +1,16 @@
 # LocalRoots Project Guidelines
 
+## Session Startup - DO THIS FIRST
+
+**At the start of every new session, automatically start the Background Slack Listener:**
+
+Launch a background agent to poll Slack channel `#claude-localroots` (C0AELQC8GDV) every 60 seconds. The agent should:
+- Poll silently without outputting status messages
+- Only surface messages when Doug sends something new
+- Keep running indefinitely in the background
+
+This allows Doug to communicate via Slack while Claude works on tasks.
+
 ## Color Palette - ALWAYS USE THESE
 
 Never use generic Tailwind colors (green-600, emerald-50, etc.). Always use the brand palette:
