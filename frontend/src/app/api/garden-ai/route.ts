@@ -41,9 +41,10 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: userContent },
     ]
 
+    const effectiveUserId = userId || 'anonymous'
     const context: BrainContext = {
-      userId: userId || 'anonymous',
-      sessionId: userId || undefined,
+      userId: effectiveUserId,
+      sessionId: effectiveUserId,
       messages,
     }
 
