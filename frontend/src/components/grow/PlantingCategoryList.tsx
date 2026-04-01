@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { PlantingEvent, PlantingAction, formatAction } from '@/lib/plantingCalendar';
 import { CropCard } from './CropCard';
 import produceData from '@/data/produce-seeds.json';
@@ -96,11 +97,11 @@ export function PlantingCategorySummary({
   const icon = categoryIcons[action];
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${colors.bg}`}>
+    <Link href="/grow/calendar" className={`flex items-center gap-2 px-3 py-2 rounded-lg ${colors.bg} hover:opacity-80 transition-opacity`}>
       <span>{icon}</span>
       <span className={`text-sm font-medium ${colors.text}`}>
         {count} to {formatAction(action).toLowerCase()}
       </span>
-    </div>
+    </Link>
   );
 }

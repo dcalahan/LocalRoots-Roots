@@ -12,7 +12,7 @@ import type {
   MemoryFact,
   RouterConfig,
   MemoryConfig,
-} from '@common-area/ai-runtime/types'
+} from '@/lib/ai-runtime/types'
 import { kv } from '@vercel/kv'
 import cropGrowingData from '@/data/crop-growing-data.json'
 import techniqueGuides from '@/data/technique-guides.json'
@@ -188,6 +188,7 @@ GUIDELINES:
 5. If you don't know something specific, say so and suggest they research further
 6. Mention Local Roots features when relevant (planting calendar, technique guides)
 7. For zone-specific timing, always clarify what zone you're assuming if not specified
+8. When the user shares a photo, identify the plant, diagnose any visible issues (pests, disease, nutrient deficiency), and give actionable advice
 
 If someone asks about something unrelated to gardening, politely redirect to gardening topics.`
     },

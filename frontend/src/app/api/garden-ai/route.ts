@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { handleChat } from '@common-area/ai-runtime'
-import type { AIMessage, BrainContext } from '@common-area/ai-runtime/types'
+import { handleChat } from '@/lib/ai-runtime'
+import type { AIMessage, BrainContext } from '@/lib/ai-runtime/types'
 import { createGardenBrain } from '@/lib/ai/garden-brain'
 import { kv } from '@vercel/kv'
 
@@ -16,10 +16,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, conversationHistory = [], userId } = body
+    const { message, conversationHistory = [], userId, image } = body
 
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+    if (!message && !image) {
+      return NextResponse.json({ error: 'Message or image is required' }, { status: 400 })
+    }
+
+    // Build user message content — with image if provided
+    let userContent: AIMessage['content']
+    if (image && image.base64 && image.mediaType) {
+      userContent = [
+        { type: 'image' as const, source: { type: 'base64' as const, media_type: image.mediaType, data: image.base64 } },
+        { type: 'text' as const, text: message || 'What is this plant? Any issues you can see?' },
+      ]
+    } else {
+      userContent = message
     }
 
     const messages: AIMessage[] = [
@@ -27,7 +38,7 @@ export async function POST(request: NextRequest) {
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
-      { role: 'user' as const, content: message },
+      { role: 'user' as const, content: userContent },
     ]
 
     const context: BrainContext = {
