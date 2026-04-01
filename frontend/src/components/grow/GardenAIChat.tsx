@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGrowingProfileSafe } from '@/contexts/GrowingProfileContext';
+import { useAccount } from 'wagmi';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,22 +21,49 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const growingProfileContext = useGrowingProfileSafe();
   const growingProfile = growingProfileContext?.profile;
+
+  // Get user ID from either wagmi or Privy wallet
+  const { address: wagmiAddress } = useAccount();
+  const { wallets } = useWallets();
+  const privyAddress = wallets?.[0]?.address;
+  const userId = (wagmiAddress || privyAddress)?.toLowerCase() || null;
+
+  // Hydrate conversation from server on first open (if authenticated)
+  const hydrateConversation = useCallback(async () => {
+    if (!userId || hydrated) return;
+    try {
+      const res = await fetch(`/api/garden-ai?userId=${userId}`);
+      const data = await res.json();
+      if (data.messages?.length > 0) {
+        setMessages(data.messages.map((m: { role: string; content: string }) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        })));
+      }
+    } catch {
+      // Hydration is non-critical
+    } finally {
+      setHydrated(true);
+    }
+  }, [userId, hydrated]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input when chat opens
+  // Focus input and hydrate when chat opens
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
+      hydrateConversation();
     }
-  }, [isOpen]);
+  }, [isOpen, hydrateConversation]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -49,14 +78,6 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     setIsLoading(true);
 
     try {
-      // Include user's growing profile for personalized advice
-      const userContext = growingProfile ? {
-        zone: growingProfile.zone,
-        lastFrostDate: growingProfile.lastSpringFrost?.toISOString().split('T')[0],
-        firstFrostDate: growingProfile.firstFallFrost?.toISOString().split('T')[0],
-        growingSeasonDays: growingProfile.growingSeasonDays,
-      } : undefined;
-
       const response = await fetch('/api/garden-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,9 +85,9 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           message: userMessage,
           conversationHistory: messages.map(m => ({
             role: m.role,
-            content: m.content
+            content: m.content,
           })),
-          userContext,
+          userId: userId || undefined,
         }),
       });
 
