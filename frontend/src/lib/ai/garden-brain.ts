@@ -117,7 +117,7 @@ function getGardenRouterConfig(): RouterConfig {
     tiers: {
       standard: {
         provider: 'anthropic',
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-haiku-4-5-20251001',
         endpoint: 'https://api.anthropic.com/v1/messages',
         apiKey: process.env.ANTHROPIC_API_KEY || '',
       },
