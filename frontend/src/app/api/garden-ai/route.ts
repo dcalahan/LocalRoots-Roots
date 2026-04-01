@@ -43,9 +43,10 @@ export async function POST(request: NextRequest) {
       usage: result.response.usage,
     })
   } catch (error) {
-    console.error('[Garden AI] Error:', error)
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error('[Garden AI] Error:', errMsg, error)
     return NextResponse.json(
-      { error: 'Failed to get response from Garden AI' },
+      { error: `Failed to get response from Garden AI: ${errMsg}` },
       { status: 500 }
     )
   }
