@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { kv } from '@/lib/kv';
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import type { PaymentRecord, PaymentSummary } from '@/lib/contracts/ambassador';

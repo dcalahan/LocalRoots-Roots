@@ -6,7 +6,7 @@ import { getTextContent } from '@/lib/ai-runtime/types'
 import { formatMemoryContext, extractMemories, mergeMemories } from '@/lib/ai-runtime/memory'
 import { createRouter } from '@/lib/ai-runtime/router'
 import { createGardenBrain } from '@/lib/ai/garden-brain'
-import { kv } from '@vercel/kv'
+import { kv } from '@/lib/kv'
 
 const brain = createGardenBrain()
 

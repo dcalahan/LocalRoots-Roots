@@ -13,7 +13,7 @@ import type {
   RouterConfig,
   MemoryConfig,
 } from '@/lib/ai-runtime/types'
-import { kv } from '@vercel/kv'
+import { kv } from '@/lib/kv'
 import cropGrowingData from '@/data/crop-growing-data.json'
 import techniqueGuides from '@/data/technique-guides.json'
 import communityRecipes from '@/data/community-recipes.json'
