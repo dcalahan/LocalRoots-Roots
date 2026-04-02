@@ -314,9 +314,30 @@ The `GardenAIChat` component provides AI gardening assistance:
 - Available on `/grow` page (visible in navigation header)
 - Also available on all `/sell/*` pages via layout wrapper
 - Floating chat icon in bottom-right corner
+- **Streaming responses** via SSE (Server-Sent Events) for real-time text rendering
+- **Photo upload** — users can snap or upload up to 5 photos for plant identification
+- **Per-user memory** — remembers user's zone, plants, soil, preferences across sessions
+- **Conversation persistence** — conversations restored on reload via Vercel KV
+- **Local marketplace awareness** — knows what neighbors are growing/selling nearby (geohash-based)
+- **Community recipe suggestions** — suggests companion crops that complete recipes (e.g., "You're growing tomatoes — plant corn, okra, cilantro for Summer in a Pan")
 
-**Files:**
-- `frontend/src/components/grow/GardenAIChat.tsx` - Main component
+**Architecture:**
+- Uses the `ai-runtime` Brain pattern (extracted from Common Area/Ask Hans)
+- Model: `claude-haiku-4-5-20251001` via direct Anthropic API (streaming)
+- Memory: 3-layer system (conversation window, entity memory, product soul)
+- Persistence: Vercel KV (`garden:conv:{userId}`, `garden:memories:{userId}`, `garden:soul`)
+- Identity: Wallet address if connected, otherwise stable localStorage UUID
+- Background memory extraction via Next.js `after()` — runs after response is sent
+- `export const maxDuration = 60` on route for longer AI responses
+
+**Key Files:**
+- `frontend/src/components/grow/GardenAIChat.tsx` - Main chat component (streaming, photos, textarea)
+- `frontend/src/app/api/garden-ai/route.ts` - POST: streaming chat; GET: conversation hydration
+- `frontend/src/app/api/garden-ai/local/route.ts` - Local marketplace listings by geohash
+- `frontend/src/lib/ai/garden-brain.ts` - Brain config (system prompt, memory, recipes, local context)
+- `frontend/src/lib/ai-runtime/` - Inlined ai-runtime (types, router, memory, chat)
+- `frontend/src/data/community-recipes.json` - 8 community recipes with garden/pantry ingredient split
+- `frontend/src/data/crop-growing-data.json` - Crop planting guide data
 - `frontend/src/app/sell/layout.tsx` - Adds chat to sell pages
 
 ## Deployment Workflow - IMPORTANT
