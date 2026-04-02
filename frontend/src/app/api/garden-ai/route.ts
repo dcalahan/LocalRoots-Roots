@@ -175,21 +175,6 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // ─── Save conversation (best-effort cloud backup) ───
-          const allMessages: AIMessage[] = [
-            ...messages,
-            { role: 'assistant' as const, content: streamState.fullResponse },
-          ]
-
-          try {
-            // Direct KV write as backup (brain.saveConversation uses same kv)
-            await kv.set(`garden:conv:${effectiveUserId}`, { messages: allMessages })
-            console.log('[Garden AI] Conversation saved for:', effectiveUserId, 'msgs:', allMessages.length)
-          } catch (err) {
-            console.error('[Garden AI] Conv save failed (non-critical):', String(err))
-            // Cloud save failed — client has localStorage backup
-          }
-
           streamState.done = true
 
           // Send current memories to client for localStorage backup
@@ -220,6 +205,19 @@ export async function POST(request: NextRequest) {
 
       if (!streamState.fullResponse) return
 
+      // ─── Save conversation to cloud (best-effort backup) ───
+      try {
+        const allMessages: AIMessage[] = [
+          ...messages,
+          { role: 'assistant' as const, content: streamState.fullResponse },
+        ]
+        await kv.set(`garden:conv:${effectiveUserId}`, { messages: allMessages })
+        console.log('[Garden AI] Conv saved for:', effectiveUserId, 'msgs:', allMessages.length)
+      } catch (err) {
+        console.error('[Garden AI] Conv save failed (non-critical):', String(err))
+      }
+
+      // ─── Extract and save memories ───
       try {
         if (brain.memoryConfig?.entityMemory?.enabled && brain.saveMemories) {
           const router = createRouter(brain.routerConfig)
