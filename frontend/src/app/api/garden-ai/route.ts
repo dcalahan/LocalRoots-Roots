@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, conversationHistory = [], userId, images, image, geohash } = body
+    const { message, conversationHistory = [], userId, images, image, geohash, clientMemories } = body
 
     const imageList: { base64: string; mediaType: string }[] = images
       || (image ? [image] : [])
@@ -53,11 +53,16 @@ export async function POST(request: NextRequest) {
 
     const effectiveUserId = userId || 'anonymous'
 
-    // ─── Pre-LLM pipeline (parallel KV loads) ───────────────
-    const [soulText, memories] = await Promise.all([
+    // ─── Pre-LLM pipeline (parallel KV loads, client fallback) ───
+    const [soulText, cloudMemories] = await Promise.all([
       brain.loadSoul?.().catch(() => null) ?? null,
       brain.loadMemories?.(effectiveUserId).catch(() => []) ?? [],
     ])
+
+    // Use cloud memories if available, otherwise fall back to client-sent memories
+    const memories = (cloudMemories && (cloudMemories as MemoryFact[]).length > 0)
+      ? cloudMemories
+      : (clientMemories as MemoryFact[] || [])
 
     const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages, geohash: geohash || undefined }
     const systemPrompt = await brain.getSystemPrompt(ctx)
@@ -131,6 +136,7 @@ export async function POST(request: NextRequest) {
     const streamState = {
       fullResponse: '',
       done: false,
+      extractedMemories: null as MemoryFact[] | null,
     }
 
     const encoder = new TextEncoder()
@@ -169,7 +175,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // ─── Save conversation IMMEDIATELY (fast KV write, ~100ms) ───
+          // ─── Save conversation (best-effort cloud backup) ───
           const allMessages: AIMessage[] = [
             ...messages,
             { role: 'assistant' as const, content: streamState.fullResponse },
@@ -179,10 +185,16 @@ export async function POST(request: NextRequest) {
             await brain.saveConversation!(effectiveUserId, allMessages)
             console.log('[Garden AI] Conversation saved for:', effectiveUserId, 'msgs:', allMessages.length)
           } catch (err) {
-            console.error('[Garden AI] Conv save FAILED:', err)
+            console.error('[Garden AI] Conv save failed (non-critical):', err)
+            // Cloud save failed — client has localStorage backup
           }
 
           streamState.done = true
+
+          // Send current memories to client for localStorage backup
+          if (memories && (memories as MemoryFact[]).length > 0) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ memories })}\n\n`))
+          }
 
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`))
           controller.close()
@@ -247,14 +259,17 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId')
   if (!userId) {
-    return NextResponse.json({ messages: [] })
+    return NextResponse.json({ messages: [], memories: [] })
   }
 
   try {
-    const data = await kv.get<{ messages: AIMessage[] }>(`garden:conv:${userId}`)
-    const messages = (data?.messages || []).filter(m => m.role !== 'system')
-    return NextResponse.json({ messages })
+    const [convData, memories] = await Promise.all([
+      kv.get<{ messages: AIMessage[] }>(`garden:conv:${userId}`).catch(() => null),
+      kv.get<MemoryFact[]>(`garden:memories:${userId}`).catch(() => null),
+    ])
+    const messages = (convData?.messages || []).filter(m => m.role !== 'system')
+    return NextResponse.json({ messages, memories: memories || [] })
   } catch {
-    return NextResponse.json({ messages: [] })
+    return NextResponse.json({ messages: [], memories: [] })
   }
 }

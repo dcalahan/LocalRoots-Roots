@@ -89,24 +89,73 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   });
   const userId = walletAddress || anonId;
 
-  // Hydrate conversation from server on first open
+  // ─── localStorage helpers ─────────────────────────────
+  const localConvKey = userId ? `garden:conv:${userId}` : null;
+  const localMemKey = userId ? `garden:memories:${userId}` : null;
+
+  const saveConvToLocal = useCallback((msgs: Message[]) => {
+    if (!localConvKey) return;
+    try {
+      // Only save text content (no image previews — too large for localStorage)
+      const slim = msgs.map(m => ({ role: m.role, content: m.content }));
+      localStorage.setItem(localConvKey, JSON.stringify(slim));
+    } catch { /* quota exceeded — non-critical */ }
+  }, [localConvKey]);
+
+  const saveMemoriesToLocal = useCallback((memories: unknown[]) => {
+    if (!localMemKey) return;
+    try {
+      localStorage.setItem(localMemKey, JSON.stringify(memories));
+    } catch { /* quota exceeded — non-critical */ }
+  }, [localMemKey]);
+
+  // Hydrate conversation: localStorage first (instant), then cloud backup
   const hydrateConversation = useCallback(async () => {
     if (!userId || hydrated) return;
-    try {
-      const res = await fetch(`/api/garden-ai?userId=${userId}`);
-      const data = await res.json();
-      if (data.messages?.length > 0) {
-        setMessages(data.messages.map((m: { role: string; content: string }) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })));
-      }
-    } catch {
-      // Hydration is non-critical
-    } finally {
-      setHydrated(true);
+
+    // 1. Try localStorage first (instant)
+    let loaded = false;
+    if (localConvKey) {
+      try {
+        const local = localStorage.getItem(localConvKey);
+        if (local) {
+          const parsed = JSON.parse(local) as { role: string; content: string }[];
+          if (parsed.length > 0) {
+            setMessages(parsed.map(m => ({
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+            })));
+            loaded = true;
+          }
+        }
+      } catch { /* corrupted localStorage — fall through to cloud */ }
     }
-  }, [userId, hydrated]);
+
+    // 2. Fall back to cloud (async, best-effort)
+    if (!loaded) {
+      try {
+        const res = await fetch(`/api/garden-ai?userId=${userId}`);
+        const data = await res.json();
+        if (data.messages?.length > 0) {
+          const cloudMsgs = data.messages.map((m: { role: string; content: string }) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+          }));
+          setMessages(cloudMsgs);
+          // Cache to localStorage for next time
+          saveConvToLocal(cloudMsgs);
+          // Also cache memories if returned
+          if (data.memories?.length > 0) {
+            saveMemoriesToLocal(data.memories);
+          }
+        }
+      } catch {
+        // Cloud is down — that's fine, we have localStorage or empty state
+      }
+    }
+
+    setHydrated(true);
+  }, [userId, hydrated, localConvKey, saveConvToLocal]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -186,6 +235,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           userId: userId || undefined,
           images: imagesPayload,
           geohash: preferences.preferredLocation?.geohash || undefined,
+          clientMemories: localMemKey ? (() => { try { const m = localStorage.getItem(localMemKey); return m ? JSON.parse(m) : undefined; } catch { return undefined; } })() : undefined,
         }),
       });
 
@@ -222,7 +272,10 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
               if (data === '[DONE]') continue;
               try {
                 const event = JSON.parse(data);
-                if (event.text) {
+                if (event.memories) {
+                  // Server sent extracted memories — save locally
+                  saveMemoriesToLocal(event.memories);
+                } else if (event.text) {
                   fullText += event.text;
                   // Update the assistant message in-place
                   setMessages(prev => {
@@ -240,10 +293,15 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             }
           }
         }
+        // Stream done — save conversation to localStorage
+        const finalMessages = [...newMessages, { role: 'assistant' as const, content: fullText }];
+        saveConvToLocal(finalMessages);
       } else {
         // JSON fallback
         const data = await response.json();
-        setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+        const finalMessages = [...newMessages, { role: 'assistant' as const, content: data.reply }];
+        setMessages(finalMessages);
+        saveConvToLocal(finalMessages);
       }
     } catch (err) {
       console.error('[GardenAIChat] Error:', err);
