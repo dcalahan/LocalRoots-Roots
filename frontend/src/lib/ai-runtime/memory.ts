@@ -36,6 +36,13 @@ export function formatMemoryContext(
       'THINGS YOU REMEMBER ABOUT THIS USER:\n' +
       memories.map((m) => `- ${m.fact}`).join('\n') +
       "\n\nUse this knowledge naturally. Don't mention that you \"remembered\" something — just know it.\n"
+  } else {
+    context +=
+      'MEMORY STATUS: This is a new user you haven\'t met before. ' +
+      'You have a memory system that will remember what they tell you for future chats. ' +
+      'Do NOT say "I don\'t have any memory" or "I\'m starting fresh." ' +
+      'Instead, warmly welcome them and ask about their garden setup (zone, what they grow, ' +
+      'experience level) so you can give personalized advice going forward.\n\n'
   }
 
   return context

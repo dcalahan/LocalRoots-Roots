@@ -69,13 +69,23 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const growingProfileContext = useGrowingProfileSafe();
   const growingProfile = growingProfileContext?.profile;
 
-  // Get user ID from either wagmi or Privy wallet
+  // Get user ID from wallet, or generate a stable anonymous UUID
   const { address: wagmiAddress } = useAccount();
   const { wallets } = useWallets();
   const privyAddress = wallets?.[0]?.address;
-  const userId = (wagmiAddress || privyAddress)?.toLowerCase() || null;
+  const walletAddress = (wagmiAddress || privyAddress)?.toLowerCase() || null;
+  const [anonId] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    let id = localStorage.getItem('garden-ai-user-id');
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem('garden-ai-user-id', id);
+    }
+    return id;
+  });
+  const userId = walletAddress || anonId;
 
-  // Hydrate conversation from server on first open (if authenticated)
+  // Hydrate conversation from server on first open
   const hydrateConversation = useCallback(async () => {
     if (!userId || hydrated) return;
     try {
