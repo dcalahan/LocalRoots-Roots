@@ -168,41 +168,55 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Signal end of stream
+          // ─── Save conversation + extract memories BEFORE closing stream ───
+          // Vercel kills the function after stream closes, so saves must complete first
+          const allMessages: AIMessage[] = [
+            ...messages,
+            { role: 'assistant' as const, content: fullResponse },
+          ]
+
+          // Run saves in parallel, don't let failures block the stream close
+          const savePromises: Promise<void>[] = []
+
+          // Save conversation
+          if (brain.saveConversation) {
+            savePromises.push(
+              brain.saveConversation(effectiveUserId, allMessages).catch((err: unknown) => {
+                console.error('[Garden AI] Conv save failed:', err)
+              })
+            )
+          }
+
+          // Extract memories
+          if (brain.memoryConfig?.entityMemory?.enabled && brain.saveMemories) {
+            const router = createRouter(brain.routerConfig)
+            const recentForExtraction: AIMessage[] = [
+              ...messages.slice(-3),
+              { role: 'assistant', content: fullResponse },
+            ]
+            const mc = brain.memoryConfig.entityMemory
+            savePromises.push(
+              extractMemories(router, mc, recentForExtraction, memories as MemoryFact[])
+                .then(async (newFacts) => {
+                  if (newFacts.length > 0 && brain.saveMemories) {
+                    const mergedMems = mergeMemories(memories as MemoryFact[], newFacts, mc.maxFacts ?? 100)
+                    await brain.saveMemories(effectiveUserId, mergedMems)
+                  }
+                })
+                .catch((err) => {
+                  console.error('[Garden AI] Memory extraction failed:', err)
+                })
+            )
+          }
+
+          await Promise.all(savePromises)
+
+          // Signal end of stream AFTER saves complete
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`))
           controller.close()
         } catch (err) {
           console.error('[Garden AI] Stream error:', err)
           controller.error(err)
-        }
-
-        // ─── Post-stream: save conversation + extract memories (fire-and-forget) ───
-        const allMessages: AIMessage[] = [
-          ...messages,
-          { role: 'assistant' as const, content: fullResponse },
-        ]
-
-        // Save conversation
-        brain.saveConversation?.(effectiveUserId, allMessages).catch((err: unknown) => {
-          console.error('[Garden AI] Conv save failed:', err)
-        })
-
-        // Extract memories
-        if (brain.memoryConfig?.entityMemory?.enabled && brain.saveMemories) {
-          const router = createRouter(brain.routerConfig)
-          const recentForExtraction: AIMessage[] = [
-            ...messages.slice(-3),
-            { role: 'assistant', content: fullResponse },
-          ]
-          const mc = brain.memoryConfig.entityMemory
-          extractMemories(router, mc, recentForExtraction, memories as MemoryFact[])
-            .then(async (newFacts) => {
-              if (newFacts.length > 0 && brain.saveMemories) {
-                const merged = mergeMemories(memories as MemoryFact[], newFacts, mc.maxFacts ?? 100)
-                await brain.saveMemories(effectiveUserId, merged)
-              }
-            })
-            .catch(() => {})
         }
       },
     })
