@@ -659,6 +659,9 @@ export function getShareText(data: ShareCardData, channel: 'sms' | 'facebook' | 
 
   switch (data.type) {
     case 'recruit-sellers': {
+      if (channel === 'facebook') {
+        return `Know someone with a garden? Local Roots lets neighbors sell their homegrown produce — no fees, all local. Help feed your community!\n\n${url}`;
+      }
       if (channel === 'nextdoor') {
         return `Hi neighbors! I'm helping local gardeners sell their homegrown produce through Local Roots. If you have a garden and want to sell what you grow — no fees, all local — sign up here: ${url}`;
       }
@@ -672,6 +675,9 @@ export function getShareText(data: ShareCardData, channel: 'sms' | 'facebook' | 
     }
 
     case 'recruit-ambassadors': {
+      if (channel === 'facebook') {
+        return `Want to help build a local food network? As a Local Roots ambassador, you earn 25% from every sale in your community. Help neighbors feed neighbors!\n\n${url}`;
+      }
       if (channel === 'sms') {
         return `Hey! Want to help your neighbors grow and sell food? You can earn 25% from every sale. Check out Local Roots: ${url}`;
       }
@@ -683,6 +689,9 @@ export function getShareText(data: ShareCardData, channel: 'sms' | 'facebook' | 
 
     case 'seller-listing': {
       const d = data as SellerListingData;
+      if (channel === 'facebook') {
+        return `Fresh ${d.produceName} from my garden! ${d.price}. Homegrown, local, no middleman. Order here:\n\n${url}`;
+      }
       if (channel === 'nextdoor') {
         return `Fresh ${d.produceName} available from my garden! ${d.price}. Order on Local Roots: ${url}`;
       }
@@ -698,6 +707,9 @@ export function getShareText(data: ShareCardData, channel: 'sms' | 'facebook' | 
     case 'ambassador-listing': {
       const d = data as AmbassadorListingData;
       const locationPart = d.neighborhood ? ` from a neighbor in ${d.neighborhood}` : ' from a local grower';
+      if (channel === 'facebook') {
+        return `My neighbor is selling fresh ${d.produceName}${locationPart}. No middleman, just real food from real people. Support local growers!\n\n${url}`;
+      }
       if (channel === 'nextdoor') {
         return `Fresh ${d.produceName}${locationPart}! Support local growers: ${url}`;
       }

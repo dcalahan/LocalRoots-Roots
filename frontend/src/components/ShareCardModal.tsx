@@ -129,13 +129,15 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     });
   };
 
-  const handleSaveForFacebook = () => {
+  const handleSaveForFacebook = async () => {
     if (!cardImage) return;
     const filename = `localroots-${data.type}-${Date.now()}.png`;
     downloadImage(cardImage, filename);
+    const text = getShareText(data, 'facebook');
+    await copyToClipboard(text);
     toast({
-      title: 'Saved!',
-      description: 'Open Facebook and attach the image to your post',
+      title: 'Image saved + link copied!',
+      description: 'Open Facebook → create a post → attach the image → paste the link as your caption',
     });
   };
 
