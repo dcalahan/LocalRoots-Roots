@@ -1,6 +1,6 @@
 export const maxDuration = 60; // Allow up to 60s for AI responses
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import type { AIMessage, MemoryFact } from '@/lib/ai-runtime/types'
 import { getTextContent } from '@/lib/ai-runtime/types'
 import { formatMemoryContext, extractMemories, mergeMemories } from '@/lib/ai-runtime/memory'
@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── Build Anthropic request with streaming ─────────────
-    // Format messages for Anthropic (system extracted, alternating roles)
     const systemParts: string[] = [fullSystemPrompt]
     const apiMessages: { role: string; content: AIMessage['content'] }[] = []
 
@@ -85,7 +84,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Ensure starts with user message
     if (apiMessages.length > 0 && apiMessages[0].role === 'assistant') {
       apiMessages.unshift({ role: 'user', content: '(conversation continues)' })
     }
@@ -129,9 +127,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Transform Anthropic SSE → simple text SSE for the client
+    // Shared state for the stream — captured by after() closure
+    const streamState = {
+      fullResponse: '',
+      done: false,
+    }
+
     const encoder = new TextEncoder()
-    let fullResponse = '' // accumulate for post-stream saves
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -157,8 +159,7 @@ export async function POST(request: NextRequest) {
                   const event = JSON.parse(data)
                   if (event.type === 'content_block_delta' && event.delta?.text) {
                     const text = event.delta.text
-                    fullResponse += text
-                    // Send as SSE
+                    streamState.fullResponse += text
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
                   }
                 } catch {
@@ -168,57 +169,62 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // ─── Save conversation + extract memories BEFORE closing stream ───
-          // Vercel kills the function after stream closes, so saves must complete first
+          // ─── Save conversation IMMEDIATELY (fast KV write, ~100ms) ───
           const allMessages: AIMessage[] = [
             ...messages,
-            { role: 'assistant' as const, content: fullResponse },
+            { role: 'assistant' as const, content: streamState.fullResponse },
           ]
 
-          // Run saves in parallel, don't let failures block the stream close
-          const savePromises: Promise<void>[] = []
-
-          // Save conversation
-          if (brain.saveConversation) {
-            savePromises.push(
-              brain.saveConversation(effectiveUserId, allMessages).catch((err: unknown) => {
-                console.error('[Garden AI] Conv save failed:', err)
-              })
-            )
+          try {
+            await brain.saveConversation!(effectiveUserId, allMessages)
+            console.log('[Garden AI] Conversation saved for:', effectiveUserId, 'msgs:', allMessages.length)
+          } catch (err) {
+            console.error('[Garden AI] Conv save FAILED:', err)
           }
 
-          // Extract memories
-          if (brain.memoryConfig?.entityMemory?.enabled && brain.saveMemories) {
-            const router = createRouter(brain.routerConfig)
-            const recentForExtraction: AIMessage[] = [
-              ...messages.slice(-3),
-              { role: 'assistant', content: fullResponse },
-            ]
-            const mc = brain.memoryConfig.entityMemory
-            savePromises.push(
-              extractMemories(router, mc, recentForExtraction, memories as MemoryFact[])
-                .then(async (newFacts) => {
-                  if (newFacts.length > 0 && brain.saveMemories) {
-                    const mergedMems = mergeMemories(memories as MemoryFact[], newFacts, mc.maxFacts ?? 100)
-                    await brain.saveMemories(effectiveUserId, mergedMems)
-                  }
-                })
-                .catch((err) => {
-                  console.error('[Garden AI] Memory extraction failed:', err)
-                })
-            )
-          }
+          streamState.done = true
 
-          await Promise.all(savePromises)
-
-          // Signal end of stream AFTER saves complete
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`))
           controller.close()
         } catch (err) {
           console.error('[Garden AI] Stream error:', err)
+          streamState.done = true
           controller.error(err)
         }
       },
+    })
+
+    // ─── Schedule memory extraction to run AFTER response is sent ───
+    // after() keeps the function alive after the response completes,
+    // so slow operations (like another Anthropic API call) don't block the user
+    after(async () => {
+      // Wait for stream to finish populating fullResponse
+      const maxWait = 60_000
+      const start = Date.now()
+      while (!streamState.done && Date.now() - start < maxWait) {
+        await new Promise(r => setTimeout(r, 100))
+      }
+
+      if (!streamState.fullResponse) return
+
+      try {
+        if (brain.memoryConfig?.entityMemory?.enabled && brain.saveMemories) {
+          const router = createRouter(brain.routerConfig)
+          const recentForExtraction: AIMessage[] = [
+            ...messages.slice(-3),
+            { role: 'assistant', content: streamState.fullResponse },
+          ]
+          const mc = brain.memoryConfig.entityMemory
+          const newFacts = await extractMemories(router, mc, recentForExtraction, memories as MemoryFact[])
+          if (newFacts.length > 0) {
+            const mergedMems = mergeMemories(memories as MemoryFact[], newFacts, mc.maxFacts ?? 100)
+            await brain.saveMemories(effectiveUserId, mergedMems)
+            console.log('[Garden AI] Extracted', newFacts.length, 'memories for:', effectiveUserId)
+          }
+        }
+      } catch (err) {
+        console.error('[Garden AI] Memory extraction failed:', err)
+      }
     })
 
     return new Response(stream, {
