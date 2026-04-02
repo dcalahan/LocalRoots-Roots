@@ -11,6 +11,13 @@ import { kv } from '@/lib/kv'
 const brain = createGardenBrain()
 
 export async function POST(request: NextRequest) {
+  // DEBUG: Test KV write at very start of handler
+  try {
+    await kv.set('garden:debug:ping', { ts: Date.now(), msg: 'handler-start' })
+  } catch (err) {
+    console.error('[Garden AI] DEBUG KV write failed at handler start:', String(err))
+  }
+
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
