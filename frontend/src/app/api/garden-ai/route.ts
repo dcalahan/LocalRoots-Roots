@@ -12,10 +12,13 @@ const brain = createGardenBrain()
 
 export async function POST(request: NextRequest) {
   // DEBUG: Test KV write at very start of handler
+  const kvUrl = process.env.KV_REST_API_URL || 'MISSING'
+  const kvToken = process.env.KV_REST_API_TOKEN ? 'SET' : 'MISSING'
   try {
     await kv.set('garden:debug:ping', { ts: Date.now(), msg: 'handler-start' })
+    console.log('[Garden AI] DEBUG KV write succeeded, URL:', kvUrl)
   } catch (err) {
-    console.error('[Garden AI] DEBUG KV write failed at handler start:', String(err))
+    console.error('[Garden AI] DEBUG KV write failed:', String(err), 'URL:', kvUrl, 'TOKEN:', kvToken)
   }
 
   try {
@@ -263,6 +266,23 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // DEBUG: check env + kv connectivity
+  if (request.nextUrl.searchParams.get('debug') === '1') {
+    const kvUrl = process.env.KV_REST_API_URL || 'MISSING'
+    const kvToken = process.env.KV_REST_API_TOKEN ? `SET(${process.env.KV_REST_API_TOKEN.slice(0,10)}...)` : 'MISSING'
+    let writeResult = 'untested'
+    let readResult = 'untested'
+    try {
+      await kv.set('garden:debug:test', { ts: Date.now() })
+      writeResult = 'OK'
+    } catch (err) { writeResult = String(err) }
+    try {
+      const val = await kv.get('garden:debug:test')
+      readResult = val ? 'OK: ' + JSON.stringify(val) : 'null'
+    } catch (err) { readResult = String(err) }
+    return NextResponse.json({ kvUrl, kvToken, writeResult, readResult })
+  }
+
   const userId = request.nextUrl.searchParams.get('userId')
   if (!userId) {
     return NextResponse.json({ messages: [], memories: [] })
