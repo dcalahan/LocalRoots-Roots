@@ -346,7 +346,13 @@ The `GardenAIChat` component provides AI gardening assistance:
 
 1. Commit changes to `main`
 2. Push to `origin/main`
-3. Vercel auto-deploys from the push
+3. Deploy: `cd frontend && npx vercel --prod`
+4. **CRITICAL: Alias the domain** — `npx vercel alias set <deployment-url> www.localroots.love`
+   - The CLI deploy does NOT auto-alias `www.localroots.love`
+   - Without this step, the domain still points to the old deployment
+   - Get the deployment URL from the `vercel --prod` output
+
+**Why manual alias?** The Vercel project's domain config doesn't auto-assign `www.localroots.love` to CLI deploys. Git-push deploys work but were broken for 49 days. Until this is fixed in the Vercel dashboard, always alias manually.
 
 This will change when we go into soft launch or launch. Until then, always deploy.
 
