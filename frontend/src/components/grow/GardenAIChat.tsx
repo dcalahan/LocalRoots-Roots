@@ -6,6 +6,8 @@ import { useGrowingProfileSafe } from '@/contexts/GrowingProfileContext';
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
+import { useSellerStatus } from '@/hooks/useSellerStatus';
+import { useSellerListings } from '@/hooks/useSellerListings';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -72,6 +74,8 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const growingProfileContext = useGrowingProfileSafe();
   const growingProfile = growingProfileContext?.profile;
   const { preferences } = useUserPreferences();
+  const { isSeller } = useSellerStatus();
+  const { listings: sellerListings } = useSellerListings();
 
   // Get user ID from wallet, or generate a stable anonymous UUID
   const { address: wagmiAddress } = useAccount();
@@ -236,6 +240,30 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           images: imagesPayload,
           geohash: preferences.preferredLocation?.geohash || undefined,
           clientMemories: localMemKey ? (() => { try { const m = localStorage.getItem(localMemKey); return m ? JSON.parse(m) : undefined; } catch { return undefined; } })() : undefined,
+          userContext: {
+            // Growing profile (from GPS, geohash, or manual override)
+            ...(growingProfile ? {
+              zone: growingProfile.zone,
+              lastFrostDate: growingProfile.lastSpringFrost?.toISOString().split('T')[0],
+              firstFrostDate: growingProfile.firstFallFrost?.toISOString().split('T')[0],
+              growingSeasonDays: growingProfile.growingSeasonDays,
+              isTropical: growingProfile.isTropical || undefined,
+              isSouthernHemisphere: growingProfile.isSouthernHemisphere || undefined,
+              wetSeasonStart: growingProfile.wetSeasonStart || undefined,
+              wetSeasonEnd: growingProfile.wetSeasonEnd || undefined,
+              confidence: growingProfile.confidence,
+              latitude: growingProfile.latitude,
+              longitude: growingProfile.longitude,
+            } : {}),
+            // Location name from user preferences
+            locationName: preferences.preferredLocation?.displayName || undefined,
+            // User role
+            primaryRole: preferences.primaryRole || undefined,
+            // Seller's active listings
+            sellerListings: isSeller && sellerListings.length > 0
+              ? sellerListings.filter(l => l.active && l.metadata).map(l => ({ produceName: l.metadata!.produceName, category: l.metadata!.category }))
+              : undefined,
+          },
         }),
       });
 

@@ -20,7 +20,43 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, conversationHistory = [], userId, images, image, geohash, clientMemories } = body
+    const { message, conversationHistory = [], userId, images, image, geohash, clientMemories, userContext: clientUserContext } = body
+
+    // ─── Server-side IP geolocation fallback ───
+    // If client didn't provide zone info (GPS denied), derive from Vercel's IP geo headers
+    let userContext = clientUserContext || {}
+    if (!userContext.zone) {
+      const ipLat = request.headers.get('x-vercel-ip-latitude')
+      const ipLng = request.headers.get('x-vercel-ip-longitude')
+      const ipCity = request.headers.get('x-vercel-ip-city')
+      const ipRegion = request.headers.get('x-vercel-ip-country-region')
+
+      if (ipLat && ipLng) {
+        try {
+          // Dynamic import to avoid pulling in the full module at top level
+          const { getGrowingProfile } = await import('@/lib/growingZones')
+          const lat = parseFloat(ipLat)
+          const lng = parseFloat(ipLng)
+          if (!isNaN(lat) && !isNaN(lng)) {
+            const profile = getGrowingProfile(lat, lng)
+            userContext = {
+              zone: profile.zone,
+              lastFrostDate: profile.lastSpringFrost?.toISOString().split('T')[0],
+              firstFrostDate: profile.firstFallFrost?.toISOString().split('T')[0],
+              growingSeasonDays: profile.growingSeasonDays,
+              isTropical: profile.isTropical || undefined,
+              isSouthernHemisphere: profile.isSouthernHemisphere || undefined,
+              confidence: 'ip-estimated',
+              latitude: lat,
+              longitude: lng,
+              locationName: ipCity ? (ipRegion ? `${ipCity}, ${ipRegion}` : ipCity) : undefined,
+            }
+          }
+        } catch {
+          // growingZones import failed — non-critical, continue without
+        }
+      }
+    }
 
     const imageList: { base64: string; mediaType: string }[] = images
       || (image ? [image] : [])
@@ -64,7 +100,7 @@ export async function POST(request: NextRequest) {
       ? cloudMemories
       : (clientMemories as MemoryFact[] || [])
 
-    const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages, geohash: geohash || undefined }
+    const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages, geohash: geohash || undefined, userContext }
     const systemPrompt = await brain.getSystemPrompt(ctx)
     const gardenContext = await brain.loadContext(ctx)
     const memoryContext = formatMemoryContext(memories as MemoryFact[], soulText)

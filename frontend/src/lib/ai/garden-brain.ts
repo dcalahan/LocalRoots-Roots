@@ -219,17 +219,97 @@ export function createGardenBrain(): Brain {
     actionTypes: [],
 
     getSystemPrompt(ctx: BrainContext): string {
-      const today = new Date().toLocaleDateString('en-US', {
+      const now = new Date()
+      const today = now.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       })
+      const uc = (ctx as BrainContext & { userContext?: Record<string, unknown> }).userContext || {}
+
+      // Derive current season
+      const month = now.getMonth() // 0-11
+      const isSouthern = uc.isSouthernHemisphere as boolean | undefined
+      const seasonMonth = isSouthern ? (month + 6) % 12 : month
+      const season = seasonMonth < 2 || seasonMonth === 11 ? 'winter' :
+        seasonMonth < 5 ? 'spring' : seasonMonth < 8 ? 'summer' : 'fall'
+      const seasonLabel = `${season.charAt(0).toUpperCase() + season.slice(1)}${isSouthern ? ' (Southern Hemisphere)' : ''}`
+
+      // Build location/zone section
+      let locationSection = ''
+      const zone = uc.zone as string | undefined
+      const locationName = uc.locationName as string | undefined
+      const confidence = uc.confidence as string | undefined
+      const isTropical = uc.isTropical as boolean | undefined
+
+      if (zone) {
+        const locationLabel = locationName ? `in ${locationName} ` : ''
+        locationSection = `\nUSER'S GROWING PROFILE:\n`
+        locationSection += `- Location: ${locationLabel}USDA Hardiness Zone ${zone}\n`
+
+        if (isTropical) {
+          const wetStart = uc.wetSeasonStart as number | undefined
+          const wetEnd = uc.wetSeasonEnd as number | undefined
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+          locationSection += `- Climate: Tropical (no frost)\n`
+          if (wetStart && wetEnd) {
+            locationSection += `- Wet season: ${monthNames[wetStart - 1]} to ${monthNames[wetEnd - 1]}\n`
+          }
+          locationSection += `- Give advice based on wet/dry seasons, NOT frost dates\n`
+        } else {
+          const lastFrost = uc.lastFrostDate as string | undefined
+          const firstFrost = uc.firstFrostDate as string | undefined
+          const seasonDays = uc.growingSeasonDays as number | undefined
+          if (lastFrost) locationSection += `- Last spring frost: ~${lastFrost}\n`
+          if (firstFrost) locationSection += `- First fall frost: ~${firstFrost}\n`
+          if (seasonDays) locationSection += `- Growing season: ~${seasonDays} days\n`
+          locationSection += `\nSince you know the user's zone, give specific planting dates for Zone ${zone}.\n`
+        }
+
+        // Confidence caveat
+        if (confidence === 'ip-estimated') {
+          locationSection += `\nNote: Zone was estimated from the user's approximate IP location. It's likely correct for general advice, but if they ask for precise planting dates, confirm their exact location first.\n`
+        } else if (confidence === 'estimated') {
+          locationSection += `\nNote: Zone was estimated from GPS — should be accurate for planting advice.\n`
+        }
+      } else {
+        locationSection = `\nYou don't know the user's growing zone yet. Ask where they garden so you can give zone-specific planting dates.\n`
+      }
+
+      // Role-aware guidance
+      let roleSection = ''
+      const role = uc.primaryRole as string | undefined
+      if (role === 'seller') {
+        roleSection = `\nUSER ROLE: This user is a SELLER on LocalRoots (they sell homegrown produce to neighbors).
+- Focus on production-oriented advice: yield optimization, succession planting for continuous supply, what sells well
+- Help them plan crops for market — popular items, presentation tips, harvest timing for peak quality
+- They already understand gardening basics — give more advanced/actionable advice\n`
+      } else if (role === 'buyer') {
+        roleSection = `\nUSER ROLE: This user is a BUYER on LocalRoots (they buy produce from neighbors).
+- Focus on seasonal awareness: what's in season now, what to look for
+- Encourage them to start growing! They clearly love fresh food
+- Mention the LocalRoots marketplace when relevant for finding local produce\n`
+      } else if (role === 'ambassador') {
+        roleSection = `\nUSER ROLE: This user is a LocalRoots AMBASSADOR (they help recruit sellers).
+- They may ask about gardening to better understand what sellers deal with
+- Help them speak knowledgeably about growing seasons, common crops, and garden challenges\n`
+      }
+
+      // Seller's current listings
+      let listingsSection = ''
+      const listings = uc.sellerListings as { produceName: string; category: string }[] | undefined
+      if (listings && listings.length > 0) {
+        const cropList = listings.map(l => l.produceName).join(', ')
+        listingsSection = `\nUSER'S CURRENT GARDEN (active listings on LocalRoots): ${cropList}
+- Build on what they already grow — suggest companion plants, succession planting, or crops that complement their lineup
+- If they ask "what should I plant next?" — suggest crops that pair well with their existing garden\n`
+      }
 
       return `You are the Local Roots Garden Assistant, a friendly and knowledgeable AI helper for home gardeners. You help people grow food successfully using natural, organic methods.
 
-Today is ${today}. Use this date for seasonal recommendations — tell users what to plant NOW, what to start indoors, and what to prepare for next season.
-
+Today is ${today}. Current season: ${seasonLabel}. Use this for seasonal recommendations — tell users what to plant NOW, what to start indoors, and what to prepare for next season.
+${locationSection}${roleSection}${listingsSection}
 Your knowledge includes:
 - When to plant vegetables based on hardiness zones and frost dates
 - Seed starting, transplanting, and harvesting timing
