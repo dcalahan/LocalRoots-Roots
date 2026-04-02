@@ -1,0 +1,204 @@
+{
+  "regionId": "lowcountry-8a",
+  "name": "Hilton Head Island & Lowcountry SC",
+  "zone": "8a",
+  "matchZones": ["8a", "8b"],
+  "matchLocations": ["hilton head", "bluffton", "beaufort", "sea pines", "palmetto dunes", "shipyard", "port royal", "lady's island", "st helena", "daufuskie", "lowcountry", "hilton head island"],
+  "climate": {
+    "usdaZone": "8a",
+    "note": "Hilton Head Island often behaves like 8b due to maritime influence",
+    "avgMinWinterTemp": "10-15F",
+    "avgFirstFrost": "Mid-November to early December",
+    "avgLastFrost": "Mid-February to early March",
+    "summerHighs": "90-95F with high humidity",
+    "annualRainfall": "~49 inches, fairly evenly distributed",
+    "humidity": "High year-round, especially June-September",
+    "saltExposure": "Significant — salt-tolerant plants strongly preferred",
+    "wind": "Occasional strong coastal winds, especially storm season"
+  },
+  "seasonalCalendar": {
+    "spring": {
+      "months": "March-May",
+      "activities": ["Plant warm season vegetables", "Divide perennials", "Prune freeze-damaged shrubs (scratch bark first)", "Fertilize azaleas/gardenias with Holly-Tone", "Begin weekly Liquid Fence on vegetables", "Pull tarp/debris from covered beds"]
+    },
+    "summer": {
+      "months": "June-September",
+      "activities": ["Water vegetables every 1-2 days in peak heat", "Prune tomato suckers aggressively for airflow", "Watch for early blight — remove affected leaves", "Replace bolted lettuce with basil", "Take Gumpo azalea cuttings", "Harvest cucumbers frequently"]
+    },
+    "fall": {
+      "months": "October-November",
+      "activities": ["BEST planting window for shrubs and trees", "Plant azalea walls", "Plant blueberries and strawberries", "Plant privacy screening shrubs", "Divide and relocate iris", "Apply pre-emergent for winter weeds"]
+    },
+    "winter": {
+      "months": "December-February",
+      "activities": ["Protect citrus below 28F", "Plan spring vegetable garden", "Order seeds", "Soil test and amend beds", "Prune roses", "Don't prune azaleas — buds set in fall"]
+    }
+  },
+  "soil": {
+    "type": "Sandy loam, often with clay sublayer",
+    "ph": "Naturally slightly acidic (5.5-6.5) — ideal for azaleas, gardenias, blueberries",
+    "drainage": "Generally good due to sand content but varies",
+    "saltIntrusion": "Near marsh/ocean, soil salinity affects plant selection",
+    "bestAmendment": "Mushroom compost, aged compost, pine bark fines",
+    "warnings": ["Concrete/stucco debris raises pH dramatically — remove before planting", "Don't over-amend veggie beds — too rich causes leafy growth at expense of fruit", "Always pH test before planting, especially near construction debris"],
+    "mulch": {
+      "best": "Natural pine bark mulch or pine straw (acidic, improves soil)",
+      "avoid": "Dyed black mulch — absorbs excessive heat, doesn't improve soil",
+      "depth": "2-3 inches, keep away from stems/trunks",
+      "warning": "Weed barrier tarps suffocate root systems — avoid in ornamental beds"
+    }
+  },
+  "deer": {
+    "severity": "Extremely bold on Hilton Head — accustomed to humans",
+    "behavior": "Travel forest edges constantly, most active dawn/dusk but feed any time",
+    "resistantPlants": ["Wax Myrtle", "Yucca", "Rosemary", "Thyme", "Basil", "Salvia", "Lantana", "French Marigolds", "Sedum/Stonecrop", "Gardenias (mature)", "Azaleas", "Santolina", "Confederate Jasmine", "Physostegia", "Blackberry (thorns)", "Ornamental grasses"],
+    "vulnerablePlants": ["Cucumbers (high risk)", "Lettuce/greens (very high risk)", "Young fig trees", "Strawberries (very high risk)", "Young citrus (moderate)", "Tomatoes (somewhat resistant due to scent)"],
+    "protectionMethods": [
+      "Liquid Fence spray — reapply after every rain, most effective when consistent",
+      "Fishing line barrier at 2-3 ft height — deer dislike invisible barrier",
+      "Wire caging — chicken wire cylinder around young trees (4 ft minimum)",
+      "Physical fencing — 7-8 ft required to reliably stop deer",
+      "Pool/structure proximity — deer less bold near houses"
+    ]
+  },
+  "vegetables": {
+    "plantingCalendar": [
+      {"crop": "Tomatoes", "when": "March-April", "notes": "Buy transplants, plant deep, bury stem to top 4-5 leaves"},
+      {"crop": "Peppers", "when": "March-April", "notes": "Need warm soil, slow to establish, more deer resistant"},
+      {"crop": "Cucumbers", "when": "April", "notes": "Train vertically on trellis, high deer risk"},
+      {"crop": "Basil", "when": "April-May", "notes": "After last frost, replaces bolted lettuce"},
+      {"crop": "Rosemary", "when": "Year round", "notes": "Perennial, plant permanently"},
+      {"crop": "Thyme", "when": "Year round", "notes": "Perennial, plant permanently"},
+      {"crop": "Lettuce/Greens", "when": "March-April", "notes": "Short window, bolts by June heat"},
+      {"crop": "Squash", "when": "April", "notes": "Direct seed"},
+      {"crop": "Sweet potatoes", "when": "May", "notes": "Long season crop"},
+      {"crop": "Strawberries", "when": "October", "notes": "Fall planting ONLY for spring harvest"},
+      {"crop": "Blueberries", "when": "October-November", "notes": "Fall planting, Rabbiteye types (Climax + Tifblue)"}
+    ],
+    "recommendedVarieties": {
+      "tomatoes": ["Celebrity (disease resistant)", "Better Boy (high yield)", "Heatmaster (bred for Southern heat)", "Sweet 100 cherry (prolific, heat tolerant)"],
+      "peppers": ["Bell Boy", "Banana pepper (heat tolerant)", "Jalapeno (easy, prolific)", "Carmen Italian (sweet, excellent in heat)"],
+      "cucumbers": ["Spacemaster (compact)", "Bush Pickle (prolific)", "Marketmore (classic slicer)"]
+    },
+    "techniques": {
+      "tomatoes": "Space 24-36 inches for airflow. Plant DEEP — strip lower leaves, bury stem. Prune suckers aggressively. Use cages or stakes.",
+      "peppers": "Space 18 inches. Plant deep like tomatoes. Slow to establish — normal to look sad 2-3 weeks.",
+      "cucumbers": "Train vertically on trellis. Against south-facing walls for heat. Use T-posts for freestanding trellis.",
+      "lettuce": "Space 6-8 inches. Plant shallow. Harvest outer leaves progressively. Stagger plantings 2 weeks apart."
+    },
+    "companionPlanting": {
+      "tomatoes": {"good": ["Basil", "Marigolds", "Chives", "Carrots"], "bad": ["Fennel", "Brassicas"]},
+      "peppers": {"good": ["Basil", "Thyme", "Parsley", "Chives", "Marigolds"], "bad": ["Fennel"]},
+      "cucumbers": {"good": ["Young dill", "Marigolds", "Nasturtium"], "bad": ["Sage"]},
+      "lettuce": {"good": ["Carrots", "Radish", "Chives"], "bad": []},
+      "general": "French marigolds as border around entire veggie bed — deters deer, aphids, nematodes. Mint CONTAINER ONLY — will take over a bed in one season."
+    },
+    "fungalDisease": {
+      "pressure": "HIGH — humidity creates constant fungal pressure",
+      "prevention": ["Space plants for airflow — never crowd", "Water at base, not overhead (soaker hoses)", "Morning watering only", "Good soil drainage"],
+      "common": ["Early blight on tomatoes", "Powdery mildew", "Root rot in poor drainage"],
+      "treatment": "Remove affected leaves immediately, apply copper fungicide"
+    }
+  },
+  "ornamentals": {
+    "azaleas": {
+      "southernIndica": {
+        "size": "6-10 ft",
+        "bloom": "March-May",
+        "bestVarieties": ["Formosa (magenta)", "George L. Taber (pink)", "Mrs. G.G. Gerbing (white)"],
+        "plantTime": "Fall (October-November)",
+        "spacing": "5-6 ft apart informal, stagger for natural effect",
+        "soil": "Acidic (pH 5.5-6.0)",
+        "warning": "Avoid Encore azaleas — spread bloom energy, never get full explosive show"
+      },
+      "gumpo": {
+        "size": "2-3 ft, low spreading",
+        "bloom": "May-June (AFTER Southern Indicas finish)",
+        "notes": "Nearly bulletproof in Zone 8a. Excellent groundcover under larger azaleas.",
+        "propagation": "Stem cuttings in rooting hormone, roots in 6-8 weeks"
+      },
+      "kurume": {
+        "size": "4-6 ft, compact",
+        "notes": "Smaller flowers but completely covered in blooms. Hardier than Southern Indicas.",
+        "varieties": ["Hino Crimson (bright red)", "Coral Bells (salmon pink)"]
+      }
+    },
+    "gardenia": {
+      "size": "4-6 ft",
+      "bloom": "June-July, intensely fragrant white flowers",
+      "id": "Thick glossy opposite oval leaves",
+      "care": "Feed with Holly-Tone + chelated iron. Loves acidic soil.",
+      "freezeNote": "Dies back but often recovers from roots. Yellow leaves = freeze stress or iron deficiency.",
+      "placement": "Near patios/pools for fragrance"
+    },
+    "confederateJasmine": {
+      "type": "Twining evergreen vine",
+      "bloom": "Intensely fragrant small white star flowers in spring",
+      "traits": "Deer resistant, salt tolerant, nearly indestructible",
+      "uses": "Trellises, fences, groundcover, climbing pool walls"
+    },
+    "waxMyrtle": {
+      "size": "10-15 ft, multi-stem",
+      "growth": "Fast — 3-5 ft/year when established",
+      "traits": "Salt tolerant, deer resistant, native",
+      "uses": "Privacy screens, hedges, road frontage screening"
+    },
+    "screening": {
+      "under8ft": ["Gumpo Azaleas (2-3 ft)", "Kurume Azaleas (4-6 ft)", "Podocarpus (any height)"],
+      "8to15ft": ["Wax Myrtle (BEST for HH)", "Nellie Stevens Holly", "Podocarpus", "Cherry Laurel"],
+      "avoid": ["Leyland Cypress (wants 40+ ft)", "Boxwood (blight throughout Southeast)"],
+      "spacing": "Informal: 6-8 ft. Formal hedge: 4-5 ft. Staggered double row: front 6 ft, back offset 3 ft deeper."
+    }
+  },
+  "edibles": {
+    "blueberries": {
+      "type": "Rabbiteye",
+      "varieties": "Climax + Tifblue (plant both for cross-pollination)",
+      "fruit": "June-July",
+      "care": "Love acidic soil, pine needle mulch",
+      "plantTime": "Fall (October)",
+      "size": "6-8 ft — doubles as ornamental"
+    },
+    "brownTurkeyFig": {
+      "size": "10-15 ft tall and wide",
+      "fruit": "Twice — June and August/September",
+      "deer": "Vulnerable when young — protect with wire cage 2-3 years",
+      "warning": "Don't plant over pool/patio — drops fruit"
+    },
+    "citrus": {
+      "viability": "Marginal in 8a — survives but freeze damage likely",
+      "recovery": "Comes back from roots even when top-killed",
+      "care": "Protect with frost cloth below 28F. Plant sheltered south-facing near structures.",
+      "diagnosis": "Yellow leaves after freeze = stress, not death. Scratch bark — green = alive."
+    },
+    "strawberries": {
+      "plantTime": "Fall ONLY (September-October) for spring harvest",
+      "varieties": "Ozark Beauty or Seascape",
+      "deer": "Very vulnerable — protect"
+    }
+  },
+  "troubleshooting": [
+    {"problem": "Yellow leaves on gardenias", "cause": "Iron deficiency or freeze stress", "solution": "Chelated iron + Holly-Tone fertilizer"},
+    {"problem": "Tomato early blight", "cause": "Humidity + poor airflow", "solution": "Remove affected leaves, copper fungicide, space plants wider, soaker hose"},
+    {"problem": "Overcrowded iris not blooming", "cause": "Rhizomes too crowded", "solution": "Divide late summer, replant 12-18 inch spacing"},
+    {"problem": "Plants not recovering after freeze", "cause": "Freeze damage", "solution": "Scratch bark — green = alive. Wait until late April. Pink roots = life. Cut dead top, water well, be patient."},
+    {"problem": "Soil pH too high", "cause": "Concrete/stucco debris leaching lime", "solution": "Remove debris, add sulfur powder or peat moss, pine needle mulch"},
+    {"problem": "Developer tarp damage", "cause": "Landscape fabric + black dyed mulch killing established plants", "solution": "Remove tarp completely. Remove construction debris. Check for surviving roots (pink/red = alive). Water deeply. Wait 3-4 weeks before replanting. pH test."}
+  ],
+  "localResources": {
+    "nurseries": ["Green Thumb Nursery — local expertise, understands HH conditions"],
+    "extension": "Clemson Extension — soil testing service, inexpensive, highly recommended",
+    "hoaNotes": "Hilton Head plantations have CC&Rs governing landscaping. Check restrictions before planting tall hedges near property lines."
+  },
+  "designPrinciples": {
+    "layering": {
+      "canopy": "Live oak, pine, magnolia",
+      "understory": "Azaleas, gardenias, viburnums",
+      "ground": "Gumpo azaleas, liriope, Confederate jasmine, ferns",
+      "accent": "Iris, sedum, ornamental grasses"
+    },
+    "forestEdge": "Deer travel forest edges — plant deer-resistant species here. Azalea walls work beautifully against pine forest. Stagger for natural look.",
+    "poolPatio": "Plant fragrant plants near seating (gardenia, Confederate jasmine). No fruit trees over pool. South-facing walls = heat sink for vegetables.",
+    "cottageGarden": "Mix perennials, shrubs, herbs, ornamentals. Allow naturalization. Less structured — works with natural landscape."
+  }
+}

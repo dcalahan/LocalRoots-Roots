@@ -17,6 +17,7 @@ import { kv } from '@/lib/kv'
 import cropGrowingData from '@/data/crop-growing-data.json'
 import techniqueGuides from '@/data/technique-guides.json'
 import communityRecipes from '@/data/community-recipes.json'
+import lowcountryData from '@/data/regional/lowcountry-8a.json'
 
 // ─── KV Key Helpers ────────────────────────────────────────
 
@@ -142,6 +143,169 @@ Use this info naturally:
   } catch {
     return ''
   }
+}
+
+// ─── Enhanced General Advice (from expert consultation) ──────
+
+function buildEnhancedGeneralContext(): string {
+  return `
+ADVANCED PLANTING TECHNIQUES:
+- Tomatoes: Plant DEEP — strip lower leaves, bury stem up to top 4-5 leaves. Roots grow along buried stem = stronger plant. Space 24-36 inches for airflow.
+- Peppers: Plant deep like tomatoes. Space 18 inches. Slow to establish — normal to look sad for 2-3 weeks after transplant.
+- Cucumbers: Train vertically on trellis — saves space, better airflow, easier harvest. South-facing walls provide heat boost.
+- Lettuce: Plant shallow, harvest outer leaves progressively to extend season. Stagger plantings 2 weeks apart. Replace with basil when it bolts in summer heat.
+- Mint: CONTAINER ONLY — will take over an entire bed in one season.
+
+PHOTO IDENTIFICATION PROTOCOL:
+When a user sends a plant photo:
+1. Start with observable features: leaf shape, texture, arrangement (opposite vs alternate), color
+2. Note growth habit: spreading, upright, vining, tree vs shrub
+3. Ask about smell when crushed — often the most definitive identifier
+4. Note location context: forest edge, sun/shade, bed type, other nearby plants
+5. Look for flowers or fruit — most definitive for ID
+6. Give 2-3 best guesses with distinguishing features between them
+7. If uncertain, advise waiting for flowering before making a definitive call
+8. NEVER advise removal of an unidentified plant — always wait for confirmed ID
+
+PHOTO DIAGNOSIS TIPS:
+- Yellow leaves = freeze stress, iron deficiency, overwatering, or nutrient lockout
+- Pink/red roots = alive and actively growing (good sign)
+- Multiple stems from crown base = shrub recovering from damage (let it grow)
+- Construction debris (white crumbly material) = stucco/concrete raising soil pH
+- Tarp line (black dyed mulch vs natural brown) = developer damage to established plantings
+
+PROPAGATION BASICS:
+- Stem cuttings: Take 4-6 inch tips, strip lower leaves, dip in rooting hormone, plant in moist well-draining mix
+- Division: Best for clumping plants (iris, thyme, ornamental grasses) — dig up, pull apart, replant immediately
+- Layering: Pin a low stem to soil while still attached to mother plant — it roots naturally
+- Always propagate in the plant's active growth season for best success
+
+GARDEN DESIGN PHILOSOPHY:
+- Treat every garden as a mystery to solve collaboratively with the user
+- Previous owners often left valuable plants — always look before removing anything
+- Established plants have irreplaceable value — resist the impulse to clear everything
+- Match plant selection to the user's actual maintenance commitment level
+- Celebrate discoveries — finding a surviving established plant is genuinely exciting
+`
+}
+
+// ─── Regional Knowledge Loader ──────────────────────────────
+
+interface RegionalData {
+  regionId: string
+  name: string
+  zone: string
+  matchZones: string[]
+  matchLocations: string[]
+  climate: Record<string, string>
+  deer?: { severity: string; resistantPlants: string[]; vulnerablePlants: string[]; protectionMethods: string[] }
+  vegetables?: { plantingCalendar: { crop: string; when: string; notes: string }[]; recommendedVarieties: Record<string, string[]>; fungalDisease?: { pressure: string; prevention: string[] } }
+  ornamentals?: Record<string, unknown>
+  edibles?: Record<string, unknown>
+  soil?: Record<string, unknown>
+  troubleshooting?: { problem: string; cause: string; solution: string }[]
+  localResources?: Record<string, unknown>
+  seasonalCalendar?: Record<string, { months: string; activities: string[] }>
+  designPrinciples?: Record<string, unknown>
+}
+
+// Registry of regional knowledge bases — add new regions here
+const REGIONAL_DATA: RegionalData[] = [lowcountryData as unknown as RegionalData]
+
+function findRegionalKnowledge(zone?: string, locationName?: string): RegionalData | null {
+  if (!zone && !locationName) return null
+
+  for (const region of REGIONAL_DATA) {
+    // Match by location name (most specific)
+    if (locationName) {
+      const lower = locationName.toLowerCase()
+      if (region.matchLocations.some(loc => lower.includes(loc))) return region
+    }
+    // Match by zone
+    if (zone && region.matchZones.includes(zone)) return region
+  }
+  return null
+}
+
+function buildRegionalContext(region: RegionalData): string {
+  let ctx = `\nREGIONAL EXPERTISE — ${region.name} (Zone ${region.zone}):\n`
+  ctx += `You have deep local knowledge of this area. Use it to give hyperlocal advice.\n\n`
+
+  // Climate
+  const c = region.climate
+  ctx += `CLIMATE: ${c.note || ''}. Summer highs ${c.summerHighs || 'N/A'}. `
+  ctx += `Annual rainfall ${c.annualRainfall || 'N/A'}. `
+  if (c.saltExposure) ctx += `Salt exposure: ${c.saltExposure}. `
+  if (c.humidity) ctx += `Humidity: ${c.humidity}.\n\n`
+
+  // Seasonal calendar
+  if (region.seasonalCalendar) {
+    ctx += `SEASONAL CALENDAR:\n`
+    for (const [season, info] of Object.entries(region.seasonalCalendar)) {
+      ctx += `- ${season.charAt(0).toUpperCase() + season.slice(1)} (${info.months}): ${info.activities.join('. ')}.\n`
+    }
+    ctx += '\n'
+  }
+
+  // Soil
+  if (region.soil) {
+    const s = region.soil as Record<string, unknown>
+    ctx += `LOCAL SOIL: ${s.type || 'N/A'}. pH ${s.ph || 'N/A'}. `
+    if (s.bestAmendment) ctx += `Best amendment: ${s.bestAmendment}. `
+    const warnings = s.warnings as string[] | undefined
+    if (warnings?.length) ctx += `Warnings: ${warnings.join('. ')}. `
+    ctx += '\n\n'
+  }
+
+  // Deer
+  if (region.deer) {
+    const d = region.deer
+    ctx += `DEER PRESSURE: ${d.severity}\n`
+    ctx += `Deer-resistant plants: ${d.resistantPlants.join(', ')}\n`
+    ctx += `Vulnerable (protect these): ${d.vulnerablePlants.join(', ')}\n`
+    ctx += `Protection methods: ${d.protectionMethods.join('. ')}.\n\n`
+  }
+
+  // Vegetable specifics
+  if (region.vegetables) {
+    const v = region.vegetables
+    ctx += `LOCAL VEGETABLE GUIDE:\n`
+    for (const item of v.plantingCalendar) {
+      ctx += `- ${item.crop} (${item.when}): ${item.notes}\n`
+    }
+    if (v.recommendedVarieties) {
+      ctx += `\nRECOMMENDED VARIETIES FOR THIS AREA:\n`
+      for (const [crop, varieties] of Object.entries(v.recommendedVarieties)) {
+        ctx += `- ${crop}: ${varieties.join(', ')}\n`
+      }
+    }
+    if (v.fungalDisease) {
+      ctx += `\nFUNGAL DISEASE: Pressure is ${v.fungalDisease.pressure}. Prevention: ${v.fungalDisease.prevention.join('. ')}.\n`
+    }
+    ctx += '\n'
+  }
+
+  // Troubleshooting
+  if (region.troubleshooting) {
+    ctx += `COMMON LOCAL PROBLEMS:\n`
+    for (const t of region.troubleshooting) {
+      ctx += `- ${t.problem}: ${t.cause} → ${t.solution}\n`
+    }
+    ctx += '\n'
+  }
+
+  // Local resources
+  if (region.localResources) {
+    const lr = region.localResources as Record<string, unknown>
+    const nurseries = lr.nurseries as string[] | undefined
+    const extension = lr.extension as string | undefined
+    if (nurseries?.length) ctx += `LOCAL NURSERIES: ${nurseries.join(', ')}\n`
+    if (extension) ctx += `EXTENSION SERVICE: ${extension}\n`
+    const hoaNotes = lr.hoaNotes as string | undefined
+    if (hoaNotes) ctx += `HOA NOTE: ${hoaNotes}\n`
+  }
+
+  return ctx
 }
 
 // ─── Initial Soul ──────────────────────────────────────────
@@ -334,6 +498,14 @@ If someone asks about something unrelated to gardening, politely redirect to gar
     async loadContext(ctx: BrainContext): Promise<string> {
       let context = buildGardenContext()
       context += buildRecipeContext()
+      context += buildEnhancedGeneralContext()
+
+      // Load regional knowledge if user's zone/location matches
+      const uc = (ctx as BrainContext & { userContext?: Record<string, unknown> }).userContext || {}
+      const region = findRegionalKnowledge(uc.zone as string, uc.locationName as string)
+      if (region) {
+        context += buildRegionalContext(region)
+      }
 
       // Load local listings if geohash is available
       const geohash = (ctx as BrainContext & { geohash?: string }).geohash
