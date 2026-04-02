@@ -10,12 +10,14 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   imagePreview?: string; // data URL for display only
+  extraImageCount?: number; // additional images beyond the preview
 }
 
 interface PendingImage {
   base64: string;
   mediaType: string;
   preview: string; // data URL
+  id: string; // unique key for React
 }
 
 interface GardenAIChatProps {
@@ -62,9 +64,9 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const growingProfileContext = useGrowingProfileSafe();
   const growingProfile = growingProfileContext?.profile;
@@ -118,45 +120,53 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   }, [isOpen, hydrateConversation]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     // Reset file input so same file can be re-selected
     e.target.value = '';
 
-    // Check size (5MB max before resize)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image too large. Please use a photo under 10MB.');
-      return;
+    const newImages: PendingImage[] = [];
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image too large. Please use photos under 10MB.');
+        continue;
+      }
+      try {
+        const { base64, mediaType } = await resizeAndEncode(file);
+        const preview = `data:${mediaType};base64,${base64}`;
+        newImages.push({ base64, mediaType, preview, id: crypto.randomUUID() });
+      } catch {
+        setError('Could not process an image. Try a different photo.');
+      }
     }
 
-    try {
-      const { base64, mediaType } = await resizeAndEncode(file);
-      const preview = `data:${mediaType};base64,${base64}`;
-      setPendingImage({ base64, mediaType, preview });
+    if (newImages.length > 0) {
+      setPendingImages(prev => [...prev, ...newImages].slice(0, 5)); // max 5 images
       inputRef.current?.focus();
-    } catch {
-      setError('Could not process image. Try a different photo.');
     }
   };
 
   const sendMessage = async () => {
     const hasText = input.trim().length > 0;
-    const hasImage = !!pendingImage;
-    if ((!hasText && !hasImage) || isLoading) return;
+    const hasImages = pendingImages.length > 0;
+    if ((!hasText && !hasImages) || isLoading) return;
 
-    const userMessage = input.trim() || (hasImage ? 'What is this plant? Any issues you can see?' : '');
+    const userMessage = input.trim() || (hasImages ? 'What is this plant? Any issues you can see?' : '');
     setInput('');
     setError(null);
 
-    // Add user message to chat (with image preview if applicable)
+    // Add user message to chat (with image previews if applicable)
     const newMsg: Message = { role: 'user', content: userMessage };
-    if (pendingImage) newMsg.imagePreview = pendingImage.preview;
+    if (hasImages) newMsg.imagePreview = pendingImages[0].preview;
+    if (pendingImages.length > 1) newMsg.extraImageCount = pendingImages.length - 1;
     const newMessages: Message[] = [...messages, newMsg];
     setMessages(newMessages);
 
-    const imagePayload = pendingImage ? { base64: pendingImage.base64, mediaType: pendingImage.mediaType } : undefined;
-    setPendingImage(null);
+    const imagesPayload = hasImages
+      ? pendingImages.map(img => ({ base64: img.base64, mediaType: img.mediaType }))
+      : undefined;
+    setPendingImages([]);
     setIsLoading(true);
 
     try {
@@ -170,7 +180,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             content: m.content,
           })),
           userId: userId || undefined,
-          image: imagePayload,
+          images: imagesPayload,
         }),
       });
 
@@ -211,7 +221,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
+        multiple
         className="hidden"
         onChange={handleFileSelect}
       />
@@ -319,11 +329,16 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                     }`}
                   >
                     {message.imagePreview && (
-                      <img
-                        src={message.imagePreview}
-                        alt="Uploaded plant photo"
-                        className="rounded-lg mb-2 max-h-48 w-auto"
-                      />
+                      <div className="mb-2">
+                        <img
+                          src={message.imagePreview}
+                          alt="Uploaded plant photo"
+                          className="rounded-lg max-h-48 w-auto"
+                        />
+                        {message.extraImageCount && message.extraImageCount > 0 && (
+                          <p className="text-xs opacity-70 mt-1">+{message.extraImageCount} more photo{message.extraImageCount > 1 ? 's' : ''}</p>
+                        )}
+                      </div>
                     )}
                     <div className="text-sm whitespace-pre-wrap">{message.content}</div>
                   </div>
@@ -352,35 +367,39 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Pending image preview */}
-          {pendingImage && (
-            <div className="border-t px-3 pt-2 flex items-center gap-2">
-              <img
-                src={pendingImage.preview}
-                alt="Photo to send"
-                className="h-12 w-12 rounded-lg object-cover"
-              />
-              <span className="text-xs text-gray-500 flex-1">Photo ready to send</span>
-              <button
-                onClick={() => setPendingImage(null)}
-                className="p-1 text-gray-400 hover:text-gray-600"
-                aria-label="Remove photo"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          {/* Pending images preview */}
+          {pendingImages.length > 0 && (
+            <div className="border-t px-3 pt-2 flex items-center gap-2 overflow-x-auto">
+              {pendingImages.map((img) => (
+                <div key={img.id} className="relative flex-shrink-0">
+                  <img
+                    src={img.preview}
+                    alt="Photo to send"
+                    className="h-12 w-12 rounded-lg object-cover"
+                  />
+                  <button
+                    onClick={() => setPendingImages(prev => prev.filter(p => p.id !== img.id))}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-gray-700 text-white rounded-full flex items-center justify-center text-xs hover:bg-gray-900"
+                    aria-label="Remove photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <span className="text-xs text-gray-500 flex-shrink-0">
+                {pendingImages.length} photo{pendingImages.length > 1 ? 's' : ''} ready
+              </span>
             </div>
           )}
 
           {/* Input */}
           <div className="border-t p-3">
-            <div className="flex gap-2">
+            <div className="flex items-end gap-2">
               {/* Camera button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
-                className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 mb-0.5"
                 aria-label="Upload photo"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -388,20 +407,26 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </button>
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // Auto-resize textarea
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                }}
                 onKeyDown={handleKeyDown}
-                placeholder={pendingImage ? "Describe what you see..." : "Ask about planting, pests, soil..."}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-roots-secondary focus:ring-1 focus:ring-roots-secondary"
+                placeholder={pendingImages.length > 0 ? "Describe what you see..." : "Ask about planting, pests, soil..."}
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-roots-secondary focus:ring-1 focus:ring-roots-secondary resize-none leading-5"
+                style={{ minHeight: '40px', maxHeight: '120px' }}
+                rows={1}
                 disabled={isLoading}
               />
               <button
                 onClick={sendMessage}
-                disabled={(!input.trim() && !pendingImage) || isLoading}
-                className="w-10 h-10 rounded-full bg-roots-secondary text-white flex items-center justify-center hover:bg-roots-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
+                className="w-10 h-10 rounded-full bg-roots-secondary text-white flex items-center justify-center hover:bg-roots-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 mb-0.5"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

@@ -16,17 +16,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, conversationHistory = [], userId, image } = body
+    const { message, conversationHistory = [], userId, images, image } = body
 
-    if (!message && !image) {
+    // Support both single image (legacy) and multiple images
+    const imageList: { base64: string; mediaType: string }[] = images
+      || (image ? [image] : [])
+
+    if (!message && imageList.length === 0) {
       return NextResponse.json({ error: 'Message or image is required' }, { status: 400 })
     }
 
-    // Build user message content — with image if provided
+    // Build user message content — with images if provided
     let userContent: AIMessage['content']
-    if (image && image.base64 && image.mediaType) {
+    if (imageList.length > 0) {
       userContent = [
-        { type: 'image' as const, source: { type: 'base64' as const, media_type: image.mediaType, data: image.base64 } },
+        ...imageList.map(img => ({
+          type: 'image' as const,
+          source: { type: 'base64' as const, media_type: img.mediaType, data: img.base64 },
+        })),
         { type: 'text' as const, text: message || 'What is this plant? Any issues you can see?' },
       ]
     } else {
