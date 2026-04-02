@@ -182,10 +182,11 @@ export async function POST(request: NextRequest) {
           ]
 
           try {
-            await brain.saveConversation!(effectiveUserId, allMessages)
+            // Direct KV write as backup (brain.saveConversation uses same kv)
+            await kv.set(`garden:conv:${effectiveUserId}`, { messages: allMessages })
             console.log('[Garden AI] Conversation saved for:', effectiveUserId, 'msgs:', allMessages.length)
           } catch (err) {
-            console.error('[Garden AI] Conv save failed (non-critical):', err)
+            console.error('[Garden AI] Conv save failed (non-critical):', String(err))
             // Cloud save failed — client has localStorage backup
           }
 
