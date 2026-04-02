@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, conversationHistory = [], userId, images, image } = body
+    const { message, conversationHistory = [], userId, images, image, geohash } = body
 
     const imageList: { base64: string; mediaType: string }[] = images
       || (image ? [image] : [])
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       brain.loadMemories?.(effectiveUserId).catch(() => []) ?? [],
     ])
 
-    const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages }
+    const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages, geohash: geohash || undefined }
     const systemPrompt = await brain.getSystemPrompt(ctx)
     const gardenContext = await brain.loadContext(ctx)
     const memoryContext = formatMemoryContext(memories as MemoryFact[], soulText)

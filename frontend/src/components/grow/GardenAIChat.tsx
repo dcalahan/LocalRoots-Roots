@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useGrowingProfileSafe } from '@/contexts/GrowingProfileContext';
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -70,6 +71,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const growingProfileContext = useGrowingProfileSafe();
   const growingProfile = growingProfileContext?.profile;
+  const { preferences } = useUserPreferences();
 
   // Get user ID from wallet, or generate a stable anonymous UUID
   const { address: wagmiAddress } = useAccount();
@@ -183,6 +185,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           })),
           userId: userId || undefined,
           images: imagesPayload,
+          geohash: preferences.preferredLocation?.geohash || undefined,
         }),
       });
 

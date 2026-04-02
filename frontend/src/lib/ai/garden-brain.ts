@@ -16,6 +16,7 @@ import type {
 import { kv } from '@vercel/kv'
 import cropGrowingData from '@/data/crop-growing-data.json'
 import techniqueGuides from '@/data/technique-guides.json'
+import communityRecipes from '@/data/community-recipes.json'
 
 // ─── KV Key Helpers ────────────────────────────────────────
 
@@ -84,6 +85,63 @@ NATURAL GROWING PRINCIPLES:
 - Companion planting: tomatoes + basil, carrots + onions, Three Sisters (corn + beans + squash)
 - Water at soil level to prevent disease, mulch to retain moisture
 `
+}
+
+// ─── Recipe Context Builder ───────────────────────────────
+
+function buildRecipeContext(): string {
+  const recipes = communityRecipes.recipes
+  const recipeLines = recipes.map(r =>
+    `- **${r.name}** (${r.credit}): Garden ingredients: ${r.gardenIngredients.join(', ')}. Pantry: ${r.pantryIngredients.join(', ')}. Seasons: ${r.seasons.join(', ')}. ${r.suggestion}`
+  ).join('\n')
+
+  return `
+COMMUNITY RECIPES (from LocalRoots neighbors):
+${recipeLines}
+
+RECIPE GUIDANCE:
+- When a user mentions growing a specific crop, suggest COMPANION CROPS that complete a recipe
+  Example: User grows tomatoes → suggest planting corn, okra, and cilantro → "Your neighbor Karen makes an amazing 'Summer in a Pan' with those — corn, cherry tomatoes, okra, red onion, cilantro"
+- Think of recipes as a REASON TO GROW specific crops, not just an afterthought
+- Connect the garden plan to the dinner table — help them plant with meals in mind
+- When the user is growing multiple recipe ingredients, share the full recipe
+- Mention that recipes come from the LocalRoots community — real neighbors sharing real food
+`
+}
+
+// ─── Local Listings Fetcher ───────────────────────────────
+
+async function fetchLocalListings(geohash: string): Promise<string> {
+  try {
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_VERCEL_URL
+        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+        : 'http://localhost:3000'
+    const res = await fetch(`${baseUrl}/api/garden-ai/local?geohash=${encodeURIComponent(geohash)}`, {
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return ''
+    const data = await res.json()
+    if (!data.produce?.length) return ''
+
+    const lines = data.produce.map((p: { produceName: string; category: string; sellerCount: number }) =>
+      `- ${p.produceName} (${p.sellerCount} seller${p.sellerCount > 1 ? 's' : ''})`
+    ).join('\n')
+
+    return `
+WHAT'S GROWING NEAR YOU (active LocalRoots listings):
+${lines}
+Total nearby sellers: ${data.totalSellers}
+
+Use this info naturally:
+- Mention what neighbors are selling when relevant
+- Encourage the user to check the LocalRoots marketplace to buy from or sell to neighbors
+- If they're growing something neighbors sell, mention it as community connection
+`
+  } catch {
+    return ''
+  }
 }
 
 // ─── Initial Soul ──────────────────────────────────────────
@@ -193,8 +251,18 @@ GUIDELINES:
 If someone asks about something unrelated to gardening, politely redirect to gardening topics.`
     },
 
-    async loadContext(_ctx: BrainContext): Promise<string> {
-      return buildGardenContext()
+    async loadContext(ctx: BrainContext): Promise<string> {
+      let context = buildGardenContext()
+      context += buildRecipeContext()
+
+      // Load local listings if geohash is available
+      const geohash = (ctx as BrainContext & { geohash?: string }).geohash
+      if (geohash && geohash.length >= 4) {
+        const localContext = await fetchLocalListings(geohash)
+        if (localContext) context += localContext
+      }
+
+      return context
     },
 
     // ─── Memory Persistence (Vercel KV) ─────────────────

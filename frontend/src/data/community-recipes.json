@@ -1,0 +1,76 @@
+{
+  "recipes": [
+    {
+      "name": "Summer in a Pan",
+      "credit": "Karen Mothner, LocalRoots community",
+      "gardenIngredients": ["corn", "cherry tomatoes", "okra", "cilantro"],
+      "pantryIngredients": ["red onion", "olive oil", "Lawry's salt", "pepper"],
+      "seasons": ["summer"],
+      "instructions": "Cook corn on cob, cut off. Halve cherry tomatoes, salt lightly. Sauté 1/4 red onion in olive oil. Add sliced okra, sauté few min. Add corn and tomatoes with Lawry's salt and pepper, sauté until warm. Remove, add fresh chopped cilantro, toss.",
+      "suggestion": "If you're growing any of these, plant the others to complete the dish!"
+    },
+    {
+      "name": "Garden Fresh Caprese",
+      "credit": "LocalRoots community",
+      "gardenIngredients": ["tomatoes", "basil"],
+      "pantryIngredients": ["fresh mozzarella", "olive oil", "balsamic vinegar", "salt"],
+      "seasons": ["summer"],
+      "instructions": "Slice tomatoes and mozzarella. Layer alternating with basil leaves. Drizzle with olive oil and balsamic. Season with salt.",
+      "suggestion": "Tomatoes and basil are perfect companion plants — they grow better together AND taste amazing together!"
+    },
+    {
+      "name": "Garden Pesto",
+      "credit": "LocalRoots community",
+      "gardenIngredients": ["basil", "garlic"],
+      "pantryIngredients": ["pine nuts", "parmesan", "olive oil", "salt"],
+      "seasons": ["summer", "fall"],
+      "instructions": "Blend 2 cups fresh basil, 2 cloves garlic, 1/3 cup pine nuts, 1/2 cup parmesan, 1/2 cup olive oil. Salt to taste. Freezes beautifully for winter.",
+      "suggestion": "Plant extra basil — you can make big batches of pesto and freeze for winter!"
+    },
+    {
+      "name": "Southern Fried Green Tomatoes",
+      "credit": "LocalRoots community",
+      "gardenIngredients": ["green tomatoes"],
+      "pantryIngredients": ["cornmeal", "flour", "eggs", "buttermilk", "salt", "pepper", "oil"],
+      "seasons": ["summer", "fall"],
+      "instructions": "Slice firm green tomatoes 1/4 inch thick. Dip in buttermilk, then dredge in cornmeal/flour mix seasoned with salt and pepper. Fry in oil until golden on each side.",
+      "suggestion": "Don't wait for all your tomatoes to ripen — green tomatoes are a delicacy!"
+    },
+    {
+      "name": "Three Sisters Succotash",
+      "credit": "LocalRoots community",
+      "gardenIngredients": ["corn", "beans", "squash"],
+      "pantryIngredients": ["butter", "onion", "salt", "pepper"],
+      "seasons": ["summer", "fall"],
+      "instructions": "Sauté diced onion in butter. Add corn kernels, cooked beans, and cubed squash. Cook until squash is tender. Season with salt and pepper.",
+      "suggestion": "The Three Sisters (corn, beans, squash) are the original companion planting — they help each other grow AND make a complete meal!"
+    },
+    {
+      "name": "Garden Salsa Fresca",
+      "credit": "LocalRoots community",
+      "gardenIngredients": ["tomatoes", "jalapeño", "cilantro", "onion"],
+      "pantryIngredients": ["lime juice", "salt", "garlic"],
+      "seasons": ["summer"],
+      "instructions": "Dice tomatoes, finely chop jalapeño (remove seeds for less heat), mince onion and cilantro. Mix with lime juice, minced garlic, and salt. Let sit 30 min for flavors to meld.",
+      "suggestion": "Plant a salsa garden! Tomatoes, peppers, cilantro, and onions in one bed."
+    },
+    {
+      "name": "Roasted Root Medley",
+      "credit": "LocalRoots community",
+      "gardenIngredients": ["carrots", "beets", "potatoes", "garlic"],
+      "pantryIngredients": ["olive oil", "rosemary", "salt", "pepper"],
+      "seasons": ["fall", "winter"],
+      "instructions": "Cut root vegetables into even chunks. Toss with olive oil, minced garlic, rosemary, salt, pepper. Roast at 400°F for 35-40 min until caramelized.",
+      "suggestion": "Root vegetables store well — plant in late summer for a fall/winter harvest!"
+    },
+    {
+      "name": "Simple Sautéed Greens",
+      "credit": "LocalRoots community",
+      "gardenIngredients": ["kale", "garlic"],
+      "pantryIngredients": ["olive oil", "red pepper flakes", "lemon juice", "salt"],
+      "seasons": ["spring", "fall", "winter"],
+      "instructions": "Strip kale leaves from stems, chop roughly. Sauté garlic in olive oil, add kale, cook until wilted. Finish with lemon juice and red pepper flakes.",
+      "suggestion": "Kale is one of the hardiest greens — it actually gets sweeter after frost!"
+    }
+  ]
+}
