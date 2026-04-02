@@ -155,6 +155,8 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     const userMessage = input.trim() || (hasImages ? 'What is this plant? Any issues you can see?' : '');
     setInput('');
     setError(null);
+    // Reset textarea height
+    if (inputRef.current) inputRef.current.style.height = 'auto';
 
     // Add user message to chat (with image previews if applicable)
     const newMsg: Message = { role: 'user', content: userMessage };
@@ -184,14 +186,62 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response');
+        // Try to read JSON error
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || `Server error: ${response.status}`);
       }
 
-      // Add assistant response
-      setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+      // Check if streaming (SSE) or JSON fallback
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/event-stream') && response.body) {
+        // Stream response — render text progressively
+        const assistantMsg: Message = { role: 'assistant', content: '' };
+        const streamMessages = [...newMessages, assistantMsg];
+        setMessages(streamMessages);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullText = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') continue;
+              try {
+                const event = JSON.parse(data);
+                if (event.text) {
+                  fullText += event.text;
+                  // Update the assistant message in-place
+                  setMessages(prev => {
+                    const updated = [...prev];
+                    const last = updated[updated.length - 1];
+                    if (last && last.role === 'assistant') {
+                      updated[updated.length - 1] = { ...last, content: fullText };
+                    }
+                    return updated;
+                  });
+                }
+              } catch {
+                // Skip malformed events
+              }
+            }
+          }
+        }
+      } else {
+        // JSON fallback
+        const data = await response.json();
+        setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+      }
     } catch (err) {
       console.error('[GardenAIChat] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
