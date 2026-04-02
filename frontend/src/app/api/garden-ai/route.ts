@@ -1,3 +1,5 @@
+export const maxDuration = 60; // Allow up to 60s for AI responses
+
 import { NextRequest, NextResponse } from 'next/server'
 import { handleChat } from '@/lib/ai-runtime'
 import type { AIMessage, BrainContext } from '@/lib/ai-runtime/types'
