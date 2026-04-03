@@ -18,6 +18,7 @@ import cropGrowingData from '@/data/crop-growing-data.json'
 import techniqueGuides from '@/data/technique-guides.json'
 import communityRecipes from '@/data/community-recipes.json'
 import lowcountryData from '@/data/regional/lowcountry-8a.json'
+import appKnowledge from '@/data/app-knowledge.json'
 
 // ─── KV Key Helpers ────────────────────────────────────────
 
@@ -189,65 +190,64 @@ GARDEN DESIGN PHILOSOPHY:
 `
 }
 
-// ─── App Knowledge Context ─────────────────────────────────
+// ─── App Knowledge Context (from app-knowledge.json) ──────────
 
 function buildAppKnowledgeContext(): string {
-  return `
-LOCAL ROOTS APP GUIDE — Use this to help users navigate the app:
+  const ak = appKnowledge as {
+    overview: string
+    sections: { id: string; name: string; description: string; routes: { path: string; name: string; description: string; authRequired: boolean }[] }[]
+    flows: { id: string; trigger: string; steps: string[] }[]
+    seeds: Record<string, string>
+    auth: Record<string, string>
+    tone: string[]
+  }
 
-WHAT IS LOCAL ROOTS:
-LocalRoots is a neighbor-to-neighbor marketplace for homegrown food. Sellers list their harvest, buyers find local food, ambassadors recruit growers. No platform fees — 100% of every sale goes to the seller. Everyone earns Seeds (loyalty rewards that convert to $ROOTS tokens at launch).
+  let ctx = `\nLOCAL ROOTS APP GUIDE — Use this to help users navigate the app:\n\n`
+  ctx += `WHAT IS LOCAL ROOTS:\n${ak.overview}\n\n`
 
-GROW SECTION (/grow):
-- Growing Hub (/grow): Explore planting resources, growing guides, and talk to the Garden AI (that's you!)
-- My Garden (/grow/my-garden): Track your planted crops through their lifecycle. Requires sign-in. You can add plants here, or just tell me what you planted and I'll add them automatically.
-- Planting Calendar (/grow/calendar): Personalized month-by-month schedule based on the user's zone — what to plant, start indoors, transplant, and harvest.
-- Technique Guides (/grow/guides): 25+ how-to guides on composting, raised beds, seed starting, pest control, companion planting, and more.
-- Crop Pages (/grow/crop/[name]): Deep info on individual crops — spacing, watering, companions, harvest timing.
+  // Sections & routes
+  for (const section of ak.sections) {
+    if (section.id === 'other') {
+      ctx += `OTHER PAGES:\n`
+    } else {
+      ctx += `${section.name.toUpperCase()} SECTION (/${section.id}):\n`
+    }
+    for (const route of section.routes) {
+      ctx += `- ${route.name} (${route.path}): ${route.description}\n`
+    }
+    ctx += '\n'
+  }
 
-BUY SECTION (/buy):
-- Shop (/buy): Enter your location to find nearby sellers. Browse produce by category or distance.
-- Product Pages (/buy/listings/[id]): See photos, price, seller info. Choose pickup or delivery, select quantity, add to cart.
-- Cart (/buy/cart): Review items grouped by seller, adjust quantities.
-- Checkout (/buy/checkout): Pay with credit card, crypto wallet, or account balance. Supports ROOTS, USDC, and USDT tokens.
-- Orders (/buy/orders): Track past and current orders. Confirm receipt, or report issues within 48 hours.
+  // Seeds
+  ctx += `SEEDS REWARDS:\n`
+  ctx += `- Sellers earn ${ak.seeds.sellers}\n`
+  ctx += `- Buyers earn ${ak.seeds.buyers}\n`
+  ctx += `- Ambassadors earn ${ak.seeds.ambassadors}\n`
+  ctx += `- Early adopter bonus: ${ak.seeds.earlyAdopter}\n`
+  ctx += `- ${ak.seeds.conversion}\n`
+  ctx += `- Leaderboard: ${ak.seeds.leaderboard}\n\n`
 
-SELL SECTION (/sell):
-- Get Started (/sell): Learn about selling — benefits, how it works, Seeds rewards.
-- Register (/sell/register): Sign up with email, phone, Google, Apple, or Instagram. No crypto wallet needed — all transactions are gasless.
-- Dashboard (/sell/dashboard): Your seller hub — manage listings, view incoming orders, track earnings and Seeds.
-- Create Listing (/sell/listings/new): Add photos, set price per unit, describe your produce, choose pickup/delivery options.
-- Earnings (/sell/earnings): Detailed breakdown of sales and Seeds earned.
+  // Auth
+  ctx += `SIGN-IN OPTIONS:\n`
+  ctx += `- Sellers & Ambassadors: ${ak.auth.sellersAmbassadors}\n`
+  ctx += `- Crypto Buyers: ${ak.auth.cryptoBuyers}\n`
+  ctx += `- Credit Card Buyers: ${ak.auth.creditCardBuyers}\n\n`
 
-AMBASSADOR SECTION (/ambassador):
-- Learn More (/ambassador): What ambassadors do — recruit sellers, earn commissions, build community food networks.
-- Register (/ambassador/register): Sign up to become an ambassador and get a personal referral link.
-- Dashboard (/ambassador/dashboard): See your recruits, earnings, Seeds, and share your referral link.
-- Guides (/ambassador/guide/*): Step-by-step guides for finding gardeners, helping them register, and creating their first listing.
+  // Flows
+  ctx += `KEY FLOWS TO GUIDE USERS THROUGH:\n`
+  for (const flow of ak.flows) {
+    ctx += `When ${flow.trigger}:\n`
+    flow.steps.forEach((step, i) => { ctx += `  ${i + 1}. ${step}\n` })
+    ctx += '\n'
+  }
 
-SEEDS REWARDS:
-- Sellers earn 500 Seeds per $1 of sales + milestone bonuses (10,000 for first sale, 25,000 at 5 sales, 50,000 at 15 sales)
-- Buyers earn 50 Seeds per $1 spent
-- Ambassadors earn 25% of their recruited sellers' Seeds
-- Early adopter bonus: 2x Seeds for first 90 days, 1.5x for days 91-180
-- Leaderboard at /seeds/leaderboard
-- Seeds convert to $ROOTS tokens when the token launches
+  // Tone
+  ctx += `HOW TO GUIDE USERS:\n`
+  for (const rule of ak.tone) {
+    ctx += `- ${rule}\n`
+  }
 
-OTHER PAGES:
-- Wallet (/wallet): View token balances (Seeds, USDC, USDT, ETH)
-- About (/about/vision, /about/story, /about/tokenomics): Mission, founder story, how Seeds and tokens work
-- Home (/): "Neighbors Feeding Neighbors" — overview of the platform
-
-HOW TO GUIDE USERS:
-- When someone asks "how do I sell?": Walk them to /sell/register → sign up → /sell/listings/new to create first listing
-- When someone asks "how do I buy?": Direct to /buy → enter location → browse → add to cart → checkout
-- When someone asks about ambassadors: Explain the program → /ambassador/register → share referral link
-- When someone asks about tracking their garden: Direct to /grow/my-garden (sign in first), or say "just tell me what you planted and I'll add it for you"
-- When someone asks about earning: Explain Seeds rates for their role, mention /seeds/leaderboard
-- Keep directions conversational — "head to the Sell page" not "navigate to /sell/register"
-- Only mention routes when actively guiding — don't dump navigation lists unprompted
-- If someone isn't signed in, let them know they'll need to sign in (email, phone, or social login — super quick, no crypto knowledge needed)
-`
+  return ctx
 }
 
 // ─── Regional Knowledge Loader ──────────────────────────────

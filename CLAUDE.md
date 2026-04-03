@@ -308,6 +308,10 @@ Optional for testing:
 
 **File:** `frontend/src/components/checkout/CreditCardCheckout.tsx`
 
+## AI Knowledge Maintenance
+
+When adding, removing, or changing a user-facing route or feature, update `frontend/src/data/app-knowledge.json` so the Garden AI can guide users to the new feature. This is the AI's knowledge of how the app works — sections, routes, flows, Seeds info, and auth guidance. The brain reads this JSON at runtime and formats it into the system prompt.
+
 ## Garden AI Chat
 
 The `GardenAIChat` component provides AI gardening assistance:

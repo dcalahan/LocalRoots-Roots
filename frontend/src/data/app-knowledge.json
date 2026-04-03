@@ -1,0 +1,305 @@
+{
+  "overview": "LocalRoots is a neighbor-to-neighbor marketplace for homegrown food. Sellers list their harvest, buyers find local food, ambassadors recruit growers. No platform fees — 100% of every sale goes to the seller. Everyone earns Seeds (loyalty rewards that convert to $ROOTS tokens at launch).",
+  "sections": [
+    {
+      "id": "grow",
+      "name": "Grow",
+      "navLabel": "Grow",
+      "description": "Growing tools, knowledge, and personal garden tracking",
+      "routes": [
+        {
+          "path": "/grow",
+          "name": "Growing Hub",
+          "description": "Explore planting resources, growing guides, and talk to the Garden AI (that's you!)",
+          "authRequired": false
+        },
+        {
+          "path": "/grow/my-garden",
+          "name": "My Garden",
+          "description": "Track your planted crops through their lifecycle. Requires sign-in. You can add plants here, or just tell me what you planted and I'll add them automatically.",
+          "authRequired": true
+        },
+        {
+          "path": "/grow/calendar",
+          "name": "Planting Calendar",
+          "description": "Personalized month-by-month schedule based on the user's zone — what to plant, start indoors, transplant, and harvest.",
+          "authRequired": false
+        },
+        {
+          "path": "/grow/guides",
+          "name": "Technique Guides",
+          "description": "25+ how-to guides on composting, raised beds, seed starting, pest control, companion planting, and more.",
+          "authRequired": false
+        },
+        {
+          "path": "/grow/crop/[id]",
+          "name": "Crop Pages",
+          "description": "Deep info on individual crops — spacing, watering, companions, harvest timing.",
+          "authRequired": false
+        }
+      ]
+    },
+    {
+      "id": "buy",
+      "name": "Buy",
+      "navLabel": "Shop",
+      "description": "Find and buy local food from neighbors",
+      "routes": [
+        {
+          "path": "/buy",
+          "name": "Shop",
+          "description": "Enter your location to find nearby sellers. Browse produce by category or distance.",
+          "authRequired": false
+        },
+        {
+          "path": "/buy/listings",
+          "name": "All Listings",
+          "description": "Browse all available produce, filter by category.",
+          "authRequired": false
+        },
+        {
+          "path": "/buy/listings/[id]",
+          "name": "Product Page",
+          "description": "See photos, price, seller info. Choose pickup or delivery, select quantity, add to cart.",
+          "authRequired": false
+        },
+        {
+          "path": "/buy/cart",
+          "name": "Cart",
+          "description": "Review items grouped by seller, adjust quantities.",
+          "authRequired": false
+        },
+        {
+          "path": "/buy/checkout",
+          "name": "Checkout",
+          "description": "Pay with credit card, crypto wallet, or account balance. Supports ROOTS, USDC, and USDT tokens.",
+          "authRequired": false
+        },
+        {
+          "path": "/buy/orders",
+          "name": "My Orders",
+          "description": "Track past and current orders. Confirm receipt, or report issues within 48 hours.",
+          "authRequired": true,
+          "authNote": "Connect wallet to view orders"
+        },
+        {
+          "path": "/buy/sellers/[sellerId]",
+          "name": "Seller Profile",
+          "description": "View a seller's info and their active listings.",
+          "authRequired": false
+        }
+      ]
+    },
+    {
+      "id": "sell",
+      "name": "Sell",
+      "navLabel": "Sell",
+      "description": "Sell your harvest to neighbors",
+      "routes": [
+        {
+          "path": "/sell",
+          "name": "Get Started Selling",
+          "description": "Learn about selling — benefits, how it works, Seeds rewards. Registered sellers are redirected to their dashboard.",
+          "authRequired": false
+        },
+        {
+          "path": "/sell/register",
+          "name": "Seller Registration",
+          "description": "Sign up with email, phone, Google, Apple, or Instagram. No crypto wallet needed — all transactions are gasless.",
+          "authRequired": true,
+          "authNote": "Privy login (email/phone/social)"
+        },
+        {
+          "path": "/sell/dashboard",
+          "name": "Seller Dashboard",
+          "description": "Your seller hub — manage listings, view incoming orders, track earnings and Seeds.",
+          "authRequired": true
+        },
+        {
+          "path": "/sell/listings/new",
+          "name": "Create Listing",
+          "description": "Add photos, set price per unit, describe your produce, choose pickup/delivery options.",
+          "authRequired": true
+        },
+        {
+          "path": "/sell/earnings",
+          "name": "Earnings",
+          "description": "Detailed breakdown of sales and Seeds earned.",
+          "authRequired": true
+        }
+      ]
+    },
+    {
+      "id": "ambassador",
+      "name": "Ambassador",
+      "navLabel": "Ambassadors",
+      "description": "Recruit sellers, earn commissions, build community food networks",
+      "routes": [
+        {
+          "path": "/ambassador",
+          "name": "Ambassador Program",
+          "description": "What ambassadors do — recruit sellers, earn commissions, build community food networks.",
+          "authRequired": false
+        },
+        {
+          "path": "/ambassador/register",
+          "name": "Become an Ambassador",
+          "description": "Sign up and get a personal referral link. Share it with gardeners to recruit them as sellers.",
+          "authRequired": true,
+          "authNote": "Privy login (email/phone/social)"
+        },
+        {
+          "path": "/ambassador/dashboard",
+          "name": "Ambassador Dashboard",
+          "description": "See your recruits, earnings, Seeds, and share your referral link.",
+          "authRequired": true
+        },
+        {
+          "path": "/ambassador/guide/find-gardeners",
+          "name": "Guide: Find Gardeners",
+          "description": "Comprehensive guide on how to find and inspire growers in your community.",
+          "authRequired": false
+        },
+        {
+          "path": "/ambassador/guide/help-register",
+          "name": "Guide: Help Register",
+          "description": "Step-by-step guide to walk someone through seller registration.",
+          "authRequired": false
+        },
+        {
+          "path": "/ambassador/guide/first-listing",
+          "name": "Guide: First Listing",
+          "description": "Help a new seller create their first listing — photos, pricing, and descriptions.",
+          "authRequired": false
+        },
+        {
+          "path": "/ambassador/disputes",
+          "name": "Disputes",
+          "description": "Vote on buyer/seller disputes as a community governance participant.",
+          "authRequired": true
+        },
+        {
+          "path": "/ambassador/governance",
+          "name": "Governance",
+          "description": "Vote on government data requests and community governance proposals.",
+          "authRequired": true
+        }
+      ]
+    },
+    {
+      "id": "other",
+      "name": "Other",
+      "navLabel": null,
+      "description": "Additional pages",
+      "routes": [
+        {
+          "path": "/",
+          "name": "Home",
+          "description": "'Neighbors Feeding Neighbors' — overview of the LocalRoots platform.",
+          "authRequired": false
+        },
+        {
+          "path": "/wallet",
+          "name": "Wallet",
+          "description": "View token balances (Seeds, USDC, USDT, ETH).",
+          "authRequired": true
+        },
+        {
+          "path": "/seeds/leaderboard",
+          "name": "Seeds Leaderboard",
+          "description": "See top earners across sellers, ambassadors, and buyers ranked by Seeds.",
+          "authRequired": false
+        },
+        {
+          "path": "/orders",
+          "name": "Orders Hub",
+          "description": "Unified orders view for Privy users — see purchases, sales, and referral orders in one place.",
+          "authRequired": true
+        },
+        {
+          "path": "/about/vision",
+          "name": "Our Vision",
+          "description": "LocalRoots mission and vision.",
+          "authRequired": false
+        },
+        {
+          "path": "/about/story",
+          "name": "Our Story",
+          "description": "The founder's story and why LocalRoots exists.",
+          "authRequired": false
+        },
+        {
+          "path": "/about/tokenomics",
+          "name": "Seeds & Tokenomics",
+          "description": "How Seeds work, earning rates, and the $ROOTS token roadmap.",
+          "authRequired": false
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "buying",
+      "trigger": "user wants to buy food from neighbors",
+      "steps": [
+        "Head to Shop (/buy) and enter your location",
+        "Browse nearby sellers or filter by category",
+        "Tap a listing to see details, choose pickup or delivery",
+        "Add to cart, then proceed to checkout (/buy/checkout)",
+        "Pay with credit card or crypto — 100% goes to the seller",
+        "Track your order at /buy/orders"
+      ]
+    },
+    {
+      "id": "selling",
+      "trigger": "user wants to sell their harvest",
+      "steps": [
+        "Go to Sell (/sell) and tap 'Start Selling'",
+        "Register at /sell/register — just email or phone, no crypto needed",
+        "From your dashboard (/sell/dashboard), create your first listing",
+        "Add photos, set a price, describe your produce, pick fulfillment options",
+        "Manage incoming orders and track earnings from your dashboard"
+      ]
+    },
+    {
+      "id": "ambassador",
+      "trigger": "user wants to become an ambassador or recruit sellers",
+      "steps": [
+        "Learn about the program at /ambassador",
+        "Register at /ambassador/register to get your referral link",
+        "Share your link with gardeners — when they register and sell, you earn 25%",
+        "Track recruits and earnings on your dashboard (/ambassador/dashboard)",
+        "Use the guides to help new sellers get started"
+      ]
+    },
+    {
+      "id": "garden-tracking",
+      "trigger": "user wants to track what they've planted",
+      "steps": [
+        "Sign in and head to My Garden (/grow/my-garden)",
+        "Tap 'Add Plants' to log what you've planted",
+        "Or just tell me in chat — 'I planted 6 cherry tomatoes' — and I'll add them automatically",
+        "Watch progress bars as your plants grow toward harvest",
+        "When harvest approaches, list your surplus on LocalRoots to sell to neighbors"
+      ]
+    }
+  ],
+  "seeds": {
+    "sellers": "500 Seeds per $1 earned + milestone bonuses (10,000 for first sale, 25,000 at 5 sales, 50,000 at 15 sales)",
+    "buyers": "50 Seeds per $1 spent",
+    "ambassadors": "25% of recruited sellers' Seeds",
+    "earlyAdopter": "2x Seeds for first 90 days, 1.5x for days 91-180",
+    "conversion": "Seeds convert to $ROOTS tokens when the token launches",
+    "leaderboard": "See rankings at /seeds/leaderboard"
+  },
+  "auth": {
+    "sellersAmbassadors": "Email, phone, Google, Apple, or Instagram via Privy. No crypto wallet needed — all transactions are gasless.",
+    "cryptoBuyers": "Connect an external wallet to pay with ROOTS, USDC, or USDT.",
+    "creditCardBuyers": "Sign in with email to pay by credit card."
+  },
+  "tone": [
+    "Guide users conversationally — 'head to the Sell page' not 'navigate to /sell/register'",
+    "Only mention routes when actively guiding — don't list navigation unprompted",
+    "If they're not signed in, let them know it's quick (email/phone/social — no crypto knowledge needed)"
+  ]
+}
