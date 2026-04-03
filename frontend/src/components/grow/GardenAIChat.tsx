@@ -366,7 +366,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
       />
 
       {/* Floating button with tooltip */}
-      <div className="fixed bottom-6 right-6 z-50 group">
+      <div className="fixed right-4 z-50 group" style={{ bottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}>
         {/* Tooltip - shows on hover when chat is closed */}
         {!isOpen && (
           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
@@ -400,8 +400,8 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
 
       {/* Chat window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
-             style={{ height: 'min(600px, calc(100vh - 8rem))' }}>
+        <div className="fixed bottom-20 right-4 left-4 sm:left-auto sm:w-96 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
+             style={{ height: 'min(600px, calc(100vh - 7rem))' }}>
           {/* Header */}
           <div className="bg-roots-secondary text-white px-4 py-3 flex items-center gap-3">
             <span className="text-2xl">🌱</span>
