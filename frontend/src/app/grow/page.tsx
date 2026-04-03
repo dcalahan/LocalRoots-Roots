@@ -40,6 +40,18 @@ function GrowPageContent() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Link href="/grow/my-garden" className="block">
+          <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-roots-secondary/30 bg-roots-secondary/5">
+            <CardContent className="pt-6 text-center">
+              <div className="text-4xl mb-3">🌱</div>
+              <h3 className="font-heading font-semibold mb-1 text-roots-secondary">My Garden</h3>
+              <p className="text-sm text-roots-gray">
+                Track what you planted
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link href="/grow/calendar" className="block">
           <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="pt-6 text-center">

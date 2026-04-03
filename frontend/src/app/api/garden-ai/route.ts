@@ -6,6 +6,7 @@ import { getTextContent } from '@/lib/ai-runtime/types'
 import { formatMemoryContext, extractMemories, mergeMemories } from '@/lib/ai-runtime/memory'
 import { createRouter } from '@/lib/ai-runtime/router'
 import { createGardenBrain } from '@/lib/ai/garden-brain'
+import { buildGardenActionExtractionPrompt, parseGardenActions } from '@/lib/gardenActions'
 import { kv } from '@/lib/kv'
 
 const brain = createGardenBrain()
@@ -216,6 +217,41 @@ export async function POST(request: NextRequest) {
           // Send current memories to client for localStorage backup
           if (memories && (memories as MemoryFact[]).length > 0) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ memories })}\n\n`))
+          }
+
+          // Extract garden actions from conversation (if user is logged in)
+          if (userId && streamState.fullResponse) {
+            try {
+              const recentForActions: AIMessage[] = [
+                ...messages.slice(-3),
+                { role: 'assistant', content: streamState.fullResponse },
+              ]
+              const extractionPrompt = buildGardenActionExtractionPrompt(recentForActions)
+              const actionRes = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ANTHROPIC_API_KEY!,
+                  'anthropic-version': '2023-06-01',
+                },
+                body: JSON.stringify({
+                  model: 'claude-haiku-4-5-20251001',
+                  max_tokens: 500,
+                  messages: [{ role: 'user', content: extractionPrompt }],
+                }),
+              })
+              if (actionRes.ok) {
+                const actionData = await actionRes.json()
+                const actionText = actionData.content?.[0]?.text || ''
+                const actions = parseGardenActions(actionText)
+                if (actions.length > 0) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ gardenActions: actions })}\n\n`))
+                  console.log('[Garden AI] Extracted', actions.length, 'garden actions for:', effectiveUserId)
+                }
+              }
+            } catch (err) {
+              console.error('[Garden AI] Garden action extraction failed:', err)
+            }
           }
 
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`))

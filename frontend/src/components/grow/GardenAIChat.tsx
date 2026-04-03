@@ -8,6 +8,10 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 import { useSellerListings } from '@/hooks/useSellerListings';
+import { useMyGarden } from '@/hooks/useMyGarden';
+import { computeStatus } from '@/lib/gardenStatus';
+import { useToast } from '@/hooks/use-toast';
+import { getCropDisplayName } from '@/lib/gardenStatus';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -76,6 +80,10 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const { preferences } = useUserPreferences();
   const { isSeller } = useSellerStatus();
   const { listings: sellerListings } = useSellerListings();
+  const { user: privyUser } = usePrivy();
+  const gardenUserId = privyUser?.id || null;
+  const { activePlants: gardenPlants, applyActions: applyGardenActions } = useMyGarden(gardenUserId);
+  const { toast } = useToast();
 
   // Get user ID from wallet, or generate a stable anonymous UUID
   const { address: wagmiAddress } = useAccount();
@@ -263,6 +271,16 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             sellerListings: isSeller && sellerListings.length > 0
               ? sellerListings.filter(l => l.active && l.metadata).map(l => ({ produceName: l.metadata!.produceName, category: l.metadata!.category }))
               : undefined,
+            // My Garden data for AI context
+            myGarden: gardenPlants.length > 0
+              ? gardenPlants.map(p => ({
+                  cropId: p.cropId,
+                  plantingDate: p.plantingDate,
+                  quantity: p.quantity,
+                  plantingMethod: p.plantingMethod,
+                  location: p.location,
+                }))
+              : undefined,
           },
         }),
       });
@@ -303,6 +321,21 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                 if (event.memories) {
                   // Server sent extracted memories — save locally
                   saveMemoriesToLocal(event.memories);
+                } else if (event.gardenActions) {
+                  // Server extracted garden actions — apply to My Garden
+                  try {
+                    applyGardenActions(event.gardenActions);
+                    for (const action of event.gardenActions) {
+                      const name = getCropDisplayName(action.cropId);
+                      if (action.action === 'add_plant') {
+                        toast({ title: `Added ${action.quantity || 1} ${name} to your garden 🌱` });
+                      } else if (action.action === 'mark_harvested') {
+                        toast({ title: `Marked ${name} as harvested 🎉` });
+                      } else if (action.action === 'remove_plant') {
+                        toast({ title: `Removed ${name} from your garden` });
+                      }
+                    }
+                  } catch { /* non-critical */ }
                 } else if (event.text) {
                   fullText += event.text;
                   // Update the assistant message in-place
