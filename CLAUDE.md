@@ -314,31 +314,66 @@ The `GardenAIChat` component provides AI gardening assistance:
 - Available on `/grow` page (visible in navigation header)
 - Also available on all `/sell/*` pages via layout wrapper
 - Floating chat icon in bottom-right corner
-- **Streaming responses** via SSE (Server-Sent Events) for real-time text rendering
-- **Photo upload** — users can snap or upload up to 5 photos for plant identification
-- **Per-user memory** — remembers user's zone, plants, soil, preferences across sessions
-- **Conversation persistence** — conversations restored on reload via Vercel KV
-- **Local marketplace awareness** — knows what neighbors are growing/selling nearby (geohash-based)
-- **Community recipe suggestions** — suggests companion crops that complete recipes (e.g., "You're growing tomatoes — plant corn, okra, cilantro for Summer in a Pan")
+- Uses Claude Haiku 4.5 via Anthropic API
 
-**Architecture:**
-- Uses the `ai-runtime` Brain pattern (extracted from Common Area/Ask Hans)
-- Model: `claude-haiku-4-5-20251001` via direct Anthropic API (streaming)
-- Memory: 3-layer system (conversation window, entity memory, product soul)
-- Persistence: Vercel KV (`garden:conv:{userId}`, `garden:memories:{userId}`, `garden:soul`)
-- Identity: Wallet address if connected, otherwise stable localStorage UUID
-- Background memory extraction via Next.js `after()` — runs after response is sent
-- `export const maxDuration = 60` on route for longer AI responses
+### Smart Context Chain
 
-**Key Files:**
-- `frontend/src/components/grow/GardenAIChat.tsx` - Main chat component (streaming, photos, textarea)
-- `frontend/src/app/api/garden-ai/route.ts` - POST: streaming chat; GET: conversation hydration
-- `frontend/src/app/api/garden-ai/local/route.ts` - Local marketplace listings by geohash
-- `frontend/src/lib/ai/garden-brain.ts` - Brain config (system prompt, memory, recipes, local context)
-- `frontend/src/lib/ai-runtime/` - Inlined ai-runtime (types, router, memory, chat)
-- `frontend/src/data/community-recipes.json` - 8 community recipes with garden/pantry ingredient split
-- `frontend/src/data/crop-growing-data.json` - Crop planting guide data
-- `frontend/src/app/sell/layout.tsx` - Adds chat to sell pages
+Garden AI automatically gathers user context from multiple sources (priority order):
+1. **Seller geohash** (on-chain) — exact location for logged-in sellers
+2. **Browser GPS** — zone + frost dates from `GrowingProfileContext`
+3. **Vercel IP geo headers** — city-level fallback when GPS is denied (`x-vercel-ip-latitude/longitude/city`)
+4. **AI asks the user** — graceful fallback when nothing else is available
+
+**Context passed to AI (all optional, degrades gracefully):**
+- Zone, frost dates, growing season, tropical/hemisphere flags
+- Location name (e.g., "Hilton Head, SC")
+- Confidence level (`precise`, `estimated`, `ip-estimated`)
+- User role (seller/buyer/ambassador) — tailors advice accordingly
+- Seller's active listings — AI knows what they already grow
+- Current season (derived from date + hemisphere)
+
+### Regional Knowledge System
+
+Regional garden intelligence is loaded conditionally based on user's zone/location:
+- JSON files in `frontend/src/data/regional/` contain hyperlocal expertise
+- Registered in `REGIONAL_DATA` array in `garden-brain.ts`
+- Matched by zone OR location name keywords
+- First region: **Lowcountry SC (Zone 8a)** — deer pressure, salt tolerance, specific varieties, seasonal calendar, soil amendments, troubleshooting, local resources
+
+**To add a new region:**
+1. Create `frontend/src/data/regional/<region-name>.json` (follow `lowcountry-8a.json` schema)
+2. Import and add to `REGIONAL_DATA` array in `garden-brain.ts`
+3. Include `matchZones` and `matchLocations` arrays for auto-matching
+
+### Persistence Architecture (localStorage-first)
+
+- **localStorage** = primary storage (sync, reliable, instant)
+- **Upstash KV** = async cloud backup via `after()` (best-effort)
+- Conversations and memories save to localStorage immediately
+- Cloud backup happens after response is sent
+- Hydration: localStorage first (instant), cloud GET as async fallback
+- Client sends `clientMemories` in POST body so server has them even when KV is down
+
+### Memory System
+
+- Entity memory extracts facts from conversations (zone, plants, soil, goals)
+- Up to 100 facts per user across categories: garden_setup, growing_preference, garden_history, schedule, personal
+- Extraction runs in `after()` via a second Haiku call
+- Memories sent back to client as SSE event for localStorage backup
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/components/grow/GardenAIChat.tsx` | Main chat component, context gathering, localStorage persistence |
+| `frontend/src/app/api/garden-ai/route.ts` | API endpoint — streaming, IP geo fallback, after() for saves |
+| `frontend/src/lib/ai/garden-brain.ts` | Brain — system prompt, context loading, regional knowledge, memory |
+| `frontend/src/lib/kv.ts` | Custom Upstash REST client (replaced broken @vercel/kv) |
+| `frontend/src/data/regional/lowcountry-8a.json` | Lowcountry SC regional knowledge |
+| `frontend/src/data/community-recipes.json` | Community recipes with companion crop suggestions |
+| `frontend/src/data/crop-growing-data.json` | Crop planting guide (20+ crops) |
+| `frontend/src/app/api/garden-ai/local/route.ts` | Local marketplace listings endpoint |
+| `frontend/src/app/sell/layout.tsx` | Adds chat to sell pages |
 
 ## Deployment Workflow - IMPORTANT
 
@@ -346,13 +381,7 @@ The `GardenAIChat` component provides AI gardening assistance:
 
 1. Commit changes to `main`
 2. Push to `origin/main`
-3. Deploy: `cd frontend && npx vercel --prod`
-4. **CRITICAL: Alias the domain** — `npx vercel alias set <deployment-url> www.localroots.love`
-   - The CLI deploy does NOT auto-alias `www.localroots.love`
-   - Without this step, the domain still points to the old deployment
-   - Get the deployment URL from the `vercel --prod` output
-
-**Why manual alias?** The Vercel project's domain config doesn't auto-assign `www.localroots.love` to CLI deploys. Git-push deploys work but were broken for 49 days. Until this is fixed in the Vercel dashboard, always alias manually.
+3. Vercel auto-deploys from the push
 
 This will change when we go into soft launch or launch. Until then, always deploy.
 
