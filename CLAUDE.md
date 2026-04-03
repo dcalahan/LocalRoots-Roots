@@ -1,5 +1,16 @@
 # LocalRoots Project Guidelines
 
+## Product Positioning — CRITICAL CONTEXT
+
+LocalRoots is a **gardening companion first, marketplace inside.** The AI gardening assistant is the front door — it delivers immediate single-player value. The marketplace (buy/sell local food) is a feature that emerges naturally when users have surplus harvest. "Neighbors Feeding Neighbors" is the brand soul, woven into every page (header tagline, footer), but NOT the headline.
+
+**Rules for all UI/copy/marketing work:**
+- Lead with gardening value, not marketplace
+- Never mention blockchain, crypto, tokens, or wallets in user-facing copy
+- Position selling as "sharing extras with neighbors"
+- Primary CTA is "Start Growing" not "Browse Produce" or "Start Selling"
+- The AI should feel like a knowledgeable friend, not a product feature
+
 ## Session Startup - DO THIS FIRST
 
 **Start a Background Slack Listener** at the beginning of every session.
