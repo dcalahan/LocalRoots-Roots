@@ -380,10 +380,10 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   };
 
   const suggestedQuestions = [
-    "When should I plant tomatoes?",
-    "How do I deal with aphids naturally?",
-    "What vegetables grow well together?",
-    "How do I start seeds indoors?",
+    "What should I plant right now?",
+    "I just started a garden — help me plan it",
+    "What's wrong with my plant? 📸",
+    "How do I grow more than I can eat?",
   ];
 
   return (
@@ -404,7 +404,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         {!isOpen && (
           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
             <div className="flex items-center gap-2">
-              <span>Ask the Garden Assistant</span>
+              <span>Ask your gardening companion</span>
             </div>
             <div className="absolute bottom-0 right-6 translate-y-full">
               <div className="border-8 border-transparent border-t-gray-900" />
@@ -413,6 +413,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         )}
 
         <button
+          data-garden-chat-toggle
           onClick={() => setIsOpen(!isOpen)}
           className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 ${
             isOpen
@@ -458,7 +459,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
               <div className="text-center py-4">
                 <div className="text-4xl mb-3">👋</div>
                 <p className="text-gray-600 mb-4">
-                  Hi! I'm your garden assistant. Ask me about planting times, pest control, or any gardening questions!
+                  Hi! I&apos;m your gardening companion — I know your local climate and can help you grow anything. What are you working on?
                 </p>
                 <div className="space-y-2">
                   <p className="text-xs text-gray-400 uppercase tracking-wide">Try asking:</p>

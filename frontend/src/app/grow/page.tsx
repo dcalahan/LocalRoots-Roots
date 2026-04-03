@@ -11,12 +11,42 @@ function GrowPageContent() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-heading font-bold mb-2">Growing Guides</h1>
+        <h1 className="text-3xl font-heading font-bold mb-2">Your Garden</h1>
         <p className="text-roots-gray max-w-xl mx-auto">
-          Know exactly when to plant based on your location. Get personalized
-          planting schedules, frost dates, and growing tips.
+          AI advice, planting calendar, and tracking — all personalized for your climate.
         </p>
       </div>
+
+      {/* Ask the AI — prominent inline card */}
+      <Card className="mb-6 border-roots-secondary/30 bg-gradient-to-r from-roots-secondary/5 to-roots-secondary/10">
+        <CardContent className="pt-6 pb-6">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-14 h-14 rounded-full bg-roots-secondary flex items-center justify-center shadow-md">
+                <span className="text-2xl" style={{ filter: 'brightness(0) invert(1)' }}>🌱</span>
+              </div>
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="font-heading font-semibold text-lg mb-1">Ask me anything about growing</h3>
+              <p className="text-sm text-roots-gray">
+                I know your local climate and can help with planting times, pest control, plant identification, garden planning — whatever you need.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <Button
+                className="bg-roots-secondary hover:bg-roots-secondary/90"
+                onClick={() => {
+                  // Find and click the floating chat button
+                  const chatBtn = document.querySelector('[data-garden-chat-toggle]') as HTMLButtonElement;
+                  if (chatBtn) chatBtn.click();
+                }}
+              >
+                Start a conversation
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Growing Profile */}
       <GrowingProfileCard />
@@ -39,7 +69,7 @@ function GrowPageContent() {
       </Card>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <Link href="/grow/my-garden" className="block">
           <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-roots-secondary/30 bg-roots-secondary/5">
             <CardContent className="pt-6 text-center">
@@ -58,7 +88,7 @@ function GrowPageContent() {
               <div className="text-4xl mb-3">📅</div>
               <h3 className="font-heading font-semibold mb-1">Planting Calendar</h3>
               <p className="text-sm text-roots-gray">
-                Month-by-month guide for your zone
+                Month-by-month for your zone
               </p>
             </CardContent>
           </Card>
@@ -70,19 +100,7 @@ function GrowPageContent() {
               <div className="text-4xl mb-3">📚</div>
               <h3 className="font-heading font-semibold mb-1">Growing Guides</h3>
               <p className="text-sm text-roots-gray">
-                Learn gardening techniques
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/sell" className="block">
-          <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-roots-primary/30 bg-roots-pale">
-            <CardContent className="pt-6 text-center">
-              <div className="text-4xl mb-3">💰</div>
-              <h3 className="font-heading font-semibold mb-1 text-roots-primary">Start Selling</h3>
-              <p className="text-sm text-roots-gray">
-                Turn your harvest into income
+                25+ technique guides
               </p>
             </CardContent>
           </Card>
@@ -109,7 +127,7 @@ function GrowPageContent() {
               <Link
                 key={crop.id}
                 href={`/grow/crop/${crop.id}`}
-                className="flex items-center gap-2 p-3 rounded-lg border hover:border-roots-primary hover:bg-roots-pale transition-colors"
+                className="flex items-center gap-2 p-3 rounded-lg border hover:border-roots-secondary hover:bg-roots-secondary/5 transition-colors"
               >
                 <span className="text-2xl">{crop.emoji}</span>
                 <span className="text-sm font-medium">{crop.name}</span>
@@ -118,24 +136,6 @@ function GrowPageContent() {
           </div>
         </CardContent>
       </Card>
-
-      {/* CTA */}
-      <div className="mt-8 text-center p-6 bg-roots-pale rounded-xl">
-        <h3 className="font-heading font-bold text-lg mb-2">
-          Ready to grow and sell?
-        </h3>
-        <p className="text-roots-gray mb-4">
-          LocalRoots connects backyard gardeners with neighbors who want fresh, local produce.
-        </p>
-        <div className="flex gap-3 justify-center">
-          <Link href="/sell">
-            <Button className="bg-roots-primary">Start Selling</Button>
-          </Link>
-          <Link href="/buy">
-            <Button variant="outline">Shop Local</Button>
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

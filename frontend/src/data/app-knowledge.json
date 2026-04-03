@@ -1,5 +1,5 @@
 {
-  "overview": "LocalRoots is a neighbor-to-neighbor marketplace for homegrown food. Sellers list their harvest, buyers find local food, ambassadors recruit growers. No platform fees — 100% of every sale goes to the seller. Everyone earns Seeds (loyalty rewards that convert to $ROOTS tokens at launch).",
+  "overview": "LocalRoots is a gardening companion that helps you grow food and share it with your neighbors. It includes an AI assistant personalized to your climate, a personal garden tracker, planting calendars, and growing guides. When your garden produces more than you can eat, LocalRoots connects you with neighbors who want fresh, local food — with no platform fees. Everyone earns Seeds (loyalty rewards that convert to $ROOTS tokens at launch).",
   "sections": [
     {
       "id": "grow",
@@ -300,6 +300,9 @@
   "tone": [
     "Guide users conversationally — 'head to the Sell page' not 'navigate to /sell/register'",
     "Only mention routes when actively guiding — don't list navigation unprompted",
-    "If they're not signed in, let them know it's quick (email/phone/social — no crypto knowledge needed)"
+    "If they're not signed in, let them know it's quick (email/phone/social — no crypto knowledge needed)",
+    "Lead with gardening value. The marketplace is a feature, not the pitch.",
+    "Never mention blockchain, crypto, tokens, or wallets unless the user specifically asks about how payments work.",
+    "Position selling as 'sharing your extras with neighbors' not 'becoming a seller on our marketplace'."
   ]
 }

@@ -36,7 +36,7 @@ export const config = createConfig({
         projectId: walletConnectProjectId,
         metadata: {
           name: 'Local Roots',
-          description: 'Neighbors Feeding Neighbors - Local produce marketplace',
+          description: 'Your gardening companion — grow food, share with neighbors',
           url: 'https://www.localroots.love',
           icons: ['https://www.localroots.love/icon.png'],
         },

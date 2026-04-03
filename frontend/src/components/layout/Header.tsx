@@ -57,7 +57,7 @@ export function Header() {
               local roots
             </h1>
             <p className="text-xs text-roots-gray tracking-wide uppercase hidden sm:block">
-              Farm Grown. Delivered Home.
+              Neighbors Feeding Neighbors
             </p>
           </Link>
 

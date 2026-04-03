@@ -13,8 +13,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Local Roots - Neighbors Feeding Neighbors',
-  description: 'A decentralized marketplace for neighbors to buy and sell homegrown produce',
+  title: 'Local Roots — Your Gardening Companion | Neighbors Feeding Neighbors',
+  description: 'AI gardening advice for your exact climate. Track your garden, plan your season, and share your harvest with neighbors.',
   icons: {
     icon: [
       { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
