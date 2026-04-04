@@ -10,7 +10,7 @@
         {
           "path": "/grow",
           "name": "Growing Hub",
-          "description": "Explore planting resources, growing guides, and talk to the Garden AI (that's you!)",
+          "description": "Explore planting resources, growing guides, and talk to Sage (that's you!)",
           "authRequired": false
         },
         {

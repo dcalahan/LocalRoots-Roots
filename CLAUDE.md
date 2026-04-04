@@ -304,7 +304,7 @@ Required for core functionality:
 - `NEXT_PUBLIC_PINATA_JWT` - Pinata API token for IPFS uploads
 - `NEXT_PUBLIC_PINATA_GATEWAY` - Pinata gateway (gateway.pinata.cloud)
 - `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` - thirdweb client ID for Pay
-- `ANTHROPIC_API_KEY` - For Garden AI chat
+- `ANTHROPIC_API_KEY` - For Sage (AI gardening companion)
 
 Optional for testing:
 - `NEXT_PUBLIC_TEST_WALLET_PRIVATE_KEY` - Shows "Test Funds" button (REMOVE BEFORE MAINNET!)
@@ -321,19 +321,28 @@ Optional for testing:
 
 ## AI Knowledge Maintenance
 
-When adding, removing, or changing a user-facing route or feature, update `frontend/src/data/app-knowledge.json` so the Garden AI can guide users to the new feature. This is the AI's knowledge of how the app works — sections, routes, flows, Seeds info, and auth guidance. The brain reads this JSON at runtime and formats it into the system prompt.
+When adding, removing, or changing a user-facing route or feature, update `frontend/src/data/app-knowledge.json` so Sage can guide users to the new feature. This is Sage's knowledge of how the app works — sections, routes, flows, Seeds info, and auth guidance. The brain reads this JSON at runtime and formats it into the system prompt.
 
-## Garden AI Chat
+## Sage — AI Gardening Companion
+
+**Name:** Sage. Always refer to the AI assistant as "Sage" in UI copy, never "Garden AI" or "Garden Assistant."
 
 The `GardenAIChat` component provides AI gardening assistance:
 - Available on `/grow` page (visible in navigation header)
 - Also available on all `/sell/*` pages via layout wrapper
-- Floating chat icon in bottom-right corner
+- Floating chat icon in bottom-right corner (tooltip: "Ask Sage")
 - Uses Claude Haiku 4.5 via Anthropic API
+
+### Voice Input/Output
+
+- **Voice input:** Browser-native Web Speech API (`SpeechRecognition`). Mic button between textarea and send button. Pulsing red when listening. Auto-sends on recognition.
+- **Voice output:** `SpeechSynthesis` with first-time opt-in. First voice message in a session triggers a card: "Would you like me to read my responses aloud?" Yes enables auto-read for the rest of the session. Speaker toggle in header to disable.
+- **iOS Safari zoom fix:** Chat textarea uses `font-size: max(16px, 0.875rem)` and viewport has `maximumScale: 1` to prevent auto-zoom on input focus.
+- Both features degrade gracefully — hidden if browser doesn't support.
 
 ### Smart Context Chain
 
-Garden AI automatically gathers user context from multiple sources (priority order):
+Sage automatically gathers user context from multiple sources (priority order):
 1. **Seller geohash** (on-chain) — exact location for logged-in sellers
 2. **Browser GPS** — zone + frost dates from `GrowingProfileContext`
 3. **Vercel IP geo headers** — city-level fallback when GPS is denied (`x-vercel-ip-latitude/longitude/city`)

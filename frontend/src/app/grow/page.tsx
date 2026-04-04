@@ -27,7 +27,7 @@ function GrowPageContent() {
               </div>
             </div>
             <div className="flex-1 text-center md:text-left">
-              <h3 className="font-heading font-semibold text-lg mb-1">Ask me anything about growing</h3>
+              <h3 className="font-heading font-semibold text-lg mb-1">Ask Sage anything about growing</h3>
               <p className="text-sm text-roots-gray">
                 I know your local climate and can help with planting times, pest control, plant identification, garden planning — whatever you need.
               </p>

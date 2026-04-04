@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { useGrowingProfileSafe } from '@/contexts/GrowingProfileContext';
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -84,6 +83,18 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const gardenUserId = privyUser?.id || null;
   const { activePlants: gardenPlants, applyActions: applyGardenActions } = useMyGarden(gardenUserId);
   const { toast } = useToast();
+
+  // Voice state
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [synthSupported, setSynthSupported] = useState(false);
+  const [autoReadEnabled, setAutoReadEnabled] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showVoicePrompt, setShowVoicePrompt] = useState(false);
+  const voicePromptShown = useRef(false);
+  const lastMessageWasVoice = useRef(false);
+  const recognitionRef = useRef<any>(null);
+  const pendingVoiceResponse = useRef<string | null>(null);
 
   // Get user ID from wallet, or generate a stable anonymous UUID
   const { address: wagmiAddress } = useAccount();
@@ -174,6 +185,21 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Check speech support on mount
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setSpeechSupported(!!SpeechRecognition);
+    setSynthSupported('speechSynthesis' in window);
+  }, []);
+
+  // Cleanup speech on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+    };
+  }, []);
+
   // Focus input and hydrate when chat opens
   useEffect(() => {
     if (isOpen) {
@@ -181,6 +207,75 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
       hydrateConversation();
     }
   }, [isOpen, hydrateConversation]);
+
+  const speakText = useCallback((text: string) => {
+    if (!synthSupported) return;
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    const voices = speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.name.includes('Samantha') || v.name.includes('Google'));
+    if (preferred) utterance.voice = preferred;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    speechSynthesis.speak(utterance);
+  }, [synthSupported]);
+
+  const stopSpeaking = useCallback(() => {
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }, []);
+
+  const startListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    stopSpeaking();
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript.trim()) {
+        lastMessageWasVoice.current = true;
+        setInput(transcript);
+        setTimeout(() => {
+          const sendBtn = document.querySelector('[data-sage-send]') as HTMLButtonElement;
+          if (sendBtn) sendBtn.click();
+        }, 100);
+      }
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [stopSpeaking]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} }
+    setIsListening(false);
+  }, []);
+
+  const handleVoicePromptYes = useCallback(() => {
+    voicePromptShown.current = true;
+    setAutoReadEnabled(true);
+    setShowVoicePrompt(false);
+    if (pendingVoiceResponse.current) {
+      speakText(pendingVoiceResponse.current);
+      pendingVoiceResponse.current = null;
+    }
+  }, [speakText]);
+
+  const handleVoicePromptNo = useCallback(() => {
+    voicePromptShown.current = true;
+    setShowVoicePrompt(false);
+    pendingVoiceResponse.current = null;
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -357,13 +452,34 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         // Stream done — save conversation to localStorage
         const finalMessages = [...newMessages, { role: 'assistant' as const, content: fullText }];
         saveConvToLocal(finalMessages);
+
+        // Voice output after stream
+        if (lastMessageWasVoice.current && synthSupported && fullText) {
+          if (autoReadEnabled) {
+            speakText(fullText);
+          } else if (!voicePromptShown.current) {
+            pendingVoiceResponse.current = fullText;
+            setShowVoicePrompt(true);
+          }
+        }
       } else {
         // JSON fallback
         const data = await response.json();
         const finalMessages = [...newMessages, { role: 'assistant' as const, content: data.reply }];
         setMessages(finalMessages);
         saveConvToLocal(finalMessages);
+
+        // Voice output after JSON response
+        if (lastMessageWasVoice.current && synthSupported && data.reply) {
+          if (autoReadEnabled) {
+            speakText(data.reply);
+          } else if (!voicePromptShown.current) {
+            pendingVoiceResponse.current = data.reply;
+            setShowVoicePrompt(true);
+          }
+        }
       }
+      lastMessageWasVoice.current = false;
     } catch (err) {
       console.error('[GardenAIChat] Error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
@@ -404,7 +520,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         {!isOpen && (
           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
             <div className="flex items-center gap-2">
-              <span>Ask your gardening companion</span>
+              <span>Ask Sage</span>
             </div>
             <div className="absolute bottom-0 right-6 translate-y-full">
               <div className="border-8 border-transparent border-t-gray-900" />
@@ -420,7 +536,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
               ? 'bg-roots-gray hover:bg-roots-gray/80'
               : 'bg-roots-secondary hover:bg-roots-secondary/90'
           } ${className}`}
-          aria-label={isOpen ? 'Close garden assistant' : 'Open garden assistant'}
+          aria-label={isOpen ? 'Close Sage' : 'Ask Sage'}
         >
           {isOpen ? (
             <svg className="w-6 h-6 text-roots-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -440,26 +556,39 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           <div className="bg-roots-secondary text-white px-4 py-3 flex items-center gap-3">
             <span className="text-2xl">🌱</span>
             <div className="flex-1">
-              <h3 className="font-semibold">Garden Assistant</h3>
-              <p className="text-xs text-roots-cream/80">Ask me anything about growing!</p>
+              <h3 className="font-semibold">Sage</h3>
+              <p className="text-xs text-roots-cream/80">Your gardening companion</p>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white/20 rounded"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-1">
+              {autoReadEnabled && (
+                <button
+                  onClick={() => { stopSpeaking(); setAutoReadEnabled(false); }}
+                  className="p-1 hover:bg-white/20 rounded"
+                  title="Turn off voice responses"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6l-4 4H4v4h4l4 4V6z" />
+                  </svg>
+                </button>
+              )}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 hover:bg-white/20 rounded"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
               <div className="text-center py-4">
-                <div className="text-4xl mb-3">👋</div>
+                <div className="text-4xl mb-3">🌱</div>
                 <p className="text-gray-600 mb-4">
-                  Hi! I&apos;m your gardening companion — I know your local climate and can help you grow anything. What are you working on?
+                  Hi! I&apos;m Sage, your gardening companion — I know your local climate and can help you grow anything. What are you working on?
                 </p>
                 <div className="space-y-2">
                   <p className="text-xs text-gray-400 uppercase tracking-wide">Try asking:</p>
@@ -486,6 +615,11 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                     </svg>
                     Upload a photo of your plant
                   </button>
+                  {speechSupported && (
+                    <p className="text-xs text-gray-400 mt-3 flex items-center justify-center gap-1">
+                      <span>🎤</span> Tip: Tap the mic to talk to Sage
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (
@@ -517,6 +651,27 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   </div>
                 </div>
               ))
+            )}
+
+            {/* Voice opt-in prompt */}
+            {showVoicePrompt && (
+              <div className="bg-roots-secondary/10 border border-roots-secondary/30 rounded-xl px-4 py-3 text-center">
+                <p className="text-sm text-gray-700 mb-2">Would you like me to read my responses aloud? 🔊</p>
+                <div className="flex justify-center gap-3">
+                  <button
+                    onClick={handleVoicePromptYes}
+                    className="px-4 py-1.5 bg-roots-secondary text-white text-sm rounded-full hover:bg-roots-secondary/90 transition-colors"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={handleVoicePromptNo}
+                    className="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-full hover:bg-gray-300 transition-colors"
+                  >
+                    No thanks
+                  </button>
+                </div>
+              </div>
             )}
 
             {isLoading && (
@@ -585,19 +740,39 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
+                  stopSpeaking();
                   // Auto-resize textarea
                   e.target.style.height = 'auto';
                   e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder={pendingImages.length > 0 ? "Describe what you see..." : "Ask about planting, pests, soil..."}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-roots-secondary focus:ring-1 focus:ring-roots-secondary resize-none leading-5"
-                style={{ minHeight: '40px', maxHeight: '120px' }}
+                placeholder={pendingImages.length > 0 ? "Describe what you see..." : "Ask Sage anything..."}
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-2xl text-sm sm:text-sm focus:outline-none focus:border-roots-secondary focus:ring-1 focus:ring-roots-secondary resize-none leading-5"
+                style={{ minHeight: '40px', maxHeight: '120px', fontSize: 'max(16px, 0.875rem)' }}
                 rows={1}
                 disabled={isLoading}
               />
+              {/* Mic button */}
+              {speechSupported && (
+                <button
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={isLoading}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 mb-0.5 ${
+                    isListening
+                      ? 'bg-red-500 text-white animate-pulse'
+                      : 'bg-gray-100 text-roots-gray hover:bg-gray-200'
+                  }`}
+                  title={isListening ? 'Stop listening' : 'Talk to Sage'}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M12 15a3 3 0 003-3V5a3 3 0 00-6 0v7a3 3 0 003 3z" />
+                  </svg>
+                </button>
+              )}
+              {/* Send button */}
               <button
                 onClick={sendMessage}
+                data-sage-send
                 disabled={(!input.trim() && pendingImages.length === 0) || isLoading}
                 className="w-10 h-10 rounded-full bg-roots-secondary text-white flex items-center justify-center hover:bg-roots-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 mb-0.5"
               >
@@ -607,7 +782,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
               </button>
             </div>
             <p className="text-xs text-gray-400 text-center mt-2">
-              Powered by Claude AI
+              Sage is powered by Claude AI
             </p>
           </div>
         </div>
