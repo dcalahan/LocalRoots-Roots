@@ -26,9 +26,8 @@ export default function Home() {
               Browse local food →
             </Link>
           </div>
-          <p className="text-roots-gray/80 text-sm flex items-center justify-center gap-1.5">
-            <span>🌱</span>
-            <span className="italic">Neighbors Feeding Neighbors</span>
+          <p className="text-roots-primary text-lg font-semibold tracking-wide mt-2">
+            Neighbors Feeding Neighbors
           </p>
         </div>
 
