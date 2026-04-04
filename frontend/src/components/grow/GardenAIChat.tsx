@@ -531,10 +531,10 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
         <button
           data-garden-chat-toggle
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 ${
+          className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 overflow-hidden ${
             isOpen
               ? 'bg-roots-gray hover:bg-roots-gray/80'
-              : 'bg-roots-secondary hover:bg-roots-secondary/90'
+              : 'bg-white'
           } ${className}`}
           aria-label={isOpen ? 'Close Sage' : 'Ask Sage'}
         >
@@ -543,7 +543,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            <span className="text-2xl" style={{ filter: 'brightness(0) invert(1)' }}>🌱</span>
+            <img src="/sage-avatar.png" alt="Ask Sage" className="w-14 h-14 rounded-full object-cover" />
           )}
         </button>
       </div>
@@ -554,7 +554,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
              style={{ height: 'min(600px, calc(100vh - 7rem))' }}>
           {/* Header */}
           <div className="bg-roots-secondary text-white px-4 py-3 flex items-center gap-3">
-            <span className="text-2xl">🌱</span>
+            <img src="/sage-avatar.png" alt="Sage" className="w-9 h-9 rounded-full object-cover" />
             <div className="flex-1">
               <h3 className="font-semibold">Sage</h3>
               <p className="text-xs text-roots-cream/80">Your gardening companion</p>
@@ -586,7 +586,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
               <div className="text-center py-4">
-                <div className="text-4xl mb-3">🌱</div>
+                <img src="/sage-avatar.png" alt="Sage" className="w-20 h-20 rounded-full mx-auto mb-2" />
                 <p className="text-gray-600 mb-4">
                   Hi! I&apos;m Sage, your gardening companion — I know your local climate and can help you grow anything. What are you working on?
                 </p>

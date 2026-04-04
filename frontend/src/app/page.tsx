@@ -37,7 +37,7 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-center mb-8">What can I help you with?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Link href="/grow" className="card text-center hover:shadow-lg transition-shadow group">
-              <div className="text-4xl mb-4">🌿</div>
+              <img src="/sage-avatar.png" alt="Sage" className="w-16 h-16 rounded-full mx-auto mb-2" />
               <h3 className="text-xl font-semibold mb-2 group-hover:text-roots-secondary transition-colors">Ask Sage</h3>
               <p className="text-roots-gray text-sm">
                 What should I plant right now? How do I fix yellow leaves? Snap a photo and I&apos;ll identify it.
