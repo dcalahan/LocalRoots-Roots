@@ -22,9 +22,7 @@ function GrowPageContent() {
         <CardContent className="pt-6 pb-6">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="flex-shrink-0">
-              <div className="w-14 h-14 rounded-full bg-roots-secondary flex items-center justify-center shadow-md">
-                <span className="text-2xl" style={{ filter: 'brightness(0) invert(1)' }}>🌱</span>
-              </div>
+              <img src="/sage-avatar.png" alt="Sage" className="w-14 h-14 rounded-full object-cover shadow-md" />
             </div>
             <div className="flex-1 text-center md:text-left">
               <h3 className="font-heading font-semibold text-lg mb-1">Ask Sage anything about growing</h3>

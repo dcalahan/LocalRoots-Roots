@@ -91,7 +91,7 @@ export function MyGardenView({
             Ready to start growing?
           </h2>
           <p className="text-roots-gray mb-6 max-w-sm mx-auto">
-            Track what you plant, watch it grow, and know exactly when it's time to harvest. You can also tell the Garden AI what you planted and it'll add it here automatically!
+            Track what you plant, watch it grow, and know exactly when it&apos;s time to harvest. You can also tell Sage what you planted and she&apos;ll add it here automatically!
           </p>
           <button
             onClick={() => setIsAddModalOpen(true)}
