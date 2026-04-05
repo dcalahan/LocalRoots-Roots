@@ -7,6 +7,7 @@ LocalRoots is a **gardening companion first, marketplace inside.** The AI garden
 **Rules for all UI/copy/marketing work:**
 - Lead with gardening value, not marketplace
 - Never mention blockchain, crypto, tokens, or wallets in user-facing copy
+- No tokenomics, allocation, or $ROOTS details on the website until pre-launch (~early 2027). Publishing token info now invites regulatory scrutiny with no upside.
 - Position selling as "sharing extras with neighbors"
 - Primary CTA is "Start Growing" not "Browse Produce" or "Start Selling"
 - The AI should feel like a knowledgeable friend, not a product feature
@@ -944,6 +945,45 @@ Deployed Feb 7 2026 (with voter whitelist):
 1. Platform is new, not enough qualified voters
 2. Someone needs to resolve disputes
 3. We don't want "admin override" precedent
+
+## Anti-Gaming & Fraud Prevention (All On-Chain)
+
+**30 mechanisms across 3 contracts** — all enforced at the smart contract level, not frontend. No client can bypass them.
+
+### Key Protections (AmbassadorRewards.sol)
+
+| Mechanism | How It Works |
+|-----------|-------------|
+| **Seller Activation Gate** | Zero rewards until recruited seller has 2 orders from 2 unique buyers |
+| **7-Day Reward Vesting** | Rewards clawed back if order disputed within vesting window |
+| **Daily Treasury Cap** | Max 0.5% of initial treasury outflow per day |
+| **Weekly Ambassador Cap** | Max 10,000 ROOTS per ambassador per week |
+| **24-Hour Cooldown** | New ambassadors can't earn for 24h after registration |
+| **1-Year Reward Expiry** | Rewards stop flowing 365 days after seller recruitment |
+| **Full Clawback on Suspension** | ALL pending rewards recovered when ambassador suspended |
+| **Max Chain Depth** | Reward chain walks max 10 levels up |
+| **Ambassador Flagging** | Any ambassador can flag another; community votes over 3 days |
+
+### Key Protections (DisputeResolution.sol)
+
+| Mechanism | How It Works |
+|-----------|-------------|
+| **3-Strike Auto-Suspension** | Sellers/buyers auto-suspended after 3 lost disputes |
+| **5-Vote Quorum** | Disputes need 5+ votes; extends 48h then auto-refunds buyer |
+| **Frivolous Dispute Detection** | Buyer gets strike if seller wins with >80% vote margin |
+| **Vote Reason Requirement** | Min 20 characters per vote — no lazy clicking |
+| **Voter Qualification** | Must have 1+ activated seller to vote (unless whitelisted) |
+
+### Key Protections (LocalRootsMarketplace.sol)
+
+| Mechanism | How It Works |
+|-----------|-------------|
+| **2-Day Dispute Window** | Buyers can dispute within 48h of completion |
+| **Escrow Hold** | Funds locked in contract until dispute window expires |
+| **Proof-of-Delivery** | Seller must upload IPFS proof before order completion |
+| **Admin Suspension** | Admin or dispute contract can suspend sellers with reason |
+
+**Design philosophy:** Any single attack might succeed once, but vesting + clawback + strikes make it unprofitable to repeat. Daily/weekly caps limit maximum damage from any exploit.
 
 ## Known Issues
 
