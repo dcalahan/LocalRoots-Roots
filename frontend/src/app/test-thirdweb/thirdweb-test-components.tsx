@@ -1,5 +1,7 @@
 'use client';
 
+import { EXPLORER_URL } from '@/lib/chainConfig';
+
 import { useState, useEffect } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { ThirdwebProvider, useSetActiveWallet, useActiveWallet } from 'thirdweb/react';
@@ -28,7 +30,7 @@ const baseSepolia = defineChain({
   blockExplorers: [
     {
       name: "BaseScan",
-      url: "https://sepolia.basescan.org",
+      url: "${EXPLORER_URL}",
     },
   ],
   testnet: true,

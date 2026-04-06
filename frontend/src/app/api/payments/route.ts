@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kv } from '@/lib/kv';
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import type { PaymentRecord, PaymentSummary } from '@/lib/contracts/ambassador';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 

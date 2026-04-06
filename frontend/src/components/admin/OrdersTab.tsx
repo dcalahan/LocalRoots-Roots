@@ -1,5 +1,7 @@
 'use client';
 
+import { EXPLORER_URL } from '@/lib/chainConfig';
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAdminOrders, type OrderWithLocation } from '@/hooks/useAdminData';
@@ -205,7 +207,7 @@ function OrderRow({
       <td className="py-4 font-mono text-sm">#{order.id.toString()}</td>
       <td className="py-4">
         <a
-          href={`https://sepolia.basescan.org/address/${order.buyer}`}
+          href={`${EXPLORER_URL}/address/${order.buyer}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-roots-primary hover:underline font-mono text-sm"

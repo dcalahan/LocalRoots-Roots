@@ -13,7 +13,7 @@ import { useAdminStatus } from '@/hooks/useAdminStatus';
 import { formatCentsToUsd } from '@/hooks/useAmbassadorPayments';
 import { MarkPaidModal } from './MarkPaidModal';
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import { AMBASSADOR_REWARDS_ADDRESS, ambassadorAbi, type Ambassador, type PaymentSummary, type AmbassadorProfile } from '@/lib/contracts/ambassador';
 import { getIpfsUrl } from '@/lib/pinata';
 

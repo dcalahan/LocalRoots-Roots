@@ -1,3 +1,4 @@
+import { EXPLORER_URL } from '@/lib/chainConfig';
 // Types for Gnosis Safe operations
 
 export interface SafeConfig {
@@ -73,7 +74,7 @@ export const SAFE_CHAIN_CONFIG = {
     name: 'Base Sepolia',
     rpcUrl: 'https://sepolia.base.org',
     safeTransactionServiceUrl: 'https://safe-transaction-base-sepolia.safe.global',
-    blockExplorerUrl: 'https://sepolia.basescan.org',
+    blockExplorerUrl: '${EXPLORER_URL}',
   },
 } as const;
 

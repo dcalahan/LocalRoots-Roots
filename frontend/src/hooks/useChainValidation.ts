@@ -1,7 +1,7 @@
 'use client';
 
 import { useAccount, useSwitchChain } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import { useCallback, useMemo } from 'react';
 
 // Target chain for the app

@@ -1,3 +1,4 @@
+import { EXPLORER_URL } from '@/lib/chainConfig';
 import { createThirdwebClient, defineChain } from "thirdweb";
 
 // thirdweb client ID - get from https://thirdweb.com/dashboard
@@ -23,7 +24,7 @@ export const baseSepolia = defineChain({
   blockExplorers: [
     {
       name: "BaseScan",
-      url: "https://sepolia.basescan.org",
+      url: "${EXPLORER_URL}",
     },
   ],
   testnet: true,

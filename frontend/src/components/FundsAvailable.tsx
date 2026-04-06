@@ -3,7 +3,8 @@
 import { useAccount, useBalance, useConnect, useDisconnect } from 'wagmi';
 import { useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
-import { baseSepolia, base } from 'wagmi/chains';
+import { base } from 'viem/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import { ROOTS_TOKEN_ADDRESS } from '@/lib/contracts/marketplace';
 import { useDemoMode, isDemoModeAvailable } from '@/contexts/DemoModeContext';
 import { isTestWalletAvailable } from '@/lib/testWalletConnector';

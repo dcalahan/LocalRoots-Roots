@@ -1,5 +1,7 @@
 'use client';
 
+import { EXPLORER_URL } from '@/lib/chainConfig';
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAdminSellers, useAdminAmbassadors, type SellerWithLocation, type AmbassadorWithLocation } from '@/hooks/useAdminData';
@@ -232,7 +234,7 @@ function SellerRow({
       <td className="py-4 font-mono text-sm">#{seller.id.toString()}</td>
       <td className="py-4">
         <a
-          href={`https://sepolia.basescan.org/address/${seller.owner}`}
+          href={`${EXPLORER_URL}/address/${seller.owner}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-roots-primary hover:underline font-mono text-sm"
@@ -309,7 +311,7 @@ function AmbassadorRow({
       <td className="py-4 font-mono text-sm">#{ambassador.id.toString()}</td>
       <td className="py-4">
         <a
-          href={`https://sepolia.basescan.org/address/${ambassador.wallet}`}
+          href={`${EXPLORER_URL}/address/${ambassador.wallet}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-roots-primary hover:underline font-mono text-sm"

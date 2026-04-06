@@ -1,5 +1,7 @@
 'use client';
 
+import { EXPLORER_URL } from '@/lib/chainConfig';
+
 import { useState, useEffect } from 'react';
 import { X, Loader2, Check, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -325,7 +327,7 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
               </p>
               {txHash && (
                 <a
-                  href={`https://sepolia.basescan.org/tx/${txHash}`}
+                  href={`${EXPLORER_URL}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 text-sm text-roots-secondary hover:underline inline-flex items-center"
@@ -349,7 +351,7 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
               </p>
               {txHash && (
                 <a
-                  href={`https://sepolia.basescan.org/tx/${txHash}`}
+                  href={`${EXPLORER_URL}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-roots-secondary hover:underline inline-flex items-center mb-4"

@@ -1,18 +1,22 @@
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { ACTIVE_CHAIN, RPC_URL, IS_MAINNET } from './chainConfig';
 
-// Use explicit RPC URL to ensure consistent data
-// Try alternative RPC endpoints if the default has caching issues
-const rpcUrl = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://base-sepolia-rpc.publicnode.com';
+// Use explicit RPC URL from chainConfig to ensure consistent data
+// Prefer NEXT_PUBLIC_RPC_URL (via chainConfig) — fall back to public node on testnet
+const rpcUrl =
+  RPC_URL ||
+  (IS_MAINNET
+    ? 'https://base.publicnode.com'
+    : 'https://base-sepolia-rpc.publicnode.com');
 
 // Export the RPC URL for other uses
 export const baseSepoliaRpcUrl = rpcUrl;
+export const activeRpcUrl = rpcUrl;
 
 // Create a fresh public client for each use to avoid any caching
-// This ensures we always get the latest blockchain state
 export function createFreshPublicClient() {
   return createPublicClient({
-    chain: baseSepolia,
+    chain: ACTIVE_CHAIN,
     transport: http(rpcUrl, {
       batch: false,
       retryCount: 3,

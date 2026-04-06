@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAccount, useBalance } from 'wagmi';
 import { useToast } from '@/hooks/use-toast';
-import { baseSepolia } from 'viem/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 
 /**
  * Auto-fund hook for testnet

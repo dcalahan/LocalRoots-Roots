@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createWalletClient, createPublicClient, http, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { baseSepolia } from 'viem/chains';
+import { ACTIVE_CHAIN, RPC_URL } from '@/lib/chainConfig';
 import { FORWARDER_ADDRESS, ALLOWED_TARGETS, forwarderAbi } from '@/lib/contracts/forwarder';
 
 // Rate limiting: track requests per address
@@ -95,13 +95,13 @@ export async function POST(request: NextRequest) {
     const account = privateKeyToAccount(relayerPrivateKey as `0x${string}`);
     const walletClient = createWalletClient({
       account,
-      chain: baseSepolia,
-      transport: http('https://sepolia.base.org'),
+      chain: ACTIVE_CHAIN,
+      transport: http(RPC_URL),
     });
 
     const publicClient = createPublicClient({
-      chain: baseSepolia,
-      transport: http('https://sepolia.base.org'),
+      chain: ACTIVE_CHAIN,
+      transport: http(RPC_URL),
     });
 
     // Log the request details for debugging

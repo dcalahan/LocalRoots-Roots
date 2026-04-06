@@ -1,5 +1,7 @@
 'use client';
 
+import { EXPLORER_URL } from '@/lib/chainConfig';
+
 import { useAccount } from 'wagmi';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -185,7 +187,7 @@ export default function ClaimPage() {
                 {claimTxHash && !claimSuccess && (
                   <div className="text-center">
                     <a
-                      href={`https://sepolia.basescan.org/tx/${claimTxHash}`}
+                      href={`${EXPLORER_URL}/tx/${claimTxHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-roots-secondary hover:underline inline-flex items-center"
@@ -242,7 +244,7 @@ export default function ClaimPage() {
 
               {claimTxHash && (
                 <a
-                  href={`https://sepolia.basescan.org/tx/${claimTxHash}`}
+                  href={`${EXPLORER_URL}/tx/${claimTxHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-roots-secondary hover:underline inline-flex items-center mb-6"

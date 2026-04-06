@@ -13,7 +13,7 @@ import { DemoModeProvider } from '@/contexts/DemoModeContext';
 import { useState } from 'react';
 import { useWalletRedirect } from '@/hooks/useWalletRedirect';
 import { useAutoFund } from '@/hooks/useAutoFund';
-import { baseSepolia } from 'viem/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 
 // Component that uses the wallet redirect hook
 function WalletRedirectHandler({ children }: { children: React.ReactNode }) {

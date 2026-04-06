@@ -10,7 +10,7 @@ import {
   encodeFunctionData,
   isAddress,
 } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import type { TokenSymbol } from './useWalletBalances';
 import {
   ROOTS_TOKEN_ADDRESS,

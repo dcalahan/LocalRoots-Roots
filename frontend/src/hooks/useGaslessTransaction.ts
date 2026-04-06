@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { usePublicClient, useSwitchChain } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { baseSepolia } from 'wagmi/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import { type Address, encodeFunctionData } from 'viem';
 import {
   FORWARDER_ADDRESS,

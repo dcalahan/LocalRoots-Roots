@@ -14,7 +14,7 @@ import { useCheckout } from '@/hooks/usePurchase';
 import { useTokenApproval } from '@/hooks/useTokenApproval';
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { baseSepolia } from 'wagmi/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import { useChainValidation } from '@/hooks/useChainValidation';
 import { formatRoots, rootsToFiat, formatFiat } from '@/lib/pricing';
 import { uploadMetadata } from '@/lib/pinata';

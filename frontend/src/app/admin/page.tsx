@@ -1,5 +1,7 @@
 'use client';
 
+import { EXPLORER_URL } from '@/lib/chainConfig';
+
 import { useState, useEffect, useCallback } from 'react';
 import { parseAbiItem } from 'viem';
 import { Card, CardContent } from '@/components/ui/card';
@@ -319,7 +321,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <a
-                        href={`https://sepolia.basescan.org/tx/${event.txHash}`}
+                        href={`${EXPLORER_URL}/tx/${event.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-roots-primary hover:underline"
@@ -344,7 +346,7 @@ export default function AdminDashboard() {
 
       {/* Contract Info */}
       <div className="mt-8 text-center text-sm text-roots-gray">
-        <p>Contract: <a href={`https://sepolia.basescan.org/address/${MARKETPLACE_ADDRESS}`} target="_blank" rel="noopener noreferrer" className="text-roots-primary hover:underline">{MARKETPLACE_ADDRESS}</a></p>
+        <p>Contract: <a href={`${EXPLORER_URL}/address/${MARKETPLACE_ADDRESS}`} target="_blank" rel="noopener noreferrer" className="text-roots-primary hover:underline">{MARKETPLACE_ADDRESS}</a></p>
       </div>
     </div>
   );

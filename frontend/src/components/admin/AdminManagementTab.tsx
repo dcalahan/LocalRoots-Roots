@@ -1,5 +1,7 @@
 'use client';
 
+import { EXPLORER_URL } from '@/lib/chainConfig';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
@@ -138,7 +140,7 @@ export function AdminManagementTab() {
                   </div>
                   <div>
                     <a
-                      href={`https://sepolia.basescan.org/address/${admin}`}
+                      href={`${EXPLORER_URL}/address/${admin}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-mono text-sm hover:text-roots-primary"

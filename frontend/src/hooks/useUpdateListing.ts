@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
-import { baseSepolia } from 'wagmi/chains';
+import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
 import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
