@@ -15,10 +15,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'Local Roots — Your Gardening Companion | Neighbors Feeding Neighbors',
-  description: 'AI gardening advice for your exact climate. Track your garden, plan your season, and share your harvest with neighbors.',
+  description: 'Help your neighborhood grow its own food. Free AI gardening advice for your climate, and a way to share your harvest with neighbors.',
   openGraph: {
-    title: 'Local Roots — Your Personal Gardening Companion',
-    description: 'AI advice for your climate. Track your garden. Share your harvest with neighbors.',
+    title: 'Local Roots — Help Your Neighborhood Grow Its Own Food',
+    description: 'More people growing food means stronger communities. Start growing with Sage, share your harvest with neighbors.',
     url: 'https://www.localroots.love',
     siteName: 'Local Roots',
     images: [
@@ -26,15 +26,15 @@ export const metadata: Metadata = {
         url: 'https://www.localroots.love/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Local Roots — Your Personal Gardening Companion',
+        alt: 'Local Roots — Help Your Neighborhood Grow Its Own Food',
       },
     ],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Local Roots — Your Personal Gardening Companion',
-    description: 'AI advice for your climate. Track your garden. Share your harvest with neighbors.',
+    title: 'Local Roots — Help Your Neighborhood Grow Its Own Food',
+    description: 'More people growing food means stronger communities. Start growing with Sage, share your harvest with neighbors.',
     images: ['https://www.localroots.love/og-image.png'],
   },
   icons: {

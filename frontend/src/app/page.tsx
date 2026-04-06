@@ -10,11 +10,11 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Your Personal Gardening Companion
+            Help Your Neighborhood Grow Its Own Food
           </h1>
           <p className="text-xl text-roots-gray max-w-2xl mx-auto mb-8">
-            AI-powered advice for your exact climate. A tracker that grows with your garden.
-            And when harvest comes — your neighbors are waiting.
+            Whether you&apos;ve never planted a seed or you&apos;re drowning in tomatoes,
+            Sage will help you grow. And when harvest comes — your neighbors are waiting.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
             <Link href="/grow">
@@ -33,13 +33,13 @@ export default function Home() {
 
         {/* What can I help you with? */}
         <div className="mb-16">
-          <h2 className="text-2xl font-bold text-center mb-8">What can I help you with?</h2>
+          <h2 className="text-2xl font-bold text-center mb-8">Ready to start?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Link href="/grow" className="card text-center hover:shadow-lg transition-shadow group">
               <img src="/sage-avatar.png" alt="Sage" className="w-16 h-16 rounded-full mx-auto mb-2" />
               <h3 className="text-xl font-semibold mb-2 group-hover:text-roots-secondary transition-colors">Ask Sage</h3>
               <p className="text-roots-gray text-sm">
-                What should I plant right now? How do I fix yellow leaves? Snap a photo and I&apos;ll identify it.
+                Never grown before? Start here. Sage knows your zone, your frost dates, and exactly what to plant right now.
               </p>
             </Link>
             <Link href="/grow/calendar" className="card text-center hover:shadow-lg transition-shadow group">
@@ -61,7 +61,7 @@ export default function Home() {
 
         {/* Mission Bridge — Garden to Community */}
         <div className="card mb-16 bg-gradient-to-r from-roots-secondary/5 to-roots-primary/5 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">When your garden grows, so does your community</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Every new gardener makes your community stronger</h2>
           {/* Journey Steps */}
           <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 mb-6 text-lg">
             <span className="flex items-center gap-1.5"><span className="text-2xl">🌱</span> Plant</span>
@@ -74,7 +74,8 @@ export default function Home() {
           </div>
           <p className="text-roots-gray max-w-xl mx-auto mb-6">
             Growing more than you can eat? Your neighbors want it.
-            List your extras on LocalRoots — no fees, no fuss. 100% goes to you.
+            List your extras — no fees, no middlemen, 100% goes to you.
+            Every sale encourages someone else to start growing too.
           </p>
           <Link href="/sell">
             <Button variant="outline" className="border-roots-primary text-roots-primary hover:bg-roots-primary hover:text-white">
@@ -100,9 +101,10 @@ export default function Home() {
         {/* Ambassador soft pitch */}
         <div className="card mb-16 text-center bg-gradient-to-r from-roots-primary/5 to-roots-secondary/5">
           <div className="text-4xl mb-4">🌟</div>
-          <h3 className="text-2xl font-bold mb-3">Help your community grow</h3>
+          <h3 className="text-2xl font-bold mb-3">Help your community grow — literally</h3>
           <p className="text-roots-gray max-w-xl mx-auto mb-6">
-            Know someone with a garden? Help them share their harvest with neighbors and earn rewards for every sale they make.
+            Encourage neighbors to start growing. Help existing gardeners share their surplus.
+            Every person you bring in makes your community more resilient — and you earn rewards for every sale they make.
           </p>
           <Link href="/ambassador">
             <Button variant="outline" className="border-roots-primary text-roots-primary hover:bg-roots-primary hover:text-white">
@@ -123,8 +125,8 @@ export default function Home() {
                 <span className="text-xl font-bold text-gray-900">Local Roots</span>
               </div>
               <p className="text-gray-600 text-sm max-w-md">
-                Your gardening companion that connects you with your neighborhood.
-                Grow food, share with neighbors, build community resilience — one harvest at a time.
+                More people growing food means stronger communities.
+                We help you start growing, and when you have more than you need, your neighbors are right here.
               </p>
             </div>
 
