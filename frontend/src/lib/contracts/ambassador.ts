@@ -1,7 +1,7 @@
 import { type Address } from 'viem';
 
 // Contract address on Base Sepolia - loaded from environment variable (Feb 7 2026 deployment with adminUnsuspendAmbassador)
-export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x4C5c8765b1a5fbed6fAf2Bd9F1adBee587d92154') as Address;
+export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x8D546152e4A39680C00Aa61d914f38878083B1c8') as Address;
 
 // ABI for ambassador functions
 export const ambassadorAbi = [

@@ -2,7 +2,8 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
-import "../src/ROOTSToken.sol";
+import "../src/RootsToken.sol";
+// (file is RootsToken.sol; previously misspelled as ROOTSToken.sol)
 import "../src/SeedsAirdrop.sol";
 import "../src/LocalRootsMarketplace.sol";
 import "../src/AmbassadorRewards.sol";
@@ -197,7 +198,7 @@ contract FundAirdrop is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        ROOTSToken rootsToken = ROOTSToken(rootsTokenAddress);
+        RootsToken rootsToken = RootsToken(rootsTokenAddress);
         rootsToken.transfer(airdropAddress, airdropAmount);
 
         vm.stopBroadcast();
@@ -231,7 +232,7 @@ contract FundAmbassadorRewards is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        ROOTSToken rootsToken = ROOTSToken(rootsTokenAddress);
+        RootsToken rootsToken = RootsToken(rootsTokenAddress);
         rootsToken.transfer(ambassadorAddress, ambassadorAmount);
 
         vm.stopBroadcast();
@@ -264,7 +265,7 @@ contract VerifyPhase2 is Script {
         LocalRootsMarketplace marketplace = LocalRootsMarketplace(marketplaceAddress);
         AmbassadorRewards ambassador = AmbassadorRewards(ambassadorAddress);
         SeedsAirdrop airdrop = SeedsAirdrop(airdropAddress);
-        ROOTSToken roots = ROOTSToken(rootsToken);
+        RootsToken roots = RootsToken(rootsToken);
 
         // Check phases
         bool mpPhase2 = marketplace.currentPhase() == LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS;

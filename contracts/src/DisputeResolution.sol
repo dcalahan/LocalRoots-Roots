@@ -37,6 +37,7 @@ interface IAmbassadorRewardsForDisputes {
     function ambassadorIdByWallet(address wallet) external view returns (uint256);
     function getAmbassador(uint256 ambassadorId) external view returns (Ambassador memory);
     function getSellerRecruitment(uint256 sellerId) external view returns (SellerRecruitment memory);
+    function getActivatedSellerCount(uint256 ambassadorId) external view returns (uint256);
     function nextAmbassadorId() external view returns (uint256);
 }
 
@@ -94,6 +95,7 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
 
     uint256 public constant VOTE_DURATION = 3 days;
     uint256 public constant VOTE_EXTENSION = 2 days;
+    uint256 public constant SELLER_RESPONSE_WINDOW = 36 hours; // Seller must respond within 36h of dispute opening
     uint256 public constant MIN_VOTES_REQUIRED = 5;
     uint256 public constant SELLER_STRIKE_LIMIT = 3;
     uint256 public constant BUYER_STRIKE_LIMIT = 3;
@@ -108,6 +110,8 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
     mapping(uint256 => mapping(uint256 => bool)) public disputeVoteChoice; // disputeId => ambassadorId => votedForBuyer
     mapping(uint256 => mapping(uint256 => string)) public disputeVoteReasons; // disputeId => ambassadorId => reason
     mapping(address => UserStrikes) public userStrikes;
+    // Strikes tracked by sellerId so a sin-binned seller can't dodge by re-registering with a fresh wallet.
+    mapping(uint256 => uint256) public sellerStrikesById;
     mapping(uint256 => uint256) public orderToDispute; // orderId => disputeId
 
     // ============ Events ============
@@ -270,6 +274,10 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         require(dispute.orderId != 0, "Dispute does not exist");
         require(!dispute.resolved, "Dispute already resolved");
         require(bytes(dispute.sellerResponse).length == 0, "Response already submitted");
+        require(
+            block.timestamp <= dispute.createdAt + SELLER_RESPONSE_WINDOW,
+            "Response window expired"
+        );
 
         // Verify caller is the seller
         (address sellerOwner,,,,,,,) = marketplace.sellers(dispute.sellerId);
@@ -371,6 +379,10 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
 
     /**
      * @notice Admin resolves dispute directly (for early stage or urgent cases)
+     * @dev TEMPORARY — must be removed at $ROOTS token launch per the decentralization
+     *      principle in CLAUDE.md. The voter whitelist (addWhitelistedVoter) is the
+     *      decentralized replacement: trusted early voters cast normal votes that count
+     *      toward quorum, eliminating the need for admin overrides.
      */
     function adminResolveDispute(
         uint256 disputeId,
@@ -401,16 +413,24 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
 
     function _addSellerStrike(uint256 sellerId) internal {
         (address sellerOwner,,,,,,,) = marketplace.sellers(sellerId);
+
+        // Track by both wallet AND sellerId. The sellerId-based count is the authoritative
+        // suspension trigger so a malicious seller can't dodge strikes by switching wallets
+        // and re-registering — though note: a fresh sellerId from the same wallet is still
+        // protected by the wallet-based count below.
         UserStrikes storage strikes = userStrikes[sellerOwner];
         strikes.sellerStrikes++;
         strikes.lastStrikeAt = block.timestamp;
 
+        sellerStrikesById[sellerId]++;
+
         emit StrikeAdded(sellerOwner, true, strikes.sellerStrikes);
 
-        // Auto-suspend after 3 strikes
-        if (strikes.sellerStrikes >= SELLER_STRIKE_LIMIT) {
+        // Auto-suspend after 3 strikes (whichever counter trips first)
+        if (sellerStrikesById[sellerId] >= SELLER_STRIKE_LIMIT ||
+            strikes.sellerStrikes >= SELLER_STRIKE_LIMIT) {
             marketplace.suspendSeller(sellerId, "Auto-suspended: 3 dispute strikes");
-            emit SellerAutoSuspended(sellerId, strikes.sellerStrikes);
+            emit SellerAutoSuspended(sellerId, sellerStrikesById[sellerId]);
         }
     }
 
@@ -426,26 +446,11 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
 
     /**
      * @notice Check if ambassador has at least one activated seller
-     * @dev A seller is activated after 2 orders from 2 unique buyers
+     * @dev A seller is activated after 2 completed orders from 2 unique buyers.
+     *      Real anti-Sybil gate: queries the indexed activated count from AmbassadorRewards.
      */
     function _hasActivatedSeller(uint256 ambassadorId) internal view returns (bool) {
-        // We need to iterate through sellers to find ones recruited by this ambassador
-        // This is done in the AmbassadorRewards contract via sellerRecruitments
-        // For gas efficiency, we check recruitedSellers count and assume at least one is activated
-        // if the ambassador has recruited sellers and enough time has passed
-
-        // Actually check by querying ambassador data
-        IAmbassadorRewardsForDisputes.Ambassador memory amb = ambassadorRewards.getAmbassador(ambassadorId);
-
-        // If they have 0 recruited sellers, definitely no activated seller
-        if (amb.recruitedSellers == 0) {
-            return false;
-        }
-
-        // For now, trust that if they have recruited sellers and the contract allows them
-        // through the recruitedSellers check, we allow voting
-        // In production, could add a mapping to track activated seller counts per ambassador
-        return true;
+        return ambassadorRewards.getActivatedSellerCount(ambassadorId) >= 1;
     }
 
     // ============ View Functions ============
@@ -462,11 +467,16 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         return userStrikes[user];
     }
 
-    function getQualifiedVoterCount() external view returns (uint256) {
+    /// @notice Count qualified voters within a paginated range of ambassador IDs.
+    /// @dev Use getQualifiedVoterCountTotal() for headcount estimates without iteration in callers.
+    function getQualifiedVoterCount(uint256 startId, uint256 limit) external view returns (uint256) {
         uint256 count = 0;
         uint256 totalAmbassadors = ambassadorRewards.nextAmbassadorId();
+        if (startId == 0) startId = 1;
+        uint256 endId = startId + limit - 1;
+        if (endId > totalAmbassadors) endId = totalAmbassadors;
 
-        for (uint256 i = 1; i <= totalAmbassadors; i++) {
+        for (uint256 i = startId; i <= endId; i++) {
             IAmbassadorRewardsForDisputes.Ambassador memory amb = ambassadorRewards.getAmbassador(i);
             if (amb.active && !amb.suspended && amb.recruitedSellers >= 1) {
                 count++;
@@ -482,19 +492,24 @@ contract DisputeResolution is IDisputeResolution, ReentrancyGuard, ERC2771Contex
         return disputes[disputeId];
     }
 
-    function getOpenDisputes() external view returns (uint256[] memory) {
-        // Count open disputes first
+    /// @notice Paginated open dispute lookup. Pass startId=0 to start at the beginning.
+    /// @dev Scans dispute IDs in [startId, startId+limit-1]. Frontend should page until empty.
+    function getOpenDisputes(uint256 startId, uint256 limit) external view returns (uint256[] memory) {
+        if (startId == 0) startId = 1;
+        uint256 endId = startId + limit - 1;
+        if (endId > nextDisputeId) endId = nextDisputeId;
+
+        // Count open disputes in window first
         uint256 openCount = 0;
-        for (uint256 i = 1; i <= nextDisputeId; i++) {
+        for (uint256 i = startId; i <= endId; i++) {
             if (!disputes[i].resolved) {
                 openCount++;
             }
         }
 
-        // Populate array
         uint256[] memory openDisputeIds = new uint256[](openCount);
         uint256 index = 0;
-        for (uint256 i = 1; i <= nextDisputeId; i++) {
+        for (uint256 i = startId; i <= endId; i++) {
             if (!disputes[i].resolved) {
                 openDisputeIds[index] = i;
                 index++;

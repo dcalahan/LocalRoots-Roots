@@ -4,7 +4,7 @@ import { DISPUTE_RESOLUTION_ADDRESS } from './disputeResolution';
 import { GOVERNMENT_REQUESTS_ADDRESS } from './governmentRequests';
 
 // ERC2771Forwarder contract address on Base Sepolia - loaded from environment variable
-export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x63e7eb99daE531227dD690A031eAD1d8d5BeAc54') as Address;
+export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x3DeE6FcBE0D28E3C772b6f57ca83B0652eC01F20') as Address;
 
 // Allowed target contracts for gasless transactions (dynamically uses current addresses)
 export const ALLOWED_TARGETS: Address[] = [

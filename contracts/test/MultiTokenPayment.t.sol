@@ -74,7 +74,8 @@ contract MultiTokenPaymentTest is Test {
             address(ambassadorRewardsContract),
             address(0),
             admin,
-            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS,
+            address(0xdead)
         );
 
         // Set marketplace in ambassador rewards
@@ -291,7 +292,8 @@ contract MultiTokenPaymentTest is Test {
             address(ambassadorRewardsContract),
             address(0),
             admin,
-            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS,
+            address(0xdead)
         );
 
         // Setup seller

@@ -985,6 +985,22 @@ Deployed Feb 7 2026 (with voter whitelist):
 
 **Design philosophy:** Any single attack might succeed once, but vesting + clawback + strikes make it unprofitable to repeat. Daily/weekly caps limit maximum damage from any exploit.
 
+## Marketing & Outreach Strategy
+
+**Marketing is handled by Common Area's NIF (Nightly Idea Factory)**, not LocalRoots. LocalRoots is the guinea pig for extending Common Area's data collection infrastructure beyond real estate.
+
+**Approach:** LocalRoots becomes a new constituent type in Common Area's existing discovery pipeline. Three new intel tables (`intel_community_gardens`, `intel_farmers_markets`, `intel_food_influencers`) plug into the same county-level discovery job state machine used for HOAs and contractors.
+
+**Roll-out:** County-by-county, starting with Beaufort County SC (Heritage Farm, Seabrook), then Lowcountry SC, coastal GA, Bay Area (Emily Bach), Atlanta (James Carr).
+
+**Ambassador handoff:** Within 12 months, NIF shifts from sending cold outreach to feeding discovered targets to ambassadors. NIF keeps doing discovery, content generation, and analytics. Ambassadors do the warm outreach.
+
+**Content engine:** Pulls from existing `crop-growing-data.json` and regional knowledge files to auto-generate seasonal posts by zone. Zero manual work from Doug.
+
+**Full plan:** `/Users/dougcalahan/Downloads/localroots-marketing-plan-for-common-area.md` (handed to Common Area NIF for implementation).
+
+**Common Area's implementation plan:** Uses `localroots_` prefixed tables in Common Area Supabase (consumer pattern, not core constituent). Radius-based geography (not county FIPS). Marketing waves follow growing zones south-to-north. Shared Resend email infrastructure benefits all products. Key addition needed: UTM parameters on outreach links to track Sage usage back to email campaigns.
+
 ## Known Issues
 
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only

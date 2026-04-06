@@ -1,13 +1,13 @@
 import { type Address } from 'viem';
 
 // Contract addresses - loaded from environment variables
-export const MARKETPLACE_ADDRESS: Address = (process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS || '0xEe6eCF5A36925C4D95097ffa2F40632bf500a0F8') as Address;
+export const MARKETPLACE_ADDRESS: Address = (process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS || '0xb3E31B84Ed6d22DD84eFd193282eafc00Eb32F22') as Address;
 export const ROOTS_TOKEN_ADDRESS: Address = (process.env.NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS || '0x33eFBF74Df84193Ce39dfF91394d9A0fE20c36c3') as Address;
-export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x13C20235BD86635627573e3027b6112a28dCfe3E') as Address;
-export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x63e7eb99daE531227dD690A031eAD1d8d5BeAc54') as Address;
+export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x8D546152e4A39680C00Aa61d914f38878083B1c8') as Address;
+export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x3DeE6FcBE0D28E3C772b6f57ca83B0652eC01F20') as Address;
 
 // Payment token addresses (Mock tokens for testnet) - Jan 25 deployment
-export const USDC_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0xBe0D90a4C6BBC99a37BA0A5aA9Ffaa894f826e06') as Address;
+export const USDC_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e') as Address;
 export const USDT_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDT_ADDRESS || '0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b') as Address;
 
 // Debug: Log token addresses at module load

@@ -42,7 +42,6 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
 
     IERC20 public immutable rootsToken;
     address public marketplace;
-    address public admin;  // Legacy single admin (kept for backwards compatibility)
 
     // Multi-admin support
     address[] public admins;
@@ -145,6 +144,16 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     mapping(uint256 => ChainPayout[]) public rewardPayouts;  // pendingRewardId => payouts
     mapping(uint256 => uint256[]) public ambassadorPendingRewards;  // ambassadorId => pendingRewardIds
 
+    // Reverse lookup: orderId => pendingRewardId (0 if none) — avoids O(n) scans
+    mapping(uint256 => uint256) public pendingRewardByOrderId;
+
+    // Per-ambassador claim cursor: index into ambassadorPendingRewards to start the next claim from.
+    // Allows claimVestedRewards to skip already-processed entries instead of scanning from 0.
+    mapping(uint256 => uint256) public ambassadorClaimCursor;
+
+    // Activated seller count per ambassador (used by DisputeResolution for anti-Sybil)
+    mapping(uint256 => uint256) public ambassadorActivatedSellerCount;
+
     // Circuit breaker tracking
     mapping(uint256 => uint256) public dailyOutflow;
     mapping(uint256 => mapping(uint256 => uint256)) public ambassadorWeeklyRewards;
@@ -202,8 +211,10 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         _;
     }
 
+    /// @dev Intentionally uses msg.sender (NOT _msgSender()) so admin actions cannot be
+    /// relayed via the gasless forwarder. Admins must sign directly with their own wallet.
     modifier onlyAdmin() {
-        require(isAdminMap[msg.sender] || msg.sender == admin, "Only admin");
+        require(isAdminMap[msg.sender], "Only admin");
         _;
     }
 
@@ -223,16 +234,16 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
     ) ERC2771Context(_trustedForwarder) {
         require(_rootsToken != address(0), "Invalid token address");
         rootsToken = IERC20(_rootsToken);
-        admin = msg.sender;  // Deployer is admin - intentionally msg.sender, not _msgSender()
 
         // Initialize multi-admin array with deployer
+        // Intentionally msg.sender (NOT _msgSender()) — deployer is the actual EOA, not a relayer
         admins.push(msg.sender);
         isAdminMap[msg.sender] = true;
     }
 
     // ============ Admin Functions ============
 
-    function setMarketplace(address _marketplace) external {
+    function setMarketplace(address _marketplace) external onlyAdmin {
         require(marketplace == address(0), "Marketplace already set");
         require(_marketplace != address(0), "Invalid marketplace address");
         marketplace = _marketplace;
@@ -246,11 +257,6 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         require(_marketplace != address(0), "Invalid marketplace address");
         marketplace = _marketplace;
         emit MarketplaceUpdated(_marketplace);
-    }
-
-    function setAdmin(address _newAdmin) external onlyAdmin {
-        require(_newAdmin != address(0), "Invalid admin address");
-        admin = _newAdmin;
     }
 
     /**
@@ -330,7 +336,7 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         emit AmbassadorUnsuspended(_ambassadorId);
     }
 
-    function initializeTreasury() external {
+    function initializeTreasury() external onlyAdmin {
         require(!treasuryInitialized, "Already initialized");
         uint256 balance = rootsToken.balanceOf(address(this));
         require(balance > 0, "No treasury balance");
@@ -387,13 +393,13 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
      */
     function registerAmbassador(uint256 _uplineId, string calldata _profileIpfs) external returns (uint256 ambassadorId) {
         require(ambassadorIdByWallet[_msgSender()] == 0, "Already an ambassador");
-
-        // Allow independent registration (uplineId = 0) or registration under an active upline
-        if (_uplineId != 0) {
-            require(ambassadors[_uplineId].active, "Upline not active");
-            require(!ambassadors[_uplineId].suspended, "Upline suspended");
-            ambassadors[_uplineId].recruitedAmbassadors++;
-        }
+        // Block self-promotion to top-of-chain. Only registerStateFounder (admin) can create
+        // an ambassador with uplineId = 0.
+        require(_uplineId != 0, "Must have an upline (use registerStateFounder for founders)");
+        require(ambassadors[_uplineId].wallet != address(0), "Upline does not exist");
+        require(ambassadors[_uplineId].active, "Upline not active");
+        require(!ambassadors[_uplineId].suspended, "Upline suspended");
+        ambassadors[_uplineId].recruitedAmbassadors++;
 
         ambassadorId = ++nextAmbassadorId;
 
@@ -478,6 +484,7 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
             recruitment.completedOrderCount >= SELLER_MIN_ORDERS &&
             recruitment.uniqueBuyerCount >= SELLER_MIN_UNIQUE_BUYERS) {
             recruitment.activated = true;
+            ambassadorActivatedSellerCount[recruitment.ambassadorId]++;
             emit SellerActivated(_sellerId, recruitment.ambassadorId);
 
             // Phase 1: Emit recruitment Seeds for the ambassador who recruited this seller
@@ -558,6 +565,7 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
             claimed: false,
             clawedBack: false
         });
+        pendingRewardByOrderId[_orderId] = pendingRewardId;
 
         // Walk the chain and create payouts
         uint256 remainingPool = totalPool;
@@ -632,6 +640,7 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         // If no rewards were actually distributed (e.g., all ambassadors in cooldown), clean up
         if (distributed == 0) {
             delete pendingRewards[pendingRewardId];
+            delete pendingRewardByOrderId[_orderId];
             nextPendingRewardId--;
             return 0;
         }
@@ -733,35 +742,59 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
         uint256[] storage rewardIds = ambassadorPendingRewards[ambassadorId];
         uint256 totalToClaim = 0;
 
-        for (uint256 i = 0; i < rewardIds.length; i++) {
+        // Start from the cursor instead of index 0 to avoid re-scanning fully-processed entries.
+        uint256 startCursor = ambassadorClaimCursor[ambassadorId];
+        uint256 newCursor = startCursor;
+        bool cursorStillAdvancing = true;
+
+        for (uint256 i = startCursor; i < rewardIds.length; i++) {
             uint256 rewardId = rewardIds[i];
             PendingReward storage reward = pendingRewards[rewardId];
 
+            // An entry is "fully processed" from this ambassador's perspective if it's been
+            // clawed back, OR their payout has already been claimed. Cursor only advances
+            // through a contiguous prefix of fully-processed entries.
+            bool entryFullyProcessed = false;
+
             if (reward.clawedBack) {
-                continue;
-            }
+                entryFullyProcessed = true;
+            } else if (block.timestamp >= reward.vestingEndsAt) {
+                // Vested — find this ambassador's payout in the chain
+                ChainPayout[] storage payouts = rewardPayouts[rewardId];
+                bool foundUnclaimed = false;
+                for (uint256 j = 0; j < payouts.length; j++) {
+                    if (payouts[j].ambassadorId == ambassadorId) {
+                        if (!payouts[j].claimed) {
+                            totalToClaim += payouts[j].amount;
+                            payouts[j].claimed = true;
 
-            if (block.timestamp < reward.vestingEndsAt) {
-                continue;
-            }
+                            ambassador.totalPending -= payouts[j].amount;
+                            ambassador.totalEarned += payouts[j].amount;
 
-            // Find this ambassador's payout in the chain
-            ChainPayout[] storage payouts = rewardPayouts[rewardId];
-            for (uint256 j = 0; j < payouts.length; j++) {
-                if (payouts[j].ambassadorId == ambassadorId && !payouts[j].claimed) {
-                    totalToClaim += payouts[j].amount;
-                    payouts[j].claimed = true;
+                            SellerRecruitment storage recruitment = sellerRecruitments[reward.sellerId];
+                            recruitment.totalRewardsPaid += payouts[j].amount;
 
-                    ambassador.totalPending -= payouts[j].amount;
-                    ambassador.totalEarned += payouts[j].amount;
-
-                    // Update seller recruitment stats
-                    SellerRecruitment storage recruitment = sellerRecruitments[reward.sellerId];
-                    recruitment.totalRewardsPaid += payouts[j].amount;
-
-                    emit RewardClaimed(rewardId, ambassadorId, payouts[j].amount);
+                            emit RewardClaimed(rewardId, ambassadorId, payouts[j].amount);
+                        }
+                        // Found this ambassador's payout (whether just claimed or already claimed)
+                        foundUnclaimed = false;
+                        break;
+                    }
+                    foundUnclaimed = foundUnclaimed; // no-op for clarity
                 }
+                entryFullyProcessed = true;
             }
+            // else: not yet vested — leave for next time
+
+            if (cursorStillAdvancing && entryFullyProcessed) {
+                newCursor = i + 1;
+            } else {
+                cursorStillAdvancing = false;
+            }
+        }
+
+        if (newCursor != startCursor) {
+            ambassadorClaimCursor[ambassadorId] = newCursor;
         }
 
         require(totalToClaim > 0, "No rewards to claim");
@@ -774,24 +807,27 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
      * @notice Clawback pending reward for disputed order
      */
     function clawbackReward(uint256 _orderId, string calldata _reason) external onlyMarketplace {
-        for (uint256 i = 1; i <= nextPendingRewardId; i++) {
-            PendingReward storage reward = pendingRewards[i];
-            if (reward.orderId == _orderId && !reward.claimed && !reward.clawedBack) {
-                reward.clawedBack = true;
+        uint256 rewardId = pendingRewardByOrderId[_orderId];
+        if (rewardId == 0) {
+            return;
+        }
+        PendingReward storage reward = pendingRewards[rewardId];
+        if (reward.claimed || reward.clawedBack) {
+            return;
+        }
 
-                // Reduce pending amounts for all in chain
-                ChainPayout[] storage payouts = rewardPayouts[i];
-                for (uint256 j = 0; j < payouts.length; j++) {
-                    if (!payouts[j].claimed) {
-                        Ambassador storage amb = ambassadors[payouts[j].ambassadorId];
-                        amb.totalPending -= payouts[j].amount;
-                    }
-                }
+        reward.clawedBack = true;
 
-                emit RewardClawedBack(i, _orderId, _reason);
-                return;
+        // Reduce pending amounts for all unclaimed payouts in the chain
+        ChainPayout[] storage payouts = rewardPayouts[rewardId];
+        for (uint256 j = 0; j < payouts.length; j++) {
+            if (!payouts[j].claimed) {
+                Ambassador storage amb = ambassadors[payouts[j].ambassadorId];
+                amb.totalPending -= payouts[j].amount;
             }
         }
+
+        emit RewardClawedBack(rewardId, _orderId, _reason);
     }
 
     // ============ Governance Functions ============
@@ -868,14 +904,22 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
 
         for (uint256 i = 0; i < rewardIds.length; i++) {
             PendingReward storage reward = pendingRewards[rewardIds[i]];
-            if (!reward.clawedBack) {
-                ChainPayout[] storage payouts = rewardPayouts[rewardIds[i]];
-                for (uint256 j = 0; j < payouts.length; j++) {
-                    if (payouts[j].ambassadorId == _ambassadorId && !payouts[j].claimed) {
-                        ambassadors[_ambassadorId].totalPending -= payouts[j].amount;
-                        emit RewardClawedBack(rewardIds[i], reward.orderId, "Ambassador suspended");
-                    }
+            if (reward.clawedBack) {
+                continue;
+            }
+            ChainPayout[] storage payouts = rewardPayouts[rewardIds[i]];
+            bool anyClawedBack = false;
+            for (uint256 j = 0; j < payouts.length; j++) {
+                if (payouts[j].ambassadorId == _ambassadorId && !payouts[j].claimed) {
+                    // Mark payout claimed so it can never be re-claimed even if the
+                    // ambassador is later unsuspended (prevents totalPending underflow).
+                    payouts[j].claimed = true;
+                    ambassadors[_ambassadorId].totalPending -= payouts[j].amount;
+                    anyClawedBack = true;
                 }
+            }
+            if (anyClawedBack) {
+                emit RewardClawedBack(rewardIds[i], reward.orderId, "Ambassador suspended");
             }
         }
     }
@@ -941,6 +985,12 @@ contract AmbassadorRewards is ReentrancyGuard, ERC2771Context {
 
     function isSellerActivated(uint256 _sellerId) external view returns (bool) {
         return sellerRecruitments[_sellerId].activated;
+    }
+
+    /// @notice Number of activated sellers (2+ orders, 2+ unique buyers) recruited by an ambassador.
+    /// @dev Used by DisputeResolution as the real anti-Sybil voting gate.
+    function getActivatedSellerCount(uint256 _ambassadorId) external view returns (uint256) {
+        return ambassadorActivatedSellerCount[_ambassadorId];
     }
 
     function isAmbassadorActive(uint256 _ambassadorId) external view returns (bool) {

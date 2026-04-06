@@ -37,7 +37,7 @@ contract RootsTokenTest is Test {
     }
 
     function test_TotalSupply() public view {
-        assertEq(token.totalSupply(), 100_000_000 * 10**18);
+        assertEq(token.totalSupply(), 1_000_000_000 * 10**18);
     }
 
     function test_Decimals() public view {
@@ -47,33 +47,33 @@ contract RootsTokenTest is Test {
     // ============ Allocation Tests ============
 
     function test_FounderAllocation() public view {
-        uint256 expected = (100_000_000 * 10**18 * 1000) / 10000; // 10%
+        uint256 expected = (1_000_000_000 * 10**18 * 1000) / 10000; // 10%
         assertEq(token.balanceOf(founderVesting), expected);
-        assertEq(token.balanceOf(founderVesting), 10_000_000 * 10**18);
+        assertEq(token.balanceOf(founderVesting), 100_000_000 * 10**18);
     }
 
     function test_AmbassadorAllocation() public view {
-        uint256 expected = (100_000_000 * 10**18 * 2500) / 10000; // 25%
+        uint256 expected = (1_000_000_000 * 10**18 * 2500) / 10000; // 25%
         assertEq(token.balanceOf(ambassadorRewards), expected);
-        assertEq(token.balanceOf(ambassadorRewards), 25_000_000 * 10**18);
+        assertEq(token.balanceOf(ambassadorRewards), 250_000_000 * 10**18);
     }
 
     function test_LiquidityAllocation() public view {
-        uint256 expected = (100_000_000 * 10**18 * 1500) / 10000; // 15%
+        uint256 expected = (1_000_000_000 * 10**18 * 1500) / 10000; // 15%
         assertEq(token.balanceOf(liquidityPool), expected);
-        assertEq(token.balanceOf(liquidityPool), 15_000_000 * 10**18);
+        assertEq(token.balanceOf(liquidityPool), 150_000_000 * 10**18);
     }
 
     function test_TreasuryAllocation() public view {
-        uint256 expected = (100_000_000 * 10**18 * 4000) / 10000; // 40%
+        uint256 expected = (1_000_000_000 * 10**18 * 4000) / 10000; // 40%
         assertEq(token.balanceOf(treasury), expected);
-        assertEq(token.balanceOf(treasury), 40_000_000 * 10**18);
+        assertEq(token.balanceOf(treasury), 400_000_000 * 10**18);
     }
 
     function test_AirdropAllocation() public view {
-        uint256 expected = (100_000_000 * 10**18 * 1000) / 10000; // 10%
+        uint256 expected = (1_000_000_000 * 10**18 * 1000) / 10000; // 10%
         assertEq(token.balanceOf(airdrop), expected);
-        assertEq(token.balanceOf(airdrop), 10_000_000 * 10**18);
+        assertEq(token.balanceOf(airdrop), 100_000_000 * 10**18);
     }
 
     function test_AllAllocationsSum() public view {

@@ -36,7 +36,8 @@ contract DeployGasless is Script {
             address(ambassadorRewards),
             address(forwarder),
             msg.sender,  // Initial admin is the deployer
-            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS,
+            0x036CbD53842c5426634e7929541eC2318f3dCF7e  // Base Sepolia USDC
         );
         console.log("LocalRootsMarketplace deployed at:", address(marketplace));
 

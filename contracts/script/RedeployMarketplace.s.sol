@@ -35,7 +35,8 @@ contract RedeployMarketplace is Script {
             AMBASSADOR_REWARDS,
             address(forwarder),
             deployer,  // Initial admin is the deployer
-            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS,
+            MOCK_USDC
         );
 
         // Configure payment token support

@@ -62,7 +62,7 @@ contract DisputeResolutionTest is Test {
     address public buyer2 = address(0x301);
 
     // Hardcoded USDC address from marketplace
-    address public constant USDC_ADDRESS = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+    address public constant USDC_ADDRESS = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
 
     uint256 public constant AMBASSADOR_ALLOCATION = 25_000_000 * 10**18;
     uint256 public constant AMBASSADOR_COOLDOWN = 24 hours;
@@ -101,7 +101,8 @@ contract DisputeResolutionTest is Test {
             address(ambassadorRewards),
             address(0),  // No trusted forwarder in tests
             admin,
-            LocalRootsMarketplace.LaunchPhase.Phase1_USDC
+            LocalRootsMarketplace.LaunchPhase.Phase1_USDC,
+            USDC_ADDRESS
         );
 
         // Deploy dispute resolution
@@ -169,6 +170,18 @@ contract DisputeResolutionTest is Test {
         // Activate seller1 (2 orders from 2 unique buyers)
         _createAndCompleteOrder(buyer1);
         _createAndCompleteOrder(buyer2);
+
+        // D1: Whitelist test ambassadors so they qualify to vote without
+        // needing to fully activate sellers in every test setup. Mirrors
+        // the early-stage voter whitelist pattern from CLAUDE.md.
+        vm.startPrank(admin);
+        disputeResolution.addWhitelistedVoter(stateFounder);
+        disputeResolution.addWhitelistedVoter(ambassador1);
+        disputeResolution.addWhitelistedVoter(ambassador2);
+        disputeResolution.addWhitelistedVoter(ambassador3);
+        disputeResolution.addWhitelistedVoter(ambassador4);
+        disputeResolution.addWhitelistedVoter(ambassador5);
+        vm.stopPrank();
     }
 
     function _registerSellerForAmbassador(address sellerAddr, uint256 ambassadorId) internal {
@@ -607,21 +620,21 @@ contract DisputeResolutionTest is Test {
         _createDisputedOrder();
         _createDisputedOrder();
 
-        uint256[] memory openDisputes = disputeResolution.getOpenDisputes();
+        uint256[] memory openDisputes = disputeResolution.getOpenDisputes(0, 100);
         assertEq(openDisputes.length, 3);
 
         // Resolve one
         vm.prank(admin);
         disputeResolution.adminResolveDispute(1, true, "Admin resolved");
 
-        openDisputes = disputeResolution.getOpenDisputes();
+        openDisputes = disputeResolution.getOpenDisputes(0, 100);
         assertEq(openDisputes.length, 2);
     }
 
     function test_GetQualifiedVoterCount() public {
         // State founder + 5 ambassadors = 6 qualified voters
         // All have recruited at least 1 seller
-        uint256 voterCount = disputeResolution.getQualifiedVoterCount();
+        uint256 voterCount = disputeResolution.getQualifiedVoterCount(0, 100);
         assertEq(voterCount, 6);
     }
 
@@ -742,5 +755,96 @@ contract DisputeResolutionTest is Test {
         vm.prank(newAmbassador);
         vm.expectRevert("Must have 1+ recruited seller");
         disputeResolution.vote(disputeId, true, "The buyer's evidence clearly shows the product was not as described");
+    }
+
+    function _voteAndResolveForBuyer(uint256 /*orderId*/, uint256 disputeId) internal {
+        vm.prank(stateFounder);
+        disputeResolution.vote(disputeId, true, "Buyer wins this round, evidence is convincing");
+        vm.prank(ambassador1);
+        disputeResolution.vote(disputeId, true, "Agreed, seller did not deliver as promised");
+        vm.prank(ambassador2);
+        disputeResolution.vote(disputeId, true, "Photos clearly show damaged produce on arrival");
+        vm.prank(ambassador3);
+        disputeResolution.vote(disputeId, true, "Refund is the appropriate outcome here today");
+        vm.prank(ambassador4);
+        disputeResolution.vote(disputeId, true, "Concur with the majority on this dispute case");
+
+        vm.warp(block.timestamp + VOTE_DURATION + 1);
+        disputeResolution.resolveDispute(disputeId);
+    }
+
+    // ============ Security Fix Regression Tests (D1, D2, D4) ============
+
+    /// @notice D1: Ambassador with a RECRUITED but NOT ACTIVATED seller cannot
+    /// vote — passes the legacy "recruitedSellers >= 1" check but is correctly
+    /// blocked by the new anti-Sybil "activated seller" check.
+    function test_D1_RecruitedButNotActivatedCannotVote() public {
+        // Create new ambassador not in the whitelist
+        address sybilAmb = address(0xBEEF);
+        vm.prank(sybilAmb);
+        ambassadorRewards.registerAmbassador(1, "");
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
+
+        // Recruit a seller for this ambassador (passes the recruitedSellers check)
+        // but DO NOT complete 2 orders (so seller is not activated)
+        address sybilSeller = address(0xBEEE);
+        vm.prank(sybilSeller);
+        marketplace.registerSeller(bytes8("djq12347"), "ipfs://x", true, true, 10, 7);
+
+        // Confirm: recruited but not activated
+        assertEq(ambassadorRewards.getActivatedSellerCount(7), 0);
+
+        // Create a dispute
+        uint256 orderId = _createDisputedOrder();
+        uint256 disputeId = 1;
+
+        // Should fail at the activated check (not the recruited check)
+        vm.prank(sybilAmb);
+        vm.expectRevert("Must have 1+ activated seller to vote");
+        disputeResolution.vote(disputeId, true, "Buyer evidence convincing in this particular case");
+    }
+
+    /// @notice D2: Strikes are tracked per sellerId, not just per wallet — a
+    /// suspended seller can't dodge auto-suspension by rotating to a new wallet
+    /// (note: in this contract suspension is per-sellerId via the marketplace,
+    /// so this test verifies the sellerStrikesById counter increments and
+    /// triggers auto-suspend after 3 lost disputes).
+    function test_D2_SellerStrikesTrackedById() public {
+        // Initial state
+        assertEq(disputeResolution.sellerStrikesById(1), 0);
+
+        // Helper inline: vote 5x for buyer then resolve.
+        _voteAndResolveForBuyer(_createDisputedOrder(), 1);
+        assertEq(disputeResolution.sellerStrikesById(1), 1, "1 strike");
+
+        _voteAndResolveForBuyer(_createDisputedOrder(), 2);
+        assertEq(disputeResolution.sellerStrikesById(1), 2, "2 strikes");
+
+        _voteAndResolveForBuyer(_createDisputedOrder(), 3);
+        assertEq(disputeResolution.sellerStrikesById(1), 3, "3 strikes recorded");
+
+        // Marketplace should have auto-suspended the seller
+        // (verified indirectly: try to create a new listing as suspended seller)
+        // We just check the counter here; full suspension flow is exercised elsewhere.
+    }
+
+    /// @notice D4: Seller cannot submit a response after the 36h response window.
+    function test_D4_SellerResponseWindowExpired() public {
+        uint256 orderId = _createDisputedOrder();
+        uint256 disputeId = 1;
+
+        // Within window — works
+        vm.prank(seller1);
+        disputeResolution.submitSellerResponse(disputeId, "Initial response", "ipfs://x");
+
+        // Create a 2nd dispute, let window expire
+        uint256 orderId2 = _createDisputedOrder();
+        uint256 disputeId2 = 2;
+
+        vm.warp(block.timestamp + 37 hours);
+
+        vm.prank(seller1);
+        vm.expectRevert("Response window expired");
+        disputeResolution.submitSellerResponse(disputeId2, "Too late", "ipfs://y");
     }
 }

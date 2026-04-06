@@ -196,7 +196,7 @@ contract AmbassadorRewardsTest is Test {
 
     function test_RevertRegister_InvalidUpline() public {
         vm.prank(cityAmbassador);
-        vm.expectRevert("Upline not active");
+        vm.expectRevert("Upline does not exist");
         rewards.registerAmbassador(999, "");
     }
 
@@ -606,16 +606,16 @@ contract AmbassadorRewardsTest is Test {
 
     // ============ Admin Tests ============
 
-    function test_SetAdmin() public {
+    function test_AddAdmin() public {
         address newAdmin = address(0x999);
-        rewards.setAdmin(newAdmin);
-        assertEq(rewards.admin(), newAdmin);
+        rewards.addAdmin(newAdmin);
+        assertTrue(rewards.isAdminMap(newAdmin));
     }
 
-    function test_RevertSetAdmin_NotAdmin() public {
+    function test_RevertAddAdmin_NotAdmin() public {
         vm.prank(stateFounder);
         vm.expectRevert("Only admin");
-        rewards.setAdmin(stateFounder);
+        rewards.addAdmin(stateFounder);
     }
 
     function test_RevertSetMarketplace_AlreadySet() public {
@@ -635,5 +635,135 @@ contract AmbassadorRewardsTest is Test {
     function test_RevertDeploy_ZeroToken() public {
         vm.expectRevert("Invalid token address");
         new AmbassadorRewards(address(0), address(0));
+    }
+
+    // ============ Security Fix Regression Tests (A1, A5, A6, D1) ============
+
+    /// @notice A1: After suspend (clawback) + unsuspend, ambassador should not be
+    /// able to "re-claim" the clawed-back payouts and underflow totalPending.
+    function test_A1_SuspendClawbackUnsuspendDoesNotUnderflow() public {
+        uint256 sellerId = _setupActivatedSellerWithChain();
+
+        // Queue a reward — block ambassador (id 4) gets 80% of 250 ROOTS = 200 ROOTS
+        vm.prank(marketplace);
+        rewards.queueReward(1, sellerId, 1000 * 10**18);
+
+        AmbassadorRewards.Ambassador memory before = rewards.getAmbassador(4);
+        assertGt(before.totalPending, 0, "should have pending");
+
+        // Admin suspends block ambassador → triggers _clawbackAllPending
+        rewards.adminSuspendAmbassador(4, "test");
+
+        AmbassadorRewards.Ambassador memory afterSuspend = rewards.getAmbassador(4);
+        assertEq(afterSuspend.totalPending, 0, "pending zeroed by clawback");
+
+        // Unsuspend the ambassador
+        rewards.adminUnsuspendAmbassador(4);
+
+        // Vest and try to claim — must NOT underflow. Should revert "No rewards to claim".
+        vm.warp(block.timestamp + VESTING_PERIOD + 1);
+        vm.prank(blockAmbassador);
+        vm.expectRevert("No rewards to claim");
+        rewards.claimVestedRewards();
+
+        AmbassadorRewards.Ambassador memory afterClaimAttempt = rewards.getAmbassador(4);
+        assertEq(afterClaimAttempt.totalPending, 0, "still zero, no underflow");
+        assertEq(afterClaimAttempt.totalEarned, 0, "nothing earned");
+    }
+
+    /// @notice A5: clawbackReward uses direct O(1) lookup; unknown orderId is a no-op.
+    function test_A5_ClawbackByOrderIdDirectLookup() public {
+        uint256 sellerId = _setupActivatedSellerWithChain();
+
+        vm.prank(marketplace);
+        uint256 rewardId = rewards.queueReward(42, sellerId, 1000 * 10**18);
+        assertGt(rewardId, 0);
+
+        // Reverse-lookup mapping populated
+        assertEq(rewards.pendingRewardByOrderId(42), rewardId);
+
+        // Unknown orderId is a silent no-op (doesn't revert)
+        vm.prank(marketplace);
+        rewards.clawbackReward(99999, "unknown");
+
+        // Real clawback succeeds via direct lookup
+        vm.prank(marketplace);
+        rewards.clawbackReward(42, "disputed");
+
+        // Block ambassador's pending should be zeroed
+        AmbassadorRewards.Ambassador memory amb = rewards.getAmbassador(4);
+        assertEq(amb.totalPending, 0);
+
+        // Double-clawback is a no-op
+        vm.prank(marketplace);
+        rewards.clawbackReward(42, "disputed again");
+    }
+
+    /// @notice A6: Cursor advances past contiguous claimed prefix so subsequent
+    /// claims don't re-scan. Verifies the cursor moves AND a second claim works
+    /// against a newly added (later-vested) reward.
+    function test_A6_ClaimCursorAdvances() public {
+        uint256 sellerId = _setupActivatedSellerWithChain();
+
+        // Queue first reward
+        vm.prank(marketplace);
+        rewards.queueReward(1, sellerId, 1000 * 10**18);
+
+        // Vest and claim
+        vm.warp(block.timestamp + VESTING_PERIOD + 1);
+        vm.prank(blockAmbassador);
+        rewards.claimVestedRewards();
+
+        // Cursor should have advanced past the 1st entry
+        uint256 cursorAfterFirst = rewards.ambassadorClaimCursor(4);
+        assertEq(cursorAfterFirst, 1, "cursor advanced past 1st reward");
+
+        // Queue a second reward
+        vm.prank(marketplace);
+        rewards.queueReward(2, sellerId, 1000 * 10**18);
+
+        // Vest and claim again
+        vm.warp(block.timestamp + VESTING_PERIOD + 1);
+        vm.prank(blockAmbassador);
+        rewards.claimVestedRewards();
+
+        uint256 cursorAfterSecond = rewards.ambassadorClaimCursor(4);
+        assertEq(cursorAfterSecond, 2, "cursor advanced past 2nd reward");
+
+        // Third claim with nothing new should revert
+        vm.prank(blockAmbassador);
+        vm.expectRevert("No rewards to claim");
+        rewards.claimVestedRewards();
+    }
+
+    /// @notice D1 support: getActivatedSellerCount increments only on activation,
+    /// once per seller, even with extra completed orders.
+    function test_D1_GetActivatedSellerCount() public {
+        rewards.registerStateFounder(stateFounder, bytes8("djq"), "");
+        vm.prank(cityAmbassador);
+        rewards.registerAmbassador(1, "");
+        vm.warp(block.timestamp + AMBASSADOR_COOLDOWN);
+
+        // Before any recruitment
+        assertEq(rewards.getActivatedSellerCount(2), 0);
+
+        // Recruit + 1 order (not yet activated — needs 2 unique buyers)
+        vm.prank(marketplace);
+        rewards.recordSellerRecruitment(1, 2);
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer1);
+        assertEq(rewards.getActivatedSellerCount(2), 0, "not yet activated");
+
+        // 2nd unique buyer → activates
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer2);
+        assertEq(rewards.getActivatedSellerCount(2), 1, "activated");
+
+        // Extra completed orders should NOT double-count
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer1);
+        vm.prank(marketplace);
+        rewards.recordCompletedOrder(1, buyer2);
+        assertEq(rewards.getActivatedSellerCount(2), 1, "still 1, not double-counted");
     }
 }

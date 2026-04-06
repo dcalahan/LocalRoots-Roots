@@ -57,7 +57,8 @@ contract LocalRootsMarketplaceTest is Test {
             address(ambassadorRewardsContract),
             address(0),
             admin,
-            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS,
+            address(0xdead)  // USDC unused in Phase 2 ROOTS-only tests
         );
 
         // Set marketplace in ambassador rewards
@@ -443,7 +444,8 @@ contract LocalRootsMarketplaceTest is Test {
             address(freshAmbassador),
             address(0),
             admin,
-            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS,
+            address(0xdead)  // USDC unused in Phase 2 ROOTS-only tests
         );
         freshAmbassador.setMarketplace(address(freshMarketplace));
 

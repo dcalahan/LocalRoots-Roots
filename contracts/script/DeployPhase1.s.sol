@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import "../src/LocalRootsMarketplace.sol";
 import "../src/AmbassadorRewards.sol";
+import "../src/DisputeResolution.sol";
 import "@openzeppelin/contracts/metatx/ERC2771Forwarder.sol";
 
 /**
@@ -26,6 +27,7 @@ contract DeployPhase1 is Script {
     ERC2771Forwarder public forwarder;
     AmbassadorRewards public ambassadorRewards;
     LocalRootsMarketplace public marketplace;
+    DisputeResolution public disputeResolution;
 
     // USDC on Base Sepolia (Circle's official testnet USDC)
     address constant USDC_ADDRESS = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
@@ -57,11 +59,21 @@ contract DeployPhase1 is Script {
             address(ambassadorRewards),
             address(forwarder),
             deployer,                                            // Initial admin
-            LocalRootsMarketplace.LaunchPhase.Phase1_USDC        // Start in Phase 1
+            LocalRootsMarketplace.LaunchPhase.Phase1_USDC,       // Start in Phase 1
+            USDC_ADDRESS                                         // Phase 1 payment token
         );
         console.log("LocalRootsMarketplace deployed at:", address(marketplace));
 
-        // Step 4: Configure AmbassadorRewards
+        // Step 4: Deploy DisputeResolution
+        disputeResolution = new DisputeResolution(
+            address(ambassadorRewards),
+            address(marketplace),
+            address(forwarder),
+            deployer
+        );
+        console.log("DisputeResolution deployed at:", address(disputeResolution));
+
+        // Step 5: Configure AmbassadorRewards
         ambassadorRewards.setMarketplace(address(marketplace));
         console.log("Marketplace configured in AmbassadorRewards");
 
@@ -78,6 +90,7 @@ contract DeployPhase1 is Script {
         console.log("  ERC2771Forwarder:", address(forwarder));
         console.log("  AmbassadorRewards:", address(ambassadorRewards));
         console.log("  LocalRootsMarketplace:", address(marketplace));
+        console.log("  DisputeResolution:", address(disputeResolution));
         console.log("");
         console.log("Phase 1 Configuration:");
         console.log("  Payment Token: USDC only (", USDC_ADDRESS, ")");

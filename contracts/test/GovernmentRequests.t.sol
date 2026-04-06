@@ -68,7 +68,7 @@ contract GovernmentRequestsTest is Test {
     address public buyer2 = address(0x301);
 
     // Hardcoded USDC address from marketplace
-    address public constant USDC_ADDRESS = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+    address public constant USDC_ADDRESS = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
 
     uint256 public constant AMBASSADOR_ALLOCATION = 25_000_000 * 10**18;
     uint256 public constant AMBASSADOR_COOLDOWN = 24 hours;
@@ -108,7 +108,8 @@ contract GovernmentRequestsTest is Test {
             address(ambassadorRewards),
             address(0),
             admin,
-            LocalRootsMarketplace.LaunchPhase.Phase1_USDC
+            LocalRootsMarketplace.LaunchPhase.Phase1_USDC,
+            USDC_ADDRESS
         );
 
         // Deploy government requests

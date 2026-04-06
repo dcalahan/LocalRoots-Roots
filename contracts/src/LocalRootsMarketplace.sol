@@ -32,8 +32,11 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     LaunchPhase public currentPhase;
     bool public phaseTransitionLocked;
 
-    // USDC address on Base Sepolia (and mainnet)
-    address public constant USDC_ADDRESS = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+    // USDC address — set in constructor so the same source compiles for
+    // mainnet, testnet, and unit tests. Immutable for gas efficiency.
+    // Mainnet:  0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+    // Sepolia:  0x036CbD53842c5426634e7929541eC2318f3dCF7e (Circle official testnet USDC)
+    address public immutable USDC_ADDRESS;
 
     // ============ State Variables ============
 
@@ -174,9 +177,12 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         address _ambassadorRewards,
         address _trustedForwarder,
         address _initialAdmin,
-        LaunchPhase _initialPhase
+        LaunchPhase _initialPhase,
+        address _usdcAddress
     ) ERC2771Context(_trustedForwarder) {
         require(_initialAdmin != address(0), "Invalid admin address");
+        require(_usdcAddress != address(0), "Invalid USDC address");
+        USDC_ADDRESS = _usdcAddress;
 
         // For Phase 1, rootsToken can be address(0)
         // For Phase 2, rootsToken is required
@@ -362,6 +368,8 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
 
         Seller storage seller = sellers[listing.sellerId];
         require(seller.active, "Seller not active");
+        require(!sellerSuspended[listing.sellerId], "Seller suspended");
+        require(_msgSender() != seller.owner, "Cannot buy own listing");
 
         if (_isDelivery) {
             require(seller.offersDelivery, "Seller does not offer delivery");
@@ -411,7 +419,8 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
                 IERC20(_paymentToken).safeTransferFrom(_msgSender(), address(this), stablecoinAmount);
 
                 // Approve swap router and swap to ROOTS
-                IERC20(_paymentToken).approve(swapRouter, stablecoinAmount);
+                // forceApprove handles USDT-style tokens that revert on non-zero→non-zero approvals
+                IERC20(_paymentToken).forceApprove(swapRouter, stablecoinAmount);
                 uint256 rootsReceived = ISwapRouter(swapRouter).swapStablecoinForRoots(
                     _paymentToken,
                     stablecoinAmount,
@@ -697,6 +706,9 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         order.fundsReleased = true;
         order.status = OrderStatus.Refunded;
 
+        // Restore inventory so the listing isn't permanently depleted by a refund
+        listings[order.listingId].quantityAvailable += order.quantity;
+
         if (order.paymentToken == USDC_ADDRESS) {
             IERC20(USDC_ADDRESS).safeTransfer(order.buyer, order.totalPrice);
         } else {
@@ -777,9 +789,9 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
     }
 
     /**
-     * @notice Refund buyer for a disputed order (admin only for now)
-     * @dev Can only refund orders where funds haven't been released yet
-     *      Handles both USDC (Phase 1) and ROOTS (Phase 2)
+     * @notice Refund buyer for a disputed order
+     * @dev Callable by admin OR by the seller voluntarily. Only for disputed orders
+     *      where funds haven't been released. Handles both USDC and ROOTS.
      * @param _orderId Order ID to refund
      */
     function refundBuyer(uint256 _orderId) external nonReentrant {
@@ -787,12 +799,17 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         require(order.status == OrderStatus.Disputed, "Order not disputed");
         require(!order.fundsReleased, "Funds already released");
 
-        // For now, only the seller can initiate a refund (voluntary)
-        // In future, this could be admin-controlled or through arbitration
-        require(sellers[order.sellerId].owner == _msgSender(), "Not order seller");
+        // Admin or seller can initiate the refund
+        require(
+            isAdmin[_msgSender()] || sellers[order.sellerId].owner == _msgSender(),
+            "Not authorized"
+        );
 
         order.fundsReleased = true;
         order.status = OrderStatus.Refunded;
+
+        // Restore inventory
+        listings[order.listingId].quantityAvailable += order.quantity;
 
         // Refund in the token that was used for payment
         if (order.paymentToken == USDC_ADDRESS) {
@@ -959,6 +976,9 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
 
         order.fundsReleased = true;
         order.status = OrderStatus.Cancelled;
+
+        // Restore inventory
+        listings[order.listingId].quantityAvailable += order.quantity;
 
         // Clawback ambassador rewards if queued
         if (ambassadorRewards != address(0) && order.rewardQueued) {

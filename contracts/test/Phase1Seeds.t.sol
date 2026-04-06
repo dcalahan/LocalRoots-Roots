@@ -23,7 +23,7 @@ contract Phase1SeedsTest is Test {
     bytes8 public geohash1 = bytes8("9q8yyk9");
 
     // USDC address that matches the hardcoded constant in LocalRootsMarketplace
-    address constant EXPECTED_USDC = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+    address constant EXPECTED_USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
 
     uint256 public constant USDC_DECIMALS = 6;
     uint256 public constant PRICE_PER_UNIT = 10 * 10**18;  // 10 ROOTS = $0.10 USD
@@ -50,7 +50,8 @@ contract Phase1SeedsTest is Test {
             address(ambassadorRewards),
             address(0),  // No forwarder in tests
             admin,
-            LocalRootsMarketplace.LaunchPhase.Phase1_USDC
+            LocalRootsMarketplace.LaunchPhase.Phase1_USDC,
+            EXPECTED_USDC
         );
 
         // Configure ambassador rewards

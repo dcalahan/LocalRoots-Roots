@@ -117,8 +117,10 @@ interface IDisputeResolution {
     function getUserStrikes(address user) external view returns (UserStrikes memory);
 
     /**
-     * @notice Get the count of qualified voters
-     * @return The number of ambassadors who can vote
+     * @notice Get the count of qualified voters within a paginated range of ambassador IDs
+     * @param startId Starting ambassador ID (use 0 to start at 1)
+     * @param limit Max number of ambassadors to scan
+     * @return The number of qualified voters in the range
      */
-    function getQualifiedVoterCount() external view returns (uint256);
+    function getQualifiedVoterCount(uint256 startId, uint256 limit) external view returns (uint256);
 }

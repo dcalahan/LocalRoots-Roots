@@ -104,7 +104,8 @@ contract DeployAll is Script {
             address(ambassadorRewards),
             address(forwarder),
             deployer,  // Initial admin is the deployer (use computed address, not msg.sender)
-            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS
+            LocalRootsMarketplace.LaunchPhase.Phase2_ROOTS,
+            0x036CbD53842c5426634e7929541eC2318f3dCF7e  // Base Sepolia USDC
         );
 
         // Step 7: Configure AmbassadorRewards
