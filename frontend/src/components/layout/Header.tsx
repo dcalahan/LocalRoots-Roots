@@ -41,6 +41,7 @@ export function Header() {
 
   const navLinks = [
     { href: '/grow', label: 'Grow' },
+    { href: '/gardeners', label: 'Gardeners' },
     { href: '/buy', label: 'Shop' },
     { href: '/sell', label: 'Sell' },
     { href: '/ambassador', label: 'Ambassadors' },

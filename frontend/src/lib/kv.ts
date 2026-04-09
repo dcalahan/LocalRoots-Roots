@@ -40,6 +40,10 @@ export const kv = {
     await kvCommand('SET', key, serialized)
   },
 
+  async del(key: string): Promise<void> {
+    await kvCommand('DEL', key)
+  },
+
   async keys(pattern: string): Promise<string[]> {
     const result = await kvCommand('KEYS', pattern)
     return (result as string[]) || []

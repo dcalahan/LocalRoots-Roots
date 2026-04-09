@@ -6,6 +6,7 @@ import { useUserPreferences } from '@/contexts/UserPreferencesContext';
 import { useMyGarden } from '@/hooks/useMyGarden';
 import { MyGardenView } from '@/components/grow/MyGardenView';
 import { GardenAIChat } from '@/components/grow/GardenAIChat';
+import { PublicGardenSettings } from '@/components/grow/PublicGardenSettings';
 
 export default function MyGardenPage() {
   const { authenticated, login, user } = usePrivy();
@@ -15,7 +16,17 @@ export default function MyGardenPage() {
 
   // Use Privy user ID for storage
   const userId = user?.id || null;
-  const { plants, addPlants, removePlant, markHarvested, isLoading } = useMyGarden(userId);
+  const {
+    plants,
+    beds,
+    addPlants,
+    removePlant,
+    markHarvested,
+    addBed,
+    updateBed,
+    deleteBed,
+    isLoading,
+  } = useMyGarden(userId);
 
   // Auth gate
   if (!authenticated) {
@@ -62,13 +73,22 @@ export default function MyGardenPage() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <MyGardenView
           plants={plants}
+          beds={beds}
           onAddPlants={addPlants}
           onRemove={removePlant}
           onHarvest={markHarvested}
+          onAddBed={addBed}
+          onUpdateBed={updateBed}
+          onDeleteBed={deleteBed}
           zone={growingProfile?.zone}
           locationName={preferences.preferredLocation?.displayName}
           firstFallFrost={growingProfile?.firstFallFrost}
         />
+        {userId && (
+          <div className="mt-8">
+            <PublicGardenSettings userId={userId} />
+          </div>
+        )}
       </div>
       <GardenAIChat />
     </div>

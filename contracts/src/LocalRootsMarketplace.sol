@@ -374,6 +374,9 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
         uint256 orderAmount;
         address paymentTokenUsed;
 
+        // Update listing quantity BEFORE external calls (checks-effects-interactions)
+        listing.quantityAvailable -= _quantity;
+
         if (currentPhase == LaunchPhase.Phase1_USDC) {
             // Phase 1: USDC only
             require(_paymentToken == USDC_ADDRESS, "Phase 1: USDC only");
@@ -421,9 +424,6 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
             }
             orderAmount = totalPriceRoots;
         }
-
-        // Update listing quantity
-        listing.quantityAvailable -= _quantity;
 
         // Create order
         orderId = ++nextOrderId;
@@ -588,18 +588,21 @@ contract LocalRootsMarketplace is ReentrancyGuard, ERC2771Context {
                 // Queue ambassador reward (with 7-day vesting for fraud protection)
                 // Will only succeed if seller is activated (2 orders, 2 unique buyers)
                 if (!order.rewardQueued) {
+                    // Set flag BEFORE external call (checks-effects-interactions)
+                    order.rewardQueued = true;
                     try IAmbassadorRewards(ambassadorRewards).queueReward(
                         _orderId,
                         order.sellerId,
                         order.totalPrice
                     ) returns (uint256 pendingRewardId) {
                         if (pendingRewardId > 0) {
-                            order.rewardQueued = true;
                             emit RewardQueued(_orderId, order.sellerId);
+                        } else {
+                            order.rewardQueued = false;
                         }
                     } catch {
-                        // If reward queueing fails, order still completes
-                        // This prevents ambassador contract issues from blocking orders
+                        // Reset flag if call fails so it can be retried
+                        order.rewardQueued = false;
                     }
                 }
             }

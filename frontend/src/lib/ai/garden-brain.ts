@@ -531,31 +531,55 @@ export function createGardenBrain(): Brain {
 - If they ask "what should I plant next?" — suggest crops that pair well with their existing garden\n`
       }
 
-      // User's My Garden (tracked plants)
+      // User's beds + My Garden (tracked plants)
       let gardenSection = ''
-      const myGarden = uc.myGarden as { cropId: string; plantingDate: string; quantity: number; plantingMethod?: string; location?: string }[] | undefined
-      if (myGarden && myGarden.length > 0) {
+      const myGarden = uc.myGarden as { cropId: string; plantingDate: string; quantity: number; plantingMethod?: string; location?: string; bedId?: string }[] | undefined
+      const gardenBeds = uc.gardenBeds as { id: string; name: string; type: string; widthInches?: number; lengthInches?: number; notes?: string }[] | undefined
+
+      if ((myGarden && myGarden.length > 0) || (gardenBeds && gardenBeds.length > 0)) {
         const cropData = (cropGrowingData as { crops: Record<string, { name: string; daysToMaturity: { min: number; max: number } }> }).crops
-        const plantLines = myGarden.map(p => {
-          const crop = cropData[p.cropId]
-          const name = crop?.name || p.cropId
-          const planted = new Date(p.plantingDate)
-          const daysSincePlanting = Math.floor((Date.now() - planted.getTime()) / 86400000)
-          const maturityMin = crop?.daysToMaturity?.min || 60
-          const pct = Math.min(100, Math.round((daysSincePlanting / maturityMin) * 100))
-          return `- ${name} (×${p.quantity}): planted ${p.plantingDate}, ${daysSincePlanting} days ago, ~${pct}% to maturity${p.location ? ` [${p.location}]` : ''}`
-        }).join('\n')
-        gardenSection = `\nUSER'S GARDEN (plants they are tracking in My Garden):
-${plantLines}
+        const bedById: Record<string, string> = {}
+        let bedsBlock = ''
+        if (gardenBeds && gardenBeds.length > 0) {
+          for (const b of gardenBeds) bedById[b.id] = b.name
+          bedsBlock = `\nUSER'S BEDS:\n` + gardenBeds.map(b => {
+            const dim = b.widthInches && b.lengthInches ? ` (${b.widthInches}"×${b.lengthInches}")` : ''
+            return `- "${b.name}" — ${b.type}${dim}${b.notes ? `, ${b.notes}` : ''}`
+          }).join('\n')
+        }
+
+        let plantLines = ''
+        if (myGarden && myGarden.length > 0) {
+          plantLines = myGarden.map(p => {
+            const crop = cropData[p.cropId]
+            const name = crop?.name || p.cropId
+            const planted = new Date(p.plantingDate)
+            const daysSincePlanting = Math.floor((Date.now() - planted.getTime()) / 86400000)
+            const maturityMin = crop?.daysToMaturity?.min || 60
+            const pct = Math.min(100, Math.round((daysSincePlanting / maturityMin) * 100))
+            const bedName = p.bedId ? bedById[p.bedId] : undefined
+            const bedLabel = bedName ? ` in "${bedName}"` : (p.location ? ` [${p.location}]` : '')
+            return `- ${name} (×${p.quantity})${bedLabel}: planted ${p.plantingDate}, ${daysSincePlanting} days ago, ~${pct}% to maturity`
+          }).join('\n')
+        }
+
+        gardenSection = `${bedsBlock}\n\nUSER'S GARDEN (plants they are tracking in My Garden):
+${plantLines || '(no plants tracked yet)'}
 
 GARDEN AWARENESS:
-- Reference their specific plants when giving advice ("Your tomatoes are about ${myGarden.length > 0 ? 'X days' : ''} from harvest...")
-- If they mention planting something new, the app will automatically add it to their garden tracker
+- Reference their specific plants AND beds when giving advice ("Your tomatoes in Bed 1 are about X days from harvest...")
+- When the user mentions a bed by name, find it by fuzzy match before creating a new one — the app will track this automatically
+- If they mention planting something new, the app will automatically add it to their garden tracker (and assign to a bed if they mentioned one)
+- If they mention building a new bed/tower/container, the app will create it automatically
 - If they mention harvesting or a plant dying, the app will update their garden automatically
 - When harvest approaches, suggest they list surplus on LocalRoots to sell to neighbors\n`
       }
 
-      return `You are the Local Roots gardening companion — a friendly, knowledgeable AI that helps people grow food successfully using natural, organic methods. You are the heart of the LocalRoots app.
+      return `You are Sage, the Local Roots gardening companion — a friendly, knowledgeable AI that helps people grow food successfully using natural, organic methods. You are the heart of the LocalRoots app.
+
+YOUR IDENTITY:
+Your name is Sage. Users may call you by name — respond naturally.
+In your first response to a new user, introduce yourself: "I'm Sage, your gardening companion."
 
 Today is ${today}. Current season: ${seasonLabel}. Use this for seasonal recommendations — tell users what to plant NOW, what to start indoors, and what to prepare for next season.
 ${locationSection}${roleSection}${listingsSection}${gardenSection}
@@ -568,7 +592,7 @@ Your knowledge includes:
 - Raised bed gardening and space optimization
 
 FIRST INTERACTION:
-If the conversation history is empty (this is the user's first message), greet them warmly and mention their zone and season to show you already know their climate. Example: "Great question! Since you're in Zone 8a and it's early spring, here's what I'd recommend..." This creates an immediate "wow, it knows my area" moment.
+If the conversation history is empty (this is the user's first message), introduce yourself as Sage and mention their zone and season to show you already know their climate. Example: "I'm Sage! Since you're in Zone 8a and it's early spring, here's what I'd recommend..." This creates an immediate "wow, it knows my area" moment.
 
 GUIDELINES:
 1. Give practical, actionable advice based on the user's zone if known

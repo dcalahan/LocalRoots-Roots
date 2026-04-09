@@ -38,7 +38,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-6">
             <Link href="/grow" className="card text-center hover:shadow-lg transition-shadow group">
               <div className="text-4xl mb-4">🤖</div>
-              <h3 className="text-xl font-semibold mb-2 group-hover:text-roots-secondary transition-colors">Ask the Garden AI</h3>
+              <h3 className="text-xl font-semibold mb-2 group-hover:text-roots-secondary transition-colors">Ask Sage</h3>
               <p className="text-roots-gray text-sm">
                 What should I plant right now? How do I fix yellow leaves? Snap a photo and I&apos;ll identify it.
               </p>
@@ -133,7 +133,7 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-3">Grow</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/grow" className="text-gray-600 hover:text-roots-secondary transition-colors">Garden AI</Link></li>
+                <li><Link href="/grow" className="text-gray-600 hover:text-roots-secondary transition-colors">Ask Sage</Link></li>
                 <li><Link href="/grow/my-garden" className="text-gray-600 hover:text-roots-secondary transition-colors">My Garden</Link></li>
                 <li><Link href="/grow/calendar" className="text-gray-600 hover:text-roots-secondary transition-colors">Planting Calendar</Link></li>
                 <li><Link href="/grow/guides" className="text-gray-600 hover:text-roots-secondary transition-colors">Growing Guides</Link></li>
