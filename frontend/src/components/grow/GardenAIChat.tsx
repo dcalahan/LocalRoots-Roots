@@ -81,7 +81,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const { listings: sellerListings } = useSellerListings();
   const { user: privyUser } = usePrivy();
   const gardenUserId = privyUser?.id || null;
-  const { activePlants: gardenPlants, applyActions: applyGardenActions } = useMyGarden(gardenUserId);
+  const { activePlants: gardenPlants, beds: gardenBeds, applyActions: applyGardenActions } = useMyGarden(gardenUserId);
   const { toast } = useToast();
 
   // Voice state
@@ -374,6 +374,18 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   quantity: p.quantity,
                   plantingMethod: p.plantingMethod,
                   location: p.location,
+                  bedId: p.bedId,
+                }))
+              : undefined,
+            // Garden beds for AI context
+            gardenBeds: gardenBeds.length > 0
+              ? gardenBeds.map(b => ({
+                  id: b.id,
+                  name: b.name,
+                  type: b.type,
+                  widthInches: b.widthInches,
+                  lengthInches: b.lengthInches,
+                  notes: b.notes,
                 }))
               : undefined,
           },

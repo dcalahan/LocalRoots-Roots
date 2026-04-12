@@ -51,3 +51,5 @@ contracts/broadcast/
 *.tsbuildinfo
 .vercel
 .env*.local
+frontend/.env.prod-check
+.claude/worktrees/

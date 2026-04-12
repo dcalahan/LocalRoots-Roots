@@ -16,10 +16,12 @@ interface SelectedCrop {
 interface AddPlantsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (plants: { cropId: string; quantity: number; plantingDate: string; plantingMethod: PlantingMethod; location?: string; isPerennial: boolean }[]) => void;
+  onAdd: (plants: { cropId: string; quantity: number; plantingDate: string; plantingMethod: PlantingMethod; location?: string; isPerennial: boolean; bedId?: string }[]) => void;
+  defaultBedId?: string;
+  bedName?: string;
 }
 
-export function AddPlantsModal({ isOpen, onClose, onAdd }: AddPlantsModalProps) {
+export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName }: AddPlantsModalProps) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<SelectedCrop[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -73,6 +75,7 @@ export function AddPlantsModal({ isOpen, onClose, onAdd }: AddPlantsModalProps) 
         plantingMethod: s.plantingMethod,
         location: s.location || undefined,
         isPerennial: info?.isPerennial || false,
+        bedId: defaultBedId,
       };
     }));
     setSelected([]);
@@ -91,7 +94,9 @@ export function AddPlantsModal({ isOpen, onClose, onAdd }: AddPlantsModalProps) 
       <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
         {/* Header */}
         <div className="px-4 py-3 border-b flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Add Plants to Garden</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {bedName ? `Add Plants to ${bedName}` : 'Add Plants to Garden'}
+          </h2>
           <button onClick={onClose} className="text-roots-gray hover:text-gray-900 text-xl">✕</button>
         </div>
 

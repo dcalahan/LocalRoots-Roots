@@ -30,18 +30,26 @@ export function buildGardenActionExtractionPrompt(recentMessages: AIMessage[]): 
   return `You extract garden actions from conversations. Given the conversation below, identify any garden changes the user EXPLICITLY stated (not asked about, not the AI suggested — only what the user said they DID or ARE DOING).
 
 VALID ACTIONS:
-- add_plant: User says they planted, started, or put in a crop
+- add_plant: User says they planted, started, or put in a crop. May include bedName.
 - remove_plant: User says a plant died, they pulled it, or removed it
 - mark_harvested: User says they harvested or picked a crop
 - update_plant: User says they moved a plant or changed something about it
+- add_bed: User says they built/added a new bed/tower/container ("I built a new raised bed", "I added a tower")
+- update_bed: User renamed a bed or changed its notes
+- delete_bed: User removed/dismantled a bed
+- assign_plant_to_bed: User says they put an existing plant in a specific bed
 
 CROP ID MAPPING (use these exact IDs):
 ${cropList}
 
+BED TYPES: raised-bed, in-ground, tower, container, greenhouse, other
+
 RULES:
 - Only extract actions the user explicitly stated — NEVER infer from questions or AI suggestions
-- "I planted tomatoes" = add_plant. "Should I plant tomatoes?" = NO action
+- "I planted tomatoes in Bed 1" = add_plant with cropId "tomato-cherry" (or appropriate), bedName "Bed 1"
 - "I just put in 6 cherry tomato plants" = add_plant with cropId "tomato-cherry", quantity 6
+- "I built a new raised bed called Bed 3" = add_bed with bedName "Bed 3", bedType "raised-bed"
+- "I added an indoor tower" = add_bed with bedName "Tower" (or whatever they called it), bedType "tower"
 - If you can't confidently map to a crop ID, skip it
 - Default plantingDate to today if not specified
 - Default quantity to 1 if not specified
@@ -51,9 +59,11 @@ CONVERSATION:
 ${conversation}
 
 Return ONLY a JSON array of actions. Examples:
-[{"action":"add_plant","cropId":"tomato-cherry","quantity":6,"plantingDate":"2026-04-03","method":"transplant"}]
+[{"action":"add_plant","cropId":"tomato-cherry","quantity":6,"plantingDate":"2026-04-03","method":"transplant","bedName":"Bed 1"}]
+[{"action":"add_bed","bedName":"Tower","bedType":"tower"}]
 [{"action":"remove_plant","cropId":"basil","reason":"died"}]
 [{"action":"mark_harvested","cropId":"cucumber"}]
+[{"action":"assign_plant_to_bed","cropId":"basil","bedName":"Bed 2"}]
 []
 
 JSON array:`;
@@ -71,9 +81,15 @@ export function parseGardenActions(response: string): GardenAction[] {
 
     // Validate each action
     const validActions: GardenAction[] = [];
+    const validTypes = [
+      'add_plant', 'remove_plant', 'mark_harvested', 'update_plant',
+      'add_bed', 'update_bed', 'delete_bed', 'assign_plant_to_bed',
+    ];
+    const cropRequired = ['add_plant', 'remove_plant', 'mark_harvested', 'update_plant', 'assign_plant_to_bed'];
     for (const item of parsed) {
-      if (!item.action || !item.cropId) continue;
-      if (!['add_plant', 'remove_plant', 'mark_harvested', 'update_plant'].includes(item.action)) continue;
+      if (!item.action || !validTypes.includes(item.action)) continue;
+      if (cropRequired.includes(item.action) && !item.cropId) continue;
+      if (item.action === 'add_bed' && !item.bedName) continue;
 
       validActions.push({
         action: item.action,
@@ -86,6 +102,11 @@ export function parseGardenActions(response: string): GardenAction[] {
         reason: item.reason,
         field: item.field,
         value: item.value,
+        bedId: item.bedId,
+        bedName: item.bedName,
+        bedType: item.bedType,
+        widthInches: item.widthInches ? Number(item.widthInches) : undefined,
+        lengthInches: item.lengthInches ? Number(item.lengthInches) : undefined,
       });
     }
 

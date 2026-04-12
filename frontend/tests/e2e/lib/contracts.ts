@@ -2,9 +2,9 @@ import type { Address } from 'viem';
 
 // Contract addresses from .env.test
 export const ROOTS_TOKEN_ADDRESS = (process.env.ROOTS_TOKEN_ADDRESS || '0x21952Cb029da00902EDA5c83a01825Ae2E645e03') as Address;
-export const MARKETPLACE_ADDRESS = (process.env.MARKETPLACE_ADDRESS || '0xBAc288595e52AF2dDF560CEaEf90064463c08f0d') as Address;
-export const AMBASSADOR_REWARDS_ADDRESS = (process.env.AMBASSADOR_REWARDS_ADDRESS || '0xC596B9FcCAC989abf4B4244EC8c74CF8d50DDB91') as Address;
-export const FORWARDER_ADDRESS = (process.env.FORWARDER_ADDRESS || '0xd6632078F9ad1Fb03a9Babd2908cBA4D00D43F74') as Address;
+export const MARKETPLACE_ADDRESS = (process.env.MARKETPLACE_ADDRESS || '0xb3E31B84Ed6d22DD84eFd193282eafc00Eb32F22') as Address;
+export const AMBASSADOR_REWARDS_ADDRESS = (process.env.AMBASSADOR_REWARDS_ADDRESS || '0x8D546152e4A39680C00Aa61d914f38878083B1c8') as Address;
+export const FORWARDER_ADDRESS = (process.env.FORWARDER_ADDRESS || '0x3DeE6FcBE0D28E3C772b6f57ca83B0652eC01F20') as Address;
 
 // SeedsAirdrop address (will be set when deployed for Phase 2)
 export const SEEDS_AIRDROP_ADDRESS = (process.env.SEEDS_AIRDROP_ADDRESS || '0x0000000000000000000000000000000000000000') as Address;
