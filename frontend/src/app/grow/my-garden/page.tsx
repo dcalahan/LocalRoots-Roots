@@ -22,6 +22,7 @@ export default function MyGardenPage() {
     addPlants,
     removePlant,
     markHarvested,
+    updatePlant,
     addBed,
     updateBed,
     deleteBed,
@@ -77,6 +78,7 @@ export default function MyGardenPage() {
           onAddPlants={addPlants}
           onRemove={removePlant}
           onHarvest={markHarvested}
+          onUpdatePlant={updatePlant}
           onAddBed={addBed}
           onUpdateBed={updateBed}
           onDeleteBed={deleteBed}
