@@ -30,6 +30,7 @@ interface BedCardProps {
   onAddPlant: (bedId: string) => void;
   onRemovePlant: (plantId: string) => void;
   onHarvestPlant: (plantId: string) => void;
+  onUpdatePlant?: (plantId: string, updates: Partial<import('@/types/my-garden').GardenPlant>) => void;
 }
 
 export function BedCard({
@@ -41,6 +42,7 @@ export function BedCard({
   onAddPlant,
   onRemovePlant,
   onHarvestPlant,
+  onUpdatePlant,
 }: BedCardProps) {
   const dimensions = bed.widthInches && bed.lengthInches
     ? `${bed.widthInches}" × ${bed.lengthInches}"`
@@ -125,6 +127,7 @@ export function BedCard({
                 firstFallFrost={firstFallFrost}
                 onRemove={onRemovePlant}
                 onHarvest={onHarvestPlant}
+                onUpdate={onUpdatePlant}
               />
             ))}
           </div>
