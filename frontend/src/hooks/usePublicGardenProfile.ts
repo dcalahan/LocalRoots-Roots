@@ -23,7 +23,7 @@ export function usePublicGardenProfile(userId: string | null) {
     if (!userId) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/garden-profile?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch(`/api/gardener-profile?userId=${encodeURIComponent(userId)}`);
       const data = await res.json();
       setProfile(data.profile || null);
     } catch {
@@ -39,7 +39,7 @@ export function usePublicGardenProfile(userId: string | null) {
     if (!userId) return;
     setError(null);
     try {
-      const res = await fetch('/api/garden-profile', {
+      const res = await fetch('/api/gardener-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, ...input }),
@@ -57,7 +57,7 @@ export function usePublicGardenProfile(userId: string | null) {
     if (!userId) return;
     setError(null);
     try {
-      const res = await fetch(`/api/garden-profile?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' });
+      const res = await fetch(`/api/gardener-profile?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
       setProfile(null);
     } catch (err) {

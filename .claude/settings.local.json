@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__slack-hub__check_new_messages",
+      "mcp__slack-hub__get_conversation"
+    ]
+  }
+}
