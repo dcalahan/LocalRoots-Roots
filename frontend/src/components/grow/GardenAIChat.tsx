@@ -187,9 +187,17 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
 
   // Check speech support on mount
   useEffect(() => {
+    // SpeechRecognition is NOT supported on iOS Safari — only Chrome desktop + Android
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    setSpeechSupported(!!SpeechRecognition);
+    // Extra guard: some iOS browsers define the constructor but it throws on .start()
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setSpeechSupported(!!SpeechRecognition && !isIOS);
     setSynthSupported('speechSynthesis' in window);
+    // Pre-load voices on iOS (they load async)
+    if ('speechSynthesis' in window) {
+      speechSynthesis.getVoices();
+      speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+    }
   }, []);
 
   // Cleanup speech on unmount
@@ -211,15 +219,23 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const speakText = useCallback((text: string) => {
     if (!synthSupported) return;
     speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Strip markdown formatting for cleaner speech
+    const cleanText = text.replace(/[*_#`~\[\]()>]/g, '').replace(/\n+/g, '. ').trim();
+    if (!cleanText) return;
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
     const voices = speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.name.includes('Samantha') || v.name.includes('Google'));
+    const preferred = voices.find(v =>
+      v.name.includes('Samantha') || v.name.includes('Google') || v.name.includes('Karen') || v.name.includes('Moira')
+    );
     if (preferred) utterance.voice = preferred;
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onerror = (e) => {
+      console.error('[Sage TTS] error:', e);
+      setIsSpeaking(false);
+    };
     speechSynthesis.speak(utterance);
   }, [synthSupported]);
 
@@ -434,16 +450,22 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   try {
                     applyGardenActions(event.gardenActions);
                     for (const action of event.gardenActions) {
-                      const name = getCropDisplayName(action.cropId);
+                      const name = getCropDisplayName(action.cropId, action.customVarietyName);
                       if (action.action === 'add_plant') {
                         toast({ title: `Added ${action.quantity || 1} ${name} to your garden 🌱` });
                       } else if (action.action === 'mark_harvested') {
                         toast({ title: `Marked ${name} as harvested 🎉` });
                       } else if (action.action === 'remove_plant') {
                         toast({ title: `Removed ${name} from your garden` });
+                      } else if (action.action === 'add_bed') {
+                        toast({ title: `Added bed "${action.bedName}" 🏡` });
+                      } else if (action.action === 'assign_plant_to_bed') {
+                        toast({ title: `Moved ${name} to ${action.bedName || 'bed'}` });
                       }
                     }
-                  } catch { /* non-critical */ }
+                  } catch (err) {
+                    console.error('[Sage] Failed to apply garden actions:', err, event.gardenActions);
+                  }
                 } else if (event.text) {
                   fullText += event.text;
                   // Update the assistant message in-place
