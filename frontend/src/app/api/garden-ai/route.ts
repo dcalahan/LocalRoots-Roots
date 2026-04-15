@@ -243,11 +243,16 @@ export async function POST(request: NextRequest) {
               if (actionRes.ok) {
                 const actionData = await actionRes.json()
                 const actionText = actionData.content?.[0]?.text || ''
+                console.log('[Garden AI] Action extraction raw:', actionText.slice(0, 200))
                 const actions = parseGardenActions(actionText)
                 if (actions.length > 0) {
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ gardenActions: actions })}\n\n`))
-                  console.log('[Garden AI] Extracted', actions.length, 'garden actions for:', effectiveUserId)
+                  console.log('[Garden AI] Extracted', actions.length, 'garden actions:', JSON.stringify(actions))
+                } else {
+                  console.log('[Garden AI] No actions extracted from conversation')
                 }
+              } else {
+                console.error('[Garden AI] Action extraction API call failed:', actionRes.status, await actionRes.text().catch(() => ''))
               }
             } catch (err) {
               console.error('[Garden AI] Garden action extraction failed:', err)
