@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import type { GardenPlant, PlantingMethod } from '@/types/my-garden';
 import { computeStatus, getEstimatedHarvestDate, getProgressPercent, getCropDisplayName } from '@/lib/gardenStatus';
+import { getCropEmoji } from '@/lib/cropEmoji';
 import { PlantProgressBar } from './PlantProgressBar';
 
 interface GardenPlantCardProps {
@@ -11,42 +12,6 @@ interface GardenPlantCardProps {
   onRemove?: (plantId: string) => void;
   onHarvest?: (plantId: string) => void;
   onUpdate?: (plantId: string, updates: Partial<GardenPlant>) => void;
-}
-
-// Crop category → emoji mapping
-const categoryEmoji: Record<string, string> = {
-  nightshades: '🍅',
-  cucurbits: '🥒',
-  greens: '🥬',
-  roots: '🥕',
-  alliums: '🧅',
-  legumes: '🫘',
-  herbs: '🌿',
-  brassicas: '🥦',
-  berries: '🫐',
-  'tree-fruit': '🍎',
-  citrus: '🍋',
-  grains: '🌽',
-};
-
-function getCropEmoji(cropId: string): string {
-  if (cropId.startsWith('tomato')) return '🍅';
-  if (cropId.startsWith('pepper')) return '🌶️';
-  if (cropId.startsWith('lettuce')) return '🥬';
-  if (cropId === 'basil') return '🌿';
-  if (cropId === 'cucumber' || cropId === 'cucumber-pickling') return '🥒';
-  if (cropId === 'corn' || cropId === 'corn-sweet') return '🌽';
-  if (cropId === 'strawberry') return '🍓';
-  if (cropId === 'blueberry') return '🫐';
-  if (cropId === 'carrot') return '🥕';
-
-  try {
-    const { getCropGrowingInfo } = require('@/lib/plantingCalendar');
-    const info = getCropGrowingInfo(cropId);
-    if (info?.category && categoryEmoji[info.category]) return categoryEmoji[info.category];
-  } catch { /* */ }
-
-  return '🌱';
 }
 
 export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, onUpdate }: GardenPlantCardProps) {

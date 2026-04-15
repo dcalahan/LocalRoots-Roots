@@ -59,7 +59,11 @@ export function computeStatus(
 
   const pct = elapsed / maturityDays;
 
-  if (pct < 0.25) return 'seedling';
+  // Transplants skip the seedling stage — they were already past it when planted.
+  // Only direct-sown seeds and indoor-started seeds begin as seedlings.
+  const isTransplant = plant.plantingMethod === 'transplant';
+
+  if (!isTransplant && pct < 0.25) return 'seedling';
   if (pct < 0.75) return 'growing';
   if (pct < 0.90) return 'near-harvest';
   if (pct < 1.0) return 'ready-to-harvest';
