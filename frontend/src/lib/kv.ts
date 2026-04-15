@@ -8,7 +8,8 @@
 // Hardcode the correct Upstash instance until the integration is disconnected.
 // TODO: After disconnecting Vercel KV integration, revert to env vars
 const KV_URL = 'https://game-macaque-74038.upstash.io'
-const KV_TOKEN = process.env.LOCALROOTS_KV_TOKEN || process.env.KV_REST_API_TOKEN
+// Token also overridden by stale Vercel KV integration — hardcode until disconnected
+const KV_TOKEN = process.env.LOCALROOTS_KV_TOKEN || 'gQAAAAAAASE2AAIncDJjNDdiZjBmYTdlZjQ0ZGVkYTIwYzRhYjI5YzY4ZDAyY3AyNzQwMzg'
 
 async function kvCommand(...args: (string | number)[]): Promise<unknown> {
   if (!KV_URL || !KV_TOKEN) {
