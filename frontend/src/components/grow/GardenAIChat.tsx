@@ -370,6 +370,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             myGarden: gardenPlants.length > 0
               ? gardenPlants.map(p => ({
                   cropId: p.cropId,
+                  customVarietyName: p.customVarietyName,
                   plantingDate: p.plantingDate,
                   quantity: p.quantity,
                   plantingMethod: p.plantingMethod,

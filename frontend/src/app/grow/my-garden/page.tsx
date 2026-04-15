@@ -82,6 +82,7 @@ export default function MyGardenPage() {
           onAddBed={addBed}
           onUpdateBed={updateBed}
           onDeleteBed={deleteBed}
+          userId={userId || undefined}
           zone={growingProfile?.zone}
           locationName={preferences.preferredLocation?.displayName}
           firstFallFrost={growingProfile?.firstFallFrost}

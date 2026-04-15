@@ -533,7 +533,7 @@ export function createGardenBrain(): Brain {
 
       // User's beds + My Garden (tracked plants)
       let gardenSection = ''
-      const myGarden = uc.myGarden as { cropId: string; plantingDate: string; quantity: number; plantingMethod?: string; location?: string; bedId?: string }[] | undefined
+      const myGarden = uc.myGarden as { cropId: string; customVarietyName?: string; plantingDate: string; quantity: number; plantingMethod?: string; location?: string; bedId?: string }[] | undefined
       const gardenBeds = uc.gardenBeds as { id: string; name: string; type: string; widthInches?: number; lengthInches?: number; notes?: string }[] | undefined
 
       if ((myGarden && myGarden.length > 0) || (gardenBeds && gardenBeds.length > 0)) {
@@ -552,7 +552,7 @@ export function createGardenBrain(): Brain {
         if (myGarden && myGarden.length > 0) {
           plantLines = myGarden.map(p => {
             const crop = cropData[p.cropId]
-            const name = crop?.name || p.cropId
+            const name = p.customVarietyName || crop?.name || p.cropId
             const planted = new Date(p.plantingDate)
             const daysSincePlanting = Math.floor((Date.now() - planted.getTime()) / 86400000)
             const maturityMin = crop?.daysToMaturity?.min || 60

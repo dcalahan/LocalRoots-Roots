@@ -58,7 +58,7 @@ export async function buildProfileView(profile: PublicGardenProfile): Promise<Pu
       const info = getCropGrowingInfo(p.cropId);
       return {
         cropId: p.cropId,
-        cropName: info?.name || p.cropId,
+        cropName: p.customVarietyName || info?.name || p.cropId,
         bedName: p.bedId ? bedById.get(p.bedId)?.name : undefined,
         status: computeStatus(p, now),
       };

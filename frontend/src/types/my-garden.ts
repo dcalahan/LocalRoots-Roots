@@ -37,6 +37,7 @@ export interface GardenBed {
 export interface GardenPlant {
   id: string;                    // uuid
   cropId: string;                // key into crop-growing-data.json (e.g. "tomato-cherry")
+  customVarietyName?: string;    // e.g. "Better Boy", "Mojito Mint" — display instead of generic name
   plantingDate: string;          // ISO date (when planted)
   quantity: number;              // how many plants
   plantingMethod: PlantingMethod;
@@ -80,9 +81,22 @@ export interface GardenAction {
   field?: string;
   value?: string;
   // bed-related
+  customVarietyName?: string;  // variety name from AI extraction
   bedId?: string;
   bedName?: string;     // fuzzy match target for AI ("Bed 1", "Tower")
   bedType?: BedType;
   widthInches?: number;
   lengthInches?: number;
+}
+
+/** Community-shared plant varieties added by users. */
+export interface CommunityVariety {
+  id: string;                   // slug: "better-boy-tomato"
+  name: string;                 // "Better Boy Tomato"
+  parentCropId: string;         // "tomato-beefsteak"
+  addedBy: string;              // userId
+  addedAt: string;
+  useCount: number;
+  description?: string;         // AI-enriched
+  maturityAdjustment?: number;  // days +/- from parent
 }
