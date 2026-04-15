@@ -3,8 +3,11 @@
  * Replaces @vercel/kv which has version compatibility issues.
  */
 
-// LOCALROOTS_ vars take priority — Vercel KV integration overrides KV_REST_API_* at runtime
-const KV_URL = process.env.LOCALROOTS_KV_URL || process.env.KV_REST_API_URL
+// Vercel KV storage integration injects stale KV_REST_API_URL at runtime
+// that overrides our project env vars AND blocks custom env vars from loading.
+// Hardcode the correct Upstash instance until the integration is disconnected.
+// TODO: After disconnecting Vercel KV integration, revert to env vars
+const KV_URL = 'https://game-macaque-74038.upstash.io'
 const KV_TOKEN = process.env.LOCALROOTS_KV_TOKEN || process.env.KV_REST_API_TOKEN
 
 async function kvCommand(...args: (string | number)[]): Promise<unknown> {
