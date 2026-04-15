@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import type { GardenPlant, PlantingMethod } from '@/types/my-garden';
+import type { GardenPlant, PlantingMethod, GardenBed } from '@/types/my-garden';
 import { computeStatus, getEstimatedHarvestDate, getProgressPercent, getCropDisplayName } from '@/lib/gardenStatus';
 import { getCropEmoji } from '@/lib/cropEmoji';
 import { PlantProgressBar } from './PlantProgressBar';
@@ -12,14 +12,18 @@ interface GardenPlantCardProps {
   onRemove?: (plantId: string) => void;
   onHarvest?: (plantId: string) => void;
   onUpdate?: (plantId: string, updates: Partial<GardenPlant>) => void;
+  /** Beds available for re-assignment in edit mode. */
+  beds?: GardenBed[];
 }
 
-export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, onUpdate }: GardenPlantCardProps) {
+export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, onUpdate, beds = [] }: GardenPlantCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editQuantity, setEditQuantity] = useState(String(plant.quantity));
   const [editDate, setEditDate] = useState(plant.plantingDate);
   const [editMethod, setEditMethod] = useState<PlantingMethod>(plant.plantingMethod);
   const [editNotes, setEditNotes] = useState(plant.notes || '');
+  const [editBedId, setEditBedId] = useState<string | ''>(plant.bedId || '');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const qtyRef = useRef<HTMLInputElement>(null);
 
   const status = computeStatus(plant, new Date(), firstFallFrost);
@@ -46,6 +50,7 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
       plantingDate: editDate || plant.plantingDate,
       plantingMethod: editMethod,
       notes: editNotes.trim() || undefined,
+      bedId: editBedId || undefined,
     });
     setIsEditing(false);
   };
@@ -55,6 +60,7 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
     setEditDate(plant.plantingDate);
     setEditMethod(plant.plantingMethod);
     setEditNotes(plant.notes || '');
+    setEditBedId(plant.bedId || '');
     setIsEditing(false);
   };
 
@@ -91,13 +97,31 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
               {isEditing ? 'Cancel' : '✏️'}
             </button>
           )}
-          {onRemove && status !== 'done' && (
+          {onRemove && status !== 'done' && !confirmingDelete && (
             <button
-              onClick={() => onRemove(plant.id)}
+              onClick={() => setConfirmingDelete(true)}
               className="text-xs px-2 py-1 rounded-full text-roots-gray hover:bg-gray-100 transition-colors"
+              aria-label="Remove plant"
             >
               ✕
             </button>
+          )}
+          {confirmingDelete && (
+            <div className="flex items-center gap-1 bg-red-50 border border-red-200 rounded-full pl-2 pr-1 py-0.5">
+              <span className="text-xs text-red-700">Delete?</span>
+              <button
+                onClick={() => { onRemove?.(plant.id); setConfirmingDelete(false); }}
+                className="text-xs px-2 py-0.5 rounded-full bg-red-500 text-white font-semibold"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                className="text-xs px-2 py-0.5 rounded-full text-roots-gray"
+              >
+                No
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -144,6 +168,22 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
               style={{ fontSize: 'max(16px, 0.875rem)' }}
             />
           </div>
+          {beds.length > 0 && (
+            <div>
+              <label className="text-xs text-roots-gray block mb-1">Bed</label>
+              <select
+                value={editBedId}
+                onChange={e => setEditBedId(e.target.value)}
+                className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                style={{ fontSize: 'max(16px, 0.875rem)' }}
+              >
+                <option value="">No bed (unassigned)</option>
+                {beds.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="text-xs text-roots-gray block mb-1">Notes (optional)</label>
             <input
