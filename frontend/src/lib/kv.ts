@@ -17,7 +17,6 @@ async function kvCommand(...args: (string | number)[]): Promise<unknown> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(args),
-    cache: 'no-store',
   })
   if (!res.ok) {
     throw new Error(`KV error: ${res.status} ${await res.text()}`)
