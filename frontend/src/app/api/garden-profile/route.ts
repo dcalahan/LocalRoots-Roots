@@ -14,12 +14,33 @@ import type { PublicGardenProfile } from '@/types/garden-profile';
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
+
+  // Debug: test KV directly to isolate the issue
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
+  if (!kvUrl || !kvToken) {
+    return NextResponse.json({ error: 'KV env vars missing', hasUrl: !!kvUrl, hasToken: !!kvToken }, { status: 500 });
+  }
+
   try {
-    const profile = await getProfile(userId);
+    const kvRes = await fetch(kvUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${kvToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(['GET', `garden-profile:${userId}`]),
+      cache: 'no-store',
+    });
+    if (!kvRes.ok) {
+      return NextResponse.json({ error: `KV HTTP ${kvRes.status}`, body: await kvRes.text() }, { status: 500 });
+    }
+    const data = await kvRes.json();
+    const profile = data.result ? JSON.parse(data.result) : null;
     return NextResponse.json({ profile });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[garden-profile GET] failed:', message, err);
+    const message = err instanceof Error ? `${err.message} | ${err.stack}` : 'Unknown error';
+    console.error('[garden-profile GET] failed:', message);
     return NextResponse.json({ error: `Load failed: ${message}` }, { status: 500 });
   }
 }
