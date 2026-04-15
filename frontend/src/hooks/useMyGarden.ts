@@ -167,6 +167,38 @@ export function useMyGarden(userId: string | null) {
     }));
   }, [updateState]);
 
+  // Reorder a plant within its bed
+  const reorderPlant = useCallback((plantId: string, direction: 'up' | 'down') => {
+    updateState(prev => {
+      const plant = prev.plants.find(p => p.id === plantId);
+      if (!plant?.bedId) return prev;
+
+      // Get plants in this bed, sorted by current order
+      const bedPlants = prev.plants
+        .filter(p => p.bedId === plant.bedId && !p.removedDate && !p.harvestedDate)
+        .sort((a, b) => (a.orderInBed ?? 999) - (b.orderInBed ?? 999));
+
+      const idx = bedPlants.findIndex(p => p.id === plantId);
+      if (idx < 0) return prev;
+      if (direction === 'up' && idx === 0) return prev;
+      if (direction === 'down' && idx === bedPlants.length - 1) return prev;
+
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      const swapId = bedPlants[swapIdx].id;
+
+      // Assign new order values
+      const orderMap = new Map<string, number>();
+      bedPlants.forEach((p, i) => orderMap.set(p.id, i));
+      orderMap.set(plantId, swapIdx);
+      orderMap.set(swapId, idx);
+
+      return {
+        ...prev,
+        plants: prev.plants.map(p => orderMap.has(p.id) ? { ...p, orderInBed: orderMap.get(p.id) } : p),
+      };
+    });
+  }, [updateState]);
+
   // ─── Bed CRUD ───
   const addBed = useCallback((bed: Omit<GardenBed, 'id' | 'createdAt' | 'order'>) => {
     const newBed: GardenBed = {
@@ -353,6 +385,7 @@ export function useMyGarden(userId: string | null) {
     markHarvested,
     updatePlant,
     assignPlantToBed,
+    reorderPlant,
     addBed,
     updateBed,
     deleteBed,

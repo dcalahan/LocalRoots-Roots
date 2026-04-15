@@ -94,6 +94,22 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
       .filter(Boolean) as { id: string; name: string }[];
   }, []);
 
+  // Category display config
+  const CATEGORY_ORDER: Record<string, { label: string; emoji: string }> = {
+    'nightshades': { label: 'Nightshades', emoji: '🍅' },
+    'leafy-greens': { label: 'Leafy Greens', emoji: '🥬' },
+    'herbs': { label: 'Herbs', emoji: '🌿' },
+    'root-vegetables': { label: 'Root Vegetables', emoji: '🥕' },
+    'squash': { label: 'Squash & Cucurbits', emoji: '🥒' },
+    'brassicas': { label: 'Brassicas', emoji: '🥦' },
+    'legumes': { label: 'Legumes', emoji: '🫘' },
+    'alliums': { label: 'Alliums', emoji: '🧅' },
+    'berries': { label: 'Berries', emoji: '🫐' },
+    'tree-fruits': { label: 'Tree Fruits', emoji: '🍎' },
+    'other': { label: 'Other', emoji: '🌱' },
+    'community': { label: 'Community Varieties', emoji: '👥' },
+  };
+
   // Merge standard crops + community varieties for search
   const filteredCrops = useMemo(() => {
     const lower = search.toLowerCase().trim();
@@ -118,6 +134,27 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
 
     return [...communityMatches, ...standard];
   }, [allCrops, communityVarieties, search]);
+
+  // Group crops by category
+  const groupedCrops = useMemo(() => {
+    const groups: Record<string, typeof filteredCrops> = {};
+    for (const crop of filteredCrops) {
+      const cat = crop.category || 'other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(crop);
+    }
+    // Sort by defined order
+    const ordered = Object.keys(CATEGORY_ORDER)
+      .filter(cat => groups[cat]?.length)
+      .map(cat => ({ category: cat, ...CATEGORY_ORDER[cat], crops: groups[cat] }));
+    // Add any unknown categories
+    for (const cat of Object.keys(groups)) {
+      if (!CATEGORY_ORDER[cat]) {
+        ordered.push({ category: cat, label: cat, emoji: '🌱', crops: groups[cat] });
+      }
+    }
+    return ordered;
+  }, [filteredCrops]);
 
   // Parent picker filtering
   const filteredParents = useMemo(() => {
@@ -354,7 +391,8 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
                     Add &ldquo;{search}&rdquo; as custom variety
                   </button>
                 </div>
-              ) : (
+              ) : search.trim() ? (
+                /* Flat grid when searching */
                 <div className="grid grid-cols-2 gap-2">
                   {filteredCrops.map(crop => {
                     const isCommunity = 'isCommunity' in crop && !!(crop as Record<string, unknown>).isCommunity;
@@ -381,6 +419,44 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
                       </button>
                     );
                   })}
+                </div>
+              ) : (
+                /* Category-grouped browsing */
+                <div className="space-y-4">
+                  {groupedCrops.map(group => (
+                    <div key={group.category}>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-roots-gray mb-2 flex items-center gap-1.5">
+                        <span>{group.emoji}</span> {group.label}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {group.crops.map(crop => {
+                          const isCommunity = 'isCommunity' in crop && !!(crop as Record<string, unknown>).isCommunity;
+                          const isSelected = isCommunity
+                            ? selected.some(s => s.customVarietyName === crop.name)
+                            : selected.some(s => s.cropId === crop.id && !s.customVarietyName);
+                          return (
+                            <button
+                              key={crop.id}
+                              onClick={() => toggleCrop(crop as Parameters<typeof toggleCrop>[0])}
+                              className={`text-left px-3 py-3 rounded-lg text-sm transition-colors touch-manipulation ${
+                                isSelected
+                                  ? 'bg-roots-secondary/20 border-2 border-roots-secondary text-roots-secondary font-medium'
+                                  : 'bg-gray-50 border-2 border-transparent hover:bg-roots-secondary/5 text-gray-700'
+                              }`}
+                            >
+                              {crop.name}
+                              {isCommunity && (
+                                <span className="block text-xs text-roots-primary/70 mt-0.5">community</span>
+                              )}
+                              {'isPerennial' in crop && crop.isPerennial && !isCommunity && (
+                                <span className="text-xs text-roots-gray ml-1">(perennial)</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

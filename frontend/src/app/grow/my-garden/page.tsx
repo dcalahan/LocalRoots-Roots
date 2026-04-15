@@ -23,6 +23,7 @@ export default function MyGardenPage() {
     removePlant,
     markHarvested,
     updatePlant,
+    reorderPlant,
     addBed,
     updateBed,
     deleteBed,
@@ -82,6 +83,7 @@ export default function MyGardenPage() {
           onAddBed={addBed}
           onUpdateBed={updateBed}
           onDeleteBed={deleteBed}
+          onReorderPlant={reorderPlant}
           userId={userId || undefined}
           zone={growingProfile?.zone}
           locationName={preferences.preferredLocation?.displayName}
