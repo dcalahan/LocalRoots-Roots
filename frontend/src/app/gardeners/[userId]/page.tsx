@@ -5,6 +5,7 @@ import { use } from 'react';
 import Link from 'next/link';
 import type { PublicGardenProfileView } from '@/types/garden-profile';
 import { STATUS_CONFIG } from '@/lib/gardenStatus';
+import { getCropEmoji } from '@/lib/cropEmoji';
 
 export default function GardenerProfilePage({
   params,
@@ -140,9 +141,11 @@ export default function GardenerProfilePage({
                         <ul className="text-sm space-y-1">
                           {bedCrops.map((c, i) => (
                             <li key={i} className="flex items-center gap-2">
-                              <span>{STATUS_CONFIG[c.status].emoji}</span>
+                              <span>{getCropEmoji(c.cropId)}</span>
                               <span className="text-gray-800">{c.cropName}</span>
-                              <span className="text-xs text-roots-gray">— {STATUS_CONFIG[c.status].label}</span>
+                              <span className="text-[10px] uppercase tracking-wide text-roots-gray bg-roots-cream rounded-full px-2 py-0.5">
+                                {STATUS_CONFIG[c.status].label}
+                              </span>
                             </li>
                           ))}
                         </ul>
@@ -166,9 +169,11 @@ export default function GardenerProfilePage({
             <ul className="text-sm space-y-1 bg-white rounded-2xl border border-gray-200 p-4">
               {noBed.map((c, i) => (
                 <li key={i} className="flex items-center gap-2">
-                  <span>{STATUS_CONFIG[c.status].emoji}</span>
+                  <span>{getCropEmoji(c.cropId)}</span>
                   <span className="text-gray-800">{c.cropName}</span>
-                  <span className="text-xs text-roots-gray">— {STATUS_CONFIG[c.status].label}</span>
+                  <span className="text-[10px] uppercase tracking-wide text-roots-gray bg-roots-cream rounded-full px-2 py-0.5">
+                    {STATUS_CONFIG[c.status].label}
+                  </span>
                 </li>
               ))}
             </ul>
