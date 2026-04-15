@@ -19,8 +19,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[garden-profile POST] request received');
   try {
     const body = await request.json();
+    console.log('[garden-profile POST] body keys:', Object.keys(body));
     const {
       userId, displayName, bio, latitude, longitude,
       profilePhotoUrl, profilePhotoIpfs, gardenPhotoUrl, gardenPhotoIpfs,
