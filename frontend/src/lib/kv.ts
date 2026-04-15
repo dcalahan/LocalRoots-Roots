@@ -3,8 +3,9 @@
  * Replaces @vercel/kv which has version compatibility issues.
  */
 
-const KV_URL = process.env.KV_REST_API_URL
-const KV_TOKEN = process.env.KV_REST_API_TOKEN
+// Use UPSTASH_ vars first (manual), fall back to KV_ vars (Vercel integration)
+const KV_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL
+const KV_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
 
 async function kvCommand(...args: (string | number)[]): Promise<unknown> {
   if (!KV_URL || !KV_TOKEN) {
