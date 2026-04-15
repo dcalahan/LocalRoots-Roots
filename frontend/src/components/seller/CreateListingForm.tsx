@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { usePrivy } from '@privy-io/react-auth';
 import { parseFiatToRoots } from '@/lib/pricing';
@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreateListing } from '@/hooks/useCreateListing';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 import { WalletButton } from '@/components/WalletButton';
-import { getAllUnits } from '@/lib/produce';
+import { getAllUnits, getProduceById } from '@/lib/produce';
 import { uploadImage, uploadMetadata } from '@/lib/pinata';
 import type { ProduceItem } from '@/lib/produce';
 
@@ -88,8 +88,30 @@ function getErrorMessage(error: Error | null): string {
     : error.message;
 }
 
+/** Best-guess default unit for a produce category. */
+function defaultUnitForCategory(category: string): string {
+  switch (category) {
+    case 'herbs':
+    case 'leafy-greens':
+      return 'bunch';
+    case 'berries':
+      return 'pint';
+    case 'alliums':
+    case 'root-vegetables':
+    case 'brassicas':
+    case 'nightshades':
+    case 'squash':
+    case 'melons':
+    case 'tree-fruits':
+    case 'legumes':
+    default:
+      return 'lb';
+  }
+}
+
 export function CreateListingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { authenticated } = usePrivy();
   const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
@@ -109,6 +131,29 @@ export function CreateListingForm() {
   const [organic, setOrganic] = useState(false);
   const [growingPractices, setGrowingPractices] = useState('');
   const [imageHash, setImageHash] = useState<string | null>(null);
+  const [prefilledFromGarden, setPrefilledFromGarden] = useState(false);
+
+  // Prefill from My Garden (when user taps "List for sale" on a bolting/harvest alert)
+  useEffect(() => {
+    if (!searchParams) return;
+    if (searchParams.get('source') !== 'garden') return;
+    const cropId = searchParams.get('crop');
+    const qtyParam = searchParams.get('qty');
+    if (!cropId) return;
+
+    const produce = getProduceById(cropId);
+    if (produce) {
+      setSelectedProduce(produce);
+      setUnitId(defaultUnitForCategory(produce.category));
+      setPrefilledFromGarden(true);
+      const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      setDescription(`Fresh from my home garden. Harvested ${today}.`);
+    }
+    if (qtyParam) {
+      const n = parseInt(qtyParam, 10);
+      if (n > 0) setQuantity(n);
+    }
+  }, [searchParams]);
 
   // Handle errors from hook
   useEffect(() => {
@@ -369,6 +414,16 @@ export function CreateListingForm() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {prefilledFromGarden && (
+            <div className="rounded-lg bg-roots-secondary/10 border border-roots-secondary/30 p-3 flex items-start gap-2">
+              <span className="text-lg leading-none mt-0.5">🌱</span>
+              <p className="text-sm text-roots-secondary">
+                <span className="font-semibold">Prefilled from your garden.</span>{' '}
+                <span className="text-roots-gray">Edit anything below, add a photo, and set your price.</span>
+              </p>
+            </div>
+          )}
+
           {/* Produce Selection */}
           <div>
             <Label className="mb-3 block">What are you selling? *</Label>

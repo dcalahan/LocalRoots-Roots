@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "gardens": [
+    {
+      "slug": "heritage-farm-hhi",
+      "name": "Heritage Farm at Sea Pines",
+      "location": {
+        "city": "Hilton Head Island",
+        "state": "SC",
+        "address": "175 Greenwood Dr, Hilton Head Island, SC 29928"
+      },
+      "description": "A community garden in the heart of Sea Pines. Heritage Farm gardeners grow more food than they can eat — this page lets you buy the surplus directly from the people whose beds are steps from this sign.",
+      "tagline": "Fresh from your neighbors' beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "contactName": "Matt Hunt",
+      "active": true,
+      "addedDate": "2026-04-15"
+    }
+  ]
+}
