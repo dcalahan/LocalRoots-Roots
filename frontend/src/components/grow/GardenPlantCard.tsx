@@ -60,7 +60,8 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
   const status = computeStatus(plant, new Date(), firstFallFrost);
   const harvestDate = getEstimatedHarvestDate(plant);
   const progress = getProgressPercent(plant);
-  const name = getCropDisplayName(plant.cropId);
+  const name = getCropDisplayName(plant.cropId, plant.customVarietyName);
+  const parentName = plant.customVarietyName ? getCropDisplayName(plant.cropId) : null;
   const emoji = getCropEmoji(plant.cropId);
 
   const plantedDate = new Date(plant.plantingDate).toLocaleDateString('en-US', {
@@ -100,6 +101,7 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
           <div>
             <h4 className="font-semibold text-gray-900">{name}</h4>
             <p className="text-xs text-roots-gray">
+              {parentName && <span className="text-roots-secondary/70">({parentName}) · </span>}
               {plant.quantity} plant{plant.quantity !== 1 ? 's' : ''}
               {plant.plantingMethod === 'start-indoors' ? ' · Started indoors' : ''}
               {plant.location ? ` · ${plant.location}` : ''}

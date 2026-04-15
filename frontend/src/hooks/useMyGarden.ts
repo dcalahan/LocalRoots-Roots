@@ -225,6 +225,7 @@ export function useMyGarden(userId: string | null) {
               updatedPlants.push({
                 id: crypto.randomUUID(),
                 cropId: action.cropId,
+                customVarietyName: action.customVarietyName,
                 plantingDate: action.plantingDate || now.split('T')[0],
                 quantity: action.quantity || 1,
                 plantingMethod: action.method || 'transplant',

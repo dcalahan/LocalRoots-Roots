@@ -50,6 +50,7 @@ RULES:
 - "I just put in 6 cherry tomato plants" = add_plant with cropId "tomato-cherry", quantity 6
 - "I built a new raised bed called Bed 3" = add_bed with bedName "Bed 3", bedType "raised-bed"
 - "I added an indoor tower" = add_bed with bedName "Tower" (or whatever they called it), bedType "tower"
+- If the user mentions a specific variety name (e.g. "Better Boy tomatoes", "Mojito Mint"), set cropId to the closest parent crop AND set customVarietyName to the variety name. Example: "Better Boy tomatoes" → cropId "tomato-beefsteak", customVarietyName "Better Boy Tomato"
 - If you can't confidently map to a crop ID, skip it
 - Default plantingDate to today if not specified
 - Default quantity to 1 if not specified
@@ -60,6 +61,7 @@ ${conversation}
 
 Return ONLY a JSON array of actions. Examples:
 [{"action":"add_plant","cropId":"tomato-cherry","quantity":6,"plantingDate":"2026-04-03","method":"transplant","bedName":"Bed 1"}]
+[{"action":"add_plant","cropId":"tomato-beefsteak","customVarietyName":"Better Boy Tomato","quantity":3,"plantingDate":"2026-04-03","method":"transplant"}]
 [{"action":"add_bed","bedName":"Tower","bedType":"tower"}]
 [{"action":"remove_plant","cropId":"basil","reason":"died"}]
 [{"action":"mark_harvested","cropId":"cucumber"}]
@@ -94,6 +96,7 @@ export function parseGardenActions(response: string): GardenAction[] {
       validActions.push({
         action: item.action,
         cropId: item.cropId,
+        customVarietyName: item.customVarietyName,
         quantity: item.quantity ? Number(item.quantity) : undefined,
         plantingDate: item.plantingDate,
         method: item.method,

@@ -136,7 +136,8 @@ export const STATUS_CONFIG: Record<PlantStatus, { label: string; emoji: string; 
 };
 
 /** Get crop display name from ID */
-export function getCropDisplayName(cropId: string): string {
+export function getCropDisplayName(cropId: string, customVarietyName?: string): string {
+  if (customVarietyName) return customVarietyName;
   const info = getCropGrowingInfo(cropId);
   return info?.name || cropId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }

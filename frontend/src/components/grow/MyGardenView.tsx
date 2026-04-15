@@ -10,13 +10,14 @@ import { BedFormModal } from './BedFormModal';
 interface MyGardenViewProps {
   plants: GardenPlant[];
   beds: GardenBed[];
-  onAddPlants: (plants: { cropId: string; quantity: number; plantingDate: string; plantingMethod: PlantingMethod; location?: string; isPerennial: boolean; bedId?: string }[]) => void;
+  onAddPlants: (plants: { cropId: string; customVarietyName?: string; quantity: number; plantingDate: string; plantingMethod: PlantingMethod; location?: string; isPerennial: boolean; bedId?: string }[]) => void;
   onRemove: (plantId: string) => void;
   onHarvest: (plantId: string) => void;
   onUpdatePlant?: (plantId: string, updates: Partial<GardenPlant>) => void;
   onAddBed: (bed: Omit<GardenBed, 'id' | 'createdAt' | 'order'>) => void;
   onUpdateBed: (bedId: string, updates: Partial<GardenBed>) => void;
   onDeleteBed: (bedId: string) => void;
+  userId?: string;
   zone?: string;
   locationName?: string;
   firstFallFrost?: Date;
@@ -40,6 +41,7 @@ export function MyGardenView({
   onAddBed,
   onUpdateBed,
   onDeleteBed,
+  userId,
   zone,
   locationName,
   firstFallFrost,
@@ -228,6 +230,7 @@ export function MyGardenView({
         onAdd={onAddPlants}
         defaultBedId={addPlantsBedId}
         bedName={targetBedName}
+        userId={userId}
       />
 
       <BedFormModal
