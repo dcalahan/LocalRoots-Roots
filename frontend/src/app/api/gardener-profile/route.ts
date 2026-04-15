@@ -1,6 +1,6 @@
 /**
- * POST /api/garden-profile  — opt in / update metadata
- * DELETE /api/garden-profile?userId=... — opt out
+ * POST /api/gardener-profile  — opt in / update metadata
+ * DELETE /api/gardener-profile?userId=... — opt out
  */
 
 import { NextRequest, NextResponse } from 'next/server';
