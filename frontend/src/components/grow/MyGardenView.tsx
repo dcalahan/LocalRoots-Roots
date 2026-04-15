@@ -201,6 +201,7 @@ export function MyGardenView({
               key={bed.id}
               bed={bed}
               plants={plantsByBed.map[bed.id] || []}
+              allBeds={beds}
               firstFallFrost={firstFallFrost}
               onEdit={handleEditBed}
               onDelete={onDeleteBed}
@@ -224,6 +225,7 @@ export function MyGardenView({
                   <GardenPlantCard
                     key={plant.id}
                     plant={plant}
+                    beds={beds}
                     firstFallFrost={firstFallFrost}
                     onRemove={onRemove}
                     onHarvest={onHarvest}
@@ -260,6 +262,7 @@ export function MyGardenView({
         defaultBedId={addPlantsBedId}
         bedName={targetBedName}
         userId={userId}
+        beds={beds}
       />
 
       <BedFormModal

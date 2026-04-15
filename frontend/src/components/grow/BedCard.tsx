@@ -37,6 +37,8 @@ const BED_TYPE_EMOJI: Record<BedType, string> = {
 interface BedCardProps {
   bed: GardenBed;
   plants: GardenPlant[];
+  /** All beds, used for moving a plant between beds in edit mode. */
+  allBeds?: GardenBed[];
   firstFallFrost?: Date;
   onEdit: (bed: GardenBed) => void;
   onDelete: (bedId: string) => void;
@@ -51,6 +53,7 @@ interface BedCardProps {
 export function BedCard({
   bed,
   plants,
+  allBeds,
   firstFallFrost,
   onEdit,
   onDelete,
@@ -175,6 +178,7 @@ export function BedCard({
                 <div className="flex-1 min-w-0">
                   <GardenPlantCard
                     plant={plant}
+                    beds={allBeds}
                     firstFallFrost={firstFallFrost}
                     onRemove={onRemovePlant}
                     onHarvest={onHarvestPlant}

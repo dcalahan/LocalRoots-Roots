@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import type { PlantingMethod, CommunityVariety } from '@/types/my-garden';
+import type { PlantingMethod, CommunityVariety, GardenBed } from '@/types/my-garden';
 import { getAllGrowableCropIds, getCropGrowingInfo, POPULAR_CROPS } from '@/lib/plantingCalendar';
 
 interface SelectedCrop {
@@ -21,6 +21,8 @@ interface AddPlantsModalProps {
   defaultBedId?: string;
   bedName?: string;
   userId?: string;
+  /** When defaultBedId is not set, show a bed picker built from this list. */
+  beds?: GardenBed[];
 }
 
 // Cache community varieties in localStorage
@@ -43,7 +45,7 @@ function setCachedVarieties(varieties: CommunityVariety[]) {
   } catch { /* quota */ }
 }
 
-export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, userId }: AddPlantsModalProps) {
+export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, userId, beds = [] }: AddPlantsModalProps) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<SelectedCrop[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -52,6 +54,21 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
   const [customName, setCustomName] = useState('');
   const [customParentSearch, setCustomParentSearch] = useState('');
   const [communityVarieties, setCommunityVarieties] = useState<CommunityVariety[]>([]);
+  // Bed selection — used when defaultBedId is not provided. If user has 1 bed,
+  // default to that. If 2+, leave blank and require selection. If 0, undefined.
+  const [chosenBedId, setChosenBedId] = useState<string | undefined>(() => {
+    if (defaultBedId) return defaultBedId;
+    if (beds.length === 1) return beds[0].id;
+    return undefined;
+  });
+  // Re-sync if props change while modal is open
+  useEffect(() => {
+    if (defaultBedId) setChosenBedId(defaultBedId);
+    else if (beds.length === 1) setChosenBedId(beds[0].id);
+  }, [defaultBedId, beds]);
+
+  const showBedPicker = !defaultBedId && beds.length > 0;
+  const effectiveBedId = defaultBedId || chosenBedId;
 
   const today = new Date().toISOString().split('T')[0];
   const threeWeeksAgo = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -73,16 +90,19 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
       .catch(() => { /* offline — use cache */ });
   }, [isOpen]);
 
-  // Build standard crop list
+  // Build standard crop list. When the user is searching, ALWAYS search the
+  // full library — typing a crop name and only matching the popular subset is
+  // confusing ("Or" should find Oregano, Oranges, etc. without toggling).
   const allCrops = useMemo(() => {
-    const ids = showAll ? getAllGrowableCropIds() : POPULAR_CROPS;
+    const isSearching = search.trim().length > 0;
+    const ids = isSearching || showAll ? getAllGrowableCropIds() : POPULAR_CROPS;
     return ids
       .map(id => {
         const info = getCropGrowingInfo(id);
         return info ? { id, name: info.name, category: info.category, isPerennial: info.isPerennial } : null;
       })
       .filter(Boolean) as { id: string; name: string; category: string; isPerennial: boolean }[];
-  }, [showAll]);
+  }, [showAll, search]);
 
   // Full crop list for parent picker (always all)
   const allCropsForParent = useMemo(() => {
@@ -240,7 +260,7 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
         plantingMethod: s.plantingMethod,
         location: s.location || undefined,
         isPerennial: info?.isPerennial || false,
-        bedId: defaultBedId,
+        bedId: effectiveBedId,
         customVarietyName: s.customVarietyName,
       };
     }));
@@ -267,7 +287,10 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
 
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col shadow-2xl">
+      <div
+        className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col shadow-2xl"
+        style={{ maxHeight: '90dvh' }}
+      >
         {/* Header */}
         <div className="px-4 py-3 border-b flex items-center justify-between shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -346,6 +369,38 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
           <>
             {/* Search */}
             <div className="px-4 py-3 border-b shrink-0">
+              {showBedPicker && (
+                <div className="mb-3">
+                  <label className="text-xs font-medium text-roots-gray block mb-1.5">
+                    Add to which bed?
+                  </label>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {beds.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={() => setChosenBedId(b.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          chosenBedId === b.id
+                            ? 'bg-roots-secondary text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {b.name}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setChosenBedId(undefined)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        chosenBedId === undefined
+                          ? 'bg-roots-gray text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      No bed
+                    </button>
+                  </div>
+                </div>
+              )}
               <input
                 type="text"
                 value={search}
