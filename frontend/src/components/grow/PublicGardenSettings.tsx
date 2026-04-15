@@ -2,7 +2,11 @@
 
 import { useState, useRef } from 'react';
 import { usePublicGardenProfile } from '@/hooks/usePublicGardenProfile';
-import { uploadImage } from '@/lib/pinata';
+// Dynamic import to avoid Pinata SDK initialization issues on some browsers
+async function doUpload(file: File) {
+  const { uploadImage } = await import('@/lib/pinata');
+  return uploadImage(file);
+}
 import Image from 'next/image';
 
 interface Props {
@@ -32,7 +36,7 @@ function PhotoUpload({
     }
     setUploading(true);
     try {
-      const result = await uploadImage(file);
+      const result = await doUpload(file);
       onUpload(result.url, result.ipfsHash);
     } catch {
       alert('Upload failed. Try again.');

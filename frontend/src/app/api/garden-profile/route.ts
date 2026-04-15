@@ -14,8 +14,14 @@ import type { PublicGardenProfile } from '@/types/garden-profile';
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
-  const profile = await getProfile(userId);
-  return NextResponse.json({ profile });
+  try {
+    const profile = await getProfile(userId);
+    return NextResponse.json({ profile });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[garden-profile GET] failed:', message, err);
+    return NextResponse.json({ error: `Load failed: ${message}` }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
