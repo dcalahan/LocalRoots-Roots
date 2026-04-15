@@ -69,7 +69,7 @@ export function MyGardenView({
         qty: String(detail.quantity),
         source: 'garden',
       });
-      router.push(`/sell/create?${params.toString()}`);
+      router.push(`/sell/listings/new?${params.toString()}`);
     };
     window.addEventListener('garden:list-for-sale', handler);
     return () => window.removeEventListener('garden:list-for-sale', handler);
