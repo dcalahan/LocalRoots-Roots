@@ -21,33 +21,40 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, displayName, bio, latitude, longitude } = body as {
+    const {
+      userId, displayName, bio, latitude, longitude,
+      profilePhotoUrl, profilePhotoIpfs, gardenPhotoUrl, gardenPhotoIpfs,
+    } = body as {
       userId?: string;
       displayName?: string;
       bio?: string;
       latitude?: number;
       longitude?: number;
+      profilePhotoUrl?: string;
+      profilePhotoIpfs?: string;
+      gardenPhotoUrl?: string;
+      gardenPhotoIpfs?: string;
     };
 
     if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
     if (!displayName?.trim()) return NextResponse.json({ error: 'displayName required' }, { status: 400 });
-    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      return NextResponse.json({ error: 'latitude/longitude required' }, { status: 400 });
-    }
-
-    // 5-char geohash = ~5km × 5km cell. Never store exact coords.
-    const geohash5 = encodeGeohash(latitude, longitude, 5);
-
-    // Best-effort reverse geocode for the location label.
-    let locationLabel = 'Unknown area';
-    try {
-      const neighborhood = await reverseGeocodeWithNeighborhood(latitude, longitude);
-      locationLabel = formatNeighborhoodDisplay(neighborhood);
-    } catch {
-      // ignore — keep default label
-    }
 
     const existing = await getProfile(userId);
+
+    // Location is optional — user may deny GPS
+    let geohash5 = existing?.geohash5 || '';
+    let locationLabel = existing?.locationLabel || 'Location not shared';
+
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+      geohash5 = encodeGeohash(latitude, longitude, 5);
+      try {
+        const neighborhood = await reverseGeocodeWithNeighborhood(latitude, longitude);
+        locationLabel = formatNeighborhoodDisplay(neighborhood);
+      } catch {
+        locationLabel = 'Unknown area';
+      }
+    }
+
     const now = new Date().toISOString();
     const profile: PublicGardenProfile = {
       userId,
@@ -55,6 +62,10 @@ export async function POST(request: NextRequest) {
       bio: bio?.trim().slice(0, 280) || undefined,
       geohash5,
       locationLabel,
+      profilePhotoUrl: profilePhotoUrl || existing?.profilePhotoUrl,
+      profilePhotoIpfs: profilePhotoIpfs || existing?.profilePhotoIpfs,
+      gardenPhotoUrl: gardenPhotoUrl || existing?.gardenPhotoUrl,
+      gardenPhotoIpfs: gardenPhotoIpfs || existing?.gardenPhotoIpfs,
       optedInAt: existing?.optedInAt || now,
       updatedAt: now,
     };
@@ -62,8 +73,9 @@ export async function POST(request: NextRequest) {
     await upsertProfile(profile);
     return NextResponse.json({ ok: true, profile });
   } catch (err) {
-    console.error('[garden-profile POST] failed:', err);
-    return NextResponse.json({ error: 'Save failed' }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[garden-profile POST] failed:', message, err);
+    return NextResponse.json({ error: `Save failed: ${message}` }, { status: 500 });
   }
 }
 

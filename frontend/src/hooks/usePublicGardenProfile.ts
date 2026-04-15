@@ -6,8 +6,12 @@ import type { PublicGardenProfile } from '@/types/garden-profile';
 interface OptInInput {
   displayName: string;
   bio?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  profilePhotoUrl?: string;
+  profilePhotoIpfs?: string;
+  gardenPhotoUrl?: string;
+  gardenPhotoIpfs?: string;
 }
 
 export function usePublicGardenProfile(userId: string | null) {

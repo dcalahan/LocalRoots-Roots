@@ -17,11 +17,24 @@ export function GardenerCard({ gardener }: Props) {
       className="block rounded-2xl border border-gray-200 bg-white p-4 hover:border-roots-secondary/40 hover:shadow-sm transition-all"
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">{gardener.displayName}</h3>
-          <p className="text-xs text-roots-gray truncate">{gardener.locationLabel}</p>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {gardener.profilePhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={gardener.profilePhotoUrl}
+              alt={gardener.displayName}
+              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-roots-secondary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg">🌱</span>
+            </div>
+          )}
+          <div className="min-w-0">
+            <h3 className="font-semibold text-gray-900 truncate">{gardener.displayName}</h3>
+            <p className="text-xs text-roots-gray truncate">{gardener.locationLabel}</p>
+          </div>
         </div>
-        <span className="text-xl ml-2">🌱</span>
       </div>
 
       {bedThumbs.length > 0 && (
