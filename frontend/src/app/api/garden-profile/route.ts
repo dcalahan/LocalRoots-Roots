@@ -1,55 +1,97 @@
 /**
  * POST /api/garden-profile  — opt in / update metadata
  * DELETE /api/garden-profile?userId=... — opt out
- *
- * NOTE: We trust the client-provided userId here because Privy auth happens
- * client-side. Server-side Privy verification can be added later if needed.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { encodeGeohash, reverseGeocodeWithNeighborhood, formatNeighborhoodDisplay } from '@/lib/geohashLocation';
-import { upsertProfile, deleteProfile, getProfile } from '@/lib/gardenProfileStore';
+import { kv } from '@/lib/kv';
 import type { PublicGardenProfile } from '@/types/garden-profile';
+
+const PROFILE_KEY = (userId: string) => `garden-profile:${userId}`;
+const INDEX_KEY = 'garden-profile-index';
+
+async function getProfile(userId: string): Promise<PublicGardenProfile | null> {
+  return await kv.get<PublicGardenProfile>(PROFILE_KEY(userId));
+}
+
+async function upsertProfile(profile: PublicGardenProfile): Promise<void> {
+  await kv.set(PROFILE_KEY(profile.userId), profile);
+  const ids = await kv.get<string[]>(INDEX_KEY) || [];
+  if (!Array.isArray(ids)) return;
+  if (!ids.includes(profile.userId)) {
+    ids.push(profile.userId);
+    await kv.set(INDEX_KEY, ids);
+  }
+}
+
+async function deleteProfile(userId: string): Promise<void> {
+  await kv.del(PROFILE_KEY(userId));
+  const ids = await kv.get<string[]>(INDEX_KEY) || [];
+  if (!Array.isArray(ids)) return;
+  const next = ids.filter(id => id !== userId);
+  if (next.length !== ids.length) await kv.set(INDEX_KEY, next);
+}
+
+// Simple geohash encoder (inline to avoid import chain issues)
+function encodeGeohash(lat: number, lng: number, precision: number = 5): string {
+  const BASE32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+  let idx = 0, bit = 0, evenBit = true;
+  let hash = '';
+  let latMin = -90, latMax = 90, lngMin = -180, lngMax = 180;
+
+  while (hash.length < precision) {
+    if (evenBit) {
+      const mid = (lngMin + lngMax) / 2;
+      if (lng >= mid) { idx = idx * 2 + 1; lngMin = mid; }
+      else { idx = idx * 2; lngMax = mid; }
+    } else {
+      const mid = (latMin + latMax) / 2;
+      if (lat >= mid) { idx = idx * 2 + 1; latMin = mid; }
+      else { idx = idx * 2; latMax = mid; }
+    }
+    evenBit = !evenBit;
+    if (++bit === 5) {
+      hash += BASE32[idx];
+      bit = 0;
+      idx = 0;
+    }
+  }
+  return hash;
+}
+
+async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+      { headers: { 'User-Agent': 'LocalRoots-Marketplace/1.0 (https://localroots.love)' } }
+    );
+    if (!res.ok) return 'Unknown area';
+    const data = await res.json();
+    const addr = data.address || {};
+    const city = addr.city || addr.town || addr.village || '';
+    const state = addr.state || '';
+    return city && state ? `${city}, ${state}` : city || state || 'Unknown area';
+  } catch {
+    return 'Unknown area';
+  }
+}
 
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
-
-  // Debug: test KV directly to isolate the issue
-  const kvUrl = process.env.KV_REST_API_URL;
-  const kvToken = process.env.KV_REST_API_TOKEN;
-  if (!kvUrl || !kvToken) {
-    return NextResponse.json({ error: 'KV env vars missing', hasUrl: !!kvUrl, hasToken: !!kvToken }, { status: 500 });
-  }
-
   try {
-    const kvRes = await fetch(kvUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${kvToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(['GET', `garden-profile:${userId}`]),
-      cache: 'no-store',
-    });
-    if (!kvRes.ok) {
-      return NextResponse.json({ error: `KV HTTP ${kvRes.status}`, body: await kvRes.text() }, { status: 500 });
-    }
-    const data = await kvRes.json();
-    const profile = data.result ? JSON.parse(data.result) : null;
+    const profile = await getProfile(userId);
     return NextResponse.json({ profile });
   } catch (err) {
-    const message = err instanceof Error ? `${err.message} | ${err.stack}` : 'Unknown error';
+    const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[garden-profile GET] failed:', message);
     return NextResponse.json({ error: `Load failed: ${message}` }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[garden-profile POST] request received');
   try {
     const body = await request.json();
-    console.log('[garden-profile POST] body keys:', Object.keys(body));
     const {
       userId, displayName, bio, latitude, longitude,
       profilePhotoUrl, profilePhotoIpfs, gardenPhotoUrl, gardenPhotoIpfs,
@@ -70,18 +112,12 @@ export async function POST(request: NextRequest) {
 
     const existing = await getProfile(userId);
 
-    // Location is optional — user may deny GPS
     let geohash5 = existing?.geohash5 || '';
     let locationLabel = existing?.locationLabel || 'Location not shared';
 
     if (typeof latitude === 'number' && typeof longitude === 'number') {
       geohash5 = encodeGeohash(latitude, longitude, 5);
-      try {
-        const neighborhood = await reverseGeocodeWithNeighborhood(latitude, longitude);
-        locationLabel = formatNeighborhoodDisplay(neighborhood);
-      } catch {
-        locationLabel = 'Unknown area';
-      }
+      locationLabel = await reverseGeocode(latitude, longitude);
     }
 
     const now = new Date().toISOString();
