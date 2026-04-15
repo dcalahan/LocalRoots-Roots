@@ -16,6 +16,10 @@ export interface PublicGardenProfile {
   bio?: string;
   geohash5: string;          // 5-char precision (~5km × 5km cell)
   locationLabel: string;     // "Hilton Head, SC" — reverse geocoded
+  profilePhotoUrl?: string;  // selfie / avatar
+  profilePhotoIpfs?: string; // IPFS CID
+  gardenPhotoUrl?: string;   // overall garden photo
+  gardenPhotoIpfs?: string;  // IPFS CID
   optedInAt: string;         // ISO timestamp
   updatedAt: string;         // ISO timestamp
 }

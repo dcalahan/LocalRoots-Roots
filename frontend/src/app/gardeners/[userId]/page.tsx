@@ -85,13 +85,37 @@ export default function GardenerProfilePage({
           ← All gardeners
         </Link>
 
+        {/* Garden photo banner */}
+        {gardener.gardenPhotoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={gardener.gardenPhotoUrl}
+            alt={`${gardener.displayName}'s garden`}
+            className="w-full h-48 object-cover rounded-xl mb-4"
+          />
+        )}
+
         {/* Hero */}
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{gardener.displayName}</h1>
-          <p className="text-sm text-roots-gray">{gardener.locationLabel}</p>
-          {gardener.bio && (
-            <p className="text-sm text-gray-700 mt-2 italic">&ldquo;{gardener.bio}&rdquo;</p>
+        <header className="mb-6 flex items-center gap-4">
+          {gardener.profilePhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={gardener.profilePhotoUrl}
+              alt={gardener.displayName}
+              className="w-20 h-20 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-roots-secondary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-3xl">🌱</span>
+            </div>
           )}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{gardener.displayName}</h1>
+            <p className="text-sm text-roots-gray">{gardener.locationLabel}</p>
+            {gardener.bio && (
+              <p className="text-sm text-gray-700 mt-1 italic">&ldquo;{gardener.bio}&rdquo;</p>
+            )}
+          </div>
         </header>
 
         {/* Beds */}
