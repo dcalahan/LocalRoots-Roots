@@ -14,6 +14,9 @@ const STATUS_PRIORITY: Record<PlantStatus, number> = {
   'seedling': 4,
   'overwintering': 5,
   'done': 6,
+  'bolting': 0,
+  'bolt-risk': 1,
+  'needs-pruning': 2,
 };
 
 const BED_TYPE_LABELS: Record<BedType, string> = {

@@ -19,6 +19,8 @@ import techniqueGuides from '@/data/technique-guides.json'
 import communityRecipes from '@/data/community-recipes.json'
 import lowcountryData from '@/data/regional/lowcountry-8a.json'
 import appKnowledge from '@/data/app-knowledge.json'
+import { detectCareAlerts } from '@/lib/careAlerts'
+import type { GardenPlant } from '@/types/my-garden'
 
 // ─── KV Key Helpers ────────────────────────────────────────
 
@@ -563,7 +565,41 @@ export function createGardenBrain(): Brain {
           }).join('\n')
         }
 
-        gardenSection = `${bedsBlock}\n\nUSER'S GARDEN (plants they are tracking in My Garden):
+        // Attention needed — bolting, pruning, and harvest-urgency
+        let attentionBlock = ''
+        if (myGarden && myGarden.length > 0) {
+          const now = new Date()
+          const lines: string[] = []
+          myGarden.forEach((p, idx) => {
+            const plant: GardenPlant = {
+              id: `ctx-${idx}`,
+              cropId: p.cropId,
+              customVarietyName: p.customVarietyName,
+              plantingDate: p.plantingDate,
+              quantity: p.quantity,
+              plantingMethod: (p.plantingMethod as GardenPlant['plantingMethod']) || 'transplant',
+              bedId: p.bedId,
+              location: p.location,
+              isPerennial: false,
+              createdAt: p.plantingDate,
+              year: new Date(p.plantingDate).getFullYear(),
+            }
+            const alerts = detectCareAlerts(plant, now)
+            for (const a of alerts) {
+              if (a.severity !== 'urgent' && a.severity !== 'critical') continue
+              const crop = cropData[p.cropId]
+              const name = p.customVarietyName || crop?.name || p.cropId
+              const bedName = p.bedId ? bedById[p.bedId] : undefined
+              const bedLabel = bedName ? ` in "${bedName}"` : ''
+              lines.push(`- ${name} (×${p.quantity})${bedLabel}: ${a.title.toUpperCase()} — ${a.actionHint || a.message}`)
+            }
+          })
+          if (lines.length > 0) {
+            attentionBlock = `\nATTENTION NEEDED IN THIS USER'S GARDEN RIGHT NOW:\n${lines.join('\n')}\n\nWhen the user greets you, mention the most urgent of these by name and offer concrete next steps (harvest, pinch, list for sale, plant a replacement). Don't overwhelm — lead with the single most urgent, then mention you noticed others.\n`
+          }
+        }
+
+        gardenSection = `${bedsBlock}${attentionBlock}\n\nUSER'S GARDEN (plants they are tracking in My Garden):
 ${plantLines || '(no plants tracked yet)'}
 
 YOUR GARDEN TRACKING POWERS:
