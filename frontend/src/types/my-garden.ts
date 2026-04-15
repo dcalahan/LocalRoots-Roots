@@ -45,6 +45,7 @@ export interface GardenPlant {
   location?: string;             // legacy free text: "raised bed #2", "back patio"
   notes?: string;                // free text
   isPerennial: boolean;          // copied from crop data at add time
+  orderInBed?: number;            // custom display order within a bed
   manualStatus?: PlantStatus;    // user override (died, harvested early, etc.)
   harvestedDate?: string;        // when user marked as harvested
   removedDate?: string;          // when user removed from garden

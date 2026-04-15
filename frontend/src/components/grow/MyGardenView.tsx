@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { GardenPlant, GardenBed, PlantingMethod } from '@/types/my-garden';
+import type { GardenPlant, GardenBed, PlantingMethod, PlantStatus } from '@/types/my-garden';
+import { computeStatus } from '@/lib/gardenStatus';
 import { GardenPlantCard } from './GardenPlantCard';
 import { AddPlantsModal } from './AddPlantsModal';
 import { BedCard } from './BedCard';
@@ -17,6 +18,7 @@ interface MyGardenViewProps {
   onAddBed: (bed: Omit<GardenBed, 'id' | 'createdAt' | 'order'>) => void;
   onUpdateBed: (bedId: string, updates: Partial<GardenBed>) => void;
   onDeleteBed: (bedId: string) => void;
+  onReorderPlant?: (plantId: string, direction: 'up' | 'down') => void;
   userId?: string;
   zone?: string;
   locationName?: string;
@@ -41,6 +43,7 @@ export function MyGardenView({
   onAddBed,
   onUpdateBed,
   onDeleteBed,
+  onReorderPlant,
   userId,
   zone,
   locationName,
@@ -50,6 +53,7 @@ export function MyGardenView({
   const [addPlantsBedId, setAddPlantsBedId] = useState<string | undefined>();
   const [isBedModalOpen, setIsBedModalOpen] = useState(false);
   const [editingBed, setEditingBed] = useState<GardenBed | undefined>();
+  const [isReordering, setIsReordering] = useState(false);
 
   const activePlants = useMemo(
     () => plants.filter(p => !p.removedDate && !p.harvestedDate),
@@ -60,6 +64,11 @@ export function MyGardenView({
     () => [...beds].sort((a, b) => a.order - b.order),
     [beds],
   );
+
+  const STATUS_PRIORITY: Record<PlantStatus, number> = {
+    'ready-to-harvest': 0, 'harvesting': 1, 'near-harvest': 2,
+    'growing': 3, 'seedling': 4, 'overwintering': 5, 'done': 6,
+  };
 
   const plantsByBed = useMemo(() => {
     const map: Record<string, GardenPlant[]> = {};
@@ -72,8 +81,14 @@ export function MyGardenView({
         unassigned.push(p);
       }
     }
+    // Sort unassigned by status priority
+    unassigned.sort((a, b) => {
+      const sa = computeStatus(a, new Date(), firstFallFrost);
+      const sb = computeStatus(b, new Date(), firstFallFrost);
+      return (STATUS_PRIORITY[sa] ?? 6) - (STATUS_PRIORITY[sb] ?? 6);
+    });
     return { map, unassigned };
-  }, [beds, activePlants]);
+  }, [beds, activePlants, firstFallFrost]);
 
   const season = getCurrentSeason();
   const year = new Date().getFullYear();
@@ -126,6 +141,18 @@ export function MyGardenView({
           </p>
         </div>
         <div className="flex gap-2">
+          {activePlants.length > 1 && onReorderPlant && (
+            <button
+              onClick={() => setIsReordering(!isReordering)}
+              className={`px-3 py-2 rounded-xl font-semibold text-sm transition-colors ${
+                isReordering
+                  ? 'bg-roots-primary/10 text-roots-primary border border-roots-primary/30'
+                  : 'text-roots-gray border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {isReordering ? 'Done' : '↕'}
+            </button>
+          )}
           <button
             onClick={handleNewBed}
             className="px-3 py-2 rounded-xl font-semibold text-roots-secondary border border-roots-secondary/30 hover:bg-roots-secondary/10 transition-colors text-sm"
@@ -181,6 +208,8 @@ export function MyGardenView({
               onRemovePlant={onRemove}
               onHarvestPlant={onHarvest}
               onUpdatePlant={onUpdatePlant}
+              onReorderPlant={onReorderPlant}
+              isReordering={isReordering}
             />
           ))}
 

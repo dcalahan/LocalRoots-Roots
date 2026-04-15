@@ -1,7 +1,20 @@
 'use client';
 
-import type { GardenBed, GardenPlant, BedType } from '@/types/my-garden';
+import { useMemo } from 'react';
+import type { GardenBed, GardenPlant, BedType, PlantStatus } from '@/types/my-garden';
+import { computeStatus } from '@/lib/gardenStatus';
 import { GardenPlantCard } from './GardenPlantCard';
+
+// Status priority: needs-attention first, then growing, then done
+const STATUS_PRIORITY: Record<PlantStatus, number> = {
+  'ready-to-harvest': 0,
+  'harvesting': 1,
+  'near-harvest': 2,
+  'growing': 3,
+  'seedling': 4,
+  'overwintering': 5,
+  'done': 6,
+};
 
 const BED_TYPE_LABELS: Record<BedType, string> = {
   'raised-bed': 'Raised bed',
@@ -31,6 +44,8 @@ interface BedCardProps {
   onRemovePlant: (plantId: string) => void;
   onHarvestPlant: (plantId: string) => void;
   onUpdatePlant?: (plantId: string, updates: Partial<import('@/types/my-garden').GardenPlant>) => void;
+  onReorderPlant?: (plantId: string, direction: 'up' | 'down') => void;
+  isReordering?: boolean;
 }
 
 export function BedCard({
@@ -43,7 +58,22 @@ export function BedCard({
   onRemovePlant,
   onHarvestPlant,
   onUpdatePlant,
+  onReorderPlant,
+  isReordering,
 }: BedCardProps) {
+  // Sort: if plants have orderInBed set, use that; otherwise sort by status priority
+  const sortedPlants = useMemo(() => {
+    const hasOrder = plants.some(p => p.orderInBed !== undefined);
+    if (hasOrder) {
+      return [...plants].sort((a, b) => (a.orderInBed ?? 999) - (b.orderInBed ?? 999));
+    }
+    return [...plants].sort((a, b) => {
+      const sa = computeStatus(a, new Date(), firstFallFrost);
+      const sb = computeStatus(b, new Date(), firstFallFrost);
+      return (STATUS_PRIORITY[sa] ?? 6) - (STATUS_PRIORITY[sb] ?? 6);
+    });
+  }, [plants, firstFallFrost]);
+
   const dimensions = bed.widthInches && bed.lengthInches
     ? `${bed.widthInches}" × ${bed.lengthInches}"`
     : null;
@@ -114,21 +144,44 @@ export function BedCard({
           <p className="text-xs text-roots-gray italic mb-3">{bed.notes}</p>
         )}
 
-        {plants.length === 0 ? (
+        {sortedPlants.length === 0 ? (
           <div className="text-center py-6 text-sm text-roots-gray">
-            No plants yet. Tap "+ Plant" to add some.
+            No plants yet. Tap &ldquo;+ Plant&rdquo; to add some.
           </div>
         ) : (
           <div className="space-y-2">
-            {plants.map(plant => (
-              <GardenPlantCard
-                key={plant.id}
-                plant={plant}
-                firstFallFrost={firstFallFrost}
-                onRemove={onRemovePlant}
-                onHarvest={onHarvestPlant}
-                onUpdate={onUpdatePlant}
-              />
+            {sortedPlants.map((plant, idx) => (
+              <div key={plant.id} className="flex items-stretch gap-1">
+                {isReordering && onReorderPlant && (
+                  <div className="flex flex-col justify-center gap-0.5 shrink-0">
+                    <button
+                      onClick={() => onReorderPlant(plant.id, 'up')}
+                      disabled={idx === 0}
+                      className="px-1.5 py-1 text-xs text-roots-gray hover:text-roots-secondary disabled:opacity-20 touch-manipulation"
+                      aria-label="Move up"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      onClick={() => onReorderPlant(plant.id, 'down')}
+                      disabled={idx === sortedPlants.length - 1}
+                      className="px-1.5 py-1 text-xs text-roots-gray hover:text-roots-secondary disabled:opacity-20 touch-manipulation"
+                      aria-label="Move down"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <GardenPlantCard
+                    plant={plant}
+                    firstFallFrost={firstFallFrost}
+                    onRemove={onRemovePlant}
+                    onHarvest={onHarvestPlant}
+                    onUpdate={onUpdatePlant}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         )}
