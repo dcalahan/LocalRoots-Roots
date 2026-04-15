@@ -11,7 +11,40 @@ export type PlantStatus =
   | 'ready-to-harvest'  // 90–100% of maturity
   | 'harvesting'        // past maturity, within harvest window
   | 'done'              // past harvest window or manually marked
-  | 'overwintering';    // perennial outside growing season
+  | 'overwintering'     // perennial outside growing season
+  | 'bolt-risk'         // approaching bolting window
+  | 'bolting'           // actively bolting — harvest immediately
+  | 'needs-pruning';    // pruning rule triggered
+
+export type CareAlertType =
+  | 'bolt-risk'
+  | 'bolting'
+  | 'prune-now'
+  | 'prune-overdue'
+  | 'frost-warning'
+  | 'heat-wave'
+  | 'harvest-urgent'
+  | 'harvest-ready';
+
+export type CareAlertSeverity = 'info' | 'soon' | 'urgent' | 'critical';
+
+export interface CareAlert {
+  /** Stable id: hash of plantId + type + cycle. Used for dedupe and dismissal. */
+  id: string;
+  plantId: string;
+  cropId: string;
+  type: CareAlertType;
+  severity: CareAlertSeverity;
+  title: string;
+  message: string;
+  actionHint?: string;
+  /** Show a "List for sale" CTA — true only for bolting / harvest-urgent */
+  sellRamp?: boolean;
+  /** True when the alert was elevated or created by weather */
+  weatherDriven?: boolean;
+  createdAt: string;
+  dismissedAt?: string;
+}
 
 export type BedType =
   | 'raised-bed'

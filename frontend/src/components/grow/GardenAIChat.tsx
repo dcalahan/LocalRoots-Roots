@@ -65,6 +65,21 @@ async function resizeAndEncode(file: File, maxDim = 1568): Promise<{ base64: str
 
 export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Listen for "ask Sage" events from plant care alerts
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { message: string };
+      if (!detail?.message) return;
+      setIsOpen(true);
+      setInput(detail.message);
+      // Focus after state flushes
+      setTimeout(() => inputRef.current?.focus(), 50);
+    };
+    window.addEventListener('sage:ask', handler);
+    return () => window.removeEventListener('sage:ask', handler);
+  }, []);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

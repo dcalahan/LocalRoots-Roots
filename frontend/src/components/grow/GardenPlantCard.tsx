@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import type { GardenPlant, PlantingMethod, GardenBed } from '@/types/my-garden';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import type { GardenPlant, PlantingMethod, GardenBed, CareAlert } from '@/types/my-garden';
 import { computeStatus, getEstimatedHarvestDate, getProgressPercent, getCropDisplayName } from '@/lib/gardenStatus';
 import { getCropEmoji } from '@/lib/cropEmoji';
 import { PlantProgressBar } from './PlantProgressBar';
+import { detectCareAlerts, dismissAlert, loadDismissals, alertColorClasses } from '@/lib/careAlerts';
 
 interface GardenPlantCardProps {
   plant: GardenPlant;
@@ -25,6 +26,35 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
   const [editBedId, setEditBedId] = useState<string | ''>(plant.bedId || '');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const qtyRef = useRef<HTMLInputElement>(null);
+
+  const [dismissals, setDismissals] = useState<Record<string, string>>({});
+  useEffect(() => { setDismissals(loadDismissals()); }, []);
+
+  const alerts = useMemo<CareAlert[]>(
+    () => detectCareAlerts(plant, new Date(), { dismissals }),
+    [plant, dismissals],
+  );
+  const primaryAlert = alerts[0];
+
+  const handleAskSage = (alert: CareAlert) => {
+    const msg = `My ${getCropDisplayName(plant.cropId, plant.customVarietyName)} — ${alert.title.toLowerCase()}. What should I do?`;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sage:ask', { detail: { message: msg } }));
+    }
+  };
+
+  const handleListForSale = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('garden:list-for-sale', {
+        detail: { plantId: plant.id, cropId: plant.cropId, quantity: plant.quantity },
+      }));
+    }
+  };
+
+  const handleDismissAlert = (alert: CareAlert) => {
+    dismissAlert(alert.id);
+    setDismissals(prev => ({ ...prev, [alert.id]: new Date().toISOString() }));
+  };
 
   const status = computeStatus(plant, new Date(), firstFallFrost);
   const harvestDate = getEstimatedHarvestDate(plant);
@@ -225,6 +255,50 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
           {plant.notes && (
             <p className="mt-2 text-xs text-roots-gray italic">{plant.notes}</p>
           )}
+
+          {primaryAlert && (() => {
+            const c = alertColorClasses(primaryAlert.severity);
+            return (
+              <div className={`mt-3 rounded-lg border ${c.border} ${c.bg} p-2.5`}>
+                <div className="flex items-start gap-2">
+                  <span className="text-base leading-none mt-0.5">{c.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <button
+                      onClick={() => handleAskSage(primaryAlert)}
+                      className={`text-left w-full ${c.text} font-semibold text-sm`}
+                    >
+                      {primaryAlert.title}
+                    </button>
+                    <p className="text-xs text-roots-gray mt-0.5">
+                      {primaryAlert.actionHint || primaryAlert.message}
+                    </p>
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                      <button
+                        onClick={() => handleAskSage(primaryAlert)}
+                        className={`text-xs px-2 py-1 rounded-full bg-white/80 ${c.text} font-semibold hover:bg-white transition-colors`}
+                      >
+                        Ask Sage
+                      </button>
+                      {primaryAlert.sellRamp && (
+                        <button
+                          onClick={handleListForSale}
+                          className="text-xs px-2 py-1 rounded-full bg-roots-primary text-white font-semibold hover:bg-roots-primary/90 transition-colors"
+                        >
+                          List for sale →
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDismissAlert(primaryAlert)}
+                        className="text-xs px-2 py-1 rounded-full text-roots-gray hover:bg-white/60 transition-colors"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </>
       )}
     </div>

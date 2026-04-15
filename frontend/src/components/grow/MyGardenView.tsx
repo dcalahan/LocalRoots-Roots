@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { GardenPlant, GardenBed, PlantingMethod, PlantStatus } from '@/types/my-garden';
-import { computeStatus } from '@/lib/gardenStatus';
+import { computeStatus, getCropDisplayName } from '@/lib/gardenStatus';
+import { detectGardenAlerts, loadDismissals } from '@/lib/careAlerts';
 import { GardenPlantCard } from './GardenPlantCard';
 import { AddPlantsModal } from './AddPlantsModal';
 import { BedCard } from './BedCard';
@@ -54,6 +56,24 @@ export function MyGardenView({
   const [isBedModalOpen, setIsBedModalOpen] = useState(false);
   const [editingBed, setEditingBed] = useState<GardenBed | undefined>();
   const [isReordering, setIsReordering] = useState(false);
+  const [dismissals, setDismissals] = useState<Record<string, string>>({});
+  const router = useRouter();
+  useEffect(() => { setDismissals(loadDismissals()); }, []);
+
+  // Listen for "list for sale" events from plant cards
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { cropId: string; quantity: number };
+      const params = new URLSearchParams({
+        crop: detail.cropId,
+        qty: String(detail.quantity),
+        source: 'garden',
+      });
+      router.push(`/sell/create?${params.toString()}`);
+    };
+    window.addEventListener('garden:list-for-sale', handler);
+    return () => window.removeEventListener('garden:list-for-sale', handler);
+  }, [router]);
 
   const activePlants = useMemo(
     () => plants.filter(p => !p.removedDate && !p.harvestedDate),
@@ -68,6 +88,7 @@ export function MyGardenView({
   const STATUS_PRIORITY: Record<PlantStatus, number> = {
     'ready-to-harvest': 0, 'harvesting': 1, 'near-harvest': 2,
     'growing': 3, 'seedling': 4, 'overwintering': 5, 'done': 6,
+    'bolting': 0, 'bolt-risk': 1, 'needs-pruning': 2,
   };
 
   const plantsByBed = useMemo(() => {
@@ -89,6 +110,12 @@ export function MyGardenView({
     });
     return { map, unassigned };
   }, [beds, activePlants, firstFallFrost]);
+
+  // Garden-wide alerts for summary card (only urgent/critical surface here)
+  const urgentAlerts = useMemo(() => {
+    const all = detectGardenAlerts(activePlants, new Date(), { dismissals });
+    return all.filter(a => a.severity === 'urgent' || a.severity === 'critical');
+  }, [activePlants, dismissals]);
 
   const season = getCurrentSeason();
   const year = new Date().getFullYear();
@@ -195,6 +222,35 @@ export function MyGardenView({
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Attention needed summary */}
+          {urgentAlerts.length > 0 && (
+            <div className="bg-roots-primary/10 border border-roots-primary/30 rounded-2xl p-4">
+              <div className="flex items-start gap-2">
+                <span className="text-xl leading-none mt-0.5">⚠️</span>
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-bold text-roots-primary">
+                    {urgentAlerts.length} plant{urgentAlerts.length !== 1 ? 's' : ''} need{urgentAlerts.length === 1 ? 's' : ''} attention
+                  </h2>
+                  <ul className="text-sm text-roots-gray mt-1 space-y-0.5">
+                    {urgentAlerts.slice(0, 5).map(a => {
+                      const p = activePlants.find(pp => pp.id === a.plantId);
+                      const name = p ? getCropDisplayName(p.cropId, p.customVarietyName) : a.cropId;
+                      return (
+                        <li key={a.id}>
+                          <span className="font-medium text-gray-900">{name}</span>
+                          <span className="text-roots-gray"> — {a.title.toLowerCase()}</span>
+                        </li>
+                      );
+                    })}
+                    {urgentAlerts.length > 5 && (
+                      <li className="italic">+ {urgentAlerts.length - 5} more</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Bed cards */}
           {sortedBeds.map(bed => (
             <BedCard

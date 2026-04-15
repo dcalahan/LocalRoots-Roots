@@ -118,6 +118,9 @@ export function groupPlantsByStatus(
     harvesting: [],
     done: [],
     overwintering: [],
+    'bolt-risk': [],
+    bolting: [],
+    'needs-pruning': [],
   };
 
   for (const plant of plants) {
@@ -137,6 +140,9 @@ export const STATUS_CONFIG: Record<PlantStatus, { label: string; emoji: string; 
   harvesting: { label: 'Harvesting', emoji: '🧺', color: 'roots-primary' },
   done: { label: 'Done This Season', emoji: '✅', color: 'roots-gray' },
   overwintering: { label: 'Overwintering', emoji: '❄️', color: 'roots-gray' },
+  'bolt-risk': { label: 'Bolt risk', emoji: '⚠️', color: 'roots-primary' },
+  bolting: { label: 'Bolting!', emoji: '🌼', color: 'roots-primary' },
+  'needs-pruning': { label: 'Needs pruning', emoji: '✂️', color: 'roots-secondary' },
 };
 
 /** Get crop display name from ID */
