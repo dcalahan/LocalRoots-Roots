@@ -5,8 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GrowingProfileProvider } from '@/contexts/GrowingProfileContext';
 import { GrowingProfileCard, MonthlyCalendar, GardenAIChat } from '@/components/grow';
+import { usePrivy } from '@privy-io/react-auth';
+import { useMyGarden } from '@/hooks/useMyGarden';
 
 function GrowPageContent() {
+  const { user } = usePrivy();
+  const userId = user?.id || null;
+  const { activePlants, beds } = useMyGarden(userId);
+  const hasGarden = activePlants.length > 0 || beds.length > 0;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
@@ -16,6 +23,32 @@ function GrowPageContent() {
           AI advice, planting calendar, and tracking — all personalized for your climate.
         </p>
       </div>
+
+      {/* My Garden — prominent CTA when user has a garden */}
+      {hasGarden && (
+        <Link href="/grow/my-garden" className="block mb-6">
+          <Card className="border-2 border-roots-primary bg-roots-primary/5 hover:bg-roots-primary/10 transition-colors cursor-pointer shadow-md">
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-14 h-14 rounded-full bg-roots-primary flex items-center justify-center shadow-md">
+                    <span className="text-2xl" style={{ filter: 'brightness(0) invert(1)' }}>🌱</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-heading font-bold text-lg text-gray-900">My Garden</h3>
+                  <p className="text-sm text-roots-gray">
+                    {activePlants.length} plant{activePlants.length !== 1 ? 's' : ''}
+                    {beds.length > 0 ? ` across ${beds.length} bed${beds.length !== 1 ? 's' : ''}` : ''}
+                    {' — '}tap to view
+                  </p>
+                </div>
+                <div className="flex-shrink-0 text-roots-primary font-bold text-xl">→</div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       {/* Ask the AI — prominent inline card */}
       <Card className="mb-6 border-roots-secondary/30 bg-gradient-to-r from-roots-secondary/5 to-roots-secondary/10">
@@ -69,18 +102,20 @@ function GrowPageContent() {
       </Card>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Link href="/grow/my-garden" className="block">
-          <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-roots-secondary/30 bg-roots-secondary/5">
-            <CardContent className="pt-6 text-center">
-              <div className="text-4xl mb-3">🌱</div>
-              <h3 className="font-heading font-semibold mb-1 text-roots-secondary">My Garden</h3>
-              <p className="text-sm text-roots-gray">
-                Track what you planted
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+      <div className={`grid grid-cols-1 ${hasGarden ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4 mb-8`}>
+        {!hasGarden && (
+          <Link href="/grow/my-garden" className="block">
+            <Card className="h-full hover:shadow-md transition-shadow cursor-pointer border-roots-secondary/30 bg-roots-secondary/5">
+              <CardContent className="pt-6 text-center">
+                <div className="text-4xl mb-3">🌱</div>
+                <h3 className="font-heading font-semibold mb-1 text-roots-secondary">My Garden</h3>
+                <p className="text-sm text-roots-gray">
+                  Track what you planted
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
         <Link href="/grow/calendar" className="block">
           <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
