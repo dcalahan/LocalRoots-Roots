@@ -187,7 +187,7 @@ export function MyGardenView({
         <div className="flex gap-2">
           <button
             onClick={handleShare}
-            className="px-3 py-2 rounded-xl text-sm text-roots-gray border border-gray-200 hover:bg-gray-50 transition-colors flex items-center gap-1"
+            className="px-3 py-2 rounded-xl text-sm text-white bg-roots-primary hover:bg-roots-primary/90 transition-colors flex items-center gap-1"
             title="Share your garden"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
