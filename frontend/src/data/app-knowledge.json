@@ -16,8 +16,13 @@
         {
           "path": "/grow/my-garden",
           "name": "My Garden",
-          "description": "Track your planted crops through their lifecycle. Requires sign-in. You can add plants here, or just tell me what you planted and I'll add them automatically.",
-          "authRequired": true
+          "description": "Track your planted crops through their lifecycle. Requires sign-in. You can add plants here, or just tell me what you planted and I'll add them automatically. Shows care alerts (bolting, pruning, harvest urgency) on each plant card and a summary banner at the top when anything is urgent.",
+          "authRequired": true,
+          "features": [
+            "Care alerts: bolting/pruning/harvest windows flagged automatically per plant. Users can tap 'Ask Sage' on any alert (it prefills a question to me), 'List for sale' (prefills a listing for bolting/harvest-urgent alerts), or 'Done' to dismiss. Pruning alerts recur on a schedule; bolting alerts dismiss permanently once harvested.",
+            "Bolting data lives in crop-growing-data.json under each crop's `bolting` field. I know bolt windows, heat triggers, and crop-specific harvest advice for: cilantro, romaine, spinach, arugula, basil, broccoli, bok choy, radish, dill.",
+            "Pruning rules live in crop-growing-data.json under each crop's `pruning` array. I know pinching/suckering/cutback schedules for: basil (pinch every 14d from day 21), tomatoes (sucker every 10d), mint/oregano/thyme (cutback every 30d from day 45), rosemary (shape every 60d), peppers, cucumbers."
+          ]
         },
         {
           "path": "/grow/calendar",
@@ -192,6 +197,24 @@
       "navLabel": null,
       "description": "Additional pages",
       "routes": [
+        {
+          "path": "/garden/[slug]",
+          "name": "Community Garden Page",
+          "description": "Landing page for a named community garden (e.g. Heritage Farm at Sea Pines). Shows only listings from sellers associated with that garden. Reached via a QR code posted at the garden entrance. If you're asked 'how do I buy from Heritage Farm?' or 'is there a page for our community garden?', point them here.",
+          "authRequired": false
+        },
+        {
+          "path": "/garden/[slug]/poster",
+          "name": "Printable Garden Poster",
+          "description": "Prints a letter-sized 8.5x11 poster with a QR code pointing to the community garden's landing page. Community garden managers or ambassadors tap 'Print poster' and tape the sheet at the garden entrance. Share this URL with anyone organizing a community garden.",
+          "authRequired": false
+        },
+        {
+          "path": "/poster",
+          "name": "Generic Printable Poster",
+          "description": "Turns any URL into a printable letter-sized poster with a QR code. Accepts ?url=, ?title=, ?tagline=, ?accent=coral|teal query params. Used by community gardens, sellers, ambassadors, and email campaigns to generate scannable flyers with zero engineering effort.",
+          "authRequired": false
+        },
         {
           "path": "/",
           "name": "Home",

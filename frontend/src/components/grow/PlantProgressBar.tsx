@@ -15,6 +15,9 @@ const statusColors: Record<PlantStatus, string> = {
   harvesting: 'bg-roots-primary',
   done: 'bg-roots-gray',
   overwintering: 'bg-roots-gray/50',
+  'bolt-risk': 'bg-roots-primary',
+  bolting: 'bg-roots-primary',
+  'needs-pruning': 'bg-roots-secondary',
 };
 
 export function PlantProgressBar({ percent, status }: PlantProgressBarProps) {

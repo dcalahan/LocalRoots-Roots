@@ -7,7 +7,7 @@
  */
 
 import type { GardenPlant, CareAlert, CareAlertSeverity } from '@/types/my-garden';
-import { getBoltingInfo, getPruningRules } from '@/data/care-schedules';
+import { getBoltingInfo, getPruningRules } from './plantingCalendar';
 import { computeStatus } from './gardenStatus';
 
 const SEVERITY_RANK: Record<CareAlertSeverity, number> = {

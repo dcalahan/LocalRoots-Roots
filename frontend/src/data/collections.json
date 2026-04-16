@@ -1,8 +1,9 @@
 {
   "version": "1.0.0",
-  "gardens": [
+  "collections": [
     {
       "slug": "heritage-farm-hhi",
+      "type": "community-garden",
       "name": "Heritage Farm at Sea Pines",
       "location": {
         "city": "Hilton Head Island",

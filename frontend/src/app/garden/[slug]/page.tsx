@@ -1,24 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getCommunityGarden } from '@/lib/communityGardens';
-import { useAllListings } from '@/hooks/useListings';
+import { getCollection } from '@/lib/collections';
+import { useListingsForSellers } from '@/hooks/useListingsForSellers';
 import { ListingsGrid } from '@/components/buyer/ListingsGrid';
 
 export default function CommunityGardenPage() {
   const params = useParams<{ slug: string }>();
-  const garden = params?.slug ? getCommunityGarden(params.slug) : null;
+  const collection = params?.slug ? getCollection(params.slug) : null;
+  const garden = collection?.type === 'community-garden' ? collection : null;
 
-  const { listings, isLoading } = useAllListings();
-
-  const gardenListings = useMemo(() => {
-    if (!garden) return [];
-    if (garden.sellerIds.length === 0) return [];
-    const set = new Set(garden.sellerIds);
-    return listings.filter(l => set.has(l.sellerId));
-  }, [garden, listings]);
+  const { listings: gardenListings, isLoading } = useListingsForSellers(
+    garden?.sellerIds ?? [],
+  );
 
   if (!garden) {
     notFound();

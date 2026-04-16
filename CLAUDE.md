@@ -324,6 +324,16 @@ Optional for testing:
 
 When adding, removing, or changing a user-facing route or feature, update `frontend/src/data/app-knowledge.json` so Sage can guide users to the new feature. This is Sage's knowledge of how the app works — sections, routes, flows, Seeds info, and auth guidance. The brain reads this JSON at runtime and formats it into the system prompt.
 
+### Teaching Sage About New Features — Required Checklist
+
+Every user-facing feature must teach Sage about itself. Silence = user confusion. Before merging:
+
+1. **`frontend/src/data/app-knowledge.json`** — Add the route (path, name, description, authRequired) and any `features: [...]` bullets describing what users can do. If data backs the feature, say where it lives so Sage can reference it.
+2. **`frontend/src/lib/ai/garden-brain.ts`** — If the feature has dynamic/data-driven awareness (e.g. "Sage knows bolting windows for these crops"), add or extend a context builder (e.g. `buildCareDataContext`) and include it in `loadContext`. Pull from shared accessors, not hardcoded lists.
+3. **Shared data registry** — New content types (collections, regions, crops) go in canonical JSON (e.g. `crop-growing-data.json`, `collections.json`) with typed accessors in `plantingCalendar.ts` or equivalent. One source of truth, many consumers.
+
+Skip any of these and the feature ships but is invisible to Sage. Treat her like a teammate who wasn't in the planning meeting — brief her explicitly.
+
 ## Sage — AI Gardening Companion
 
 **Name:** Sage. Always refer to the AI assistant as "Sage" in UI copy, never "Garden AI" or "Garden Assistant."

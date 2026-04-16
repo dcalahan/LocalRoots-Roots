@@ -35,9 +35,33 @@ export interface CropTimeline {
   notSuitableReason?: string;
 }
 
+/**
+ * Bolting behavior for a crop (when a plant switches from leaves to flowers/seed).
+ * Co-located with planting calendar data so crops are described in one place.
+ */
+export interface BoltingInfo {
+  daysToBoltMin: number;
+  daysToBoltMax: number;
+  heatTriggerF?: number;
+  trigger: 'heat' | 'daylength' | 'age';
+  advice: string;
+}
+
+/** Pruning schedule entry for a crop. */
+export interface PruningRule {
+  triggerDays: number;
+  type: 'pinch-top' | 'sucker' | 'cutback' | 'deadhead' | 'shape';
+  title: string;
+  message: string;
+  actionHint: string;
+  recurringDays: number;
+}
+
 interface CropGrowingInfo {
   name: string;
   category: string;
+  bolting?: BoltingInfo;
+  pruning?: PruningRule[];
   startIndoors: { weeksBeforeLastFrost?: number; weeksBeforeLastFrostMax?: number; yearRound?: boolean } | null;
   directSow: { weeksBeforeLastFrost?: number; weeksAfterLastFrost?: number; minSoilTempF?: number; fallPlanting?: boolean } | null;
   transplant: { weeksBeforeLastFrost?: number; weeksAfterLastFrost?: number; minSoilTempF?: number; dormantPlanting?: boolean } | null;
@@ -466,6 +490,26 @@ export function getCropsToHarvestThisMonth(
  */
 export function getCropGrowingInfo(cropId: string): CropGrowingInfo | null {
   return crops[cropId] || null;
+}
+
+/** Get bolting behavior for a crop, if defined. */
+export function getBoltingInfo(cropId: string): BoltingInfo | null {
+  return crops[cropId]?.bolting || null;
+}
+
+/** Get pruning rules for a crop — always an array, empty if none defined. */
+export function getPruningRules(cropId: string): PruningRule[] {
+  return crops[cropId]?.pruning || [];
+}
+
+/** All crop IDs that have bolting data — used by Sage to list her care knowledge. */
+export function getCropsWithBoltingData(): string[] {
+  return Object.keys(crops).filter(id => crops[id]?.bolting);
+}
+
+/** All crop IDs that have pruning rules. */
+export function getCropsWithPruningData(): string[] {
+  return Object.keys(crops).filter(id => (crops[id]?.pruning?.length ?? 0) > 0);
 }
 
 /**

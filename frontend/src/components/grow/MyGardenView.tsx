@@ -71,8 +71,8 @@ export function MyGardenView({
       });
       router.push(`/sell/listings/new?${params.toString()}`);
     };
-    window.addEventListener('garden:list-for-sale', handler);
-    return () => window.removeEventListener('garden:list-for-sale', handler);
+    window.addEventListener('app:list-for-sale', handler);
+    return () => window.removeEventListener('app:list-for-sale', handler);
   }, [router]);
 
   const activePlants = useMemo(

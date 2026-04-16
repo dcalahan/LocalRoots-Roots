@@ -45,7 +45,7 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
 
   const handleListForSale = () => {
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('garden:list-for-sale', {
+      window.dispatchEvent(new CustomEvent('app:list-for-sale', {
         detail: { plantId: plant.id, cropId: plant.cropId, quantity: plant.quantity },
       }));
     }

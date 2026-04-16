@@ -20,6 +20,7 @@ import communityRecipes from '@/data/community-recipes.json'
 import lowcountryData from '@/data/regional/lowcountry-8a.json'
 import appKnowledge from '@/data/app-knowledge.json'
 import { detectCareAlerts } from '@/lib/careAlerts'
+import { getCropsWithBoltingData, getCropsWithPruningData, getBoltingInfo, getPruningRules } from '@/lib/plantingCalendar'
 import type { GardenPlant } from '@/types/my-garden'
 
 // ─── KV Key Helpers ────────────────────────────────────────
@@ -189,6 +190,47 @@ GARDEN DESIGN PHILOSOPHY:
 - Established plants have irreplaceable value — resist the impulse to clear everything
 - Match plant selection to the user's actual maintenance commitment level
 - Celebrate discoveries — finding a surviving established plant is genuinely exciting
+`
+}
+
+// ─── Care Data Context (bolting + pruning awareness) ──────────
+
+function buildCareDataContext(): string {
+  const crops = (cropGrowingData as { crops: Record<string, { name: string }> }).crops
+  const nameOf = (id: string) => crops[id]?.name || id
+
+  const boltCrops = getCropsWithBoltingData()
+  const pruneCrops = getCropsWithPruningData()
+
+  const boltLines = boltCrops.map(id => {
+    const b = getBoltingInfo(id)
+    if (!b) return ''
+    return `- ${nameOf(id)}: bolts ~day ${b.daysToBoltMin}–${b.daysToBoltMax}${b.heatTriggerF ? `, heat trigger ${b.heatTriggerF}°F` : ''}. ${b.advice}`
+  }).filter(Boolean).join('\n')
+
+  const pruneLines = pruneCrops.map(id => {
+    const rules = getPruningRules(id)
+    if (!rules.length) return ''
+    const summary = rules.map(r => `${r.type} from day ${r.triggerDays}, every ${r.recurringDays}d`).join('; ')
+    return `- ${nameOf(id)}: ${summary}`
+  }).filter(Boolean).join('\n')
+
+  return `
+CARE DATA YOU KNOW ABOUT (pulled live from crop-growing-data.json):
+
+BOLTING WINDOWS — if the user asks "when will my X bolt?" or "is my X going to bolt soon?", you know this for:
+${boltLines}
+
+PRUNING SCHEDULES — if the user asks about pinching, suckering, or cutbacks, you know this for:
+${pruneLines}
+
+CARE ALERTS FEATURE:
+The My Garden page surfaces these automatically as care alert strips on each plant card. Users see bolting, pruning, and harvest-urgent alerts with three actions per alert:
+- "Ask Sage" — opens chat prefilled with a question about that plant (you'll see it in the user message)
+- "List for sale" — only on bolting + harvest-urgent alerts; opens a prefilled listing form
+- "Done" — dismisses the alert (pruning alerts recur next cycle; bolting dismisses permanently)
+
+When a user mentions a plant you have bolting/pruning data for, proactively reference timing. When you detect they need to take action soon, you may suggest listing surplus on LocalRoots — but only for bolting/harvest-urgent situations, not routine pruning.
 `
 }
 
@@ -652,6 +694,7 @@ If someone asks about something unrelated to gardening or LocalRoots, politely r
       let context = buildGardenContext()
       context += buildRecipeContext()
       context += buildEnhancedGeneralContext()
+      context += buildCareDataContext()
       context += buildAppKnowledgeContext()
 
       // Load regional knowledge if user's zone/location matches
