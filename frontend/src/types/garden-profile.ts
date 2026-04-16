@@ -22,6 +22,7 @@ export interface PublicGardenProfile {
   gardenPhotoIpfs?: string;  // IPFS CID
   optedInAt: string;         // ISO timestamp
   updatedAt: string;         // ISO timestamp
+  hidden?: boolean;          // true = opted out but data preserved for re-enabling
 }
 
 /** What a public profile looks like when distilled with garden state on read. */
