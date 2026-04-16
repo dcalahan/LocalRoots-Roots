@@ -418,19 +418,19 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
             {/* Search */}
             <div className="px-4 py-3 border-b shrink-0">
               {showBedPicker && (
-                <div className="mb-3">
-                  <label className="text-xs font-medium text-roots-gray block mb-1.5">
-                    Add to which bed?
+                <div className="mb-3 p-3 bg-roots-secondary/5 border border-roots-secondary/20 rounded-xl">
+                  <label className="text-sm font-semibold text-gray-900 block mb-2">
+                    Which bed?
                   </label>
-                  <div className="flex gap-1.5 flex-wrap">
+                  <div className="flex gap-2 flex-wrap">
                     {beds.map(b => (
                       <button
                         key={b.id}
                         onClick={() => setChosenBedId(b.id)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                           chosenBedId === b.id
                             ? 'bg-roots-secondary text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-white text-gray-700 border border-gray-200 hover:border-roots-secondary'
                         }`}
                       >
                         {b.name}
@@ -438,10 +438,10 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
                     ))}
                     <button
                       onClick={() => setChosenBedId(undefined)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         chosenBedId === undefined
                           ? 'bg-roots-gray text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-400'
                       }`}
                     >
                       No bed
