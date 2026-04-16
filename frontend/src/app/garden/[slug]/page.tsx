@@ -1,9 +1,46 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getCollectionAsync } from '@/lib/collections';
 import { GardenListings } from './GardenListings';
+import { GardenShareButton } from './GardenShareButton';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const collection = await getCollectionAsync(slug);
+  const garden = collection?.type === 'community-garden' ? collection : null;
+  if (!garden) return {};
+  return {
+    title: `${garden.name} — Fresh from Your Neighbors | Local Roots`,
+    description: garden.description,
+    openGraph: {
+      title: garden.name,
+      description: garden.tagline,
+      url: `https://www.localroots.love/garden/${slug}`,
+      siteName: 'Local Roots',
+      images: [
+        {
+          url: garden.heroImage || 'https://www.localroots.love/og-image.png',
+          width: 1200,
+          height: 630,
+        },
+      ],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: garden.name,
+      description: garden.tagline,
+      images: [garden.heroImage || 'https://www.localroots.love/og-image.png'],
+    },
+  };
+}
 
 export default async function CommunityGardenPage({
   params,
@@ -30,9 +67,16 @@ export default async function CommunityGardenPage({
           </p>
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">{garden.name}</h1>
           <p className="text-roots-cream/90 text-lg mb-1">{garden.tagline}</p>
-          <p className="text-roots-cream/70 text-sm">
-            {garden.location.city}, {garden.location.state}
-          </p>
+          <div className="flex items-center gap-3 text-sm">
+            <p className="text-roots-cream/70">
+              {garden.location.city}, {garden.location.state}
+            </p>
+            <GardenShareButton
+              name={garden.name}
+              tagline={garden.tagline}
+              slug={garden.slug}
+            />
+          </div>
         </div>
       </div>
 
