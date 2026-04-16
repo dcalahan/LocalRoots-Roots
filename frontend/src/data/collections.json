@@ -17,6 +17,1251 @@
       "contactName": "Matt Hunt",
       "active": true,
       "addedDate": "2026-04-15"
+    },
+    {
+      "slug": "agrowkulture-urban-farm",
+      "type": "community-garden",
+      "name": "aGROWKulture Urban Farm",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "ashview",
+      "type": "community-garden",
+      "name": "Ashview Community Garden",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "community-foodscapes",
+      "type": "community-garden",
+      "name": "Community Foodscapes",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "ekstasis-hostel-urban-farm",
+      "type": "community-garden",
+      "name": "eKstasis Hostel + Urban Farm",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "five-points-farm",
+      "type": "community-garden",
+      "name": "Five Points Farm",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "georgia-tech",
+      "type": "community-garden",
+      "name": "Georgia Tech Community Garden",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "little-nancy-creek-park",
+      "type": "community-garden",
+      "name": "Little Nancy Creek Park Community Garden",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "lullwater-conservation-garden",
+      "type": "community-garden",
+      "name": "Lullwater Conservation Garden",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "mother-clyde-memorial-west-end-garden",
+      "type": "community-garden",
+      "name": "Mother Clyde Memorial West End Garden",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "patchwork-city-farms",
+      "type": "community-garden",
+      "name": "Patchwork City Farms",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "pendergrast-farm",
+      "type": "community-garden",
+      "name": "Pendergrast Farm",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "souper-farm",
+      "type": "community-garden",
+      "name": "Souper Farm",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "the-garden-at-emory",
+      "type": "community-garden",
+      "name": "The Garden at Emory",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "the-garden-queen",
+      "type": "community-garden",
+      "name": "The Garden Queen",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "truly-living-well-collegetown-farm",
+      "type": "community-garden",
+      "name": "Truly Living Well Collegetown Farm",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "urban-farm-of-ormewood",
+      "type": "community-garden",
+      "name": "Urban Farm of Ormewood",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "urban-food-forest-at-browns-mill",
+      "type": "community-garden",
+      "name": "Urban Food Forest at Browns Mill",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "west-end-community-urban-garden",
+      "type": "community-garden",
+      "name": "West End Community Urban Garden",
+      "location": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "description": "A community garden in Atlanta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "carroll-county-ag-center",
+      "type": "community-garden",
+      "name": "Carroll County Ag Center",
+      "location": {
+        "city": "Carrollton",
+        "state": "GA"
+      },
+      "description": "A community garden in Carrollton, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "serenbe-farms",
+      "type": "community-garden",
+      "name": "Serenbe Farms",
+      "location": {
+        "city": "Chattahoochee Hills",
+        "state": "GA"
+      },
+      "description": "A community garden in Chattahoochee Hills, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "community-garden-cp",
+      "type": "community-garden",
+      "name": "Community Garden",
+      "location": {
+        "city": "College Park",
+        "state": "GA"
+      },
+      "description": "A community garden in College Park, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "metro-atlanta-urban-farm",
+      "type": "community-garden",
+      "name": "Metro Atlanta Urban Farm",
+      "location": {
+        "city": "College Park",
+        "state": "GA"
+      },
+      "description": "A community garden in College Park, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "garden-of-gethsemane",
+      "type": "community-garden",
+      "name": "Garden of Gethsemane",
+      "location": {
+        "city": "Covington",
+        "state": "GA"
+      },
+      "description": "A community garden in Covington, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "wylde-center-oakhurst-garden",
+      "type": "community-garden",
+      "name": "Wylde Center Oakhurst Garden",
+      "location": {
+        "city": "Decatur",
+        "state": "GA"
+      },
+      "description": "A community garden in Decatur, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "dunwoody-community-garden-and-orchard",
+      "type": "community-garden",
+      "name": "Dunwoody Community Garden and Orchard",
+      "location": {
+        "city": "Dunwoody",
+        "state": "GA"
+      },
+      "description": "A community garden in Dunwoody, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "healthy-life-community-garden-at-heritage-park",
+      "type": "community-garden",
+      "name": "Healthy Life Community Garden at Heritage Park",
+      "location": {
+        "city": "Griffin",
+        "state": "GA"
+      },
+      "description": "A community garden in Griffin, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "community-garden-of-jonesboro",
+      "type": "community-garden",
+      "name": "Community Garden of Jonesboro",
+      "location": {
+        "city": "Jonesboro",
+        "state": "GA"
+      },
+      "description": "A community garden in Jonesboro, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "lilburn",
+      "type": "community-garden",
+      "name": "Lilburn Community Garden",
+      "location": {
+        "city": "Lilburn",
+        "state": "GA"
+      },
+      "description": "A community garden in Lilburn, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "vines-park",
+      "type": "community-garden",
+      "name": "Vines Park",
+      "location": {
+        "city": "Loganville",
+        "state": "GA"
+      },
+      "description": "A community garden in Loganville, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "green-meadows-preserve",
+      "type": "community-garden",
+      "name": "Green Meadows Preserve Community Garden",
+      "location": {
+        "city": "Marietta",
+        "state": "GA"
+      },
+      "description": "A community garden in Marietta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "master-gardener-volunteers-of-cobb-county",
+      "type": "community-garden",
+      "name": "Master Gardener Volunteers of Cobb County",
+      "location": {
+        "city": "Marietta",
+        "state": "GA"
+      },
+      "description": "A community garden in Marietta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "ptc",
+      "type": "community-garden",
+      "name": "PTC Community Garden",
+      "location": {
+        "city": "Peachtree City",
+        "state": "GA"
+      },
+      "description": "A community garden in Peachtree City, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "north-fulton-annex",
+      "type": "community-garden",
+      "name": "North Fulton Annex Community Garden",
+      "location": {
+        "city": "Sandy Springs",
+        "state": "GA"
+      },
+      "description": "A community garden in Sandy Springs, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "180-degree-farm",
+      "type": "community-garden",
+      "name": "180 Degree Farm",
+      "location": {
+        "city": "Sharpsburg",
+        "state": "GA"
+      },
+      "description": "A community garden in Sharpsburg, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "norris-lake",
+      "type": "community-garden",
+      "name": "Norris Lake Community Garden",
+      "location": {
+        "city": "Snellville",
+        "state": "GA"
+      },
+      "description": "A community garden in Snellville, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "shaw-community-center",
+      "type": "community-garden",
+      "name": "Shaw Community Center",
+      "location": {
+        "city": "Charleston",
+        "state": "SC"
+      },
+      "description": "A community garden in Charleston, SC. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "the-green-heart-project",
+      "type": "community-garden",
+      "name": "The Green Heart Project",
+      "location": {
+        "city": "Charleston",
+        "state": "SC"
+      },
+      "description": "A community garden in Charleston, SC. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "carolina-human-reinvestment",
+      "type": "community-garden",
+      "name": "Carolina Human Reinvestment",
+      "location": {
+        "city": "Georgetown",
+        "state": "SC"
+      },
+      "description": "A community garden in Georgetown, SC. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "georgetown",
+      "type": "community-garden",
+      "name": "Georgetown Community Garden",
+      "location": {
+        "city": "Georgetown",
+        "state": "SC"
+      },
+      "description": "A community garden in Georgetown, SC. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "isla-j-farms",
+      "type": "community-garden",
+      "name": "Isla J Farms",
+      "location": {
+        "city": "Ridgeland",
+        "state": "SC"
+      },
+      "description": "A community garden in Ridgeland, SC. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "leaf-urban-farm",
+      "type": "community-garden",
+      "name": "LEAF Urban Farm",
+      "location": {
+        "city": "Fremont",
+        "state": "CA"
+      },
+      "description": "A community garden in Fremont, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "lafayette",
+      "type": "community-garden",
+      "name": "Lafayette Community Garden",
+      "location": {
+        "city": "Lafayette",
+        "state": "CA"
+      },
+      "description": "A community garden in Lafayette, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "willowgate",
+      "type": "community-garden",
+      "name": "Willowgate Community Gardens",
+      "location": {
+        "city": "Mountain View",
+        "state": "CA"
+      },
+      "description": "A community garden in Mountain View, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "acta-non-verba-youth-urban-farm",
+      "type": "community-garden",
+      "name": "Acta Non Verba Youth Urban Farm",
+      "location": {
+        "city": "Oakland",
+        "state": "CA"
+      },
+      "description": "A community garden in Oakland, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "canticle-farm",
+      "type": "community-garden",
+      "name": "Canticle Farm",
+      "location": {
+        "city": "Oakland",
+        "state": "CA"
+      },
+      "description": "A community garden in Oakland, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "city-slicker-farms",
+      "type": "community-garden",
+      "name": "City Slicker Farms",
+      "location": {
+        "city": "Oakland",
+        "state": "CA"
+      },
+      "description": "A community garden in Oakland, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "west-oakland-farm-park",
+      "type": "community-garden",
+      "name": "West Oakland Farm Park",
+      "location": {
+        "city": "Oakland",
+        "state": "CA"
+      },
+      "description": "A community garden in Oakland, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "north-richmond-farm",
+      "type": "community-garden",
+      "name": "North Richmond Farm",
+      "location": {
+        "city": "Richmond",
+        "state": "CA"
+      },
+      "description": "A community garden in Richmond, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "urban-tilth",
+      "type": "community-garden",
+      "name": "Urban Tilth",
+      "location": {
+        "city": "Richmond",
+        "state": "CA"
+      },
+      "description": "A community garden in Richmond, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "alemany-farm",
+      "type": "community-garden",
+      "name": "Alemany Farm",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "arlington",
+      "type": "community-garden",
+      "name": "Arlington Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "clipper",
+      "type": "community-garden",
+      "name": "Clipper Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "community-garden-sf",
+      "type": "community-garden",
+      "name": "Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "connecticut-friendship-garden",
+      "type": "community-garden",
+      "name": "Connecticut Friendship Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "corwin-street",
+      "type": "community-garden",
+      "name": "Corwin Street Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "farming-hope",
+      "type": "community-garden",
+      "name": "Farming Hope",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "florence-fang-community-farm",
+      "type": "community-garden",
+      "name": "Florence Fang Community Farm",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "garden-for-the-environment",
+      "type": "community-garden",
+      "name": "Garden for the Environment",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "geneva",
+      "type": "community-garden",
+      "name": "Geneva Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "golden-gate-park",
+      "type": "community-garden",
+      "name": "Golden Gate Park Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "howard-langton-mini-park",
+      "type": "community-garden",
+      "name": "Howard Langton Mini Park Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "in-chan-kaajal",
+      "type": "community-garden",
+      "name": "In Chan Kaajal Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "la-grande",
+      "type": "community-garden",
+      "name": "La Grande Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "mcateer-campus-community-farm",
+      "type": "community-garden",
+      "name": "McAteer Campus Community Farm",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "mclaren-park",
+      "type": "community-garden",
+      "name": "McLaren Park Community Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "tenderloin-peoples-garden",
+      "type": "community-garden",
+      "name": "Tenderloin Peoples Garden",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "white-crane-springs",
+      "type": "community-garden",
+      "name": "White Crane Springs",
+      "location": {
+        "city": "San Francisco",
+        "state": "CA"
+      },
+      "description": "A community garden in San Francisco, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "garden-to-table-silicon-valley",
+      "type": "community-garden",
+      "name": "Garden to Table Silicon Valley",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "guadalupe",
+      "type": "community-garden",
+      "name": "Guadalupe Community Garden",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "hamline",
+      "type": "community-garden",
+      "name": "Hamline Community Garden",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "nuestra-tierra",
+      "type": "community-garden",
+      "name": "Nuestra Tierra Community Garden",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "rusty-areias",
+      "type": "community-garden",
+      "name": "Rusty Areias Community Garden",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "uc-master-gardener-berger-demonstration-garden",
+      "type": "community-garden",
+      "name": "UC Master Gardener Berger Demonstration Garden",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "uc-master-gardener-martial-cottle-park",
+      "type": "community-garden",
+      "name": "UC Master Gardener Martial Cottle Park",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "veggielution-community-farm",
+      "type": "community-garden",
+      "name": "Veggielution Community Farm",
+      "location": {
+        "city": "San Jose",
+        "state": "CA"
+      },
+      "description": "A community garden in San Jose, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "san-mateo",
+      "type": "community-garden",
+      "name": "San Mateo Community Garden",
+      "location": {
+        "city": "San Mateo",
+        "state": "CA"
+      },
+      "description": "A community garden in San Mateo, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "saratoga",
+      "type": "community-garden",
+      "name": "Saratoga Community Garden",
+      "location": {
+        "city": "Saratoga",
+        "state": "CA"
+      },
+      "description": "A community garden in Saratoga, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "ucce-master-gardener-sunnyvale-demo-garden",
+      "type": "community-garden",
+      "name": "UCCE Master Gardener Sunnyvale Demo Garden",
+      "location": {
+        "city": "Sunnyvale",
+        "state": "CA"
+      },
+      "description": "A community garden in Sunnyvale, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "acworth",
+      "type": "community-garden",
+      "name": "Acworth Community Garden",
+      "location": {
+        "city": "Acworth",
+        "state": "GA"
+      },
+      "description": "A community garden in Acworth, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "alpharetta",
+      "type": "community-garden",
+      "name": "Alpharetta Community Garden",
+      "location": {
+        "city": "Alpharetta",
+        "state": "GA"
+      },
+      "description": "A community garden in Alpharetta, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "sugar-hill",
+      "type": "community-garden",
+      "name": "Sugar Hill Community Garden",
+      "location": {
+        "city": "Sugar Hill",
+        "state": "GA"
+      },
+      "description": "A community garden in Sugar Hill, GA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "uc-master-gardeners-of-napa-county",
+      "type": "community-garden",
+      "name": "UC Master Gardeners of Napa County",
+      "location": {
+        "city": "Napa",
+        "state": "CA"
+      },
+      "description": "A community garden in Napa, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
+    },
+    {
+      "slug": "west-county-community-farm",
+      "type": "community-garden",
+      "name": "West County Community Farm",
+      "location": {
+        "city": "Sebastopol",
+        "state": "CA"
+      },
+      "description": "A community garden in Sebastopol, CA. Gardeners here grow more food than they can eat — this page lets neighbors buy the surplus directly, with 100% going to the grower.",
+      "tagline": "Fresh from your neighbors’ beds.",
+      "heroImage": null,
+      "sellerIds": [],
+      "active": true,
+      "addedDate": "2026-04-16"
     }
   ]
 }
