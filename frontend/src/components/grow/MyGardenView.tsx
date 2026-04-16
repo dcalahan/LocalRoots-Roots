@@ -167,8 +167,9 @@ export function MyGardenView({
       cropNames,
       locationName: locationName || undefined,
       gardenPhotoUrl: gardenPhoto,
+      userId: userId || undefined,
     });
-  }, [activePlants, beds, locationName]);
+  }, [activePlants, beds, locationName, userId]);
 
   return (
     <>
