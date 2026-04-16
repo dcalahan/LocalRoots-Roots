@@ -147,11 +147,32 @@ export function PublicGardenSettings({ userId }: Props) {
     }
   };
 
+  const [showConfirmStop, setShowConfirmStop] = useState(false);
+
   const handleDisable = async () => {
     setBusy(true);
     try {
       await optOut();
       setEditing(false);
+      setShowConfirmStop(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Resume sharing from hidden profile (re-save with existing data)
+  const handleResume = async () => {
+    if (!profile) return;
+    setBusy(true);
+    try {
+      await optIn({
+        displayName: profile.displayName,
+        bio: profile.bio,
+        profilePhotoUrl: profile.profilePhotoUrl,
+        profilePhotoIpfs: profile.profilePhotoIpfs,
+        gardenPhotoUrl: profile.gardenPhotoUrl,
+        gardenPhotoIpfs: profile.gardenPhotoIpfs,
+      });
     } finally {
       setBusy(false);
     }
@@ -162,7 +183,7 @@ export function PublicGardenSettings({ userId }: Props) {
   }
 
   // Show form when not public, or when editing
-  const showForm = !isPublic || editing;
+  const showForm = editing || (!isPublic && !profile?.hidden);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5">
@@ -217,12 +238,52 @@ export function PublicGardenSettings({ userId }: Props) {
             >
               Edit profile
             </button>
+            {showConfirmStop ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-roots-gray">Remove from directory?</span>
+                <button
+                  onClick={handleDisable}
+                  disabled={busy}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-roots-primary hover:bg-roots-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {busy ? 'Removing…' : 'Yes, stop'}
+                </button>
+                <button
+                  onClick={() => setShowConfirmStop(false)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 border border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowConfirmStop(true)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-roots-primary border border-roots-primary/40 hover:bg-roots-primary/10 transition-colors"
+              >
+                Stop sharing
+              </button>
+            )}
+          </div>
+        </div>
+      ) : profile && profile.hidden ? (
+        /* Hidden/paused state — data preserved, can resume instantly */
+        <div className="space-y-3">
+          <p className="text-sm text-roots-gray">
+            Your profile is hidden from the directory. Your info is saved — you can resume sharing anytime.
+          </p>
+          <div className="flex gap-2">
             <button
-              onClick={handleDisable}
+              onClick={handleResume}
               disabled={busy}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-roots-primary border border-roots-primary/40 hover:bg-roots-primary/10 transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-roots-secondary hover:bg-roots-secondary/90 transition-colors disabled:opacity-50"
             >
-              {busy ? 'Removing…' : 'Stop sharing'}
+              {busy ? 'Resuming…' : 'Resume sharing'}
+            </button>
+            <button
+              onClick={startEditing}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-roots-gray border border-gray-300 hover:bg-gray-50 transition-colors"
+            >
+              Edit first
             </button>
           </div>
         </div>

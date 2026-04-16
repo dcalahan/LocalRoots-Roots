@@ -58,13 +58,14 @@ export function usePublicGardenProfile(userId: string | null) {
     setError(null);
     try {
       const res = await fetch(`/api/gardener-profile?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      setProfile(null);
+      if (!res.ok) throw new Error('Hide failed');
+      // Re-fetch to get the hidden profile (data preserved)
+      await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed');
+      setError(err instanceof Error ? err.message : 'Hide failed');
       throw err;
     }
-  }, [userId]);
+  }, [userId, refresh]);
 
-  return { profile, isPublic: !!profile, isLoading, error, optIn, optOut, refresh };
+  return { profile, isPublic: !!profile && !profile.hidden, isLoading, error, optIn, optOut, refresh };
 }

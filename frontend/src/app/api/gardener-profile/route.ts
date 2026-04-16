@@ -24,8 +24,13 @@ async function upsertProfile(profile: PublicGardenProfile): Promise<void> {
   }
 }
 
-async function deleteProfile(userId: string): Promise<void> {
-  await kv.del(PROFILE_KEY(userId));
+async function hideProfile(userId: string): Promise<void> {
+  const profile = await getProfile(userId);
+  if (!profile) return;
+  profile.hidden = true;
+  profile.updatedAt = new Date().toISOString();
+  await kv.set(PROFILE_KEY(userId), profile);
+  // Remove from public index
   const ids = await kv.get<string[]>(INDEX_KEY) || [];
   if (!Array.isArray(ids)) return;
   const next = ids.filter(id => id !== userId);
@@ -133,6 +138,7 @@ export async function POST(request: NextRequest) {
       gardenPhotoIpfs: gardenPhotoIpfs || existing?.gardenPhotoIpfs,
       optedInAt: existing?.optedInAt || now,
       updatedAt: now,
+      hidden: false, // Always clear hidden when saving/re-enabling
     };
 
     await upsertProfile(profile);
@@ -148,7 +154,7 @@ export async function DELETE(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
   try {
-    await deleteProfile(userId);
+    await hideProfile(userId);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[garden-profile DELETE] failed:', err);
