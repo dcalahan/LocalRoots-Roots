@@ -332,11 +332,11 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[env(safe-area-inset-top)] sm:items-center sm:pt-0">
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
 
       <div
-        className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col shadow-2xl mt-auto sm:mt-0"
+        className="relative bg-white rounded-b-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col shadow-2xl"
         style={{ maxHeight: viewportHeight ? `${viewportHeight - 10}px` : '90dvh' }}
       >
         {/* Header */}
