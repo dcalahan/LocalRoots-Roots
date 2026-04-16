@@ -1,9 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreateListingForm } from '@/components/seller/CreateListingForm';
 
-export default function CreateListingPage() {
+export const dynamic = 'force-dynamic';
+
+function CreateListingPageInner() {
   const router = useRouter();
 
   // For MVP, skip wallet checks - let users add listings first
@@ -39,5 +42,13 @@ export default function CreateListingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateListingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-roots-cream" />}>
+      <CreateListingPageInner />
+    </Suspense>
   );
 }
