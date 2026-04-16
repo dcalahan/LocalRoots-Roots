@@ -1,55 +1,65 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { use } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { PublicGardenProfileView } from '@/types/garden-profile';
 import { STATUS_CONFIG } from '@/lib/gardenStatus';
 import { getCropEmoji } from '@/lib/cropEmoji';
+import { getProfile, buildProfileView } from '@/lib/gardenProfileStore';
 
-export default function GardenerProfilePage({
+async function fetchGardener(userId: string): Promise<PublicGardenProfileView | null> {
+  const profile = await getProfile(userId);
+  if (!profile || profile.hidden) return null;
+  return buildProfileView(profile);
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ userId: string }>;
+}): Promise<Metadata> {
+  const { userId } = await params;
+  const gardener = await fetchGardener(userId);
+  if (!gardener) return {};
+
+  const cropNames = gardener.currentlyGrowing.slice(0, 5).map(c => c.cropName);
+  const growing = cropNames.length > 0 ? ` Growing ${cropNames.join(', ')}.` : '';
+  const description = gardener.bio
+    ? `${gardener.bio}${growing}`
+    : `${gardener.displayName} in ${gardener.locationLabel}.${growing}`;
+
+  return {
+    title: `${gardener.displayName} | Local Roots`,
+    description,
+    openGraph: {
+      title: gardener.displayName,
+      description,
+      url: `https://www.localroots.love/gardeners/${encodeURIComponent(userId)}`,
+      siteName: 'Local Roots',
+      images: [
+        {
+          url: gardener.gardenPhotoUrl || gardener.profilePhotoUrl || 'https://www.localroots.love/og-image.png',
+          width: 1200,
+          height: 630,
+        },
+      ],
+      type: 'profile',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: gardener.displayName,
+      description,
+    },
+  };
+}
+
+export default async function GardenerProfilePage({
   params,
 }: {
   params: Promise<{ userId: string }>;
 }) {
-  const { userId } = use(params);
-  const [gardener, setGardener] = useState<PublicGardenProfileView | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const { userId } = await params;
+  const gardener = await fetchGardener(userId);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/gardeners/${encodeURIComponent(userId)}`)
-      .then(async res => {
-        if (!res.ok) {
-          if (!cancelled) setNotFound(true);
-          return null;
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (cancelled || !data) return;
-        setGardener(data.gardener);
-      })
-      .finally(() => { if (!cancelled) setIsLoading(false); });
-    return () => { cancelled = true; };
-  }, [userId]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-roots-cream">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-white rounded w-48 border border-gray-200" />
-            <div className="h-32 bg-white rounded-2xl border border-gray-200" />
-            <div className="h-32 bg-white rounded-2xl border border-gray-200" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (notFound || !gardener) {
+  if (!gardener) {
     return (
       <div className="min-h-screen bg-roots-cream">
         <div className="max-w-lg mx-auto px-4 py-16 text-center">
@@ -91,7 +101,7 @@ export default function GardenerProfilePage({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={gardener.gardenPhotoUrl}
-            alt={`${gardener.displayName}'s garden`}
+            alt={gardener.displayName}
             className="w-full h-48 object-cover rounded-xl mb-4"
           />
         )}
