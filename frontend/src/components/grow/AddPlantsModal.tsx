@@ -72,6 +72,18 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
   const showBedPicker = !defaultBedId && beds.length > 0;
   const effectiveBedId = defaultBedId || chosenBedId;
 
+  // Track visual viewport height for iOS keyboard avoidance
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!vv) return;
+    const update = () => setViewportHeight(vv.height);
+    update();
+    vv.addEventListener('resize', update);
+    return () => vv.removeEventListener('resize', update);
+  }, [isOpen]);
+
   const today = new Date().toISOString().split('T')[0];
   const threeWeeksAgo = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -320,12 +332,12 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
 
       <div
-        className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col shadow-2xl"
-        style={{ maxHeight: '90dvh' }}
+        className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col shadow-2xl mt-auto sm:mt-0"
+        style={{ maxHeight: viewportHeight ? `${viewportHeight - 10}px` : '90dvh' }}
       >
         {/* Header */}
         <div className="px-4 py-3 border-b flex items-center justify-between shrink-0">
