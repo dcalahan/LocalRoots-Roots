@@ -1011,6 +1011,33 @@ Deployed Feb 7 2026 (with voter whitelist):
 
 **Common Area's implementation plan:** Uses `localroots_` prefixed tables in Common Area Supabase (consumer pattern, not core constituent). Radius-based geography (not county FIPS). Marketing waves follow growing zones south-to-north. Shared Resend email infrastructure benefits all products. Key addition needed: UTM parameters on outreach links to track Sage usage back to email campaigns.
 
+### Collections Sync API (Common Area ↔ LocalRoots)
+
+Autonomous server-to-server sync. Common Area NIF proposes gardens and resolves slugs without human/git handoff. Static `frontend/src/data/collections.json` is the seed; runtime additions go to Vercel KV (`collection:<slug>` + `collections:index`).
+
+**Endpoints** (Bearer auth via `COLLECTIONS_SYNC_TOKEN`):
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/api/collections/propose` | Propose new gardens — server generates slugs, idempotent by name+city, max 200/batch. Re-posting returns existing slug in `created` (not `skipped`) |
+| GET | `/api/collections/resolve?slugs=a,b,c` | Resolve specific slugs → `{ slug, name, city, state, buyer_url, poster_url, active, added_date, source }` |
+| GET | `/api/collections/resolve?since=ISO8601` | Delta fetch of all collections added on/after date. Accepts full ISO8601 or `YYYY-MM-DD` |
+
+**Common Area cadence:** slug-sync cron every 6h. First fire re-posts the 85 qualified gardens (idempotent backfill), steady trickle after. Weekly digest to `#claude-localroots` (`C0AELQC8GDV`) Monday 9am ET.
+
+**Env vars required (Vercel Production):**
+- `COLLECTIONS_SYNC_TOKEN` — shared secret with Common Area, ≥16 chars. Fail-closed if missing.
+
+**Key files:**
+- `frontend/src/app/api/collections/propose/route.ts`
+- `frontend/src/app/api/collections/resolve/route.ts`
+- `frontend/src/lib/syncAuth.ts` — Bearer + `timingSafeEqual`
+- `frontend/src/lib/collections.ts` — `getCollectionAsync`, `upsertCollectionToKV`, `generateUniqueSlug`, `collectionBuyerUrl`, `collectionPosterUrl`
+
+**Page rendering:** `/garden/[slug]` and `/garden/[slug]/poster` are async server components using `getCollectionAsync` — KV-added gardens render the same as seeded ones.
+
+**Deactivation sync (future):** v1 uses `?since=` polling, so deactivations propagate within 6h. When tighter sync is needed, expose `POST /api/localroots/garden-event` accepting `{ slug, event: 'deactivated' | 'reactivated' | 'updated' }` and Common Area pushes deltas. Parked until requested.
+
 ## Known Issues
 
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only
