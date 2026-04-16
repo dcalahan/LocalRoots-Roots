@@ -79,8 +79,10 @@ export async function GET(req: Request) {
   } else {
     matched = await getAllCollectionsAsync(type);
     if (since) {
-      // ISO date string compare works for YYYY-MM-DD
-      matched = matched.filter(c => c.addedDate >= since);
+      // Accept full ISO8601 (2025-04-15T12:00:00Z) or YYYY-MM-DD — truncate
+      // both sides to YYYY-MM-DD so string compare works either way.
+      const sinceDay = since.slice(0, 10);
+      matched = matched.filter(c => c.addedDate.slice(0, 10) >= sinceDay);
     }
   }
 
