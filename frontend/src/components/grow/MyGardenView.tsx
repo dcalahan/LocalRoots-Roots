@@ -161,8 +161,8 @@ export function MyGardenView({
       ? cropNames.slice(0, 5).join(', ') + (cropNames.length > 5 ? ` + ${cropNames.length - 5} more` : '')
       : 'my garden';
     const text = cropNames.length > 0
-      ? `I'm growing ${cropList} in my garden on Local Roots 🌱`
-      : `I just started tracking my garden on Local Roots 🌱`;
+      ? `Check out my garden! I'm growing ${cropList} on Local Roots 🌱`
+      : `Check out my garden on Local Roots! 🌱`;
     const url = 'https://www.localroots.love/grow';
     if (typeof navigator !== 'undefined' && navigator.share) {
       try { await navigator.share({ title: 'My Garden — Local Roots', text, url }); return; } catch { /* cancelled */ }
