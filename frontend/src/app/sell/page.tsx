@@ -7,7 +7,6 @@ import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
-import { EarlyAdopterBanner } from '@/components/seeds/EarlyAdopterBanner';
 import { SellerMilestones } from '@/components/seeds/SellerMilestones';
 import { getMultiplierInfo, SEEDS_PER_DOLLAR_SELLER } from '@/components/seeds/PhaseConfig';
 
@@ -60,9 +59,6 @@ export default function SellerPage() {
   // Default: Show marketing page (no wallet required)
   return (
     <div className="min-h-screen bg-roots-cream">
-      {/* Early Adopter Banner */}
-      <EarlyAdopterBanner />
-
       {/* Hero Section */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-16 md:py-24">
