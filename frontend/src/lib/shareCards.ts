@@ -16,7 +16,7 @@ const CARD_HEIGHT = 1920;
 
 // ─── Card Data Types ──────────────────────────────────────────
 
-export type ShareCardType = 'recruit-sellers' | 'recruit-ambassadors' | 'seller-listing' | 'ambassador-listing';
+export type ShareCardType = 'recruit-sellers' | 'recruit-ambassadors' | 'seller-listing' | 'ambassador-listing' | 'my-garden';
 
 export interface RecruitSellersData {
   type: 'recruit-sellers';
@@ -46,7 +46,15 @@ export interface AmbassadorListingData {
   imageUrl?: string;
 }
 
-export type ShareCardData = RecruitSellersData | RecruitAmbassadorsData | SellerListingData | AmbassadorListingData;
+export interface MyGardenData {
+  type: 'my-garden';
+  gardenName: string;
+  cropNames: string[];
+  locationName?: string;
+  gardenPhotoUrl?: string;
+}
+
+export type ShareCardData = RecruitSellersData | RecruitAmbassadorsData | SellerListingData | AmbassadorListingData | MyGardenData;
 
 // ─── Canvas Helpers ───────────────────────────────────────────
 
@@ -544,6 +552,123 @@ export async function generateAmbassadorListingCard(data: AmbassadorListingData)
   return canvas.toDataURL('image/png');
 }
 
+// ─── My Garden Card ─────────────────────────────────────────
+
+async function generateMyGardenCard(data: MyGardenData): Promise<string> {
+  const canvas = document.createElement('canvas');
+  canvas.width = CARD_WIDTH;
+  canvas.height = CARD_HEIGHT;
+  const ctx = canvas.getContext('2d')!;
+
+  // Cream background
+  ctx.fillStyle = ROOTS_CREAM;
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  // Teal accent bar at top
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.fillRect(0, 0, CARD_WIDTH, 180);
+
+  // LOCAL ROOTS branding
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 52px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOCAL ROOTS', CARD_WIDTH / 2, 115);
+
+  // Garden photo or emoji fallback
+  let imageDrawn = false;
+  const imgW = CARD_WIDTH - 120;
+  const imgH = 480;
+  const imgX = 60;
+  const imgY = 230;
+
+  if (data.gardenPhotoUrl) {
+    const img = await loadImage(data.gardenPhotoUrl);
+    if (img) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, imgW, imgH, 24);
+      ctx.closePath();
+      ctx.clip();
+      const aspect = img.width / img.height;
+      let drawW = imgW, drawH = imgH;
+      if (aspect > imgW / imgH) { drawH = imgW / aspect; } else { drawW = imgH * aspect; }
+      ctx.drawImage(img, imgX + (imgW - drawW) / 2, imgY + (imgH - drawH) / 2, drawW, drawH);
+      ctx.restore();
+      ctx.strokeStyle = ROOTS_SECONDARY;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(imgX, imgY, imgW, imgH, 24);
+      ctx.stroke();
+      imageDrawn = true;
+    }
+  }
+
+  if (!imageDrawn) {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.roundRect(imgX, imgY, imgW, imgH, 24);
+    ctx.fill();
+    ctx.strokeStyle = ROOTS_SECONDARY;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.font = '180px system-ui, -apple-system, sans-serif';
+    ctx.fillText('\u{1F331}', CARD_WIDTH / 2, imgY + imgH / 2 + 60);
+  }
+
+  const textY = imgY + imgH + 80;
+
+  // "Check out my garden!"
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = 'bold 60px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Check out my garden!', CARD_WIDTH / 2, textY);
+
+  // Garden name
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+  ctx.fillText(data.gardenName, CARD_WIDTH / 2, textY + 80);
+
+  // Location
+  if (data.locationName) {
+    ctx.fillStyle = ROOTS_GRAY;
+    ctx.font = '38px system-ui, -apple-system, sans-serif';
+    ctx.fillText(`\u{1F4CD} ${data.locationName}`, CARD_WIDTH / 2, textY + 145);
+  }
+
+  // Currently growing list
+  const listStartY = data.locationName ? textY + 220 : textY + 160;
+  if (data.cropNames.length > 0) {
+    ctx.fillStyle = ROOTS_GRAY;
+    ctx.font = '36px system-ui, -apple-system, sans-serif';
+    ctx.fillText('Currently growing:', CARD_WIDTH / 2, listStartY);
+
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = '40px system-ui, -apple-system, sans-serif';
+    const displayCrops = data.cropNames.slice(0, 6);
+    const cropText = displayCrops.join('  \u{2022}  ');
+    wrapText(ctx, cropText, CARD_WIDTH / 2, listStartY + 60, CARD_WIDTH - 140, 56);
+  }
+
+  // CTA button
+  const ctaY = 1320;
+  const ctaWidth = 500;
+  const ctaHeight = 90;
+  const ctaX = (CARD_WIDTH - ctaWidth) / 2;
+  ctx.fillStyle = ROOTS_SECONDARY;
+  ctx.beginPath();
+  ctx.roundRect(ctaX, ctaY, ctaWidth, ctaHeight, 45);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 44px system-ui, -apple-system, sans-serif';
+  ctx.fillText('Start your garden', CARD_WIDTH / 2, ctaY + 62);
+
+  // Footer
+  ctx.fillStyle = ROOTS_GRAY;
+  ctx.font = '34px system-ui, -apple-system, sans-serif';
+  ctx.fillText('\u{1F331} localroots.love', CARD_WIDTH / 2, CARD_HEIGHT - 80);
+
+  return canvas.toDataURL('image/png');
+}
+
 // ─── Generate Card (dispatcher) ──────────────────────────────
 
 export async function generateCard(data: ShareCardData): Promise<string> {
@@ -556,6 +681,8 @@ export async function generateCard(data: ShareCardData): Promise<string> {
       return generateSellerListingCard(data);
     case 'ambassador-listing':
       return generateAmbassadorListingCard(data);
+    case 'my-garden':
+      return generateMyGardenCard(data);
   }
 }
 
@@ -649,6 +776,8 @@ export function getCardShareUrl(data: ShareCardData): string {
     case 'seller-listing':
     case 'ambassador-listing':
       return `${base}/buy`;
+    case 'my-garden':
+      return `${base}/grow`;
   }
 }
 
@@ -743,6 +872,28 @@ export function getShareText(data: ShareCardData, channel: ShareChannel): string
       }
       return `Fresh ${d.produceName}${locationPart}! Support local growers: ${url}`;
     }
+
+    case 'my-garden': {
+      const d = data as MyGardenData;
+      const cropList = d.cropNames.slice(0, 5).join(', ');
+      const growing = cropList ? ` I'm growing ${cropList}.` : '';
+      if (channel === 'facebook') {
+        return `${url} — Check out my garden!${growing} Track what you grow with Local Roots.\n\nStart yours: ${url} #LocalRoots #LocallyGrown`;
+      }
+      if (channel === 'instagram') {
+        return `Check out my garden!${growing} Track what you grow with Local Roots — your AI gardening companion.\n\n(Add a link sticker in Stories to share)\n\n#LocalRoots #LocallyGrown #GrowLocal #GardenLife #HomeGarden`;
+      }
+      if (channel === 'nextdoor') {
+        return `Check out my garden!${growing} I'm using Local Roots to track everything — it has a free AI gardening assistant. Try it: ${url}`;
+      }
+      if (channel === 'sms') {
+        return `Check out my garden!${growing} I'm using Local Roots to track it all — free AI gardening advice too: ${url}`;
+      }
+      if (channel === 'email') {
+        return `Check out my garden!${growing}\n\nI'm using Local Roots to track what I grow — it has a free AI gardening assistant that gives personalized advice.\n\nStart your garden: ${url}`;
+      }
+      return `Check out my garden!${growing} Start yours on Local Roots: ${url}`;
+    }
   }
 }
 
@@ -756,6 +907,8 @@ export function getEmailSubject(data: ShareCardData): string {
       return `Fresh ${(data as SellerListingData).produceName} available!`;
     case 'ambassador-listing':
       return `Fresh ${(data as AmbassadorListingData).produceName} from a local grower`;
+    case 'my-garden':
+      return 'Check out my garden on Local Roots!';
   }
 }
 

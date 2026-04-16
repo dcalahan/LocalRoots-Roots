@@ -9,6 +9,8 @@ import { GardenPlantCard } from './GardenPlantCard';
 import { AddPlantsModal } from './AddPlantsModal';
 import { BedCard } from './BedCard';
 import { BedFormModal } from './BedFormModal';
+import { ShareCardModal } from '@/components/ShareCardModal';
+import type { ShareCardData } from '@/lib/shareCards';
 
 interface MyGardenViewProps {
   plants: GardenPlant[];
@@ -153,26 +155,20 @@ export function MyGardenView({
     ? beds.find(b => b.id === addPlantsBedId)?.name
     : undefined;
 
-  // Share garden
-  const [shareLabel, setShareLabel] = useState('Share');
-  const handleShare = useCallback(async () => {
-    const cropNames = [...new Set(activePlants.map(p => getCropDisplayName(p)))];
-    const cropList = cropNames.length > 0
-      ? cropNames.slice(0, 5).join(', ') + (cropNames.length > 5 ? ` + ${cropNames.length - 5} more` : '')
-      : 'my garden';
-    const text = cropNames.length > 0
-      ? `Check out my garden! I'm growing ${cropList} on Local Roots 🌱`
-      : `Check out my garden on Local Roots! 🌱`;
-    const url = 'https://www.localroots.love/grow';
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try { await navigator.share({ title: 'My Garden — Local Roots', text, url }); return; } catch { /* cancelled */ }
-    }
-    try {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
-      setShareLabel('Copied!');
-      setTimeout(() => setShareLabel('Share'), 2000);
-    } catch { /* silent */ }
-  }, [activePlants]);
+  // Share garden via ShareCardModal
+  const [shareCardData, setShareCardData] = useState<ShareCardData | null>(null);
+  const handleShare = useCallback(() => {
+    const cropNames = [...new Set(activePlants.map(p => getCropDisplayName(p.cropId, p.customVarietyName)))];
+    // Use first bed photo as garden photo
+    const gardenPhoto = beds.find(b => b.photoUrl)?.photoUrl;
+    setShareCardData({
+      type: 'my-garden',
+      gardenName: 'My Garden',
+      cropNames,
+      locationName: locationName || undefined,
+      gardenPhotoUrl: gardenPhoto,
+    });
+  }, [activePlants, beds, locationName]);
 
   return (
     <>
@@ -197,7 +193,7 @@ export function MyGardenView({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
-            <span className="hidden sm:inline">{shareLabel}</span>
+            <span className="hidden sm:inline">Share</span>
           </button>
           {activePlants.length > 1 && onReorderPlant && (
             <button
@@ -361,6 +357,11 @@ export function MyGardenView({
         }}
         onSave={handleSaveBed}
         initialBed={editingBed}
+      />
+
+      <ShareCardModal
+        data={shareCardData}
+        onClose={() => setShareCardData(null)}
       />
     </>
   );
