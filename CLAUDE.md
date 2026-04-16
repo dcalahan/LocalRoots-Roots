@@ -1038,6 +1038,43 @@ Autonomous server-to-server sync. Common Area NIF proposes gardens and resolves 
 
 **Deactivation sync (future):** v1 uses `?since=` polling, so deactivations propagate within 6h. When tighter sync is needed, expose `POST /api/localroots/garden-event` accepting `{ slug, event: 'deactivated' | 'reactivated' | 'updated' }` and Common Area pushes deltas. Parked until requested.
 
+## Social Sharing
+
+**Reference:** Common Area's [Social Sharing Guide](https://github.com/dcalahan/nightly-idea-factory/blob/master/support/LOCALROOTS-SOCIAL-SHARING-GUIDE.md) — platform-specific rules for URL placement, hashtag counts, image dimensions, posting times.
+
+### OG Meta
+
+Garden pages (`/garden/[slug]`) have dynamic OG metadata via `generateMetadata()` — sharing shows garden name + tagline. All other pages use the global OG from `layout.tsx` (static `og-image.png`).
+
+### Share Buttons
+
+- **Garden pages:** Share icon in hero section (`GardenShareButton.tsx`) — Web Share API with clipboard fallback
+- **Listing detail pages:** Share icon next to produce name — same pattern
+- **Ambassador/Seller dashboards:** `ShareCardModal` with canvas-generated 1080×1920 cards (4 types: recruit-sellers, recruit-ambassadors, seller-listing, ambassador-listing)
+
+### Platform Rules (from Common Area guide)
+
+| Platform | Key rule | Implementation |
+|----------|----------|----------------|
+| **Facebook** | URL must be on line 1 (before "See more" fold). Uploading a custom image kills the OG link preview card. | Facebook share copies link+caption only (no image download). URL appears first in text. |
+| **Instagram** | URLs not clickable in captions. | IG caption has no URL, includes 5 hashtags, prompts "Add a link sticker in Stories" |
+| **SMS/Email/NextDoor** | URL inline | No changes needed |
+
+### SEO
+
+- `sitemap.xml` — static pages + all active garden pages (seed + KV, dynamic)
+- `robots.txt` — allows `/`, disallows `/api/` and `/admin/`
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/lib/shareCards.ts` | Canvas card generator, platform-specific share text, `ShareChannel` type |
+| `frontend/src/components/ShareCardModal.tsx` | Reusable share modal for ambassador/seller cards |
+| `frontend/src/app/garden/[slug]/GardenShareButton.tsx` | Garden page share button (Web Share API) |
+| `frontend/src/app/sitemap.ts` | Dynamic sitemap |
+| `frontend/src/app/robots.ts` | Robots.txt |
+
 ## Known Issues
 
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only
