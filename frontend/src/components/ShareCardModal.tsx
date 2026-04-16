@@ -119,25 +119,28 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     toast({ title: 'Image downloaded!' });
   };
 
-  const handleSaveForInstagram = () => {
+  const handleSaveForInstagram = async () => {
     if (!cardImage) return;
     const filename = `localroots-${data.type}-${Date.now()}.png`;
     downloadImage(cardImage, filename);
+    // Copy Instagram-specific caption (no URL — not clickable in IG captions)
+    const text = getShareText(data, 'instagram');
+    await copyToClipboard(text);
     toast({
-      title: 'Saved!',
-      description: 'Open Instagram and share from your camera roll',
+      title: 'Image saved + caption copied!',
+      description: 'Open Instagram → share from camera roll → paste caption. Add a link sticker in Stories!',
     });
   };
 
   const handleSaveForFacebook = async () => {
-    if (!cardImage) return;
-    const filename = `localroots-${data.type}-${Date.now()}.png`;
-    downloadImage(cardImage, filename);
+    // Per Common Area guide: uploading a custom image kills Facebook's link
+    // preview card. Instead, just copy the link + caption text. Facebook will
+    // auto-generate a clickable OG preview card from the URL's meta tags.
     const text = getShareText(data, 'facebook');
     await copyToClipboard(text);
     toast({
-      title: 'Image saved + link copied!',
-      description: 'Open Facebook → create a post → attach the image → paste the link as your caption',
+      title: 'Link + caption copied!',
+      description: 'Open Facebook → create a post → paste. The link preview will appear automatically.',
     });
   };
 
@@ -192,7 +195,7 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
           {/* Prominent social share section */}
           <div className="bg-roots-primary/10 border-2 border-roots-primary/30 rounded-xl p-4 mb-4">
             <p className="text-sm font-semibold text-roots-primary text-center mb-3">
-              Save image & post to:
+              Share to:
             </p>
             <div className={`grid gap-2 ${showNextDoor ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <button
@@ -206,8 +209,7 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
 
               <button
                 onClick={handleSaveForFacebook}
-                disabled={!cardImage}
-                className="flex flex-col items-center gap-1 p-3 rounded-lg bg-white border-2 border-roots-primary/20 hover:border-roots-primary hover:bg-roots-primary/5 transition-colors disabled:opacity-50"
+                className="flex flex-col items-center gap-1 p-3 rounded-lg bg-white border-2 border-roots-primary/20 hover:border-roots-primary hover:bg-roots-primary/5 transition-colors"
               >
                 <span className="text-2xl">{'\u{1F4F1}'}</span>
                 <span className="text-xs font-medium">Facebook</span>

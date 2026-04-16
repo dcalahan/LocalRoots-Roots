@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,6 +34,25 @@ export default function ListingDetailPage() {
 
   const [quantity, setQuantity] = useState(1);
   const [isDelivery, setIsDelivery] = useState(false);
+  const [shareLabel, setShareLabel] = useState('Share');
+
+  const handleShareListing = useCallback(async () => {
+    if (!listing) return;
+    const url = `${window.location.origin}/buy/listings/${listing.listingId}`;
+    const shareData = {
+      title: listing.metadata.produceName,
+      text: `Fresh ${listing.metadata.produceName} from a neighbor on Local Roots`,
+      url,
+    };
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try { await navigator.share(shareData); return; } catch { /* cancelled */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareLabel('Copied!');
+      setTimeout(() => setShareLabel('Share'), 2000);
+    } catch { /* silent */ }
+  }, [listing]);
 
   if (isLoading) {
     return (
@@ -117,9 +136,21 @@ export default function ListingDetailPage() {
 
         {/* Details */}
         <div>
-          <h1 className="text-3xl font-heading font-bold mb-2">
-            {listing.metadata.produceName}
-          </h1>
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h1 className="text-3xl font-heading font-bold">
+              {listing.metadata.produceName}
+            </h1>
+            <button
+              onClick={handleShareListing}
+              className="flex items-center gap-1 text-roots-gray hover:text-roots-primary transition-colors shrink-0 mt-2"
+              title="Share this listing"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              <span className="text-xs">{shareLabel}</span>
+            </button>
+          </div>
 
           <Link
             href={`/buy/sellers/${listing.sellerId}`}
