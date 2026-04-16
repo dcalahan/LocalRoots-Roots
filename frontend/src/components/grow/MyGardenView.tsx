@@ -173,18 +173,11 @@ export function MyGardenView({
   return (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <span>🌱</span> My Garden
           </h1>
-          <p className="text-sm text-roots-gray mt-1">
-            {season} {year}
-            {zone && ` · Zone ${zone}`}
-            {locationName && ` · ${locationName}`}
-          </p>
-        </div>
-        <div className="flex gap-2">
           <button
             onClick={handleShare}
             className="px-3 py-2 rounded-xl text-sm text-white bg-roots-primary hover:bg-roots-primary/90 transition-colors flex items-center gap-1"
@@ -195,6 +188,13 @@ export function MyGardenView({
             </svg>
             <span className="text-xs">Share</span>
           </button>
+        </div>
+        <p className="text-sm text-roots-gray mt-1">
+          {season} {year}
+          {zone && ` · Zone ${zone}`}
+          {locationName && ` · ${locationName}`}
+        </p>
+        <div className="flex gap-2 mt-3">
           {activePlants.length > 1 && onReorderPlant && (
             <button
               onClick={() => setIsReordering(!isReordering)}
