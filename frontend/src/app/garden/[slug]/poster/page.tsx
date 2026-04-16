@@ -1,34 +1,30 @@
-'use client';
+import { notFound, redirect } from 'next/navigation';
+import { getCollectionAsync, collectionBuyerUrl } from '@/lib/collections';
 
-import { useEffect } from 'react';
-import { notFound, useParams, useRouter } from 'next/navigation';
-import { getCollection, collectionBuyerUrl } from '@/lib/collections';
+export const dynamic = 'force-dynamic';
 
 /**
  * Community garden poster — thin wrapper around the generic `/poster`
- * primitive. Resolves the garden by slug, builds the right params, and
- * redirects. New poster types should follow this same pattern: look up
- * your data, then forward to `/poster` with the right query string.
+ * primitive. Resolves the garden by slug (including KV-added ones) and
+ * redirects to /poster with the right query string.
  */
-export default function CommunityGardenPosterPage() {
-  const params = useParams<{ slug: string }>();
-  const router = useRouter();
-  const collection = params?.slug ? getCollection(params.slug) : null;
+export default async function CommunityGardenPosterPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const collection = await getCollectionAsync(slug);
   const garden = collection?.type === 'community-garden' ? collection : null;
-
-  useEffect(() => {
-    if (!garden) return;
-    const url = collectionBuyerUrl(garden);
-    const qs = new URLSearchParams({
-      url,
-      title: garden.name,
-      eyebrow: 'COMMUNITY GARDEN',
-      tagline: 'Fresh food grown\na few feet from here.',
-      accent: 'teal',
-    });
-    router.replace(`/poster?${qs.toString()}`);
-  }, [garden, router]);
-
   if (!garden) notFound();
-  return null;
+
+  const url = collectionBuyerUrl(garden);
+  const qs = new URLSearchParams({
+    url,
+    title: garden.name,
+    eyebrow: 'COMMUNITY GARDEN',
+    tagline: 'Fresh food grown\na few feet from here.',
+    accent: 'teal',
+  });
+  redirect(`/poster?${qs.toString()}`);
 }
