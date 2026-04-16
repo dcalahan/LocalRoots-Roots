@@ -52,6 +52,8 @@ export interface MyGardenData {
   cropNames: string[];
   locationName?: string;
   gardenPhotoUrl?: string;
+  /** Privy userId — links to /gardeners/[userId] when public profile exists */
+  userId?: string;
 }
 
 export type ShareCardData = RecruitSellersData | RecruitAmbassadorsData | SellerListingData | AmbassadorListingData | MyGardenData;
@@ -777,7 +779,9 @@ export function getCardShareUrl(data: ShareCardData): string {
     case 'ambassador-listing':
       return `${base}/buy`;
     case 'my-garden':
-      return `${base}/grow`;
+      return (data as MyGardenData).userId
+        ? `${base}/gardeners/${encodeURIComponent((data as MyGardenData).userId!)}`
+        : `${base}/grow`;
   }
 }
 
