@@ -1,19 +1,18 @@
-'use client';
-
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getCollection } from '@/lib/collections';
-import { useListingsForSellers } from '@/hooks/useListingsForSellers';
-import { ListingsGrid } from '@/components/buyer/ListingsGrid';
+import { getCollectionAsync } from '@/lib/collections';
+import { GardenListings } from './GardenListings';
 
-export default function CommunityGardenPage() {
-  const params = useParams<{ slug: string }>();
-  const collection = params?.slug ? getCollection(params.slug) : null;
+export const dynamic = 'force-dynamic';
+
+export default async function CommunityGardenPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const collection = await getCollectionAsync(slug);
   const garden = collection?.type === 'community-garden' ? collection : null;
-
-  const { listings: gardenListings, isLoading } = useListingsForSellers(
-    garden?.sellerIds ?? [],
-  );
 
   if (!garden) {
     notFound();
@@ -45,17 +44,6 @@ export default function CommunityGardenPage() {
 
         {/* Listings */}
         <div>
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
-              Available from this garden
-            </h2>
-            {gardenListings.length > 0 && (
-              <span className="text-sm text-roots-gray">
-                {gardenListings.length} item{gardenListings.length !== 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-
           {!hasMembers ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
               <div className="text-4xl mb-3">🌻</div>
@@ -74,11 +62,7 @@ export default function CommunityGardenPage() {
               </Link>
             </div>
           ) : (
-            <ListingsGrid
-              listings={gardenListings}
-              isLoading={isLoading}
-              emptyMessage={`Nothing is listed right now — check back tomorrow.`}
-            />
+            <GardenListings sellerIds={garden.sellerIds} />
           )}
         </div>
 
