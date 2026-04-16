@@ -11,6 +11,7 @@ import { BedCard } from './BedCard';
 import { BedFormModal } from './BedFormModal';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import type { ShareCardData } from '@/lib/shareCards';
+import { usePublicGardenProfile } from '@/hooks/usePublicGardenProfile';
 
 interface MyGardenViewProps {
   plants: GardenPlant[];
@@ -60,6 +61,7 @@ export function MyGardenView({
   const [isReordering, setIsReordering] = useState(false);
   const [dismissals, setDismissals] = useState<Record<string, string>>({});
   const router = useRouter();
+  const { profile: gardenProfile } = usePublicGardenProfile(userId || null);
   useEffect(() => { setDismissals(loadDismissals()); }, []);
 
   // Listen for "list for sale" events from plant cards
@@ -159,17 +161,17 @@ export function MyGardenView({
   const [shareCardData, setShareCardData] = useState<ShareCardData | null>(null);
   const handleShare = useCallback(() => {
     const cropNames = [...new Set(activePlants.map(p => getCropDisplayName(p.cropId, p.customVarietyName)))];
-    // Use first bed photo as garden photo
-    const gardenPhoto = beds.find(b => b.photoUrl)?.photoUrl;
+    // Use public profile data when available, fall back to bed photos / props
+    const gardenPhoto = gardenProfile?.gardenPhotoUrl || beds.find(b => b.photoUrl)?.photoUrl;
     setShareCardData({
       type: 'my-garden',
-      gardenName: 'My Garden',
+      gardenName: gardenProfile?.displayName || 'My Garden',
       cropNames,
-      locationName: locationName || undefined,
+      locationName: gardenProfile?.locationLabel || locationName || undefined,
       gardenPhotoUrl: gardenPhoto,
       userId: userId || undefined,
     });
-  }, [activePlants, beds, locationName, userId]);
+  }, [activePlants, beds, locationName, userId, gardenProfile]);
 
   return (
     <>
