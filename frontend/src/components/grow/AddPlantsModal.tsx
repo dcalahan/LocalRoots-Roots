@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
-import type { PlantingMethod, CommunityVariety, GardenBed } from '@/types/my-garden';
+import type { PlantingMethod, CommunityVariety, GardenBed, GardenPlant } from '@/types/my-garden';
 import { getAllGrowableCropIds, getCropGrowingInfo, POPULAR_CROPS } from '@/lib/plantingCalendar';
 
 interface SelectedCrop {
@@ -23,6 +23,8 @@ interface AddPlantsModalProps {
   userId?: string;
   /** When defaultBedId is not set, show a bed picker built from this list. */
   beds?: GardenBed[];
+  /** Existing plants in the user's garden — used to surface "Your Varieties" at the top. */
+  existingPlants?: GardenPlant[];
 }
 
 // Cache community varieties in localStorage
@@ -45,7 +47,7 @@ function setCachedVarieties(varieties: CommunityVariety[]) {
   } catch { /* quota */ }
 }
 
-export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, userId, beds = [] }: AddPlantsModalProps) {
+export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, userId, beds = [], existingPlants = [] }: AddPlantsModalProps) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<SelectedCrop[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -116,6 +118,7 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
 
   // Category display config
   const CATEGORY_ORDER: Record<string, { label: string; emoji: string }> = {
+    'my-varieties': { label: 'Your Varieties', emoji: '⭐' },
     'nightshades': { label: 'Nightshades', emoji: '🍅' },
     'leafy-greens': { label: 'Leafy Greens', emoji: '🥬' },
     'herbs': { label: 'Herbs', emoji: '🌿' },
@@ -130,6 +133,29 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
     'community': { label: 'Community Varieties', emoji: '👥' },
   };
 
+  // Extract the user's own custom varieties from their existing plants.
+  // These appear at the top of the browse view so they're always accessible
+  // without searching (e.g. "Mojito Mint" shows up immediately).
+  const myVarieties = useMemo(() => {
+    const seen = new Set<string>();
+    const results: { id: string; name: string; category: string; isPerennial: boolean; isCommunity: true; parentCropId: string; description?: string }[] = [];
+    for (const plant of existingPlants) {
+      if (plant.customVarietyName && !seen.has(plant.customVarietyName.toLowerCase())) {
+        seen.add(plant.customVarietyName.toLowerCase());
+        const parentInfo = getCropGrowingInfo(plant.cropId);
+        results.push({
+          id: `my-variety:${plant.cropId}:${plant.customVarietyName}`,
+          name: plant.customVarietyName,
+          category: 'my-varieties',
+          isPerennial: parentInfo?.isPerennial || false,
+          isCommunity: true,
+          parentCropId: plant.cropId,
+        });
+      }
+    }
+    return results;
+  }, [existingPlants]);
+
   // Merge standard crops + community varieties for search
   const filteredCrops = useMemo(() => {
     const lower = search.toLowerCase().trim();
@@ -137,23 +163,33 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
       ? allCrops.filter(c => c.name.toLowerCase().includes(lower) || c.id.includes(lower))
       : allCrops;
 
-    // Community varieties matching search
-    const communityMatches = lower.length >= 2
-      ? communityVarieties
-          .filter(v => v.name.toLowerCase().includes(lower))
-          .map(v => ({
-            id: `community:${v.id}:${v.parentCropId}`,
-            name: v.name,
-            category: 'community' as const,
-            isPerennial: getCropGrowingInfo(v.parentCropId)?.isPerennial || false,
-            isCommunity: true as const,
-            parentCropId: v.parentCropId,
-            description: v.description,
-          }))
-        : [];
+    // Community varieties matching search (include user's own + registry)
+    let communityMatches: typeof myVarieties = [];
+    if (lower.length >= 2) {
+      communityMatches = communityVarieties
+        .filter(v => v.name.toLowerCase().includes(lower))
+        .map(v => ({
+          id: `community:${v.id}:${v.parentCropId}`,
+          name: v.name,
+          category: 'community' as const,
+          isPerennial: getCropGrowingInfo(v.parentCropId)?.isPerennial || false,
+          isCommunity: true as const,
+          parentCropId: v.parentCropId,
+          description: v.description,
+        }));
+    }
 
-    return [...communityMatches, ...standard];
-  }, [allCrops, communityVarieties, search]);
+    // When searching, also include user's own varieties that match
+    const myMatches = lower
+      ? myVarieties.filter(v => v.name.toLowerCase().includes(lower))
+      : myVarieties;
+
+    // Deduplicate: my varieties win over community registry
+    const myNames = new Set(myMatches.map(v => v.name.toLowerCase()));
+    const dedupedCommunity = communityMatches.filter(v => !myNames.has(v.name.toLowerCase()));
+
+    return [...myMatches, ...dedupedCommunity, ...standard];
+  }, [allCrops, communityVarieties, myVarieties, search]);
 
   // Group crops by category
   const groupedCrops = useMemo(() => {
@@ -465,8 +501,13 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
                         }`}
                       >
                         {crop.name}
-                        {isCommunity && (
+                        {isCommunity && crop.category !== 'my-varieties' && (
                           <span className="block text-xs text-roots-primary/70 mt-0.5">community</span>
+                        )}
+                        {crop.category === 'my-varieties' && (
+                          <span className="block text-xs text-roots-secondary/70 mt-0.5">
+                            {getCropGrowingInfo(('parentCropId' in crop ? (crop as Record<string, unknown>).parentCropId : crop.id) as string)?.name || ''}
+                          </span>
                         )}
                         {'isPerennial' in crop && crop.isPerennial && !isCommunity && (
                           <span className="text-xs text-roots-gray ml-1">(perennial)</span>
@@ -500,8 +541,13 @@ export function AddPlantsModal({ isOpen, onClose, onAdd, defaultBedId, bedName, 
                               }`}
                             >
                               {crop.name}
-                              {isCommunity && (
+                              {isCommunity && crop.category !== 'my-varieties' && (
                                 <span className="block text-xs text-roots-primary/70 mt-0.5">community</span>
+                              )}
+                              {crop.category === 'my-varieties' && (
+                                <span className="block text-xs text-roots-secondary/70 mt-0.5">
+                                  {getCropGrowingInfo(('parentCropId' in crop ? (crop as Record<string, unknown>).parentCropId : crop.id) as string)?.name || ''}
+                                </span>
                               )}
                               {'isPerennial' in crop && crop.isPerennial && !isCommunity && (
                                 <span className="text-xs text-roots-gray ml-1">(perennial)</span>
