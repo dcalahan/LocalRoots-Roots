@@ -319,6 +319,7 @@ export function MyGardenView({
         bedName={targetBedName}
         userId={userId}
         beds={beds}
+        existingPlants={plants}
       />
 
       <BedFormModal
