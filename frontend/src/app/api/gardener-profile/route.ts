@@ -84,9 +84,14 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId');
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
+  const full = request.nextUrl.searchParams.get('full') === '1';
   try {
     const profile = await getProfile(userId);
-    return NextResponse.json({ profile });
+    if (!full || !profile) return NextResponse.json({ profile });
+    // Full view includes beds + plants (for server component rendering)
+    const { buildProfileView } = await import('@/lib/gardenProfileStore');
+    const view = await buildProfileView(profile);
+    return NextResponse.json({ profile, view });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[garden-profile GET] failed:', message);
