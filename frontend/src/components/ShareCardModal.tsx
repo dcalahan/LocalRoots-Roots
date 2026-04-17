@@ -141,9 +141,10 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
   const handleSaveForInstagram = async () => {
     if (!cardImage) return;
 
-    // Copy Instagram-specific caption (no URL — not clickable in IG captions)
+    // Copy the share URL to clipboard — user needs it for Instagram's link sticker.
+    // The card image already shows garden name, crops, location visually.
     const text = getShareText(data, 'instagram');
-    await copyToClipboard(text);
+    await copyToClipboard(shareUrl);
 
     // Convert data URL to File for native share sheet
     const filename = `localroots-${data.type}-${Date.now()}.png`;
