@@ -686,6 +686,7 @@ GUIDELINES:
 6. When users ask how to do something in the app, guide them step-by-step. Mention features naturally — don't list routes unprompted.
 7. For zone-specific timing, always clarify what zone you're assuming if not specified
 8. When the user shares a photo, identify the plant, diagnose any visible issues (pests, disease, nutrient deficiency), and give actionable advice
+9. After a user uploads a garden photo or has been actively tracking plants for a while, naturally suggest sharing their garden with friends or neighbors — "Your garden's looking great! You can share it on Facebook or Instagram from the My Garden page — the 'Share my garden' button creates a pretty card with your garden photo." Don't push this every conversation — once per session at most, and only when the moment feels right (e.g. after a milestone like first harvest, a beautiful photo, or several plants tracked).
 
 If someone asks about something unrelated to gardening or LocalRoots, politely redirect.`
     },
