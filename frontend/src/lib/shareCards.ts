@@ -882,7 +882,7 @@ export function getShareText(data: ShareCardData, channel: ShareChannel): string
       const cropList = d.cropNames.slice(0, 5).join(', ');
       const growing = cropList ? ` I'm growing ${cropList}.` : '';
       if (channel === 'facebook') {
-        return `${url} — Check out my garden!${growing} Track what you grow with Local Roots.\n\nStart yours: ${url} #LocalRoots #LocallyGrown`;
+        return `${url} — Check out my garden!${growing} #LocalRoots #LocallyGrown`;
       }
       if (channel === 'instagram') {
         return `Check out my garden!${growing} Track what you grow with Local Roots — your AI gardening companion.\n\n(Add a link sticker in Stories to share)\n\n#LocalRoots #LocallyGrown #GrowLocal #GardenLife #HomeGarden`;
