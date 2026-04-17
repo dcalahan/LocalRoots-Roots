@@ -6,10 +6,18 @@ import { getCropEmoji } from '@/lib/cropEmoji';
 import { getProfile, buildProfileView } from '@/lib/gardenProfileStore';
 
 async function fetchGardener(userId: string): Promise<PublicGardenProfileView | null> {
-  const profile = await getProfile(userId);
-  if (!profile || profile.hidden) return null;
-  return buildProfileView(profile);
+  try {
+    const profile = await getProfile(userId);
+    if (!profile || profile.hidden) return null;
+    return await buildProfileView(profile);
+  } catch (err) {
+    console.error('[gardener-profile] fetchGardener failed:', err);
+    return null;
+  }
 }
+
+// Force dynamic rendering — KV data changes frequently
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -93,7 +101,7 @@ export default async function GardenerProfilePage({
     <div className="min-h-screen bg-roots-cream">
       <div className="max-w-2xl mx-auto px-4 py-8">
         <Link href="/gardeners" className="text-sm text-roots-secondary font-semibold mb-4 inline-block">
-          ← All gardeners
+          ← Neighbors' Gardens
         </Link>
 
         {/* Garden photo banner */}

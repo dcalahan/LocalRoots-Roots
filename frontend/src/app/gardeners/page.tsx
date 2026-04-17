@@ -45,7 +45,7 @@ export default function GardenersDirectoryPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <header className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <span>🌍</span> Gardeners Near You
+            <span>🌍</span> Neighbors&apos; Gardens
           </h1>
           <p className="text-sm text-roots-gray mt-1">
             Neighbors growing food in your area. Tap a card to see their beds and what they&apos;re growing.
