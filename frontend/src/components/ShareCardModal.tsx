@@ -266,9 +266,20 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
                 </button>
               )}
             </div>
-            <p className="text-xs text-roots-gray text-center mt-2">
-              IG tip: Share as a Story, then tap the link sticker icon to add your garden URL
-            </p>
+            <div className="mt-2 text-center">
+              <p className="text-xs text-roots-gray">
+                IG tip: Share as a Story, then add a link sticker with:
+              </p>
+              <button
+                onClick={async () => {
+                  await copyToClipboard(shareUrl);
+                  toast({ title: 'Link copied!' });
+                }}
+                className="text-xs text-roots-primary font-medium mt-1 hover:underline break-all"
+              >
+                {shareUrl} {'\u{1F4CB}'}
+              </button>
+            </div>
           </div>
 
           {/* Secondary options */}
