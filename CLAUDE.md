@@ -1063,6 +1063,7 @@ POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
 | `POST /api/gardener-profile` | User saves public garden profile | `/gardeners/${userId}` |
 | `PUT /api/my-garden` | Plants/beds change (only if user has public profile) | `/gardeners/${userId}` |
 | `POST /api/collections/propose` | Common Area adds a garden | `/garden/${slug}` |
+| `POST /api/relay` | Seller creates a listing (gasless) | `/buy/listings/${listingId}` |
 
 **Environment variables (Vercel):**
 - `FACEBOOK_APP_ID` — from developers.facebook.com (free app, no approval needed)
@@ -1074,6 +1075,7 @@ POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
 |------|-------------|-----------------|-----------------|
 | Garden collection | `/garden/[slug]` | Hero image or `og-image.png` fallback | `garden.name` |
 | Gardener profile | `/gardeners/[userId]` | Garden photo → profile photo → `og-image.png` | `gardener.displayName` |
+| Listing detail | `/buy/listings/[id]` | Listing photo from IPFS (Pinata gateway) | `listing.produceName` |
 | All other pages | Various | `og-image.png` (static from `layout.tsx`) | Layout default |
 
 **Gardener profile technical notes:**
@@ -1081,14 +1083,22 @@ POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
 - Applies `decodeURIComponent()` to userId param — Privy IDs have colons that get URL-encoded
 - `export const dynamic = 'force-dynamic'` prevents static caching
 
+**Listing detail technical notes:**
+- Server component split: `page.tsx` (server, `generateMetadata`) + `ListingDetailClient.tsx` (client, interactive UI)
+- Data fetched server-side via shared `lib/listingData.ts` (viem RPC + IPFS fetch, no browser APIs)
+- Uses `React.cache()` to deduplicate fetch between `generateMetadata` and page render
+- OG images use Pinata gateway (`gateway.pinata.cloud`) for reliability with FB crawler
+- 5-second timeout on IPFS fetches to avoid slow page loads
+
 ### Share Surfaces
 
 | Surface | Component | URL shared | Dynamic OG? |
 |---------|-----------|-----------|-------------|
 | My Garden → Share | `MyGardenView.tsx` → `ShareCardModal` (`my-garden` type) | `/gardeners/{userId}` | ✅ Yes |
 | Garden page → Share | `GardenShareButton.tsx` (Web Share API + clipboard) | `/garden/{slug}` | ✅ Yes |
-| Listing → Share | `buy/listings/[id]/page.tsx` (Web Share API + clipboard) | `/buy/listings/{id}` | ❌ No (deferred) |
-| Ambassador/Seller dashboards | `ShareCardModal` (4 card types) | Various `/sell/`, `/ambassador/`, `/buy` | ❌ No (static, generic OG fine) |
+| Listing → Share | `buy/listings/[id]/page.tsx` (Web Share API + clipboard) | `/buy/listings/{id}` | ✅ Yes |
+| Seller dashboard → Share listing | `ShareCardModal` (`seller-listing` type) | `/buy/listings/{id}` | ✅ Yes |
+| Ambassador/Seller dashboards | `ShareCardModal` (recruit card types) | Various `/sell/`, `/ambassador/` | ❌ No (static, generic OG fine) |
 
 **5 share card types** (canvas-generated 1080×1920 PNG): `recruit-sellers`, `recruit-ambassadors`, `seller-listing`, `ambassador-listing`, `my-garden`
 
@@ -1115,6 +1125,9 @@ POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
 | `frontend/src/components/grow/MyGardenView.tsx` | My Garden share button (coral) → ShareCardModal |
 | `frontend/src/app/garden/[slug]/GardenShareButton.tsx` | Garden page share button (Web Share API) |
 | `frontend/src/app/gardeners/[userId]/page.tsx` | Gardener profile — server component with dynamic OG, inline KV |
+| `frontend/src/app/buy/listings/[id]/page.tsx` | Listing detail — server component with dynamic OG |
+| `frontend/src/app/buy/listings/[id]/ListingDetailClient.tsx` | Listing detail — client component (cart, share, interactive) |
+| `frontend/src/lib/listingData.ts` | Server-safe listing data fetch (contract RPC + IPFS) |
 | `frontend/src/app/sitemap.ts` | Dynamic sitemap |
 | `frontend/src/app/robots.ts` | Robots.txt |
 

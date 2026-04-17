@@ -37,6 +37,7 @@ export interface SellerListingData {
   sellerName: string;
   neighborhood: string;
   imageUrl?: string;
+  listingId?: string;
 }
 
 export interface AmbassadorListingData {
@@ -44,6 +45,7 @@ export interface AmbassadorListingData {
   produceName: string;
   neighborhood: string;
   imageUrl?: string;
+  listingId?: string;
 }
 
 export interface MyGardenData {
@@ -776,8 +778,13 @@ export function getCardShareUrl(data: ShareCardData): string {
     case 'recruit-ambassadors':
       return `${base}/ambassador/register?ref=${data.ambassadorId}`;
     case 'seller-listing':
+      return (data as SellerListingData).listingId
+        ? `${base}/buy/listings/${(data as SellerListingData).listingId}`
+        : `${base}/buy`;
     case 'ambassador-listing':
-      return `${base}/buy`;
+      return (data as AmbassadorListingData).listingId
+        ? `${base}/buy/listings/${(data as AmbassadorListingData).listingId}`
+        : `${base}/buy`;
     case 'my-garden':
       return (data as MyGardenData).userId
         ? `${base}/gardeners/${encodeURIComponent((data as MyGardenData).userId!)}`

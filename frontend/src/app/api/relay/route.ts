@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createWalletClient, createPublicClient, http, type Address } from 'viem';
+import { createWalletClient, createPublicClient, http, decodeEventLog, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { ACTIVE_CHAIN, RPC_URL } from '@/lib/chainConfig';
 import { FORWARDER_ADDRESS, ALLOWED_TARGETS, forwarderAbi } from '@/lib/contracts/forwarder';
+import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
+import { warmFacebookOgCache } from '@/lib/facebookOgScrape';
 
 // Rate limiting: track requests per address
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
@@ -195,6 +197,30 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('[Relay] Transaction confirmed:', receipt.status);
+
+    // Warm Facebook OG cache for newly created listings
+    if (receipt.status === 'success' && to.toLowerCase() === MARKETPLACE_ADDRESS.toLowerCase()) {
+      try {
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({
+              abi: marketplaceAbi,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'ListingCreated') {
+              const listingId = (decoded.args as { listingId: bigint }).listingId;
+              console.log('[Relay] New listing created, warming FB OG cache for listing', listingId.toString());
+              warmFacebookOgCache(`/buy/listings/${listingId}`).catch(() => {});
+            }
+          } catch {
+            // Not a matching event, skip
+          }
+        }
+      } catch {
+        // Non-critical — don't fail the relay response
+      }
+    }
 
     return NextResponse.json({
       success: true,
