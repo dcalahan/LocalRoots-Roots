@@ -65,7 +65,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ userId: string }>;
 }): Promise<Metadata> {
-  const { userId } = await params;
+  const { userId: rawUserId } = await params;
+  const userId = decodeURIComponent(rawUserId);
   const gardener = await fetchGardener(userId);
   if (!gardener) return {};
 
@@ -105,7 +106,8 @@ export default async function GardenerProfilePage({
 }: {
   params: Promise<{ userId: string }>;
 }) {
-  const { userId } = await params;
+  const { userId: rawUserId } = await params;
+  const userId = decodeURIComponent(rawUserId);
   const gardener = await fetchGardener(userId);
 
   if (!gardener) {
