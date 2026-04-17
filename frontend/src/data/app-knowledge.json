@@ -21,7 +21,9 @@
           "features": [
             "Care alerts: bolting/pruning/harvest windows flagged automatically per plant. Users can tap 'Ask Sage' on any alert (it prefills a question to me), 'List for sale' (prefills a listing for bolting/harvest-urgent alerts), or 'Done' to dismiss. Pruning alerts recur on a schedule; bolting alerts dismiss permanently once harvested.",
             "Bolting data lives in crop-growing-data.json under each crop's `bolting` field. I know bolt windows, heat triggers, and crop-specific harvest advice for: cilantro, romaine, spinach, arugula, basil, broccoli, bok choy, radish, dill.",
-            "Pruning rules live in crop-growing-data.json under each crop's `pruning` array. I know pinching/suckering/cutback schedules for: basil (pinch every 14d from day 21), tomatoes (sucker every 10d), mint/oregano/thyme (cutback every 30d from day 45), rosemary (shape every 60d), peppers, cucumbers."
+            "Pruning rules live in crop-growing-data.json under each crop's `pruning` array. I know pinching/suckering/cutback schedules for: basil (pinch every 14d from day 21), tomatoes (sucker every 10d), mint/oregano/thyme (cutback every 30d from day 45), rosemary (shape every 60d), peppers, cucumbers.",
+            "Share your garden: Tap the coral 'Share my garden' button to create a public profile, then share it on Facebook, Instagram, NextDoor, SMS, or email. The share card is a pretty image you can save or post. When shared on Facebook, the link preview automatically shows your garden photo and name.",
+            "Public garden profile: Opt in to share your display name, bio, garden photo, location, and current crops at a public URL. You can edit or hide your profile anytime."
           ]
         },
         {
@@ -65,7 +67,7 @@
         {
           "path": "/buy/listings/[id]",
           "name": "Product Page",
-          "description": "See photos, price, seller info. Choose pickup or delivery, select quantity, add to cart.",
+          "description": "See photos, price, seller info. Choose pickup or delivery, select quantity, add to cart. Share the listing on social media — Facebook will show the actual produce photo in the link preview.",
           "authRequired": false
         },
         {
@@ -117,7 +119,7 @@
         {
           "path": "/sell/dashboard",
           "name": "Seller Dashboard",
-          "description": "Your seller hub — manage listings, view incoming orders, track earnings and Seeds.",
+          "description": "Your seller hub — manage listings, view incoming orders, track earnings and Seeds. Share individual listings on Facebook, Instagram, NextDoor, SMS, or email — the link preview shows your produce photo automatically.",
           "authRequired": true
         },
         {
@@ -197,6 +199,18 @@
       "navLabel": null,
       "description": "Additional pages",
       "routes": [
+        {
+          "path": "/gardeners/[userId]",
+          "name": "Public Garden Profile",
+          "description": "A public page showing a gardener's display name, bio, garden photo, location, and what they're growing. Created when a user opts in via 'Share my garden' on the My Garden page. When shared on Facebook, the link preview shows the gardener's actual garden photo and name — not the generic LocalRoots image.",
+          "authRequired": false,
+          "features": [
+            "Anyone can view a gardener's public profile by visiting their link",
+            "Shows garden photo, display name, bio, approximate location, and current crops",
+            "Sharing the link on Facebook, SMS, or email produces a rich preview with the garden photo",
+            "Gardeners can edit or hide their profile anytime from My Garden"
+          ]
+        },
         {
           "path": "/garden/[slug]",
           "name": "Community Garden Page",
@@ -293,6 +307,17 @@
         "Share your link with gardeners — when they register and sell, you earn 25%",
         "Track recruits and earnings on your dashboard (/ambassador/dashboard)",
         "Use the guides to help new sellers get started"
+      ]
+    },
+    {
+      "id": "sharing",
+      "trigger": "user wants to share their garden, a listing, or a community garden on social media",
+      "steps": [
+        "To share your garden: go to My Garden (/grow/my-garden), tap the coral 'Share my garden' button, create a public profile with your name and garden photo, then pick a platform (Facebook, Instagram, NextDoor, SMS, Email)",
+        "To share a listing: tap the share icon on any product page, or use the Share button next to your listings on the seller dashboard",
+        "To share a community garden: visit the garden page (/garden/[slug]) and tap the share button",
+        "Facebook tip: when you share a link, Facebook automatically shows your garden photo or produce photo in the preview — no need to upload an image separately (uploading an image actually hides the link preview)",
+        "Instagram tip: URLs don't work in Instagram captions — use the 'Add a link sticker' in Stories instead"
       ]
     },
     {
