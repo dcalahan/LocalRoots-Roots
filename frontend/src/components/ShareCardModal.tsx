@@ -157,7 +157,12 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     // Try native share sheet (works on iOS — lets user share directly to IG or save to Photos)
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], text });
+        await navigator.share({ files: [file], text, url: shareUrl });
+        // After sharing, show reminder about link sticker with the actual URL
+        toast({
+          title: 'Add a link sticker in Stories!',
+          description: `Tap the link sticker icon and paste: ${shareUrl}`,
+        });
         return;
       } catch (e) {
         if ((e as Error).name === 'AbortError') return; // user cancelled
