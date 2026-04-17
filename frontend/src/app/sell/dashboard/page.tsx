@@ -790,6 +790,7 @@ export default function SellerDashboard() {
                                 sellerName: profile?.metadata?.name || '',
                                 neighborhood: '',
                                 imageUrl: listing.metadata?.imageUrl || undefined,
+                                listingId: listing.listingId,
                               });
                             }}
                           >
