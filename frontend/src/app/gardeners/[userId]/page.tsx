@@ -1,15 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import type { PublicGardenProfileView } from '@/types/garden-profile';
 import { STATUS_CONFIG } from '@/lib/gardenStatus';
 import { getCropEmoji } from '@/lib/cropEmoji';
-import { getProfile, buildProfileView } from '@/lib/gardenProfileStore';
 
 async function fetchGardener(userId: string): Promise<PublicGardenProfileView | null> {
   try {
-    const profile = await getProfile(userId);
-    if (!profile || profile.hidden) return null;
-    return await buildProfileView(profile);
+    // Fetch via API route — direct KV reads from server components fail
+    // silently on Vercel due to runtime context differences.
+    const hdrs = await headers();
+    const host = hdrs.get('host') || 'www.localroots.love';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const url = `${protocol}://${host}/api/gardener-profile?userId=${encodeURIComponent(userId)}&full=1`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.profile || data.profile.hidden) return null;
+    return data.view as PublicGardenProfileView;
   } catch (err) {
     console.error('[gardener-profile] fetchGardener failed:', err);
     return null;
