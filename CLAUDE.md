@@ -1107,7 +1107,7 @@ POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
 | Platform | Key rule | Implementation |
 |----------|----------|----------------|
 | **Facebook** | URL must be on line 1. Uploading a custom image kills the OG link preview card. | FB share copies link+caption only (no image download). OG preview does the work. |
-| **Instagram** | URLs not clickable in captions. | IG caption has no URL, includes 5 hashtags, prompts "Add a link sticker in Stories" |
+| **Instagram** | URLs not clickable in captions. Can't auto-attach link stickers from web. | iOS native share sheet sends image. Copies garden URL to clipboard (not caption) for link sticker. IG tip with tappable URL shown in modal. |
 | **SMS/Email/NextDoor** | URL inline | Standard share text |
 
 ### SEO
