@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kv } from '@/lib/kv';
 import type { PublicGardenProfile } from '@/types/garden-profile';
+import { warmFacebookOgCache } from '@/lib/facebookOgScrape';
 
 const PROFILE_KEY = (userId: string) => `garden-profile:${userId}`;
 const INDEX_KEY = 'garden-profile-index';
@@ -147,6 +148,7 @@ export async function POST(request: NextRequest) {
     };
 
     await upsertProfile(profile);
+    warmFacebookOgCache(`/gardeners/${encodeURIComponent(userId)}`).catch(() => {});
     return NextResponse.json({ ok: true, profile });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
