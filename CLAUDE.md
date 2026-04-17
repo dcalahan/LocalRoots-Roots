@@ -1042,23 +1042,63 @@ Autonomous server-to-server sync. Common Area NIF proposes gardens and resolves 
 
 **Reference:** Common Area's [Social Sharing Guide](https://github.com/dcalahan/nightly-idea-factory/blob/master/support/LOCALROOTS-SOCIAL-SHARING-GUIDE.md) — platform-specific rules for URL placement, hashtag counts, image dimensions, posting times.
 
-### OG Meta
+**Full plan:** `~/.claude/plans/zany-meandering-kazoo.md` — complete inventory of share surfaces, Facebook architecture, verification checklist.
 
-Garden pages (`/garden/[slug]`) have dynamic OG metadata via `generateMetadata()` — sharing shows garden name + tagline. All other pages use the global OG from `layout.tsx` (static `og-image.png`).
+### How Facebook Sharing Works (CRITICAL)
 
-### Share Buttons
+Facebook does NOT discover URLs on its own. It only scrapes a URL's OG tags when explicitly told to via the Graph API or Sharing Debugger. Without proactive scraping, Facebook shows the generic `localroots.love` fallback image for every shared URL.
 
-- **Garden pages:** Share icon in hero section (`GardenShareButton.tsx`) — Web Share API with clipboard fallback
-- **Listing detail pages:** Share icon next to produce name — same pattern
-- **Ambassador/Seller dashboards:** `ShareCardModal` with canvas-generated 1080×1920 cards (4 types: recruit-sellers, recruit-ambassadors, seller-listing, ambassador-listing)
+**Architecture:** After every profile/garden data save, we call Facebook's Graph API to pre-warm the OG cache:
+
+```
+POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
+```
+
+**Utility:** `frontend/src/lib/facebookOgScrape.ts` — `warmFacebookOgCache(path)`. Fire-and-forget, silent no-op when env vars missing (dev).
+
+**Call sites:**
+
+| Route | Trigger | Path scraped |
+|-------|---------|-------------|
+| `POST /api/gardener-profile` | User saves public garden profile | `/gardeners/${userId}` |
+| `PUT /api/my-garden` | Plants/beds change (only if user has public profile) | `/gardeners/${userId}` |
+| `POST /api/collections/propose` | Common Area adds a garden | `/garden/${slug}` |
+
+**Environment variables (Vercel):**
+- `FACEBOOK_APP_ID` — from developers.facebook.com (free app, no approval needed)
+- `FACEBOOK_APP_SECRET` — from the same app dashboard
+
+### OG Meta (Dynamic)
+
+| Page | URL pattern | OG image source | OG title source |
+|------|-------------|-----------------|-----------------|
+| Garden collection | `/garden/[slug]` | Hero image or `og-image.png` fallback | `garden.name` |
+| Gardener profile | `/gardeners/[userId]` | Garden photo → profile photo → `og-image.png` | `gardener.displayName` |
+| All other pages | Various | `og-image.png` (static from `layout.tsx`) | Layout default |
+
+**Gardener profile technical notes:**
+- Server component uses **inline Upstash REST call** (not `lib/kv.ts`) because the kv module fails silently in RSC on Vercel
+- Applies `decodeURIComponent()` to userId param — Privy IDs have colons that get URL-encoded
+- `export const dynamic = 'force-dynamic'` prevents static caching
+
+### Share Surfaces
+
+| Surface | Component | URL shared | Dynamic OG? |
+|---------|-----------|-----------|-------------|
+| My Garden → Share | `MyGardenView.tsx` → `ShareCardModal` (`my-garden` type) | `/gardeners/{userId}` | ✅ Yes |
+| Garden page → Share | `GardenShareButton.tsx` (Web Share API + clipboard) | `/garden/{slug}` | ✅ Yes |
+| Listing → Share | `buy/listings/[id]/page.tsx` (Web Share API + clipboard) | `/buy/listings/{id}` | ❌ No (deferred) |
+| Ambassador/Seller dashboards | `ShareCardModal` (4 card types) | Various `/sell/`, `/ambassador/`, `/buy` | ❌ No (static, generic OG fine) |
+
+**5 share card types** (canvas-generated 1080×1920 PNG): `recruit-sellers`, `recruit-ambassadors`, `seller-listing`, `ambassador-listing`, `my-garden`
 
 ### Platform Rules (from Common Area guide)
 
 | Platform | Key rule | Implementation |
 |----------|----------|----------------|
-| **Facebook** | URL must be on line 1 (before "See more" fold). Uploading a custom image kills the OG link preview card. | Facebook share copies link+caption only (no image download). URL appears first in text. |
+| **Facebook** | URL must be on line 1. Uploading a custom image kills the OG link preview card. | FB share copies link+caption only (no image download). OG preview does the work. |
 | **Instagram** | URLs not clickable in captions. | IG caption has no URL, includes 5 hashtags, prompts "Add a link sticker in Stories" |
-| **SMS/Email/NextDoor** | URL inline | No changes needed |
+| **SMS/Email/NextDoor** | URL inline | Standard share text |
 
 ### SEO
 
@@ -1069,9 +1109,12 @@ Garden pages (`/garden/[slug]`) have dynamic OG metadata via `generateMetadata()
 
 | File | Purpose |
 |------|---------|
-| `frontend/src/lib/shareCards.ts` | Canvas card generator, platform-specific share text, `ShareChannel` type |
-| `frontend/src/components/ShareCardModal.tsx` | Reusable share modal for ambassador/seller cards |
+| `frontend/src/lib/facebookOgScrape.ts` | Facebook Graph API OG cache warming (fire-and-forget) |
+| `frontend/src/lib/shareCards.ts` | Canvas card generator (5 types), platform-specific share text |
+| `frontend/src/components/ShareCardModal.tsx` | Reusable share modal — FB copies link+caption only, no image |
+| `frontend/src/components/grow/MyGardenView.tsx` | My Garden share button (coral) → ShareCardModal |
 | `frontend/src/app/garden/[slug]/GardenShareButton.tsx` | Garden page share button (Web Share API) |
+| `frontend/src/app/gardeners/[userId]/page.tsx` | Gardener profile — server component with dynamic OG, inline KV |
 | `frontend/src/app/sitemap.ts` | Dynamic sitemap |
 | `frontend/src/app/robots.ts` | Robots.txt |
 

@@ -38,6 +38,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { warmFacebookOgCache } from '@/lib/facebookOgScrape';
 import {
   getAllCollectionsAsync,
   upsertCollectionToKV,
@@ -159,6 +160,7 @@ export async function POST(req: Request) {
 
     try {
       await upsertCollectionToKV(collection);
+      warmFacebookOgCache(`/garden/${slug}`).catch(() => {});
       existingByKey.set(keyOf(g.name, g.city), collection);
       created.push({ original_name: g.name, slug });
     } catch (err) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kv } from '@/lib/kv';
 import type { GardenPlant, GardenBed, MyGardenData } from '@/types/my-garden';
+import { warmFacebookOgCache } from '@/lib/facebookOgScrape';
 
 function kvKey(userId: string): string {
   return `my-garden:${userId}`;
@@ -42,6 +43,11 @@ export async function PUT(request: NextRequest) {
       beds: beds || [],
     };
     await kv.set(kvKey(userId), data);
+
+    // Warm Facebook OG cache if user has a public garden profile
+    kv.get(`garden-profile:${userId}`).then(profile => {
+      if (profile) warmFacebookOgCache(`/gardeners/${encodeURIComponent(userId)}`).catch(() => {});
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (err) {
