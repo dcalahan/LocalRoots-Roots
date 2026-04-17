@@ -1,23 +1,56 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { headers } from 'next/headers';
-import type { PublicGardenProfileView } from '@/types/garden-profile';
-import { STATUS_CONFIG } from '@/lib/gardenStatus';
+import type { PublicGardenProfile, PublicGardenProfileView } from '@/types/garden-profile';
+import type { MyGardenData } from '@/types/my-garden';
+import { STATUS_CONFIG, computeStatus } from '@/lib/gardenStatus';
 import { getCropEmoji } from '@/lib/cropEmoji';
+import { getCropGrowingInfo } from '@/lib/plantingCalendar';
+
+// Direct Upstash REST fetch — bypasses the kv module which fails silently
+// in server components on Vercel. Hardcoded to match kv.ts values.
+const KV_URL = 'https://game-macaque-74038.upstash.io';
+const KV_TOKEN = process.env.LOCALROOTS_KV_TOKEN || 'gQAAAAAAASE2AAIncDJjNDdiZjBmYTdlZjQ0ZGVkYTIwYzRhYjI5YzY4ZDAyY3AyNzQwMzg';
+
+async function kvGet<T>(key: string): Promise<T | null> {
+  const res = await fetch(KV_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(['GET', key]),
+    cache: 'no-store',
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (data.result === null || data.result === undefined) return null;
+  if (typeof data.result === 'string') {
+    try { return JSON.parse(data.result) as T; } catch { return data.result as T; }
+  }
+  return data.result as T;
+}
 
 async function fetchGardener(userId: string): Promise<PublicGardenProfileView | null> {
   try {
-    // Fetch via API route — direct KV reads from server components fail
-    // silently on Vercel due to runtime context differences.
-    const hdrs = await headers();
-    const host = hdrs.get('host') || 'www.localroots.love';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const url = `${protocol}://${host}/api/gardener-profile?userId=${encodeURIComponent(userId)}&full=1`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data.profile || data.profile.hidden) return null;
-    return data.view as PublicGardenProfileView;
+    const profile = await kvGet<PublicGardenProfile>(`garden-profile:${userId}`);
+    if (!profile || profile.hidden) return null;
+
+    const garden = await kvGet<MyGardenData>(`my-garden:${userId}`);
+    const plants = garden?.plants || [];
+    const beds = garden?.beds || [];
+    const bedById = new Map(beds.map(b => [b.id, b]));
+    const now = new Date();
+
+    const currentlyGrowing = plants
+      .filter(p => !p.removedDate && !p.harvestedDate)
+      .map(p => {
+        const info = getCropGrowingInfo(p.cropId);
+        return {
+          cropId: p.cropId,
+          cropName: p.customVarietyName || info?.name || p.cropId,
+          bedName: p.bedId ? bedById.get(p.bedId)?.name : undefined,
+          status: computeStatus(p, now),
+        };
+      });
+
+    return { ...profile, beds, currentlyGrowing };
   } catch (err) {
     console.error('[gardener-profile] fetchGardener failed:', err);
     return null;
