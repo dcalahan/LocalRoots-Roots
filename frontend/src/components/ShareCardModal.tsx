@@ -158,11 +158,6 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file], text, url: shareUrl });
-        // After sharing, show reminder about link sticker with the actual URL
-        toast({
-          title: 'Add a link sticker in Stories!',
-          description: `Tap the link sticker icon and paste: ${shareUrl}`,
-        });
         return;
       } catch (e) {
         if ((e as Error).name === 'AbortError') return; // user cancelled
@@ -271,6 +266,9 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
                 </button>
               )}
             </div>
+            <p className="text-xs text-roots-gray text-center mt-2">
+              IG tip: Share as a Story, then tap the link sticker icon to add your garden URL
+            </p>
           </div>
 
           {/* Secondary options */}
