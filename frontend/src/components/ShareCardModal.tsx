@@ -112,20 +112,61 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     window.location.href = getEmailShareUrl(subject, body);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!cardImage) return;
     const filename = `localroots-${data.type}-${Date.now()}.png`;
+
+    // On iOS, use native share sheet so image saves to Photos (not Files)
+    const arr = cardImage.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    const u8arr = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+    const file = new File([u8arr], filename, { type: mime });
+
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return;
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return;
+      }
+    }
+
+    // Fallback for desktop
     downloadImage(cardImage, filename);
     toast({ title: 'Image downloaded!' });
   };
 
   const handleSaveForInstagram = async () => {
     if (!cardImage) return;
-    const filename = `localroots-${data.type}-${Date.now()}.png`;
-    downloadImage(cardImage, filename);
+
     // Copy Instagram-specific caption (no URL — not clickable in IG captions)
     const text = getShareText(data, 'instagram');
     await copyToClipboard(text);
+
+    // Convert data URL to File for native share sheet
+    const filename = `localroots-${data.type}-${Date.now()}.png`;
+    const arr = cardImage.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    const u8arr = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+    const file = new File([u8arr], filename, { type: mime });
+
+    // Try native share sheet (works on iOS — lets user share directly to IG or save to Photos)
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text });
+        return;
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return; // user cancelled
+        // Fall through to download
+      }
+    }
+
+    // Fallback for desktop: download the image
+    downloadImage(cardImage, filename);
     toast({
       title: 'Image saved + caption copied!',
       description: 'Open Instagram → share from camera roll → paste caption. Add a link sticker in Stories!',
