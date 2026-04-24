@@ -30,14 +30,49 @@ interface GardenAIChatProps {
   className?: string;
 }
 
-// Resize image to max dimension and return base64 (no data URL prefix)
+// Resize image to max dimension and return base64 (no data URL prefix).
+// Tries createImageBitmap first (handles HEIC + EXIF on iOS better), falls back
+// to FileReader + <img> for older browsers.
 async function resizeAndEncode(file: File, maxDim = 1568): Promise<{ base64: string; mediaType: string }> {
+  console.log('[Sage photo] resizeAndEncode start:', { name: file.name, type: file.type, size: file.size });
+
+  // Attempt 1: createImageBitmap — best path on iOS for HEIC + EXIF orientation
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' } as ImageBitmapOptions);
+      let { width, height } = bitmap;
+      if (width > maxDim || height > maxDim) {
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('No 2D canvas context');
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close?.();
+      // Always output JPEG — covers HEIC/HEIF/PNG/JPEG input, much smaller than PNG for photos
+      const mediaType = 'image/jpeg';
+      const dataUrl = canvas.toDataURL(mediaType, 0.85);
+      const base64 = dataUrl.split(',')[1];
+      if (!base64) throw new Error('Empty base64 after encode');
+      console.log('[Sage photo] createImageBitmap success:', { width, height, kb: Math.round(base64.length / 1024) });
+      return { base64, mediaType };
+    } catch (err) {
+      console.warn('[Sage photo] createImageBitmap failed, falling back to FileReader:', err);
+    }
+  }
+
+  // Attempt 2: FileReader + <img> — legacy fallback
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
         let { width, height } = img;
+        if (!width || !height) { reject(new Error('Image has zero dimensions')); return; }
         if (width > maxDim || height > maxDim) {
           const scale = maxDim / Math.max(width, height);
           width = Math.round(width * scale);
@@ -46,19 +81,21 @@ async function resizeAndEncode(file: File, maxDim = 1568): Promise<{ base64: str
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d')!;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('No 2D canvas context')); return; }
         ctx.drawImage(img, 0, 0, width, height);
-        // Use JPEG for photos (smaller), PNG for screenshots
         const mediaType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
         const quality = mediaType === 'image/jpeg' ? 0.85 : undefined;
         const dataUrl = canvas.toDataURL(mediaType, quality);
         const base64 = dataUrl.split(',')[1];
+        if (!base64) { reject(new Error('Empty base64 after encode')); return; }
+        console.log('[Sage photo] FileReader fallback success:', { width, height, kb: Math.round(base64.length / 1024) });
         resolve({ base64, mediaType });
       };
-      img.onerror = reject;
+      img.onerror = () => reject(new Error('Image element failed to decode file'));
       img.src = reader.result as string;
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('FileReader failed to read file'));
     reader.readAsDataURL(file);
   });
 }
@@ -310,24 +347,45 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    console.log('[Sage photo] handleFileSelect fired. files:', files?.length ?? 0);
+
+    if (!files || files.length === 0) {
+      // iOS Safari sometimes fires change with an empty file list after a memory-pressured camera capture
+      toast({
+        title: 'No photo received',
+        description: 'Try again — or pick from your camera roll instead of taking a new photo.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Reset file input so same file can be re-selected
     e.target.value = '';
 
     const newImages: PendingImage[] = [];
+    const failures: string[] = [];
+
     for (const file of Array.from(files)) {
       if (file.size > 10 * 1024 * 1024) {
-        setError('Image too large. Please use photos under 10MB.');
+        failures.push(`${file.name || 'photo'} is over 10MB`);
         continue;
       }
       try {
         const { base64, mediaType } = await resizeAndEncode(file);
         const preview = `data:${mediaType};base64,${base64}`;
         newImages.push({ base64, mediaType, preview, id: crypto.randomUUID() });
-      } catch {
-        setError('Could not process an image. Try a different photo.');
+      } catch (err) {
+        console.error('[Sage photo] encode failed:', { name: file.name, type: file.type, size: file.size, err });
+        failures.push(`${file.name || 'photo'} (${file.type || 'unknown type'}): ${(err as Error).message}`);
       }
+    }
+
+    if (failures.length > 0) {
+      toast({
+        title: "Couldn't attach photo",
+        description: failures.join('; '),
+        variant: 'destructive',
+      });
     }
 
     if (newImages.length > 0) {
