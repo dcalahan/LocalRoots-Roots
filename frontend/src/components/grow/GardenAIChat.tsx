@@ -366,13 +366,33 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
       return;
     }
 
+    // Capture file metadata BEFORE resetting the input — iOS may drop the
+    // File references when we touch e.target.value.
+    const fileList: File[] = [];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const f = files.item(i);
+        if (f) fileList.push(f);
+      }
+      addPhotoDebug(`captured ${fileList.length} file(s) into array`);
+    } catch (err) {
+      addPhotoDebug(`capture FAILED: ${(err as Error).message}`);
+      toast({ title: "Couldn't read photo", description: (err as Error).message, variant: 'destructive' });
+      return;
+    }
+
     // Reset file input so same file can be re-selected
-    e.target.value = '';
+    try {
+      e.target.value = '';
+      addPhotoDebug('input reset ok');
+    } catch (err) {
+      addPhotoDebug(`input reset failed: ${(err as Error).message}`);
+    }
 
     const newImages: PendingImage[] = [];
     const failures: string[] = [];
 
-    for (const file of Array.from(files)) {
+    for (const file of fileList) {
       addPhotoDebug(`got file: ${file.type || 'no-type'} ${Math.round(file.size / 1024)}KB`);
       if (file.size > 10 * 1024 * 1024) {
         failures.push(`${file.name || 'photo'} is over 10MB`);
