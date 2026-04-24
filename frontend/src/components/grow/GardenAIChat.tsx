@@ -15,8 +15,10 @@ import { getCropDisplayName } from '@/lib/gardenStatus';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  imagePreview?: string; // data URL for display only
-  extraImageCount?: number; // additional images beyond the preview
+  imagePreviews?: string[]; // data URLs for display only (not persisted to localStorage)
+  // Legacy fields — kept so older localStorage messages still render
+  imagePreview?: string;
+  extraImageCount?: number;
 }
 
 interface PendingImage {
@@ -123,13 +125,6 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-  // TEMP: diagnostic trace for photo upload — each entry is "step: detail"
-  const [photoDebug, setPhotoDebug] = useState<string[]>([]);
-  const addPhotoDebug = useCallback((line: string) => {
-    const stamp = new Date().toLocaleTimeString();
-    console.log('[Sage photo]', line);
-    setPhotoDebug(prev => [...prev, `${stamp} ${line}`].slice(-6));
-  }, []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -354,10 +349,9 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    addPhotoDebug(`change fired: ${files?.length ?? 0} file(s)`);
 
     if (!files || files.length === 0) {
-      addPhotoDebug('empty file list — iOS returned nothing');
+      // iOS Safari sometimes fires change with an empty file list after a memory-pressured camera capture
       toast({
         title: 'No photo received',
         description: 'Try again — or pick from your camera roll instead of taking a new photo.',
@@ -366,47 +360,31 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
       return;
     }
 
-    // Capture file metadata BEFORE resetting the input — iOS may drop the
-    // File references when we touch e.target.value.
+    // Capture file references before resetting the input — iOS may drop
+    // File objects when we touch e.target.value on some versions.
     const fileList: File[] = [];
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const f = files.item(i);
-        if (f) fileList.push(f);
-      }
-      addPhotoDebug(`captured ${fileList.length} file(s) into array`);
-    } catch (err) {
-      addPhotoDebug(`capture FAILED: ${(err as Error).message}`);
-      toast({ title: "Couldn't read photo", description: (err as Error).message, variant: 'destructive' });
-      return;
+    for (let i = 0; i < files.length; i++) {
+      const f = files.item(i);
+      if (f) fileList.push(f);
     }
 
-    // Reset file input so same file can be re-selected
-    try {
-      e.target.value = '';
-      addPhotoDebug('input reset ok');
-    } catch (err) {
-      addPhotoDebug(`input reset failed: ${(err as Error).message}`);
-    }
+    // Reset file input so same file can be re-selected next time
+    e.target.value = '';
 
     const newImages: PendingImage[] = [];
     const failures: string[] = [];
 
     for (const file of fileList) {
-      addPhotoDebug(`got file: ${file.type || 'no-type'} ${Math.round(file.size / 1024)}KB`);
       if (file.size > 10 * 1024 * 1024) {
         failures.push(`${file.name || 'photo'} is over 10MB`);
-        addPhotoDebug(`too large: ${Math.round(file.size / 1024)}KB`);
         continue;
       }
       try {
         const { base64, mediaType } = await resizeAndEncode(file);
         const preview = `data:${mediaType};base64,${base64}`;
         newImages.push({ base64, mediaType, preview, id: crypto.randomUUID() });
-        addPhotoDebug(`encoded ok: ${Math.round(base64.length / 1024)}KB ${mediaType}`);
       } catch (err) {
         console.error('[Sage photo] encode failed:', { name: file.name, type: file.type, size: file.size, err });
-        addPhotoDebug(`encode FAILED: ${(err as Error).message}`);
         failures.push(`${file.name || 'photo'} (${file.type || 'unknown type'}): ${(err as Error).message}`);
       }
     }
@@ -420,7 +398,6 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     }
 
     if (newImages.length > 0) {
-      addPhotoDebug(`adding ${newImages.length} to pending`);
       setPendingImages(prev => [...prev, ...newImages].slice(0, 5)); // max 5 images
       inputRef.current?.focus();
     }
@@ -439,8 +416,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
 
     // Add user message to chat (with image previews if applicable)
     const newMsg: Message = { role: 'user', content: userMessage };
-    if (hasImages) newMsg.imagePreview = pendingImages[0].preview;
-    if (pendingImages.length > 1) newMsg.extraImageCount = pendingImages.length - 1;
+    if (hasImages) newMsg.imagePreviews = pendingImages.map(img => img.preview);
     const newMessages: Message[] = [...messages, newMsg];
     setMessages(newMessages);
 
@@ -775,18 +751,44 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                         : 'bg-gray-100 text-gray-800 rounded-bl-md'
                     }`}
                   >
-                    {message.imagePreview && (
-                      <div className="mb-2">
-                        <img
-                          src={message.imagePreview}
-                          alt="Uploaded plant photo"
-                          className="rounded-lg max-h-48 w-auto"
-                        />
-                        {message.extraImageCount && message.extraImageCount > 0 && (
-                          <p className="text-xs opacity-70 mt-1">+{message.extraImageCount} more photo{message.extraImageCount > 1 ? 's' : ''}</p>
-                        )}
-                      </div>
-                    )}
+                    {(() => {
+                      // Prefer new multi-image field; fall back to legacy single-image fields for older messages
+                      const previews: string[] = message.imagePreviews?.length
+                        ? message.imagePreviews
+                        : message.imagePreview
+                          ? [message.imagePreview]
+                          : [];
+                      if (previews.length === 0) return null;
+                      if (previews.length === 1) {
+                        return (
+                          <div className="mb-2">
+                            <img
+                              src={previews[0]}
+                              alt="Uploaded plant photo"
+                              className="rounded-lg max-h-48 w-auto"
+                            />
+                            {/* Legacy: older messages may only have the first preview + a count of the rest */}
+                            {message.extraImageCount && message.extraImageCount > 0 && (
+                              <p className="text-xs opacity-70 mt-1">+{message.extraImageCount} more photo{message.extraImageCount > 1 ? 's' : ''}</p>
+                            )}
+                          </div>
+                        );
+                      }
+                      // Multi-image: compact grid, max 3 columns
+                      const cols = previews.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+                      return (
+                        <div className={`mb-2 grid ${cols} gap-1`}>
+                          {previews.map((src, i) => (
+                            <img
+                              key={i}
+                              src={src}
+                              alt={`Uploaded plant photo ${i + 1}`}
+                              className="rounded-lg h-24 w-full object-cover"
+                            />
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <div className="text-sm whitespace-pre-wrap">{message.content}</div>
                   </div>
                 </div>
@@ -835,24 +837,6 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* TEMP: photo debug trace — REMOVE once fixed */}
-          {photoDebug.length > 0 && (
-            <div className="border-t px-3 py-2 bg-yellow-50 text-xs font-mono text-yellow-900 max-h-32 overflow-y-auto">
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold">Photo debug trace:</span>
-                <button
-                  onClick={() => setPhotoDebug([])}
-                  className="text-yellow-700 underline text-xs"
-                >
-                  clear
-                </button>
-              </div>
-              {photoDebug.map((line, i) => (
-                <div key={i} className="truncate">{line}</div>
-              ))}
-            </div>
-          )}
-
           {/* Pending images preview */}
           {pendingImages.length > 0 && (
             <div className="border-t px-3 pt-2 flex items-center gap-2 overflow-x-auto">
@@ -883,11 +867,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             <div className="flex items-end gap-2">
               {/* Camera button */}
               <button
-                onClick={() => {
-                  const hasRef = !!fileInputRef.current;
-                  addPhotoDebug(`camera tapped, input ref: ${hasRef ? 'yes' : 'MISSING'}`);
-                  fileInputRef.current?.click();
-                }}
+                onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
                 className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 mb-0.5"
                 aria-label="Upload photo"
