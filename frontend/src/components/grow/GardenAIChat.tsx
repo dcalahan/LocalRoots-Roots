@@ -123,6 +123,13 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  // TEMP: diagnostic trace for photo upload — each entry is "step: detail"
+  const [photoDebug, setPhotoDebug] = useState<string[]>([]);
+  const addPhotoDebug = useCallback((line: string) => {
+    const stamp = new Date().toLocaleTimeString();
+    console.log('[Sage photo]', line);
+    setPhotoDebug(prev => [...prev, `${stamp} ${line}`].slice(-6));
+  }, []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -347,10 +354,10 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    console.log('[Sage photo] handleFileSelect fired. files:', files?.length ?? 0);
+    addPhotoDebug(`change fired: ${files?.length ?? 0} file(s)`);
 
     if (!files || files.length === 0) {
-      // iOS Safari sometimes fires change with an empty file list after a memory-pressured camera capture
+      addPhotoDebug('empty file list — iOS returned nothing');
       toast({
         title: 'No photo received',
         description: 'Try again — or pick from your camera roll instead of taking a new photo.',
@@ -366,16 +373,20 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     const failures: string[] = [];
 
     for (const file of Array.from(files)) {
+      addPhotoDebug(`got file: ${file.type || 'no-type'} ${Math.round(file.size / 1024)}KB`);
       if (file.size > 10 * 1024 * 1024) {
         failures.push(`${file.name || 'photo'} is over 10MB`);
+        addPhotoDebug(`too large: ${Math.round(file.size / 1024)}KB`);
         continue;
       }
       try {
         const { base64, mediaType } = await resizeAndEncode(file);
         const preview = `data:${mediaType};base64,${base64}`;
         newImages.push({ base64, mediaType, preview, id: crypto.randomUUID() });
+        addPhotoDebug(`encoded ok: ${Math.round(base64.length / 1024)}KB ${mediaType}`);
       } catch (err) {
         console.error('[Sage photo] encode failed:', { name: file.name, type: file.type, size: file.size, err });
+        addPhotoDebug(`encode FAILED: ${(err as Error).message}`);
         failures.push(`${file.name || 'photo'} (${file.type || 'unknown type'}): ${(err as Error).message}`);
       }
     }
@@ -389,6 +400,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     }
 
     if (newImages.length > 0) {
+      addPhotoDebug(`adding ${newImages.length} to pending`);
       setPendingImages(prev => [...prev, ...newImages].slice(0, 5)); // max 5 images
       inputRef.current?.focus();
     }
@@ -803,6 +815,24 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* TEMP: photo debug trace — REMOVE once fixed */}
+          {photoDebug.length > 0 && (
+            <div className="border-t px-3 py-2 bg-yellow-50 text-xs font-mono text-yellow-900 max-h-32 overflow-y-auto">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-semibold">Photo debug trace:</span>
+                <button
+                  onClick={() => setPhotoDebug([])}
+                  className="text-yellow-700 underline text-xs"
+                >
+                  clear
+                </button>
+              </div>
+              {photoDebug.map((line, i) => (
+                <div key={i} className="truncate">{line}</div>
+              ))}
+            </div>
+          )}
+
           {/* Pending images preview */}
           {pendingImages.length > 0 && (
             <div className="border-t px-3 pt-2 flex items-center gap-2 overflow-x-auto">
@@ -833,7 +863,11 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             <div className="flex items-end gap-2">
               {/* Camera button */}
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  const hasRef = !!fileInputRef.current;
+                  addPhotoDebug(`camera tapped, input ref: ${hasRef ? 'yes' : 'MISSING'}`);
+                  fileInputRef.current?.click();
+                }}
                 disabled={isLoading}
                 className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0 mb-0.5"
                 aria-label="Upload photo"
