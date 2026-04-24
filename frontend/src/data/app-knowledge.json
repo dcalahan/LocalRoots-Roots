@@ -330,6 +330,17 @@
         "Watch progress bars as your plants grow toward harvest",
         "When harvest approaches, list your surplus on LocalRoots to sell to neighbors"
       ]
+    },
+    {
+      "id": "feedback",
+      "trigger": "user wants to send feedback, report a bug, suggest a feature, or tell the developers something",
+      "steps": [
+        "Just tell me what's on your mind — a frustration, a bug, an idea, a feature request",
+        "I'll ask if you want me to pass it along to the LocalRoots dev team",
+        "If you say yes, I log it for them — they review suggestions regularly",
+        "I don't capture anything without your explicit yes — your conversation stays yours unless you confirm",
+        "There's no separate feedback form. Just talking to me is the fastest way to be heard."
+      ]
     }
   ],
   "seeds": {
