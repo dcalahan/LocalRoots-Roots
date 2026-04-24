@@ -7,6 +7,12 @@ import { formatMemoryContext, extractMemories, mergeMemories } from '@/lib/ai-ru
 import { createRouter } from '@/lib/ai-runtime/router'
 import { createGardenBrain } from '@/lib/ai/garden-brain'
 import { buildGardenActionExtractionPrompt, parseGardenActions } from '@/lib/gardenActions'
+import {
+  buildSuggestionExtractionPrompt,
+  parseSuggestion,
+  saveSuggestion,
+  shouldRunSuggestionExtraction,
+} from '@/lib/sageSuggestions'
 import { kv } from '@/lib/kv'
 
 const brain = createGardenBrain()
@@ -312,6 +318,63 @@ export async function POST(request: NextRequest) {
         }
       } catch (err) {
         console.error('[Garden AI] Memory extraction failed:', err)
+      }
+
+      // ─── Extract Sage suggestion (if user confirmed a capture) ───
+      // Cheap heuristic prefilter: only run the Haiku call when Sage's
+      // last message contains a confirmation phrase. Keeps cost ~zero
+      // on chats that don't capture anything.
+      try {
+        const recentForSuggestion: AIMessage[] = [
+          ...messages.slice(-6),
+          { role: 'assistant', content: streamState.fullResponse },
+        ]
+        if (shouldRunSuggestionExtraction(recentForSuggestion)) {
+          const prompt = buildSuggestionExtractionPrompt(recentForSuggestion)
+          const sugRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': process.env.ANTHROPIC_API_KEY!,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 400,
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          })
+          if (sugRes.ok) {
+            const sugData = await sugRes.json()
+            const sugText = sugData.content?.[0]?.text || ''
+            const extracted = parseSuggestion(sugText)
+            if (extracted) {
+              const anonKey =
+                request.headers.get('x-vercel-forwarded-for') ||
+                request.headers.get('x-forwarded-for') ||
+                null
+              const cleanUserId = userId && userId !== 'anonymous' ? userId : null
+              const saved = await saveSuggestion(extracted, cleanUserId, anonKey)
+              if (saved) {
+                console.log(
+                  '[Garden AI] Sage suggestion captured:',
+                  saved.id,
+                  saved.category,
+                  saved.area,
+                )
+              }
+            } else {
+              console.log('[Garden AI] Suggestion prefilter passed but extraction returned null')
+            }
+          } else {
+            console.error(
+              '[Garden AI] Suggestion extraction API call failed:',
+              sugRes.status,
+            )
+          }
+        }
+      } catch (err) {
+        console.error('[Garden AI] Suggestion extraction failed:', err)
       }
     })
 

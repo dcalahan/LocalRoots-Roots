@@ -410,6 +410,46 @@ Regional garden intelligence is loaded conditionally based on user's zone/locati
 | `frontend/src/app/api/garden-ai/local/route.ts` | Local marketplace listings endpoint |
 | `frontend/src/app/sell/layout.tsx` | Adds chat to sell pages |
 
+## Sage App Suggestions
+
+Sage can capture user feedback (bugs, feature ideas, friction) during chat and forward it to the dev team. Captured suggestions appear in the admin dashboard under the **Sage Suggestions** tab.
+
+**Capture flow (gated on explicit user confirmation):**
+1. User expresses friction / idea / bug in chat
+2. Sage answers their actual question, then offers: *"Want me to pass this along to the dev team?"*
+3. User confirms with a clear yes
+4. Sage replies with a phrase containing *"noted for the team"* or *"passed along"* — that phrase is the trigger
+5. After the response sends, a second Haiku call extracts a structured suggestion → KV write
+
+**Sage NEVER captures without explicit user confirmation.** If the user declines or pivots, nothing is logged. The system prompt enforces this.
+
+**Privacy:** only the user's last message (`userQuote`) and Sage's distillation (`sageSummary`) are stored. Full conversations are not persisted alongside the suggestion. Privy ID stored when available, anonymous IP-keyed otherwise.
+
+**Rate limit:** 5 suggestions per user (or anonymous IP) per UTC day, enforced server-side via KV counter.
+
+**KV schema:**
+- `sage:suggestion:{id}` — full record (`SageSuggestion` JSON)
+- `sage:suggestions:index` — array of IDs, newest first, capped at 1000
+- `sage:suggestions:rate:{userKey}:{YYYYMMDD}` — daily counter
+
+**Admin UI:** `/admin?tab=suggestions` — table view with category/area/status filters, mark triaged / in_progress / shipped / wontfix, add notes per entry. Status badges: new (coral), triaged (yellow), in_progress (blue), shipped (green), wontfix (gray).
+
+**Cost:** the extraction Haiku call only fires when a heuristic prefilter detects a confirmation phrase in Sage's last message. On chats without a capture, cost is zero.
+
+**Key files:**
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/types/sage-suggestion.ts` | TypeScript types and constants (categories, areas, statuses) |
+| `frontend/src/lib/sageSuggestions.ts` | Extraction prompt, parser, KV helpers, heuristic prefilter |
+| `frontend/src/app/api/sage-suggestions/route.ts` | Admin GET (list) + PATCH (update status/notes). On-chain admin check via `marketplace.isAdmin`. |
+| `frontend/src/components/admin/SuggestionsTab.tsx` | Admin dashboard tab — list, filter, expand, status actions, notes editor |
+| `frontend/src/app/api/garden-ai/route.ts` | Calls extraction in the existing `after()` block (after memory extraction) |
+| `frontend/src/lib/ai/garden-brain.ts` | System prompt teaches Sage when/how to offer capture and the confirmation phrase requirement |
+| `frontend/src/data/app-knowledge.json` | `feedback` flow — Sage knows to mention this when users ask "how do I send feedback?" |
+
+**Plan reference:** `~/.claude/plans/zany-meandering-kazoo.md` has the full design + verification plan.
+
 ## Deployment Workflow - IMPORTANT
 
 **Always deploy after making changes.** The user tests exclusively on `www.localroots.love`, not locally. After every change:
