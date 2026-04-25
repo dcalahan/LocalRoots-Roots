@@ -1,7 +1,7 @@
 import { type Address } from 'viem';
 
-// Contract address on Base Sepolia - loaded from environment variable
-export const DISPUTE_RESOLUTION_ADDRESS: Address = (process.env.NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS || '0xf195E2005538ae55f2559930A8C641A0f9709D6C') as Address;
+// Contract address — Base MAINNET (April 25 2026 DeployPhase1)
+export const DISPUTE_RESOLUTION_ADDRESS: Address = (process.env.NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS || '0x7789aCB26FD08A2f33664ebC0b60eE4fa0D5420d') as Address;
 
 // ABI for dispute resolution functions
 export const disputeResolutionAbi = [
