@@ -924,7 +924,12 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
               </button>
             </div>
             <p className="text-xs text-gray-400 text-center mt-2">
-              Sage is powered by Claude AI
+              {/* Footer attribution follows the active Sage provider. Mirror of
+                  server-side SAGE_PROVIDER env (set NEXT_PUBLIC_SAGE_PROVIDER
+                  to the same value). Defaults to Claude when not set. */}
+              {process.env.NEXT_PUBLIC_SAGE_PROVIDER?.toLowerCase() === 'venice'
+                ? 'Sage is built on Venice AI'
+                : 'Sage is built on Claude AI'}
             </p>
           </div>
         </div>
