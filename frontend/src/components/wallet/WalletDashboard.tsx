@@ -13,6 +13,7 @@ import {
 import { ReceiveTokenSection } from './ReceiveTokenSection';
 import { SendTokenModal } from './SendTokenModal';
 import { SwapWidget } from './SwapWidget';
+import { CashOutSection } from './CashOutSection';
 
 interface TokenRowProps {
   token: TokenBalance;
@@ -149,6 +150,9 @@ export function WalletDashboard() {
         onClose={() => setIsSendModalOpen(false)}
         onSuccess={() => refetch()}
       />
+
+      {/* Cash Out — Coinbase Offramp for sellers */}
+      <CashOutSection />
 
       {/* Swap Section */}
       <SwapWidget />
