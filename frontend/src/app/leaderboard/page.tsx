@@ -44,7 +44,7 @@ function getRankStyle(rank: number): string {
   return 'bg-gray-50 text-gray-600 border-gray-200';
 }
 
-export default function SeedsLeaderboardPage() {
+export default function LeaderboardPage() {
   const { address } = useAccount();
   const [page, setPage] = useState(0);
   const pageSize = 25;
@@ -60,6 +60,10 @@ export default function SeedsLeaderboardPage() {
   const displayStats = isSubgraphAvailable && globalStats ? globalStats : MOCK_STATS;
   const isUsingMockData = !isSubgraphAvailable || !leaderboard?.length;
 
+  // Avoid unused-var lint warnings for the loading flags (we render synchronously with mock fallback)
+  void leaderboardLoading;
+  void statsLoading;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -67,14 +71,14 @@ export default function SeedsLeaderboardPage() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-4xl">🏆</span>
-            <h1 className="text-3xl md:text-4xl font-bold">Seeds Leaderboard</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">Roots Points Leaderboard</h1>
           </div>
           <p className="text-amber-100 max-w-2xl">
-            Track the top Seeds earners in the Local Roots community. This is preview mode — Seeds earned now are for testing only and won't carry over to mainnet launch.
+            Top earners in the Local Roots community. Roots Points are our loyalty rewards program — earn them on every sale, purchase, or referral.
           </p>
           {isUsingMockData && (
             <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-amber-600/50 border border-amber-400">
-              Preview Mode - Showing sample data
+              Preview Mode — sample data
             </div>
           )}
         </div>
@@ -86,7 +90,7 @@ export default function SeedsLeaderboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-xl shadow-sm p-4 text-center">
               <div className="text-2xl font-bold text-roots-primary">{formatSeeds(displayStats.totalSeeds)}</div>
-              <div className="text-sm text-gray-500">Total Seeds Earned</div>
+              <div className="text-sm text-gray-500">Total Roots Points Earned</div>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-4 text-center">
               <div className="text-2xl font-bold text-gray-900">{displayStats.uniqueEarners}</div>
@@ -109,7 +113,7 @@ export default function SeedsLeaderboardPage() {
             <div className="bg-gradient-to-r from-roots-primary/10 to-roots-secondary/10 rounded-xl p-6 border border-roots-primary/20">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <div className="text-sm text-gray-600 mb-1">Your Seeds Balance</div>
+                  <div className="text-sm text-gray-600 mb-1">Your Roots Points Balance</div>
                   <div className="text-3xl font-bold text-roots-primary">
                     {userSeeds ? formatSeeds(userSeeds.total) : '0'}
                   </div>
@@ -145,7 +149,7 @@ export default function SeedsLeaderboardPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Seeds</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total RP</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Sales</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Purchases</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Referrals</th>
@@ -223,34 +227,34 @@ export default function SeedsLeaderboardPage() {
 
         {/* How to Earn */}
         <section className="mt-8 bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-4">How to Earn Seeds</h2>
+          <h2 className="text-lg font-semibold mb-4">How to Earn Roots Points</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="text-3xl mb-2">🧑‍🌾</div>
               <h3 className="font-medium mb-1">Sell Produce</h3>
-              <p className="text-sm text-gray-600">500 Seeds per $1 earned from sales</p>
+              <p className="text-sm text-gray-600">500 Roots Points per $1 earned from sales</p>
             </div>
             <div className="text-center">
               <div className="text-3xl mb-2">🛒</div>
               <h3 className="font-medium mb-1">Buy Local</h3>
-              <p className="text-sm text-gray-600">50 Seeds per $1 spent on purchases</p>
+              <p className="text-sm text-gray-600">50 Roots Points per $1 spent on purchases</p>
             </div>
             <div className="text-center">
               <div className="text-3xl mb-2">🌟</div>
               <h3 className="font-medium mb-1">Refer Sellers</h3>
-              <p className="text-sm text-gray-600">25% of your recruited sellers' sales + 2,500 bonus per activation</p>
+              <p className="text-sm text-gray-600">25% of your recruited sellers&apos; sales + 2,500 bonus per activation</p>
             </div>
           </div>
 
-          {/* Preview Mode Note */}
+          {/* Early adopter note */}
           <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">🧪</span>
-              <span className="font-medium text-amber-800">Preview Mode</span>
+              <span className="text-xl">🔥</span>
+              <span className="font-medium text-amber-800">Early Adopter Bonus</span>
             </div>
             <p className="text-sm text-amber-700">
-              Seeds earned now are for testing only. When we launch on mainnet, everyone starts fresh —
-              that's when early adopters will earn <strong>2x Seeds</strong> for the first 90 days.
+              Early sellers earn <strong>2x Roots Points</strong> for the first 90 days, then <strong>1.5x</strong> for days 91-180.
+              The earlier you join, the more you earn.
             </p>
           </div>
         </section>

@@ -89,7 +89,7 @@ export default function AmbassadorDisputesPage() {
     if (success) {
       toast({
         title: 'Vote submitted!',
-        description: 'You earned 100 Seeds for participating.',
+        description: 'You earned 100 Roots Points for participating.',
       });
       // Add to voted set
       setVotedDisputeIds((prev) => new Set([...prev, disputeId.toString()]));
@@ -191,7 +191,7 @@ export default function AmbassadorDisputesPage() {
                 <p className="text-sm text-roots-gray">
                   When a buyer disputes an order, ambassadors vote on the outcome.
                   Review the evidence from both parties before casting your vote.
-                  You earn <strong>100 Seeds</strong> for voting, plus <strong>50 bonus Seeds</strong> if you vote with the majority.
+                  You earn <strong>100 Roots Points</strong> for voting, plus <strong>50 bonus Roots Points</strong> if you vote with the majority.
                 </p>
               </div>
             </div>

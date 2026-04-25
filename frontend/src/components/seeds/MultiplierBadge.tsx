@@ -1,6 +1,6 @@
 'use client';
 
-import { getMultiplierInfo } from './PhaseConfig';
+import { getMultiplierInfo, PHASE1_LABEL } from './PhaseConfig';
 
 interface MultiplierBadgeProps {
   size?: 'sm' | 'md' | 'lg';
@@ -26,7 +26,7 @@ export function MultiplierBadge({ size = 'md', showDays = true, className = '' }
       className={`inline-flex items-center gap-1 rounded-full font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white ${sizeClasses[size]} ${className}`}
     >
       <span>🔥</span>
-      <span>{info.multiplierDisplay} Seeds</span>
+      <span>{info.multiplierDisplay} {PHASE1_LABEL}</span>
       {showDays && info.daysRemaining > 0 && (
         <span className="opacity-90">({info.daysRemaining}d left)</span>
       )}

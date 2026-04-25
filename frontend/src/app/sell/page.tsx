@@ -127,37 +127,37 @@ export default function SellerPage() {
               </div>
               <h3 className="font-heading text-xl font-bold mb-3">Earn Cash + Rewards</h3>
               <p className="text-roots-gray">
-                Get paid for your produce and earn {SEEDS_PER_DOLLAR_SELLER} Seeds loyalty points per $1 sold.
-                Seeds become redeemable rewards when our community program launches!
+                Get paid for your produce and earn {SEEDS_PER_DOLLAR_SELLER} Roots Points per $1 sold —
+                our loyalty rewards program. Early sellers earn the most.
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Seeds Earning Section */}
+        {/* Roots Points Earning Section */}
         <div className="mt-12 max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Seeds Rate */}
+            {/* Roots Points Rate */}
             <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50">
               <CardContent className="pt-8 pb-6">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-3xl">🌱</span>
-                  <h3 className="font-heading text-xl font-bold">Earn Seeds on Every Sale</h3>
+                  <h3 className="font-heading text-xl font-bold">Earn Roots Points on Every Sale</h3>
                 </div>
                 <div className="mb-4">
                   <div className="text-4xl font-bold text-roots-primary">
                     {SEEDS_PER_DOLLAR_SELLER}
                   </div>
-                  <div className="text-gray-600">Seeds per $1 earned</div>
+                  <div className="text-gray-600">Roots Points per $1 earned</div>
                 </div>
                 {multiplierInfo.isActive && (
                   <div className="p-3 bg-amber-100 rounded-lg text-amber-800 text-sm">
-                    <span className="font-semibold">🔥 Early Seller Bonus:</span> Earn {multiplierInfo.multiplierDisplay} Seeds
+                    <span className="font-semibold">🔥 Early Seller Bonus:</span> Earn {multiplierInfo.multiplierDisplay} Roots Points
                     on all sales for the next {multiplierInfo.daysRemaining} days!
                   </div>
                 )}
                 <p className="text-sm text-gray-600 mt-4">
-                  Seeds become redeemable rewards when our community program launches. Early sellers earn the most!
+                  Roots Points are our loyalty rewards program. Early sellers earn the most.
                 </p>
               </CardContent>
             </Card>

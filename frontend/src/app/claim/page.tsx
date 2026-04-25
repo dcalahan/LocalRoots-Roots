@@ -49,7 +49,7 @@ export default function ClaimPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Claim Your $ROOTS</h1>
           <p className="text-roots-gray">
-            Convert your Seeds earned during Phase 1 into $ROOTS tokens
+            Convert your Roots Points earned during Phase 1 into $ROOTS tokens
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export default function ClaimPage() {
             <CardHeader>
               <CardTitle>Connect Your Wallet</CardTitle>
               <CardDescription>
-                Connect the wallet you used to earn Seeds to check your eligibility
+                Connect the wallet you used to earn Roots Points to check your eligibility
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
@@ -87,11 +87,11 @@ export default function ClaimPage() {
                 Airdrop Not Yet Active
               </h3>
               <p className="text-roots-gray mb-4">
-                The $ROOTS token airdrop hasn&apos;t started yet. Keep earning Seeds - they&apos;ll
+                The $ROOTS token airdrop hasn&apos;t started yet. Keep earning Roots Points - they&apos;ll
                 convert to $ROOTS when we launch!
               </p>
               <Link href="/sell/dashboard">
-                <Button variant="outline">View Your Seeds</Button>
+                <Button variant="outline">View Your Roots Points</Button>
               </Link>
             </CardContent>
           </Card>
@@ -121,10 +121,10 @@ export default function ClaimPage() {
             <CardContent className="py-12 text-center">
               <AlertCircle className="h-12 w-12 text-roots-gray mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No Seeds Found
+                No Roots Points Found
               </h3>
               <p className="text-roots-gray mb-4">
-                This wallet didn&apos;t earn any Seeds during Phase 1.
+                This wallet didn&apos;t earn any Roots Points during Phase 1.
               </p>
               <p className="text-sm text-roots-gray mb-6">
                 Wallet: {address?.slice(0, 6)}...{address?.slice(-4)}
@@ -144,15 +144,15 @@ export default function ClaimPage() {
               <CardHeader>
                 <CardTitle className="text-roots-primary">You&apos;re Eligible!</CardTitle>
                 <CardDescription>
-                  You earned Seeds during Phase 1 and can now claim $ROOTS tokens
+                  You earned Roots Points during Phase 1 and can now claim $ROOTS tokens
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Seeds → ROOTS Conversion */}
+                {/* Roots Points → ROOTS Conversion */}
                 <div className="bg-roots-cream rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm text-roots-gray">Seeds Earned</p>
+                      <p className="text-sm text-roots-gray">Roots Points Earned</p>
                       <p className="text-2xl font-bold text-gray-900">
                         {formatSeedsForDisplay(claimInfo.seedsEarned)}
                       </p>
@@ -272,10 +272,10 @@ export default function ClaimPage() {
         {/* Info Section */}
         <div className="mt-8 text-center text-sm text-roots-gray">
           <p>
-            Seeds were earned by sellers, buyers, and ambassadors during Phase 1.
+            Roots Points were earned by sellers, buyers, and ambassadors during Phase 1.
           </p>
           <p className="mt-1">
-            The conversion ratio is based on total Seeds distributed.
+            The conversion ratio is based on total Roots Points distributed.
           </p>
         </div>
       </div>

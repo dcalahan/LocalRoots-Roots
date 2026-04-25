@@ -1,6 +1,6 @@
 'use client';
 
-import { SELLER_MILESTONES, formatSeeds, getMultiplierInfo } from './PhaseConfig';
+import { SELLER_MILESTONES, formatSeeds, getMultiplierInfo, PHASE1_LABEL, PHASE1_LABEL_SHORT } from './PhaseConfig';
 
 interface SellerMilestonesProps {
   completedSales?: number;
@@ -87,11 +87,11 @@ export function SellerMilestones({
         <h3 className="text-xl font-bold">Seller Milestones</h3>
       </div>
       <p className="text-gray-600 text-sm mb-4">
-        Earn bonus Seeds as you grow your seller journey
+        Earn bonus {PHASE1_LABEL} as you grow your seller journey
       </p>
       {showMultiplier && info.isActive && (
         <div className="mb-4 p-2 bg-amber-100 rounded-lg text-sm text-amber-800">
-          🔥 Early adopter bonus: All milestones earn {info.multiplierDisplay} Seeds!
+          🔥 Early adopter bonus: All milestones earn {info.multiplierDisplay} {PHASE1_LABEL}!
         </div>
       )}
       <div className="space-y-3">
@@ -127,7 +127,7 @@ export function SellerMilestones({
                 <div className="font-bold">
                   {formatSeeds(showMultiplier && info.isActive ? adjustedSeeds : milestone.seeds)}
                 </div>
-                <div className="text-xs">Seeds</div>
+                <div className="text-xs">{PHASE1_LABEL_SHORT}</div>
               </div>
             </div>
           );

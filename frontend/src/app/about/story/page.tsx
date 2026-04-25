@@ -113,13 +113,13 @@ export default function FounderStoryPage() {
             </p>
             <p className="mb-4">
               <strong>Right now:</strong> The marketplace is live in preview mode on a test network.
-              Explore freely — buy, sell, try everything. Nothing costs real money. Seeds earned
-              during this preview phase are just for testing and won't carry over.
+              Explore freely — buy, sell, try everything. Nothing costs real money. Roots Points
+              earned during this preview phase are just for testing and won&apos;t carry over.
             </p>
             <p className="mb-4">
-              <strong>At launch:</strong> When we go live on mainnet, everyone starts fresh. That's
-              when Seeds count for real. Your Seeds determine your share of the $ROOTS airdrop —
-              the more you contribute to the network, the bigger your share.
+              <strong>At launch:</strong> When we go live on mainnet, everyone starts fresh. That&apos;s
+              when Roots Points count for real. Your Roots Points determine your share of the $ROOTS
+              airdrop — the more you contribute to the network, the bigger your share.
             </p>
             <p>
               This version is built on Base (Coinbase's L2 network). Transactions are gasless for

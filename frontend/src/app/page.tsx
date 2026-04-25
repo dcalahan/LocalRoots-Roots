@@ -148,8 +148,8 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li><Link href="/sell" className="text-gray-600 hover:text-roots-primary transition-colors">Sell Your Harvest</Link></li>
                 <li><Link href="/ambassador" className="text-gray-600 hover:text-roots-primary transition-colors">Become an Ambassador</Link></li>
-                <li><Link href="/seeds/leaderboard" className="text-gray-600 hover:text-roots-primary transition-colors">Seeds Leaderboard</Link></li>
-                <li><Link href="/about/tokenomics" className="text-gray-600 hover:text-roots-primary transition-colors">Seeds & Tokenomics</Link></li>
+                <li><Link href="/leaderboard" className="text-gray-600 hover:text-roots-primary transition-colors">Roots Points Leaderboard</Link></li>
+                <li><Link href="/about/tokenomics" className="text-gray-600 hover:text-roots-primary transition-colors">Roots Points & Tokenomics</Link></li>
                 <li><Link href="/about/vision" className="text-gray-600 hover:text-roots-primary transition-colors">Our Vision</Link></li>
                 <li><Link href="/about/story" className="text-gray-600 hover:text-roots-primary transition-colors">Our Story</Link></li>
               </ul>
