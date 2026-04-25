@@ -14,6 +14,7 @@ import {
   shouldRunSuggestionExtraction,
 } from '@/lib/sageSuggestions'
 import { kv } from '@/lib/kv'
+import { streamSageChat, completeSagePrompt, type SageMessage } from '@/lib/ai/sageProvider'
 
 const brain = createGardenBrain()
 
@@ -120,60 +121,21 @@ export async function POST(request: NextRequest) {
       llmMessages = messages.slice(-windowSize)
     }
 
-    // ─── Build Anthropic request with streaming ─────────────
+    // ─── Build messages for Sage provider (Venice or Anthropic) ─────
+    // Extract any system messages from history into the systemPrompt; keep
+    // user/assistant turns. Provider handles its own format conversion.
     const systemParts: string[] = [fullSystemPrompt]
-    const apiMessages: { role: string; content: AIMessage['content'] }[] = []
+    const apiMessages: SageMessage[] = []
 
     for (const msg of llmMessages) {
       if (msg.role === 'system') {
         systemParts.push(getTextContent(msg.content))
-      } else {
-        apiMessages.push({ role: msg.role, content: msg.content })
+      } else if (msg.role === 'user' || msg.role === 'assistant') {
+        apiMessages.push({ role: msg.role, content: msg.content as SageMessage['content'] })
       }
     }
 
-    if (apiMessages.length > 0 && apiMessages[0].role === 'assistant') {
-      apiMessages.unshift({ role: 'user', content: '(conversation continues)' })
-    }
-
-    // Merge consecutive same-role (only strings)
-    const merged: { role: string; content: AIMessage['content'] }[] = []
-    for (const msg of apiMessages) {
-      const prev = merged.length > 0 ? merged[merged.length - 1] : null
-      if (prev && prev.role === msg.role && typeof prev.content === 'string' && typeof msg.content === 'string') {
-        prev.content += '\n\n' + msg.content
-      } else {
-        merged.push({ ...msg })
-      }
-    }
-
-    const anthropicBody = {
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
-      stream: true,
-      system: systemParts.join('\n\n'),
-      messages: merged,
-    }
-
-    // ─── Stream from Anthropic ──────────────────────────────
-    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(anthropicBody),
-    })
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text().catch(() => 'Unknown error')
-      console.error('[Garden AI] Anthropic error:', anthropicRes.status, errText)
-      return NextResponse.json(
-        { error: `AI service error: ${anthropicRes.status}` },
-        { status: 502 }
-      )
-    }
+    const finalSystemPrompt = systemParts.join('\n\n')
 
     // Shared state for the stream — captured by after() closure
     const streamState = {
@@ -186,36 +148,15 @@ export async function POST(request: NextRequest) {
 
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = anthropicRes.body!.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-
         try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n')
-            buffer = lines.pop() ?? ''
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6).trim()
-                if (data === '[DONE]') continue
-
-                try {
-                  const event = JSON.parse(data)
-                  if (event.type === 'content_block_delta' && event.delta?.text) {
-                    const text = event.delta.text
-                    streamState.fullResponse += text
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
-                  }
-                } catch {
-                  // Skip malformed SSE events
-                }
-              }
-            }
+          // streamSageChat picks Venice or Anthropic per env var, with fallback
+          for await (const text of streamSageChat({
+            systemPrompt: finalSystemPrompt,
+            messages: apiMessages,
+            maxTokens: 2000,
+          })) {
+            streamState.fullResponse += text
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
           }
 
           streamState.done = true
@@ -233,32 +174,17 @@ export async function POST(request: NextRequest) {
                 { role: 'assistant', content: streamState.fullResponse },
               ]
               const extractionPrompt = buildGardenActionExtractionPrompt(recentForActions)
-              const actionRes = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-api-key': process.env.ANTHROPIC_API_KEY!,
-                  'anthropic-version': '2023-06-01',
-                },
-                body: JSON.stringify({
-                  model: 'claude-haiku-4-5-20251001',
-                  max_tokens: 500,
-                  messages: [{ role: 'user', content: extractionPrompt }],
-                }),
+              const actionText = await completeSagePrompt({
+                prompt: extractionPrompt,
+                maxTokens: 500,
               })
-              if (actionRes.ok) {
-                const actionData = await actionRes.json()
-                const actionText = actionData.content?.[0]?.text || ''
-                console.log('[Garden AI] Action extraction raw:', actionText.slice(0, 200))
-                const actions = parseGardenActions(actionText)
-                if (actions.length > 0) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ gardenActions: actions })}\n\n`))
-                  console.log('[Garden AI] Extracted', actions.length, 'garden actions:', JSON.stringify(actions))
-                } else {
-                  console.log('[Garden AI] No actions extracted from conversation')
-                }
+              console.log('[Garden AI] Action extraction raw:', actionText.slice(0, 200))
+              const actions = parseGardenActions(actionText)
+              if (actions.length > 0) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ gardenActions: actions })}\n\n`))
+                console.log('[Garden AI] Extracted', actions.length, 'garden actions:', JSON.stringify(actions))
               } else {
-                console.error('[Garden AI] Action extraction API call failed:', actionRes.status, await actionRes.text().catch(() => ''))
+                console.log('[Garden AI] No actions extracted from conversation')
               }
             } catch (err) {
               console.error('[Garden AI] Garden action extraction failed:', err)
@@ -331,22 +257,11 @@ export async function POST(request: NextRequest) {
         ]
         if (shouldRunSuggestionExtraction(recentForSuggestion)) {
           const prompt = buildSuggestionExtractionPrompt(recentForSuggestion)
-          const sugRes = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': process.env.ANTHROPIC_API_KEY!,
-              'anthropic-version': '2023-06-01',
-            },
-            body: JSON.stringify({
-              model: 'claude-haiku-4-5-20251001',
-              max_tokens: 400,
-              messages: [{ role: 'user', content: prompt }],
-            }),
-          })
-          if (sugRes.ok) {
-            const sugData = await sugRes.json()
-            const sugText = sugData.content?.[0]?.text || ''
+          try {
+            const sugText = await completeSagePrompt({
+              prompt,
+              maxTokens: 400,
+            })
             const extracted = parseSuggestion(sugText)
             if (extracted) {
               const anonKey =
@@ -366,10 +281,10 @@ export async function POST(request: NextRequest) {
             } else {
               console.log('[Garden AI] Suggestion prefilter passed but extraction returned null')
             }
-          } else {
+          } catch (sugErr) {
             console.error(
-              '[Garden AI] Suggestion extraction API call failed:',
-              sugRes.status,
+              '[Garden AI] Suggestion extraction call failed:',
+              sugErr instanceof Error ? sugErr.message : String(sugErr),
             )
           }
         }
