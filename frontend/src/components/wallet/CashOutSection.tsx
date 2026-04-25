@@ -6,6 +6,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWalletBalances } from '@/hooks/useWalletBalances';
+import { useToast } from '@/hooks/use-toast';
 import {
   isCoinbaseOfframpConfigured,
   openCoinbaseOfframp,
@@ -24,6 +25,7 @@ import {
 export function CashOutSection() {
   const { user } = usePrivy();
   const { walletAddress, balances } = useWalletBalances();
+  const { toast } = useToast();
   const [isOpening, setIsOpening] = useState(false);
 
   const usdcBalance = balances.find(b => b.symbol === 'USDC');
@@ -32,23 +34,25 @@ export function CashOutSection() {
 
   const configured = isCoinbaseOfframpConfigured();
 
-  const handleCashOut = () => {
+  const handleCashOut = async () => {
     if (!walletAddress) return;
     setIsOpening(true);
-    const opened = openCoinbaseOfframp({
-      walletAddress,
-      partnerUserId: user?.id || undefined,
-      // Pre-fill the user's full USDC balance — they can edit on Coinbase
-      presetCryptoAmount: usdcAmount > 0 ? usdcAmount : undefined,
-      redirectUrl:
-        typeof window !== 'undefined'
-          ? `${window.location.origin}/sell/dashboard`
-          : undefined,
-    });
-    // Brief visual feedback even if the popup launches synchronously
-    setTimeout(() => setIsOpening(false), 1500);
-    if (!opened) {
-      console.warn('[CashOutSection] Offramp not configured');
+    try {
+      const result = await openCoinbaseOfframp({
+        walletAddress,
+        partnerUserId: user?.id || undefined,
+        // Pre-fill the user's full USDC balance — they can edit on Coinbase
+        presetCryptoAmount: usdcAmount > 0 ? usdcAmount : undefined,
+      });
+      if (!result.ok) {
+        toast({
+          title: "Couldn't open Cash Out",
+          description: result.error || 'Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsOpening(false);
     }
   };
 
@@ -74,7 +78,7 @@ export function CashOutSection() {
               <p className="text-xs mt-1">
                 Bank deposit via Coinbase is being configured for launch.
                 For now, you can send your USDC directly to a personal Coinbase
-                account using the &ldquo;Send&rdquo; button below.
+                account using the &ldquo;Send&rdquo; button above.
               </p>
             </div>
           </div>
