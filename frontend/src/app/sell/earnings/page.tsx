@@ -129,26 +129,27 @@ export default function EarningsPage() {
                   <div className="w-8 h-8 bg-roots-secondary rounded-full flex items-center justify-center">
                     <span className="text-white text-lg">🌱</span>
                   </div>
-                  What are Seeds?
+                  What are Roots Points?
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-roots-gray mb-4">
-                  Seeds are loyalty points you earn with every sale. When LocalRoots launches the $ROOTS token,
-                  your Seeds will convert to real $ROOTS tokens at a fixed rate.
+                  Roots Points are LocalRoots&apos; loyalty rewards program — think Starbucks Stars or airline miles.
+                  Earn them with every sale. When LocalRoots launches the $ROOTS token in 2027, your Roots Points
+                  will convert to $ROOTS tokens at a fixed rate.
                 </p>
                 <ul className="space-y-2 text-roots-gray">
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span><strong>Earn automatically</strong> - Seeds are recorded on-chain with every sale</span>
+                    <span><strong>Earn automatically</strong> — Roots Points are recorded on-chain with every sale</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span><strong>Early adopter bonus</strong> - Early sellers get more Seeds per dollar earned</span>
+                    <span><strong>Early adopter bonus</strong> — early sellers get more Roots Points per dollar earned</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <svg className="w-5 h-5 text-roots-secondary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,7 +234,7 @@ export default function EarningsPage() {
             </p>
             {!isPhase2 && (
               <p className="mt-1">
-                Seeds are tracked on-chain and will be converted to $ROOTS at token launch.
+                Roots Points are tracked on-chain and will be converted to $ROOTS at token launch.
               </p>
             )}
           </div>

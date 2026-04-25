@@ -241,7 +241,7 @@ function buildAppKnowledgeContext(): string {
     overview: string
     sections: { id: string; name: string; description: string; routes: { path: string; name: string; description: string; authRequired: boolean }[] }[]
     flows: { id: string; trigger: string; steps: string[] }[]
-    seeds: Record<string, string>
+    rootsPoints: Record<string, string>
     auth: Record<string, string>
     tone: string[]
   }
@@ -262,14 +262,16 @@ function buildAppKnowledgeContext(): string {
     ctx += '\n'
   }
 
-  // Seeds
-  ctx += `SEEDS REWARDS:\n`
-  ctx += `- Sellers earn ${ak.seeds.sellers}\n`
-  ctx += `- Buyers earn ${ak.seeds.buyers}\n`
-  ctx += `- Ambassadors earn ${ak.seeds.ambassadors}\n`
-  ctx += `- Early adopter bonus: ${ak.seeds.earlyAdopter}\n`
-  ctx += `- ${ak.seeds.conversion}\n`
-  ctx += `- Leaderboard: ${ak.seeds.leaderboard}\n\n`
+  // Roots Points (loyalty rewards program — formerly called "Seeds")
+  ctx += `ROOTS POINTS (loyalty rewards program):\n`
+  ctx += `- Sellers earn ${ak.rootsPoints.sellers}\n`
+  ctx += `- Buyers earn ${ak.rootsPoints.buyers}\n`
+  ctx += `- Ambassadors earn ${ak.rootsPoints.ambassadors}\n`
+  ctx += `- Early adopter bonus: ${ak.rootsPoints.earlyAdopter}\n`
+  ctx += `- ${ak.rootsPoints.conversion}\n`
+  ctx += `- Leaderboard: ${ak.rootsPoints.leaderboard}\n`
+  if (ak.rootsPoints.tone) ctx += `- TONE: ${ak.rootsPoints.tone}\n`
+  ctx += `\n`
 
   // Auth
   ctx += `SIGN-IN OPTIONS:\n`

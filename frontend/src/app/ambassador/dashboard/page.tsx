@@ -536,7 +536,7 @@ export default function AmbassadorDashboardPage() {
                 <span>🌱</span>
                 {seedsData ? formatSeedsAmount(seedsData.total) : '0'}
               </div>
-              <div className="text-sm text-roots-gray">Seeds Earned</div>
+              <div className="text-sm text-roots-gray">Roots Points Earned</div>
               {multiplierInfo.isActive && (
                 <div className="text-xs text-amber-600 mt-1">
                   {multiplierInfo.multiplierDisplay} active!
@@ -554,11 +554,11 @@ export default function AmbassadorDashboardPage() {
           </Card>
         </div>
 
-        {/* Seeds Breakdown Card */}
+        {/* Roots Points Breakdown Card */}
         <Card className="mb-8 border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <span className="text-2xl">🌱</span> Your Seeds
+              <span className="text-2xl">🌱</span> Your Roots Points
               {multiplierInfo.isActive && <MultiplierBadge />}
             </CardTitle>
           </CardHeader>
@@ -591,7 +591,7 @@ export default function AmbassadorDashboardPage() {
             </div>
             <div className="text-center pt-3 border-t">
               <p className="text-sm text-amber-800">
-                Seeds convert to $ROOTS tokens at Phase 2 launch.{' '}
+                Roots Points convert to $ROOTS tokens at Phase 2 launch.{' '}
                 <Link href="/about/tokenomics" className="underline hover:no-underline">
                   Learn more
                 </Link>
@@ -611,10 +611,10 @@ export default function AmbassadorDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-roots-gray mb-3">
-                Share this link with farmers to onboard them. You'll earn <strong>{AMBASSADOR_COMMISSION_PERCENT}% in Seeds</strong> from their sales!
+                Share this link with farmers to onboard them. You&apos;ll earn <strong>{AMBASSADOR_COMMISSION_PERCENT}% in Roots Points</strong> from their sales!
               </p>
               <div className="text-xs text-amber-700 bg-amber-50 rounded p-2 mb-3">
-                🌱 Recruitment bonus: <strong>{AMBASSADOR_RECRUITMENT_BONUS.toLocaleString()} Seeds</strong> when they make their first sale
+                🌱 Recruitment bonus: <strong>{AMBASSADOR_RECRUITMENT_BONUS.toLocaleString()} Roots Points</strong> when they make their first sale
               </div>
               <div className="flex gap-2">
                 <input
@@ -654,7 +654,7 @@ export default function AmbassadorDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-roots-gray mb-3">
-                Share this link to recruit more ambassadors. Earn Seeds from your entire network's activity!
+                Share this link to recruit more ambassadors. Earn Roots Points from your entire network&apos;s activity!
               </p>
               <div className="flex gap-2">
                 <input
@@ -706,7 +706,7 @@ export default function AmbassadorDashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-roots-gray mb-4">
-              Help govern LocalRoots by voting on disputes and reviewing data requests. Earn Seeds for participating.
+              Help govern LocalRoots by voting on disputes and reviewing data requests. Earn Roots Points for participating.
             </p>
 
             {/* Stats Grid */}
@@ -756,7 +756,7 @@ export default function AmbassadorDashboardPage() {
                     )}
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Vote on buyer/seller disputes. <span className="text-amber-600 font-medium">100 Seeds per vote</span>
+                    Vote on buyer/seller disputes. <span className="text-amber-600 font-medium">100 Roots Points per vote</span>
                   </p>
                 </div>
               </Link>

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { getMultiplierInfo } from './PhaseConfig';
+import { getMultiplierInfo, PHASE1_LABEL } from './PhaseConfig';
 
 interface EarlyAdopterBannerProps {
   showLink?: boolean;
@@ -28,7 +28,7 @@ export function EarlyAdopterBanner({ showLink = true, className = '', isPhase2 =
         <span className="text-xl">🔥</span>
         <span className="font-semibold">Early Adopter Bonus:</span>
         <span>
-          Earn <strong>{info.multiplierDisplay} Seeds</strong> for the next{' '}
+          Earn <strong>{info.multiplierDisplay} {PHASE1_LABEL}</strong> for the next{' '}
           <strong>{info.daysRemaining} days</strong>!
         </span>
         {showLink && (

@@ -1,5 +1,5 @@
 {
-  "overview": "LocalRoots is a gardening companion that helps you grow food and share it with your neighbors. It includes an AI assistant personalized to your climate, a personal garden tracker, planting calendars, and growing guides. When your garden produces more than you can eat, LocalRoots connects you with neighbors who want fresh, local food — with no platform fees. Everyone earns Seeds (loyalty rewards that convert to $ROOTS tokens at launch).",
+  "overview": "LocalRoots is a gardening companion that helps you grow food and share it with your neighbors. It includes an AI assistant personalized to your climate, a personal garden tracker, planting calendars, and growing guides. When your garden produces more than you can eat, LocalRoots connects you with neighbors who want fresh, local food — with no platform fees. Everyone earns Roots Points (a loyalty rewards program for sellers, buyers, and ambassadors).",
   "sections": [
     {
       "id": "grow",
@@ -106,7 +106,7 @@
         {
           "path": "/sell",
           "name": "Get Started Selling",
-          "description": "Learn about selling — benefits, how it works, Seeds rewards. Registered sellers are redirected to their dashboard.",
+          "description": "Learn about selling — benefits, how it works, Roots Points rewards. Registered sellers are redirected to their dashboard.",
           "authRequired": false
         },
         {
@@ -119,7 +119,7 @@
         {
           "path": "/sell/dashboard",
           "name": "Seller Dashboard",
-          "description": "Your seller hub — manage listings, view incoming orders, track earnings and Seeds. Share individual listings on Facebook, Instagram, NextDoor, SMS, or email — the link preview shows your produce photo automatically.",
+          "description": "Your seller hub — manage listings, view incoming orders, track earnings and Roots Points. Share individual listings on Facebook, Instagram, NextDoor, SMS, or email — the link preview shows your produce photo automatically.",
           "authRequired": true
         },
         {
@@ -131,7 +131,7 @@
         {
           "path": "/sell/earnings",
           "name": "Earnings",
-          "description": "Detailed breakdown of sales and Seeds earned.",
+          "description": "Detailed breakdown of sales and Roots Points earned.",
           "authRequired": true
         }
       ]
@@ -158,7 +158,7 @@
         {
           "path": "/ambassador/dashboard",
           "name": "Ambassador Dashboard",
-          "description": "See your recruits, earnings, Seeds, and share your referral link.",
+          "description": "See your recruits, earnings, Roots Points, and share your referral link.",
           "authRequired": true
         },
         {
@@ -238,13 +238,13 @@
         {
           "path": "/wallet",
           "name": "Wallet",
-          "description": "View token balances (Seeds, USDC, USDT, ETH).",
+          "description": "View balances (Roots Points, USDC, USDT, ETH).",
           "authRequired": true
         },
         {
-          "path": "/seeds/leaderboard",
-          "name": "Seeds Leaderboard",
-          "description": "See top earners across sellers, ambassadors, and buyers ranked by Seeds.",
+          "path": "/leaderboard",
+          "name": "Roots Points Leaderboard",
+          "description": "See top earners across sellers, ambassadors, and buyers ranked by Roots Points. (The old /seeds/leaderboard URL also still works via redirect.)",
           "authRequired": false
         },
         {
@@ -267,8 +267,8 @@
         },
         {
           "path": "/about/tokenomics",
-          "name": "Seeds & Tokenomics",
-          "description": "How Seeds work, earning rates, and the $ROOTS token roadmap.",
+          "name": "Roots Points & Tokenomics",
+          "description": "How Roots Points work, earning rates, and the $ROOTS token roadmap.",
           "authRequired": false
         }
       ]
@@ -343,13 +343,15 @@
       ]
     }
   ],
-  "seeds": {
-    "sellers": "500 Seeds per $1 earned + milestone bonuses (10,000 for first sale, 25,000 at 5 sales, 50,000 at 15 sales)",
-    "buyers": "50 Seeds per $1 spent",
-    "ambassadors": "25% of recruited sellers' Seeds",
-    "earlyAdopter": "2x Seeds for first 90 days, 1.5x for days 91-180",
-    "conversion": "Seeds convert to $ROOTS tokens when the token launches",
-    "leaderboard": "See rankings at /seeds/leaderboard"
+  "rootsPoints": {
+    "_label": "Roots Points (RP) — LocalRoots' loyalty rewards program. Think Starbucks Stars or airline miles. Pre-launch this is called Roots Points; old code/docs may still say 'Seeds' — same thing.",
+    "sellers": "500 Roots Points per $1 earned + milestone bonuses (10,000 RP for first sale, 25,000 at 5 sales, 50,000 at 15 sales)",
+    "buyers": "50 Roots Points per $1 spent",
+    "ambassadors": "25% of recruited sellers' Roots Points",
+    "earlyAdopter": "2x Roots Points for first 90 days, 1.5x for days 91-180",
+    "conversion": "Roots Points convert to $ROOTS tokens when the token launches in 2027",
+    "leaderboard": "See rankings at /leaderboard",
+    "tone": "When users ask, describe Roots Points as a loyalty program. Avoid crypto jargon unless the user asks specifically about how the conversion works. Don't quote a future dollar value of $ROOTS."
   },
   "auth": {
     "sellersAmbassadors": "Email, phone, Google, Apple, or Instagram via Privy. No crypto wallet needed — all transactions are gasless.",

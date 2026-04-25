@@ -7,12 +7,17 @@ export const DAY_180 = new Date(PHASE1_LAUNCH.getTime() + 180 * 24 * 60 * 60 * 1
 
 // Phase 2 terminology
 export const PHASE2_LABEL = '$ROOTS';
-export const PHASE1_LABEL = 'Seeds';
+// Phase 1 user-facing label. Changed from "Seeds" → "Roots Points" April 2026.
+// Internal code (function names, constants) still references "Seeds" for stability;
+// only the user-facing label changed. See ~/.claude/plans/roots-points-rebrand-and-bootstrap-honesty.md
+export const PHASE1_LABEL = 'Roots Points';
+/** Short abbreviation, used where space is tight. */
+export const PHASE1_LABEL_SHORT = 'RP';
 
 /**
  * Get the reward label based on current phase
  * @param isPhase2 - Whether we're in Phase 2
- * @returns "Seeds" in Phase 1, "$ROOTS" in Phase 2
+ * @returns "Roots Points" in Phase 1, "$ROOTS" in Phase 2
  */
 export function getRewardLabel(isPhase2: boolean): string {
   return isPhase2 ? PHASE2_LABEL : PHASE1_LABEL;

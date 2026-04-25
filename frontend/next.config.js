@@ -16,6 +16,17 @@ const nextConfig = {
   },
   // Empty turbopack config to use Turbopack (Next.js 16 default)
   turbopack: {},
+  async redirects() {
+    return [
+      {
+        // Seeds → Roots Points rebrand (April 2026). Old URL preserved
+        // for backlinks from Common Area emails and external references.
+        source: '/seeds/leaderboard',
+        destination: '/leaderboard',
+        permanent: true, // 308
+      },
+    ];
+  },
   async headers() {
     return [
       {
