@@ -1,14 +1,16 @@
 import { type Address } from 'viem';
 
 // Contract addresses - loaded from environment variables
-export const MARKETPLACE_ADDRESS: Address = (process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS || '0xb3E31B84Ed6d22DD84eFd193282eafc00Eb32F22') as Address;
-export const ROOTS_TOKEN_ADDRESS: Address = (process.env.NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS || '0x33eFBF74Df84193Ce39dfF91394d9A0fE20c36c3') as Address;
-export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0x8D546152e4A39680C00Aa61d914f38878083B1c8') as Address;
-export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x3DeE6FcBE0D28E3C772b6f57ca83B0652eC01F20') as Address;
+// Fallback addresses are Base MAINNET (deployed April 25 2026 — DeployPhase1)
+export const MARKETPLACE_ADDRESS: Address = (process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS || '0x00c779cdc392d8c99B6649F8002e4A1C57E644b7') as Address;
+export const ROOTS_TOKEN_ADDRESS: Address = (process.env.NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS || '0x0000000000000000000000000000000000000000') as Address;
+export const AMBASSADOR_REWARDS_ADDRESS: Address = (process.env.NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS || '0xdf6351e0f46CFb02Dab17a62E5D89D175689BeBE') as Address;
+export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x6ad1513BAA05cBA3354F4367326F0f63fC25A0Dd') as Address;
 
-// Payment token addresses (Mock tokens for testnet) - Jan 25 deployment
-export const USDC_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e') as Address;
-export const USDT_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDT_ADDRESS || '0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b') as Address;
+// Payment token addresses — Base MAINNET (Circle's official USDC, real USDT)
+export const USDC_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913') as Address;
+// USDT not currently used on mainnet (USDC-only for v1). Keeping export to avoid breaking imports.
+export const USDT_ADDRESS: Address = (process.env.NEXT_PUBLIC_USDT_ADDRESS || '0x0000000000000000000000000000000000000000') as Address;
 
 // Debug: Log token addresses at module load
 if (typeof window !== 'undefined') {

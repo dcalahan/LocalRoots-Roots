@@ -3,8 +3,8 @@ import { MARKETPLACE_ADDRESS, AMBASSADOR_REWARDS_ADDRESS } from './marketplace';
 import { DISPUTE_RESOLUTION_ADDRESS } from './disputeResolution';
 import { GOVERNMENT_REQUESTS_ADDRESS } from './governmentRequests';
 
-// ERC2771Forwarder contract address on Base Sepolia - loaded from environment variable
-export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x3DeE6FcBE0D28E3C772b6f57ca83B0652eC01F20') as Address;
+// ERC2771Forwarder contract address — Base MAINNET (April 25 2026 DeployPhase1)
+export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x6ad1513BAA05cBA3354F4367326F0f63fC25A0Dd') as Address;
 
 // Allowed target contracts for gasless transactions (dynamically uses current addresses)
 export const ALLOWED_TARGETS: Address[] = [
