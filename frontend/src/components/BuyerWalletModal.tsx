@@ -360,7 +360,7 @@ export function BuyerWalletModal({
               <p className="text-xs text-center text-roots-gray mt-6">
                 {showCreditCardOption
                   ? 'Credit card payments are processed securely.'
-                  : 'Sign in to view your account balance and earn Seeds rewards.'
+                  : 'Sign in to view your account balance and earn Roots Points rewards.'
                 }
               </p>
             </>
