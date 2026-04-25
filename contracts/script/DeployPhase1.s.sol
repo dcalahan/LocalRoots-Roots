@@ -29,16 +29,44 @@ contract DeployPhase1 is Script {
     LocalRootsMarketplace public marketplace;
     DisputeResolution public disputeResolution;
 
-    // USDC on Base Sepolia (Circle's official testnet USDC)
-    address constant USDC_ADDRESS = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
+    // USDC addresses (Circle's official deployments)
+    address constant USDC_BASE_MAINNET = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+    address constant USDC_BASE_SEPOLIA = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
 
     function run() external {
         address deployer = vm.envAddress("FOUNDER_ADDRESS");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
+        // INITIAL_ADMIN is the wallet that gets admin role on the contracts.
+        // SECURITY: keep this separate from the deployer wallet so a compromised
+        // deployer key (which sees the most exposure during deployment) does not
+        // also retain admin powers on the deployed contracts. Defaults to deployer
+        // for backwards compatibility with testnet runs that didn't set it.
+        address initialAdmin = vm.envOr("INITIAL_ADMIN", deployer);
+
+        // USDC address: auto-pick by chain ID, or override with USDC_ADDRESS env.
+        address usdcAddress = vm.envOr("USDC_ADDRESS", address(0));
+        if (usdcAddress == address(0)) {
+            if (block.chainid == 8453) {
+                usdcAddress = USDC_BASE_MAINNET;
+            } else if (block.chainid == 84532) {
+                usdcAddress = USDC_BASE_SEPOLIA;
+            } else {
+                revert("Unknown chain - set USDC_ADDRESS env var");
+            }
+        }
+
+        string memory networkName;
+        if (block.chainid == 8453) networkName = "Base MAINNET";
+        else if (block.chainid == 84532) networkName = "Base Sepolia";
+        else networkName = "Unknown chain";
+
         console.log("=== Phase 1 Deployment ===");
-        console.log("Deployer:", deployer);
-        console.log("Network: Base Sepolia (Phase 1 - USDC only)");
+        console.log("Network:       ", networkName);
+        console.log("Chain ID:      ", block.chainid);
+        console.log("Deployer:      ", deployer);
+        console.log("Initial admin: ", initialAdmin);
+        console.log("USDC address:  ", usdcAddress);
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -50,7 +78,7 @@ contract DeployPhase1 is Script {
         // Note: In Phase 1, rootsToken is set to a dummy address since rewards are Seeds-based
         // The contract still requires a non-zero address, so we use USDC address as placeholder
         // (No ROOTS tokens will be transferred in Phase 1)
-        ambassadorRewards = new AmbassadorRewards(USDC_ADDRESS, address(forwarder));
+        ambassadorRewards = new AmbassadorRewards(usdcAddress, address(forwarder));
         console.log("AmbassadorRewards deployed at:", address(ambassadorRewards));
 
         // Step 3: Deploy Marketplace in Phase 1 mode
@@ -58,9 +86,9 @@ contract DeployPhase1 is Script {
             address(0),                                          // No ROOTS token in Phase 1
             address(ambassadorRewards),
             address(forwarder),
-            deployer,                                            // Initial admin
+            initialAdmin,                                        // Initial admin (separate from deployer)
             LocalRootsMarketplace.LaunchPhase.Phase1_USDC,       // Start in Phase 1
-            USDC_ADDRESS                                         // Phase 1 payment token
+            usdcAddress                                          // Phase 1 payment token
         );
         console.log("LocalRootsMarketplace deployed at:", address(marketplace));
 
@@ -69,7 +97,7 @@ contract DeployPhase1 is Script {
             address(ambassadorRewards),
             address(marketplace),
             address(forwarder),
-            deployer
+            initialAdmin
         );
         console.log("DisputeResolution deployed at:", address(disputeResolution));
 
@@ -93,7 +121,7 @@ contract DeployPhase1 is Script {
         console.log("  DisputeResolution:", address(disputeResolution));
         console.log("");
         console.log("Phase 1 Configuration:");
-        console.log("  Payment Token: USDC only (", USDC_ADDRESS, ")");
+        console.log("  Payment Token: USDC only (", usdcAddress, ")");
         console.log("  Rewards: Seeds (tracked on-chain, indexed by TheGraph)");
         console.log("  Seeds Ratios: 500 Seeds per $1 (sellers), 50 Seeds per $1 (buyers)");
         console.log("");
