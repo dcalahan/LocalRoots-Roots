@@ -103,6 +103,12 @@ export default function EarningsPage() {
                 <p className="text-xs text-roots-gray mt-2">
                   From {completedOrders.length} completed sale{completedOrders.length !== 1 ? 's' : ''}
                 </p>
+                <Link
+                  href="/wallet"
+                  className="text-sm text-roots-primary font-medium hover:underline mt-3 inline-block"
+                >
+                  Cash out to bank →
+                </Link>
               </CardContent>
             </Card>
 
