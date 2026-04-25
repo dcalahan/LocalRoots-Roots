@@ -234,21 +234,42 @@ Single email login shows role-based tabs:
 | Seller | Privy (email) | `/orders` |
 | Ambassador | Privy (email) | `/orders` |
 
-## Contract Addresses (Base Sepolia Testnet)
+## Contract Addresses (Base MAINNET — LIVE since April 25 2026)
 
-Current deployment (2026-04-06 — Phase 1, security-fix release, immutable USDC):
-- `NEXT_PUBLIC_MARKETPLACE_ADDRESS` = `0xb3E31B84Ed6d22DD84eFd193282eafc00Eb32F22`
-- `NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS` = `0x8D546152e4A39680C00Aa61d914f38878083B1c8`
-- `NEXT_PUBLIC_FORWARDER_ADDRESS` = `0x3DeE6FcBE0D28E3C772b6f57ca83B0652eC01F20`
-- `NEXT_PUBLIC_USDC_ADDRESS` = `0x036CbD53842c5426634e7929541eC2318f3dCF7e` (Circle official Base Sepolia USDC)
-- `NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS` = `0x21952Cb029da00902EDA5c83a01825Ae2E645e03` (legacy — Phase 1 has no ROOTS)
-- `NEXT_PUBLIC_USDT_ADDRESS` = `0x3c69B46E4Ab4141F0089a5289dBC20f33A36981b` (legacy MockUSDT — not used in Phase 1)
+**Phase 1 deployment via `DeployPhase1.s.sol`:**
+- `NEXT_PUBLIC_MARKETPLACE_ADDRESS` = `0x00c779cdc392d8c99B6649F8002e4A1C57E644b7`
+- `NEXT_PUBLIC_AMBASSADOR_REWARDS_ADDRESS` = `0xdf6351e0f46CFb02Dab17a62E5D89D175689BeBE`
+- `NEXT_PUBLIC_FORWARDER_ADDRESS` = `0x6ad1513BAA05cBA3354F4367326F0f63fC25A0Dd`
+- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0x7789aCB26FD08A2f33664ebC0b60eE4fa0D5420d`
+- `NEXT_PUBLIC_USDC_ADDRESS` = `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` (Circle official Base mainnet USDC)
+- `NEXT_PUBLIC_ROOTS_TOKEN_ADDRESS` = `0x0000000000000000000000000000000000000000` (Phase 2 / Q1 2027 — not yet deployed)
+- `NEXT_PUBLIC_USDT_ADDRESS` = `0x0000000000000000000000000000000000000000` (USDC-only on mainnet)
+- `NEXT_PUBLIC_NETWORK` = `mainnet` (gates `chainConfig.ts` flip)
+- `NEXT_PUBLIC_COINBASE_PROJECT_ID` = `37ee8da0-6945-4c8f-9f73-f7cb5bc4dabc`
 
-Governance contracts (2026-04-06 — redeployed alongside marketplace):
-- `NEXT_PUBLIC_DISPUTE_RESOLUTION_ADDRESS` = `0xf195E2005538ae55f2559930A8C641A0f9709D6C`
-- `NEXT_PUBLIC_GOVERNMENT_REQUESTS_ADDRESS` = `0x9464B2b76047Da4eb6fD8E60245998f1c747DC33`
+**Not deployed to mainnet (out of v1 scope):**
+- `GovernmentRequests` — ambassador governance for data requests (defer to Phase 1.5)
+- `OperationsTreasury` (Gnosis Safe) — admin operations multisig (optional)
 
-All contract addresses must be from the same deployment. If one changes, verify all are updated in `.env.local`.
+**Admin role on AmbassadorRewards** transferred from deployer → `0x30C4343A742F922Ea8cF10e2042919C873274879` (Doug's Privy wallet) post-deployment via `addAdmin` + `removeAdmin` calls. Deployer wallet has zero residual rights.
+
+**Mainnet wallets:**
+- Admin (Privy): `0x30C4343A742F922Ea8cF10e2042919C873274879`
+- Relayer (gas): `0xe2034722F2973814CF829179889b7C27D8D00452` — funded with 0.05 ETH; private key in Vercel `RELAYER_PRIVATE_KEY`
+- Deployer (abandoned): `0x6fC7F0e04Ce4e9C7684F71b9991FEf50a84e2e03` — single-use, no contract rights
+
+**Testnet (Base Sepolia) addresses — DEPRECATED (kept for historical reference only):**
+<details><summary>Click to expand testnet addresses (do not use)</summary>
+
+- Marketplace: `0xb3E31B84Ed6d22DD84eFd193282eafc00Eb32F22`
+- AmbassadorRewards: `0x8D546152e4A39680C00Aa61d914f38878083B1c8`
+- Forwarder: `0x3DeE6FcBE0D28E3C772b6f57ca83B0652eC01F20`
+- USDC (Sepolia): `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
+- DisputeResolution: `0xf195E2005538ae55f2559930A8C641A0f9709D6C`
+- GovernmentRequests: `0x9464B2b76047Da4eb6fD8E60245998f1c747DC33`
+</details>
+
+All contract addresses must be from the same deployment. If one changes, verify all are updated in Vercel env vars AND fallback addresses in `frontend/src/lib/contracts/*.ts`.
 
 ## Test Wallet Configuration
 
