@@ -602,10 +602,24 @@ export function createGardenBrain(): Brain {
             const planted = new Date(p.plantingDate)
             const daysSincePlanting = Math.floor((Date.now() - planted.getTime()) / 86400000)
             const maturityMin = crop?.daysToMaturity?.min || 60
+            const maturityMax = crop?.daysToMaturity?.max || maturityMin + 14
             const pct = Math.min(100, Math.round((daysSincePlanting / maturityMin) * 100))
+            const daysToHarvest = Math.max(0, maturityMin - daysSincePlanting)
+            // Estimated harvest window — earliest at planted + maturityMin, latest at planted + maturityMax
+            const harvestStart = new Date(planted.getTime() + maturityMin * 86400000)
+            const harvestEnd = new Date(planted.getTime() + maturityMax * 86400000)
+            const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            const harvestRange = maturityMax > maturityMin
+              ? `${fmt(harvestStart)}–${fmt(harvestEnd)}`
+              : fmt(harvestStart)
+            const harvestStatus = daysToHarvest === 0
+              ? 'READY TO HARVEST NOW'
+              : daysToHarvest <= 7
+                ? `~${daysToHarvest} days until harvest (READY SOON)`
+                : `~${daysToHarvest} days until harvest`
             const bedName = p.bedId ? bedById[p.bedId] : undefined
             const bedLabel = bedName ? ` in "${bedName}"` : (p.location ? ` [${p.location}]` : '')
-            return `- ${name} (×${p.quantity})${bedLabel}: planted ${p.plantingDate}, ${daysSincePlanting} days ago, ~${pct}% to maturity`
+            return `- ${name} (×${p.quantity})${bedLabel}: planted ${p.plantingDate} (${daysSincePlanting}d ago), ~${pct}% to maturity, ${harvestStatus}, expected harvest window ${harvestRange}`
           }).join('\n')
         }
 
@@ -657,7 +671,16 @@ You have the ability to add plants, beds, and more to the user's garden tracker.
 - Reference their specific plants AND beds when giving advice ("Your tomatoes in Bed 1 are about X days from harvest...")
 - When the user mentions a bed by name, find it by fuzzy match — don't create duplicates
 - When harvest approaches, suggest they list surplus on LocalRoots to sell to neighbors
-- If someone asks "can you add plants to my garden?" — say YES! Tell them to just describe what they planted and you'll track it for them.\n`
+- If someone asks "can you add plants to my garden?" — say YES! Tell them to just describe what they planted and you'll track it for them.
+
+WHAT YOU KNOW ABOUT EACH TRACKED PLANT (already in the USER'S GARDEN block above):
+- Days since planting and approximate % to maturity
+- Days remaining until expected harvest (e.g. "~46 days until harvest")
+- Expected harvest window (a date range like "Jun 1–Jun 15")
+- Which bed each plant lives in
+- Care alerts (bolting, pruning, harvest urgency) when severity is urgent or critical
+
+When a user asks "when can I harvest my tomatoes?" or "what's ready in my garden?" — YOU HAVE THIS DATA. Answer with concrete dates and day counts from the context above. Don't say "I'm not sure if the app shows that" — it's right there in your garden context. If a plant shows "READY TO HARVEST NOW" or "READY SOON," lead with that proactively when greeting the user.\n`
       }
 
       return `You are Sage, the Local Roots gardening companion — a friendly, knowledgeable AI that helps people grow food successfully using natural, organic methods. You are the heart of the LocalRoots app.
