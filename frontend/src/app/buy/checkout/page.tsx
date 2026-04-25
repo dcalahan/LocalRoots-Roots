@@ -480,11 +480,11 @@ export default function CheckoutPage() {
             <p className="text-roots-gray mb-4">
               Your {successCount} {successCount === 1 ? 'order has' : 'orders have'} been placed successfully.
             </p>
-            {/* Seeds earned confirmation */}
+            {/* Roots Points earned confirmation */}
             <div className="inline-block bg-amber-50 border border-amber-200 rounded-lg px-6 py-4 mb-6">
               <div className="flex items-center justify-center gap-2 text-amber-900">
                 <span className="text-2xl">🌱</span>
-                <span className="font-semibold">Seeds Earned!</span>
+                <span className="font-semibold">Roots Points Earned!</span>
               </div>
               <SeedsPreview
                 usdAmount={totalUsdSpent}

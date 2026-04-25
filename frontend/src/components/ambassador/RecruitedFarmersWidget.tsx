@@ -151,12 +151,12 @@ export function RecruitedFarmersWidget({ address, onShareListing }: RecruitedFar
           </h4>
           <div className="space-y-2 text-sm text-blue-700">
             <p>
-              <strong>Seeds:</strong> Earned instantly when your recruited farmers make sales.
-              You earn {AMBASSADOR_COMMISSION_PERCENT}% of each sale as Seeds.
+              <strong>Roots Points:</strong> Earned instantly when your recruited farmers make sales.
+              You earn {AMBASSADOR_COMMISSION_PERCENT}% of each sale as Roots Points.
             </p>
             <p>
-              <strong>$ROOTS:</strong> Seeds convert to $ROOTS tokens at Phase 2 launch.
-              Early Seeds have bonus multipliers!
+              <strong>$ROOTS:</strong> Roots Points convert to $ROOTS tokens at Phase 2 launch.
+              Early Roots Points have bonus multipliers!
             </p>
             <p>
               <strong>Recruitment Bonus:</strong> Earn bonus Seeds when a farmer you recruited makes their first sale.
