@@ -26,6 +26,9 @@ import { ShareCardModal } from '@/components/ShareCardModal';
 import type { ShareCardData } from '@/lib/shareCards';
 import { GrowingProfileProvider } from '@/contexts/GrowingProfileContext';
 import { GrowingProfileCard, MonthlyCalendar, TechniqueGuideCard } from '@/components/grow';
+import { MyGardenView } from '@/components/grow/MyGardenView';
+import { useMyGarden } from '@/hooks/useMyGarden';
+import { usePrivy } from '@privy-io/react-auth';
 import guidesData from '@/data/technique-guides.json';
 import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
@@ -430,6 +433,24 @@ export default function SellerDashboard() {
   const { deleteListing, isPending: isDeleting, isSuccess: deleteSuccess, error: deleteError, reset: resetDelete } = useDeleteListing();
   const { isPhase2 } = usePhase();
   const rewardLabel = getRewardLabel(isPhase2);
+
+  // ─── My Garden state — single source of truth, shared with /grow/my-garden ───
+  // Sellers see their actual plant/bed tracking on the Growing tab now.
+  // Same hook, same localStorage key, same KV — full parity with /grow.
+  const { user: privyUser } = usePrivy();
+  const gardenUserId = privyUser?.id || null;
+  const {
+    plants: gardenPlants,
+    beds: gardenBeds,
+    addPlants: addGardenPlants,
+    removePlant: removeGardenPlant,
+    markHarvested: markGardenHarvested,
+    updatePlant: updateGardenPlant,
+    addBed: addGardenBed,
+    updateBed: updateGardenBed,
+    deleteBed: deleteGardenBed,
+    reorderPlant: reorderGardenPlant,
+  } = useMyGarden(gardenUserId);
 
   // Auto-claim funds for orders past 48-hour dispute window
   const { isAutoClaiming } = useAutoClaimFunds(orders, refetchOrders);
@@ -1066,51 +1087,75 @@ export default function SellerDashboard() {
 
             {activeTab === 'growing' && (
               <GrowingProfileProvider>
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="font-heading text-xl font-bold">Planting Calendar</h2>
-                    <Link href="/grow" className="text-sm text-roots-primary hover:underline">
-                      Full Growing Guides →
-                    </Link>
-                  </div>
+                <div className="space-y-8">
+                  {/* My Garden — same view as /grow/my-garden, same data source.
+                      Sellers can add plants + beds + manage care alerts here
+                      without leaving the dashboard. Full parity with the Grow
+                      tab so there's only one place a user manages their garden. */}
+                  <MyGardenView
+                    plants={gardenPlants}
+                    beds={gardenBeds}
+                    onAddPlants={addGardenPlants}
+                    onRemove={removeGardenPlant}
+                    onHarvest={markGardenHarvested}
+                    onUpdatePlant={updateGardenPlant}
+                    onAddBed={addGardenBed}
+                    onUpdateBed={updateGardenBed}
+                    onDeleteBed={deleteGardenBed}
+                    onReorderPlant={reorderGardenPlant}
+                    userId={gardenUserId || undefined}
+                    locationName={preferences.preferredLocation?.displayName}
+                  />
 
-                  {/* Growing Profile */}
-                  <GrowingProfileCard />
-
-                  {/* Monthly Calendar */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="font-heading text-lg">What to Plant Now</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <MonthlyCalendar />
-                    </CardContent>
-                  </Card>
-
-                  {/* Quick Guides */}
-                  <div>
-                    <h3 className="font-heading font-semibold mb-3">Quick Guides</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {Object.values(guidesData.guides).slice(0, 4).map((guide) => (
-                        <TechniqueGuideCard
-                          key={guide.slug}
-                          slug={guide.slug}
-                          title={guide.title}
-                          description={guide.description}
-                          difficulty={guide.difficulty as 'beginner' | 'intermediate' | 'advanced'}
-                          timeToComplete={guide.timeToComplete}
-                          tags={guide.tags}
-                          compact
-                        />
-                      ))}
-                    </div>
-                    <div className="text-center mt-4">
-                      <Link
-                        href="/grow/guides"
-                        className="text-sm text-roots-primary hover:underline"
-                      >
-                        View All Guides →
+                  {/* Planting Calendar + Guides — companion content for the
+                      seller's growing decisions. Stays here so a seller can
+                      see "what to plant now" alongside their actual garden. */}
+                  <div className="space-y-6 pt-6 border-t border-roots-gray/10">
+                    <div className="flex justify-between items-center">
+                      <h2 className="font-heading text-xl font-bold">Planting Calendar</h2>
+                      <Link href="/grow" className="text-sm text-roots-primary hover:underline">
+                        Full Growing Guides →
                       </Link>
+                    </div>
+
+                    {/* Growing Profile */}
+                    <GrowingProfileCard />
+
+                    {/* Monthly Calendar */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="font-heading text-lg">What to Plant Now</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <MonthlyCalendar />
+                      </CardContent>
+                    </Card>
+
+                    {/* Quick Guides */}
+                    <div>
+                      <h3 className="font-heading font-semibold mb-3">Quick Guides</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {Object.values(guidesData.guides).slice(0, 4).map((guide) => (
+                          <TechniqueGuideCard
+                            key={guide.slug}
+                            slug={guide.slug}
+                            title={guide.title}
+                            description={guide.description}
+                            difficulty={guide.difficulty as 'beginner' | 'intermediate' | 'advanced'}
+                            timeToComplete={guide.timeToComplete}
+                            tags={guide.tags}
+                            compact
+                          />
+                        ))}
+                      </div>
+                      <div className="text-center mt-4">
+                        <Link
+                          href="/grow/guides"
+                          className="text-sm text-roots-primary hover:underline"
+                        >
+                          View All Guides →
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
