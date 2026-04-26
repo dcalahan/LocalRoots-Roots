@@ -2,6 +2,7 @@ import { type Address } from 'viem';
 import { MARKETPLACE_ADDRESS, AMBASSADOR_REWARDS_ADDRESS } from './marketplace';
 import { DISPUTE_RESOLUTION_ADDRESS } from './disputeResolution';
 import { GOVERNMENT_REQUESTS_ADDRESS } from './governmentRequests';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 
 // ERC2771Forwarder contract address — Base MAINNET (April 25 2026 DeployPhase1)
 export const FORWARDER_ADDRESS: Address = (process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '0x6ad1513BAA05cBA3354F4367326F0f63fC25A0Dd') as Address;
@@ -71,10 +72,15 @@ export const forwarderAbi = [
 
 // EIP-712 domain for the forwarder (matches ERC2771Forwarder constructor)
 // Note: The domain name is set by the Forwarder constructor, which uses "LocalRootsForwarder"
+//
+// chainId MUST match the chain that the forwarder contract is deployed on,
+// or signature verification will fail with "Invalid signature - verification
+// returned false". Driven off ACTIVE_CHAIN_ID from chainConfig so it tracks
+// NEXT_PUBLIC_NETWORK (mainnet=8453, sepolia=84532).
 export const forwarderDomain = {
   name: 'LocalRootsForwarder',
   version: '1',
-  chainId: 84532, // Base Sepolia
+  chainId: ACTIVE_CHAIN_ID,
   verifyingContract: FORWARDER_ADDRESS as `0x${string}`,
 } as const;
 
