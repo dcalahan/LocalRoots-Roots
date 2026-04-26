@@ -16,6 +16,7 @@ import {
 import { kv } from '@/lib/kv'
 import { streamSageChat, completeSagePrompt, type SageMessage } from '@/lib/ai/sageProvider'
 import { loadServerDismissals } from '@/lib/careDismissals'
+import { SAGE_BRAIN_VERSION } from '@/lib/ai/sageBrainVersion'
 
 const brain = createGardenBrain()
 
@@ -217,13 +218,19 @@ export async function POST(request: NextRequest) {
       if (!streamState.fullResponse) return
 
       // ─── Save conversation to cloud (best-effort backup) ───
+      // Stamp with the current brain version so a future upgrade can detect
+      // stale conversations on GET and clear them automatically.
       try {
         const allMessages: AIMessage[] = [
           ...messages,
           { role: 'assistant' as const, content: streamState.fullResponse },
         ]
-        await kv.set(`garden:conv:${effectiveUserId}`, { messages: allMessages })
-        console.log('[Garden AI] Conv saved for:', effectiveUserId, 'msgs:', allMessages.length)
+        await kv.set(`garden:conv:${effectiveUserId}`, {
+          messages: allMessages,
+          brainVersion: SAGE_BRAIN_VERSION,
+          updatedAt: new Date().toISOString(),
+        })
+        console.log('[Garden AI] Conv saved for:', effectiveUserId, 'msgs:', allMessages.length, 'v:', SAGE_BRAIN_VERSION)
       } catch (err) {
         console.error('[Garden AI] Conv save failed (non-critical):', String(err))
       }
@@ -315,18 +322,39 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId')
   if (!userId) {
-    return NextResponse.json({ messages: [], memories: [] })
+    return NextResponse.json({ messages: [], memories: [], brainVersion: SAGE_BRAIN_VERSION })
   }
 
   try {
     const [convData, memories] = await Promise.all([
-      kv.get<{ messages: AIMessage[] }>(`garden:conv:${userId}`).catch(() => null),
+      kv.get<{ messages: AIMessage[]; brainVersion?: string }>(`garden:conv:${userId}`).catch(() => null),
       kv.get<MemoryFact[]>(`garden:memories:${userId}`).catch(() => null),
     ])
+
+    // ─── Brain version check: force a fresh conversation on Sage upgrades ───
+    // Memories survive (they're user-owned facts about the user).
+    // Only the back-and-forth conversation gets cleared so the LLM doesn't
+    // keep priming on stale behavior contracts.
+    if (convData && convData.brainVersion !== SAGE_BRAIN_VERSION) {
+      console.log('[Garden AI] Brain version mismatch — clearing convo. stored:', convData.brainVersion, 'current:', SAGE_BRAIN_VERSION)
+      try { await kv.del(`garden:conv:${userId}`) } catch { /* non-critical */ }
+      return NextResponse.json({
+        messages: [],
+        memories: memories || [],
+        brainVersion: SAGE_BRAIN_VERSION,
+        reset: true,
+        resetReason: 'brain-upgraded',
+      })
+    }
+
     const messages = (convData?.messages || []).filter(m => m.role !== 'system')
-    return NextResponse.json({ messages, memories: memories || [] })
+    return NextResponse.json({
+      messages,
+      memories: memories || [],
+      brainVersion: SAGE_BRAIN_VERSION,
+    })
   } catch {
-    return NextResponse.json({ messages: [], memories: [] })
+    return NextResponse.json({ messages: [], memories: [], brainVersion: SAGE_BRAIN_VERSION })
   }
 }
 

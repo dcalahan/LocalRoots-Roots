@@ -11,6 +11,7 @@ import { useMyGarden } from '@/hooks/useMyGarden';
 import { computeStatus } from '@/lib/gardenStatus';
 import { useToast } from '@/hooks/use-toast';
 import { getCropDisplayName } from '@/lib/gardenStatus';
+import { SAGE_BRAIN_VERSION } from '@/lib/ai/sageBrainVersion';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -125,6 +126,11 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  // True when the most recent hydrate detected a brain version bump
+  // (prior conversation was wiped). Shown as a soft banner over the empty
+  // chat so users understand why their thread is gone. Auto-clears once
+  // the user sends their first message in the new conversation.
+  const [showResetBanner, setShowResetBanner] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -173,9 +179,11 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const saveConvToLocal = useCallback((msgs: Message[]) => {
     if (!localConvKey) return;
     try {
-      // Only save text content (no image previews — too large for localStorage)
+      // Only save text content (no image previews — too large for localStorage).
+      // Stamp with the current brain version so the next hydrate can detect
+      // and discard stale conversations from before a Sage upgrade.
       const slim = msgs.map(m => ({ role: m.role, content: m.content }));
-      localStorage.setItem(localConvKey, JSON.stringify(slim));
+      localStorage.setItem(localConvKey, JSON.stringify({ version: SAGE_BRAIN_VERSION, messages: slim }));
     } catch { /* quota exceeded — non-critical */ }
   }, [localConvKey]);
 
@@ -186,19 +194,35 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     } catch { /* quota exceeded — non-critical */ }
   }, [localMemKey]);
 
-  // Hydrate conversation: localStorage first (instant), then cloud backup
+  // Hydrate conversation: localStorage first (instant), then cloud backup.
+  // Also enforces brain-version reset — if the stored conversation was
+  // written under an older Sage brain, we clear it so the LLM doesn't keep
+  // priming on outdated behavior contracts.
   const hydrateConversation = useCallback(async () => {
     if (!userId || hydrated) return;
 
-    // 1. Try localStorage first (instant)
     let loaded = false;
+    let versionMismatch = false;
+
+    // 1. Try localStorage first (instant)
     if (localConvKey) {
       try {
         const local = localStorage.getItem(localConvKey);
         if (local) {
-          const parsed = JSON.parse(local) as { role: string; content: string }[];
-          if (parsed.length > 0) {
-            setMessages(parsed.map(m => ({
+          const parsed = JSON.parse(local);
+          // New shape: { version, messages: [...] }
+          // Old shape: [...]  (legacy unversioned — treat as stale)
+          if (Array.isArray(parsed)) {
+            // Legacy unversioned — clear it; the cloud check below may
+            // still surface a versioned conversation, otherwise empty state.
+            localStorage.removeItem(localConvKey);
+            versionMismatch = true;
+          } else if (parsed.version !== SAGE_BRAIN_VERSION) {
+            // Stale brain — clear and surface the reset banner
+            localStorage.removeItem(localConvKey);
+            versionMismatch = true;
+          } else if (Array.isArray(parsed.messages) && parsed.messages.length > 0) {
+            setMessages(parsed.messages.map((m: { role: string; content: string }) => ({
               role: m.role as 'user' | 'assistant',
               content: m.content,
             })));
@@ -213,26 +237,34 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
       try {
         const res = await fetch(`/api/garden-ai?userId=${userId}`);
         const data = await res.json();
+        // Server reports reset:true when it detected and cleared a stale convo
+        if (data.reset) versionMismatch = true;
         if (data.messages?.length > 0) {
           const cloudMsgs = data.messages.map((m: { role: string; content: string }) => ({
             role: m.role as 'user' | 'assistant',
             content: m.content,
           }));
           setMessages(cloudMsgs);
-          // Cache to localStorage for next time
+          // Cache to localStorage for next time (now versioned)
           saveConvToLocal(cloudMsgs);
           // Also cache memories if returned
           if (data.memories?.length > 0) {
             saveMemoriesToLocal(data.memories);
           }
+        } else if (data.memories?.length > 0) {
+          // Reset case: server cleared convo but returned memories
+          saveMemoriesToLocal(data.memories);
         }
       } catch {
         // Cloud is down — that's fine, we have localStorage or empty state
       }
     }
 
+    if (versionMismatch && messages.length === 0) {
+      setShowResetBanner(true);
+    }
     setHydrated(true);
-  }, [userId, hydrated, localConvKey, saveConvToLocal]);
+  }, [userId, hydrated, localConvKey, saveConvToLocal, saveMemoriesToLocal, messages.length]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -411,6 +443,8 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     const userMessage = input.trim() || (hasImages ? 'What is this plant? Any issues you can see?' : '');
     setInput('');
     setError(null);
+    // First message in a fresh conversation hides the upgrade banner
+    if (showResetBanner) setShowResetBanner(false);
     // Reset textarea height
     if (inputRef.current) inputRef.current.style.height = 'auto';
 
@@ -725,6 +759,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   setMessages([]);
                   setHydrated(true);
                   setError(null);
+                  setShowResetBanner(false);
                   toast({ title: 'New conversation started', description: 'Fresh slate. Sage still remembers what she knows about you.' });
                 }}
                 className="p-1 hover:bg-white/20 rounded"
@@ -752,6 +787,22 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 ? (
               <div className="text-center py-4">
+                {/* Brain-version reset banner — shown once after a Sage upgrade
+                    cleared the user's prior conversation. Auto-dismisses on first
+                    new message, or when the user clicks the × on the banner. */}
+                {showResetBanner && (
+                  <div className="mb-4 mx-1 rounded-lg border border-roots-secondary/30 bg-roots-secondary/10 px-3 py-2 text-left text-xs text-roots-secondary flex items-start gap-2">
+                    <span className="text-base leading-none">🌱</span>
+                    <span className="flex-1">Sage learned some new things — starting a fresh chat.</span>
+                    <button
+                      onClick={() => setShowResetBanner(false)}
+                      className="text-roots-secondary/70 hover:text-roots-secondary leading-none"
+                      aria-label="Dismiss"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
                 <img src="/sage-avatar.png" alt="Sage" className="w-20 h-20 rounded-full mx-auto mb-2" />
                 <p className="text-gray-600 mb-4">
                   Hi! I&apos;m Sage, your gardening companion — I know your local climate and can help you grow anything. What are you working on?
