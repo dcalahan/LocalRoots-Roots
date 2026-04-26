@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { getIpfsUrl } from '@/lib/pinata';
 
 // Stock photos for seller profiles
 const STOCK_PHOTOS = [
@@ -41,6 +42,24 @@ export function ImageUploader({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Seed the preview from currentHash so a parent component pre-filling the
+  // form (e.g. seller registration pulling from public garden profile) shows
+  // the existing image immediately. Handles three shapes:
+  //   - data:... base64 URLs (use as-is)
+  //   - ipfs://CID or bare CID (convert to gateway URL)
+  //   - http(s):// (use as-is, e.g. stock photos or already-resolved URLs)
+  useEffect(() => {
+    if (!currentHash) return;
+    if (preview) return; // user has already picked / a value is already shown
+    if (currentHash.startsWith('data:') || currentHash.startsWith('http')) {
+      setPreview(currentHash);
+    } else {
+      // Treat as IPFS hash (with or without ipfs:// prefix)
+      setPreview(getIpfsUrl(currentHash));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentHash]);
 
   // Detect mobile device
   useEffect(() => {

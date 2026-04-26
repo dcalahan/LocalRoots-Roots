@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
@@ -36,10 +36,22 @@ interface SellerRegistrationFormProps {
 
 export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { isConnected } = useAccount();
   const { login, authenticated, user: privyUser } = usePrivy();
   const { registerSeller, isPending, isSuccess, error, txHash } = useRegisterSeller();
+
+  // Listing intent — set when user came from a "Sell" button on a My Garden
+  // plant card. After successful registration we route them straight to the
+  // listing creation flow with the crop pre-filled, instead of the generic
+  // success card. Keeps the Sell-from-garden journey one continuous path.
+  const listingIntent = searchParams?.get('intent') === 'list'
+    ? {
+        cropId: searchParams.get('cropId') || '',
+        qty: searchParams.get('qty') || '1',
+      }
+    : null;
 
   // ─── Existing public garden profile lookup ──────────────────────────
   // If the user already has a public garden profile (set up via /grow/my-garden),
@@ -47,6 +59,14 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   // about their garden — no reason to make them type it again for selling.
   const gardenerUserId = privyUser?.id || null;
   const { profile: existingGardenProfile } = usePublicGardenProfile(gardenerUserId);
+
+  // Privy already has the user's email if they logged in via email auth.
+  // Pull it so we can pre-fill the contact field instead of asking for it
+  // a second time. Privy's email account is stored on user.email.address.
+  const privyEmail = ((privyUser as unknown as { email?: { address?: string } | string })?.email);
+  const privyEmailAddress = typeof privyEmail === 'string'
+    ? privyEmail
+    : (privyEmail?.address || '');
 
   // Form state
   const [name, setName] = useState('');
@@ -95,6 +115,16 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
     setPrefillDismissed(true);
   };
 
+  // Pre-fill email from Privy once it's available. Doesn't overwrite if
+  // the user has already typed something different (e.g. they want orders
+  // routed to a different inbox than their login email).
+  useEffect(() => {
+    if (privyEmailAddress && !email) {
+      setEmail(privyEmailAddress);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privyEmailAddress]);
+
   // Handle success
   useEffect(() => {
     if (isSuccess) {
@@ -104,6 +134,18 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
       });
       // Clear ambassador referral from localStorage
       localStorage.removeItem('ambassadorRef');
+
+      // If they came from My Garden via a Sell button, take them straight
+      // to the listing creation flow with the crop pre-filled. Don't show
+      // the generic success card — keep the path continuous.
+      if (listingIntent && listingIntent.cropId) {
+        const params = new URLSearchParams({
+          source: 'garden',
+          crop: listingIntent.cropId,
+          qty: listingIntent.qty,
+        });
+        router.push(`/sell/listings/new?${params.toString()}`);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
@@ -340,6 +382,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
 
             <ImageUploader
               onUpload={(hash) => setProfileImageHash(hash)}
+              currentHash={profileImageHash || undefined}
               label="Add a photo (your garden, your produce, or yourself)"
             />
           </div>
@@ -360,7 +403,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
             <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
               offersPickup
                 ? 'bg-roots-primary/10 border-roots-primary'
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                : 'bg-white border-roots-gray/40 hover:border-roots-gray/70'
             }`}>
               <div>
                 <p className="font-medium">Pickup from my place</p>
@@ -394,7 +437,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
             <div className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors ${
               offersDelivery
                 ? 'bg-roots-primary/10 border-roots-primary'
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                : 'bg-white border-roots-gray/40 hover:border-roots-gray/70'
             }`}>
               <div>
                 <p className="font-medium">I can deliver</p>
@@ -446,7 +489,9 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
                 required
               />
               <p className="text-xs text-roots-gray mt-1">
-                We&apos;ll send order notifications here
+                {privyEmailAddress && email === privyEmailAddress
+                  ? 'From your login — change this if you want orders sent to a different inbox.'
+                  : "We'll send order notifications here"}
               </p>
             </div>
 

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import type { GardenPlant, PlantingMethod, GardenBed, CareAlert } from '@/types/my-garden';
 import { computeStatus, getEstimatedHarvestDate, getProgressPercent, getCropDisplayName } from '@/lib/gardenStatus';
 import { getCropEmoji } from '@/lib/cropEmoji';
 import { PlantProgressBar } from './PlantProgressBar';
 import { detectCareAlerts, dismissAlert, loadDismissals, alertColorClasses } from '@/lib/careAlerts';
+import { useSellerStatus } from '@/hooks/useSellerStatus';
 
 interface GardenPlantCardProps {
   plant: GardenPlant;
@@ -21,6 +23,8 @@ interface GardenPlantCardProps {
 export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, onUpdate, beds = [] }: GardenPlantCardProps) {
   const { user: privyUser } = usePrivy();
   const userId = privyUser?.id || null;
+  const { isSeller } = useSellerStatus();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editQuantity, setEditQuantity] = useState(String(plant.quantity));
   const [editDate, setEditDate] = useState(plant.plantingDate);
@@ -59,6 +63,30 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
     // prompt build sees it and stops mentioning what the user already handled.
     dismissAlert(alert.id, userId);
     setDismissals(prev => ({ ...prev, [alert.id]: new Date().toISOString() }));
+  };
+
+  // Sell button — branches on seller status:
+  //   - Already a seller → straight to listing creation, pre-filled with this crop
+  //   - Not yet a seller → seller registration with intent=list, which auto-routes
+  //     to listing creation after registration completes (and pre-fills name/photo
+  //     from public garden profile if available)
+  const handleSell = () => {
+    const params = new URLSearchParams({
+      crop: plant.cropId,
+      qty: String(plant.quantity || 1),
+      source: 'garden',
+    });
+    if (isSeller) {
+      router.push(`/sell/listings/new?${params.toString()}`);
+    } else {
+      // Preserve listing intent through the registration flow
+      const regParams = new URLSearchParams({
+        intent: 'list',
+        cropId: plant.cropId,
+        qty: String(plant.quantity || 1),
+      });
+      router.push(`/sell/register?${regParams.toString()}`);
+    }
   };
 
   const status = computeStatus(plant, new Date(), firstFallFrost);
@@ -116,6 +144,18 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
         </div>
         {/* Quick actions */}
         <div className="flex items-center gap-1">
+          {/* Sell — always available for active plants. Routes to listing
+              creation if already a seller, or to seller registration with
+              listing intent preserved if not. */}
+          {status !== 'done' && (
+            <button
+              onClick={handleSell}
+              className="text-xs px-2.5 py-1 rounded-full bg-roots-primary text-white font-semibold hover:bg-roots-primary/90 transition-colors"
+              title={isSeller ? 'List this for sale on LocalRoots' : 'Sign up to start selling'}
+            >
+              Sell
+            </button>
+          )}
           {(status === 'near-harvest' || status === 'ready-to-harvest' || status === 'harvesting') && onHarvest && (
             <button
               onClick={() => onHarvest(plant.id)}
