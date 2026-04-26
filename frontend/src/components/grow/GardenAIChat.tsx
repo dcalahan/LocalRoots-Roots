@@ -666,10 +666,18 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
 
       {/* Chat window */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 left-4 sm:left-auto sm:w-96 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
-             style={{ height: 'min(600px, calc(100vh - 7rem))' }}>
-          {/* Header */}
-          <div className="bg-roots-secondary text-white px-4 py-3 flex items-center gap-3">
+        <div
+          className="fixed bottom-20 right-4 left-4 sm:left-auto sm:w-96 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
+          // Use 100dvh (dynamic viewport height) so the panel resizes correctly
+          // when mobile Safari shows/hides the address bar and keyboard. Old `100vh`
+          // included the address bar + keyboard area, pushing the header above the
+          // visible viewport on iPhone. The 7rem offset accounts for the floating
+          // chat button below + a top buffer.
+          style={{ height: 'min(600px, calc(100dvh - 7rem))' }}
+        >
+          {/* Header — flex-shrink-0 ensures it never gets squeezed when the
+              chat content area grows. Always visible at the top of the panel. */}
+          <div className="flex-shrink-0 bg-roots-secondary text-white px-4 py-3 flex items-center gap-3">
             <img src="/sage-avatar.png" alt="Sage" className="w-9 h-9 rounded-full object-cover" />
             <div className="flex-1">
               <h3 className="font-semibold">Sage</h3>
