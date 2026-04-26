@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { IS_MAINNET } from '@/lib/chainConfig';
 
 export function TestnetBanner() {
   const [dismissed, setDismissed] = useState(true); // Start hidden to avoid flash
@@ -17,6 +18,10 @@ export function TestnetBanner() {
     setDismissed(true);
   };
 
+  // On mainnet, never show this banner — real money changes hands here,
+  // and the "no real money" copy would be flat-out wrong. The banner is
+  // only meaningful on testnet builds.
+  if (IS_MAINNET) return null;
   if (dismissed) return null;
 
   return (
