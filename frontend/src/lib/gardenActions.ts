@@ -52,7 +52,8 @@ RULES:
 - "I added an indoor tower" = add_bed with bedName "Tower" (or whatever they called it), bedType "tower"
 - If the user mentions a specific variety name (e.g. "Better Boy tomatoes", "Mojito Mint"), set cropId to the closest parent crop AND set customVarietyName to the variety name. Example: "Better Boy tomatoes" → cropId "tomato-beefsteak", customVarietyName "Better Boy Tomato"
 - If you can't confidently map to a crop ID, skip it
-- Default plantingDate to today if not specified
+- ONLY include plantingDate if the user explicitly stated when they planted ("I planted yesterday", "I put them in April 14", "today", etc.). NEVER default to today's date — leave plantingDate OFF the action entirely if the user didn't say when. The downstream system will surface a clear "no planting date" gap rather than guessing wrong.
+- RELATIVE DATE REFERENCES: If the user said the new plant went in relative to another plant ("same day as the tomatoes", "a week before the peppers", "right after I put in the basil"), look earlier in the CONVERSATION (and in any prior assistant messages that referenced specific dates) for the referenced plant's planting date and compute the date from that reference. Same day = same ISO date; "a week before" = subtract 7 days; "two days after" = add 2 days. If the referenced date is clearly resolvable from the conversation, set plantingDate to the computed ISO date. If you cannot find the referenced date in the conversation, omit plantingDate rather than guessing.
 - Default quantity to 1 if not specified
 - Default method to "transplant" unless they say "seeds" (direct-sow) or "started indoors" (start-indoors)
 

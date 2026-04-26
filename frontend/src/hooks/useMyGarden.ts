@@ -242,6 +242,16 @@ export function useMyGarden(userId: string | null) {
         switch (action.action) {
           case 'add_plant': {
             if (!action.cropId || !isValidCrop(action.cropId)) break;
+            // SAFETY: if Sage didn't extract a planting date, skip auto-adding the
+            // plant. Better for Sage to ask the user "when did you plant it?" than
+            // to create a plant with today's date that may be wrong by weeks. The
+            // extraction prompt was updated to leave plantingDate off when the user
+            // didn't say a date — this guard catches anything that slipped through.
+            if (!action.plantingDate) {
+              console.warn('[useMyGarden] Skipping add_plant without plantingDate:', action);
+              break;
+            }
+
             const cropInfo = getCropGrowingInfo(action.cropId);
             // Resolve bed: by id, by name fuzzy match
             let bedId = action.bedId;
@@ -251,14 +261,14 @@ export function useMyGarden(userId: string | null) {
             const exists = updatedPlants.some(p =>
               p.cropId === action.cropId
               && !p.removedDate
-              && Math.abs(new Date(p.plantingDate).getTime() - new Date(action.plantingDate || now).getTime()) < 86400000
+              && Math.abs(new Date(p.plantingDate).getTime() - new Date(action.plantingDate!).getTime()) < 86400000
             );
             if (!exists) {
               updatedPlants.push({
                 id: crypto.randomUUID(),
                 cropId: action.cropId,
                 customVarietyName: action.customVarietyName,
-                plantingDate: action.plantingDate || now.split('T')[0],
+                plantingDate: action.plantingDate,
                 quantity: action.quantity || 1,
                 plantingMethod: action.method || 'transplant',
                 bedId,
