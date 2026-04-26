@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { GardenPlant, GardenBed, GardenAction, MyGardenData, BedType } from '@/types/my-garden';
+import type { GardenPlant, GardenBed, GardenAction, MyGardenData, BedType, PlantStatus } from '@/types/my-garden';
 import { getCropGrowingInfo, isValidCrop } from '@/lib/plantingCalendar';
+import { getDismissibleAlertIds, type CareCategory } from '@/lib/careDismissals';
 
 const STORAGE_VERSION = 2;
 
@@ -35,6 +36,33 @@ function saveToLocal(userId: string, plants: GardenPlant[], beds: GardenBed[]): 
     const data: MyGardenData = { version: STORAGE_VERSION, plants, beds };
     localStorage.setItem(getStorageKey(userId), JSON.stringify(data));
   } catch { /* quota exceeded — non-critical */ }
+}
+
+// Mirror of careAlerts.ts's localStorage key — kept duplicated here so this
+// hook can write dismissals without importing the React-coupled module.
+const CARE_DISMISSALS_KEY = 'localroots:care-alert-dismissals';
+
+/** Write care-alert dismissals to localStorage (instant UI) and server (KV mirror). */
+function persistCareDismissals(alertIds: string[], userId: string | null): void {
+  if (alertIds.length === 0) return;
+  // localStorage: instant UI updates on plant cards
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = window.localStorage.getItem(CARE_DISMISSALS_KEY);
+      const map: Record<string, string> = raw ? JSON.parse(raw) : {};
+      const now = new Date().toISOString();
+      for (const id of alertIds) map[id] = now;
+      window.localStorage.setItem(CARE_DISMISSALS_KEY, JSON.stringify(map));
+    } catch { /* quota or parse failure — non-critical */ }
+  }
+  // Server: so Sage's next system prompt sees the dismissal
+  if (userId) {
+    fetch(`/api/care-dismissals?userId=${encodeURIComponent(userId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alertIds }),
+    }).catch(() => { /* localStorage already has it — non-critical */ });
+  }
 }
 
 function findBedByFuzzyName(beds: GardenBed[], name: string): GardenBed | undefined {
@@ -375,12 +403,61 @@ export function useMyGarden(userId: string | null) {
             }
             break;
           }
+          // ─── Care-alert execution (Sage acting on bolting/pruning/harvest) ───
+          case 'mark_pruned': {
+            if (!action.cropId) break;
+            // Find current pruning-cycle alert IDs for every active plant of
+            // this crop and dismiss them. If the user pruned proactively
+            // (before triggerDays), we still write the dismissal for cycle 0
+            // so the day-N alert never fires.
+            const ids = getDismissibleAlertIds(updatedPlants, action.cropId, 'pruning');
+            persistCareDismissals(ids, userId);
+            break;
+          }
+          case 'mark_bolting': {
+            if (!action.cropId) break;
+            // Set manualStatus = 'bolting' on the active plant. careAlerts.ts
+            // already fires the critical "Bolting — harvest now" alert when
+            // manualStatus is bolting, so this both records the state and
+            // escalates the urgency if it wasn't already at the bolt window.
+            const target = updatedPlants.find(p =>
+              p.cropId === action.cropId && !p.removedDate && !p.harvestedDate,
+            );
+            if (target) {
+              updatedPlants = updatedPlants.map(p =>
+                p.id === target.id
+                  ? { ...p, manualStatus: 'bolting' as PlantStatus }
+                  : p,
+              );
+            }
+            // Also dismiss any pre-existing bolt-risk alerts (the bolt
+            // critical replaces them; user already knows).
+            const ids = getDismissibleAlertIds(updatedPlants, action.cropId, 'bolting');
+            persistCareDismissals(ids, userId);
+            break;
+          }
+          case 'dismiss_care_alert': {
+            if (!action.cropId || !action.alertType) break;
+            // Map alertType → category for the dismissal helper
+            let category: CareCategory | null = null;
+            if (action.alertType === 'prune-now' || action.alertType === 'prune-overdue') {
+              category = 'pruning';
+            } else if (action.alertType === 'bolting' || action.alertType === 'bolt-risk') {
+              category = 'bolting';
+            } else if (action.alertType === 'harvest-ready' || action.alertType === 'harvest-urgent') {
+              category = 'harvest';
+            }
+            if (!category) break;
+            const ids = getDismissibleAlertIds(updatedPlants, action.cropId, category);
+            persistCareDismissals(ids, userId);
+            break;
+          }
         }
       }
 
       return { plants: updatedPlants, beds: updatedBeds };
     });
-  }, [updateState]);
+  }, [updateState, userId]);
 
   // Active plants (not removed/harvested)
   const activePlants = plants.filter(p => !p.removedDate && !p.harvestedDate);

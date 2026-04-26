@@ -15,6 +15,7 @@ import {
 } from '@/lib/sageSuggestions'
 import { kv } from '@/lib/kv'
 import { streamSageChat, completeSagePrompt, type SageMessage } from '@/lib/ai/sageProvider'
+import { loadServerDismissals } from '@/lib/careDismissals'
 
 const brain = createGardenBrain()
 
@@ -98,9 +99,10 @@ export async function POST(request: NextRequest) {
     const effectiveUserId = userId || 'anonymous'
 
     // ─── Pre-LLM pipeline (parallel KV loads, client fallback) ───
-    const [soulText, cloudMemories] = await Promise.all([
+    const [soulText, cloudMemories, dismissals] = await Promise.all([
       brain.loadSoul?.().catch(() => null) ?? null,
       brain.loadMemories?.(effectiveUserId).catch(() => []) ?? [],
+      loadServerDismissals(effectiveUserId).catch(() => ({})),
     ])
 
     // Use cloud memories if available, otherwise fall back to client-sent memories
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
       ? cloudMemories
       : (clientMemories as MemoryFact[] || [])
 
-    const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages, geohash: geohash || undefined, userContext }
+    const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages, geohash: geohash || undefined, userContext, dismissals }
     const systemPrompt = await brain.getSystemPrompt(ctx)
     const gardenContext = await brain.loadContext(ctx)
     const memoryContext = formatMemoryContext(memories as MemoryFact[], soulText)

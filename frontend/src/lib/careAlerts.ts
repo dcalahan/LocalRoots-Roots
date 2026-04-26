@@ -175,7 +175,13 @@ export function loadDismissals(): Record<string, string> {
   }
 }
 
-export function dismissAlert(alertId: string): void {
+/**
+ * Dismiss a care alert. Writes to localStorage immediately (instant UI) and,
+ * when a userId is provided, mirrors the dismissal to the server so Sage's
+ * next system prompt build also sees it. Without the server mirror, Sage
+ * keeps mentioning things the user already clicked "Done" on.
+ */
+export function dismissAlert(alertId: string, userId?: string | null): void {
   if (typeof window === 'undefined') return;
   try {
     const current = loadDismissals();
@@ -183,6 +189,15 @@ export function dismissAlert(alertId: string): void {
     window.localStorage.setItem(DISMISSALS_KEY, JSON.stringify(current));
   } catch {
     /* ignore */
+  }
+  // Mirror to server (best-effort, fire-and-forget). localStorage already
+  // has it, so a network failure is non-critical.
+  if (userId) {
+    fetch(`/api/care-dismissals?userId=${encodeURIComponent(userId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alertId }),
+    }).catch(() => { /* non-critical */ });
   }
 }
 

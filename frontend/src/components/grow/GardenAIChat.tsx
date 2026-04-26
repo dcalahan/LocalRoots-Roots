@@ -463,9 +463,12 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             sellerListings: isSeller && sellerListings.length > 0
               ? sellerListings.filter(l => l.active && l.metadata).map(l => ({ produceName: l.metadata!.produceName, category: l.metadata!.category }))
               : undefined,
-            // My Garden data for AI context
+            // My Garden data for AI context. `id` is sent so server-side
+            // care-alert dismissals (keyed by plantId:type:cycle) match
+            // when the brain re-detects alerts during prompt build.
             myGarden: gardenPlants.length > 0
               ? gardenPlants.map(p => ({
+                  id: p.id,
                   cropId: p.cropId,
                   customVarietyName: p.customVarietyName,
                   plantingDate: p.plantingDate,
@@ -473,6 +476,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   plantingMethod: p.plantingMethod,
                   location: p.location,
                   bedId: p.bedId,
+                  manualStatus: p.manualStatus,
                 }))
               : undefined,
             // Garden beds for AI context
@@ -542,6 +546,12 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                         toast({ title: `Added bed "${action.bedName}" 🏡` });
                       } else if (action.action === 'assign_plant_to_bed') {
                         toast({ title: `Moved ${name} to ${action.bedName || 'bed'}` });
+                      } else if (action.action === 'mark_pruned') {
+                        toast({ title: `Marked ${name} pruned ✂️`, description: 'Sage will remind you on the next cycle.' });
+                      } else if (action.action === 'mark_bolting') {
+                        toast({ title: `Marked ${name} as bolting 🌼`, description: 'Harvest soon — leaves turn bitter fast once they bolt.' });
+                      } else if (action.action === 'dismiss_care_alert') {
+                        toast({ title: `Got it — dropping that reminder`, description: 'Sage will stay quiet on this for now.' });
                       }
                     }
                   } catch (err) {
