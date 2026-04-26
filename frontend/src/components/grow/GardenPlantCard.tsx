@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import type { GardenPlant, PlantingMethod, GardenBed, CareAlert } from '@/types/my-garden';
 import { computeStatus, getEstimatedHarvestDate, getProgressPercent, getCropDisplayName } from '@/lib/gardenStatus';
 import { getCropEmoji } from '@/lib/cropEmoji';
@@ -18,6 +19,8 @@ interface GardenPlantCardProps {
 }
 
 export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, onUpdate, beds = [] }: GardenPlantCardProps) {
+  const { user: privyUser } = usePrivy();
+  const userId = privyUser?.id || null;
   const [isEditing, setIsEditing] = useState(false);
   const [editQuantity, setEditQuantity] = useState(String(plant.quantity));
   const [editDate, setEditDate] = useState(plant.plantingDate);
@@ -52,7 +55,9 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
   };
 
   const handleDismissAlert = (alert: CareAlert) => {
-    dismissAlert(alert.id);
+    // Pass userId so the dismissal also mirrors to KV — Sage's next system
+    // prompt build sees it and stops mentioning what the user already handled.
+    dismissAlert(alert.id, userId);
     setDismissals(prev => ({ ...prev, [alert.id]: new Date().toISOString() }));
   };
 

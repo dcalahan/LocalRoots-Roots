@@ -38,6 +38,9 @@ VALID ACTIONS:
 - update_bed: User renamed a bed or changed its notes
 - delete_bed: User removed/dismantled a bed
 - assign_plant_to_bed: User says they put an existing plant in a specific bed
+- mark_pruned: User says they pruned/pinched/suckered/cut back a plant ("I just pinched the basil", "I suckered the tomatoes today", "cut back the mint"). NOT for harvesting whole plants (use mark_harvested) and NOT for the plant dying (use remove_plant).
+- mark_bolting: User says a plant is bolting / has flowered / went to seed ("my basil is going to flower", "the cilantro bolted", "lettuce is shooting up"). Sets the plant's status to bolting so the harvest-now urgency is recorded.
+- dismiss_care_alert: User explicitly tells you to stop bringing up a care alert ("stop reminding me about pruning", "I'll handle that later, don't bug me", "got it, drop it"). Use sparingly — only when the user is clearly waving off the current cycle's reminder, not just acknowledging.
 
 CROP ID MAPPING (use these exact IDs):
 ${cropList}
@@ -67,6 +70,9 @@ Return ONLY a JSON array of actions. Examples:
 [{"action":"remove_plant","cropId":"basil","reason":"died"}]
 [{"action":"mark_harvested","cropId":"cucumber"}]
 [{"action":"assign_plant_to_bed","cropId":"basil","bedName":"Bed 2"}]
+[{"action":"mark_pruned","cropId":"tomato-cherry"}]
+[{"action":"mark_bolting","cropId":"basil"}]
+[{"action":"dismiss_care_alert","cropId":"tomato-cherry","alertType":"prune-now"}]
 []
 
 JSON array:`;
@@ -87,12 +93,18 @@ export function parseGardenActions(response: string): GardenAction[] {
     const validTypes = [
       'add_plant', 'remove_plant', 'mark_harvested', 'update_plant',
       'add_bed', 'update_bed', 'delete_bed', 'assign_plant_to_bed',
+      'mark_pruned', 'mark_bolting', 'dismiss_care_alert',
     ];
-    const cropRequired = ['add_plant', 'remove_plant', 'mark_harvested', 'update_plant', 'assign_plant_to_bed'];
+    const cropRequired = [
+      'add_plant', 'remove_plant', 'mark_harvested', 'update_plant',
+      'assign_plant_to_bed',
+      'mark_pruned', 'mark_bolting', 'dismiss_care_alert',
+    ];
     for (const item of parsed) {
       if (!item.action || !validTypes.includes(item.action)) continue;
       if (cropRequired.includes(item.action) && !item.cropId) continue;
       if (item.action === 'add_bed' && !item.bedName) continue;
+      if (item.action === 'dismiss_care_alert' && !item.alertType) continue;
 
       validActions.push({
         action: item.action,
@@ -111,6 +123,7 @@ export function parseGardenActions(response: string): GardenAction[] {
         bedType: item.bedType,
         widthInches: item.widthInches ? Number(item.widthInches) : undefined,
         lengthInches: item.lengthInches ? Number(item.lengthInches) : undefined,
+        alertType: item.alertType,
       });
     }
 

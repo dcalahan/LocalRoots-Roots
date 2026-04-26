@@ -579,8 +579,13 @@ export function createGardenBrain(): Brain {
 
       // User's beds + My Garden (tracked plants)
       let gardenSection = ''
-      const myGarden = uc.myGarden as { cropId: string; customVarietyName?: string; plantingDate: string; quantity: number; plantingMethod?: string; location?: string; bedId?: string }[] | undefined
+      const myGarden = uc.myGarden as { id?: string; cropId: string; customVarietyName?: string; plantingDate: string; quantity: number; plantingMethod?: string; location?: string; bedId?: string; manualStatus?: string }[] | undefined
       const gardenBeds = uc.gardenBeds as { id: string; name: string; type: string; widthInches?: number; lengthInches?: number; notes?: string }[] | undefined
+
+      // Server-loaded care-alert dismissals — keyed by `${plantId}:${type}:${cycle}`.
+      // Pre-loaded in /api/garden-ai/route.ts and passed in via ctx so this
+      // sync function can use it without an awaited KV call.
+      const dismissals = ((ctx as BrainContext & { dismissals?: Record<string, string> }).dismissals) || {}
 
       {
         const cropData = (cropGrowingData as { crops: Record<string, { name: string; daysToMaturity: { min: number; max: number } }> }).crops
@@ -623,14 +628,23 @@ export function createGardenBrain(): Brain {
           }).join('\n')
         }
 
-        // Attention needed — bolting, pruning, and harvest-urgency
+        // Care alerts split into two tiers:
+        //   ATTENTION NEEDED — urgent/critical (bolting, prune-overdue, harvest-urgent)
+        //   UPCOMING / ROUTINE — soon (prune-now, harvest-ready)
+        // Both tiers respect server-side dismissals so anything the user
+        // already clicked "Done" on (or told Sage to drop) stays out.
         let attentionBlock = ''
         if (myGarden && myGarden.length > 0) {
           const now = new Date()
-          const lines: string[] = []
+          const urgentLines: string[] = []
+          const upcomingLines: string[] = []
           myGarden.forEach((p, idx) => {
+            // Use the real plant id when the client sends it so dismissals
+            // (keyed by plantId:type:cycle) match. Falls back to a synthetic
+            // id only for legacy clients that haven't been updated yet.
+            const plantId = p.id || `ctx-${idx}`
             const plant: GardenPlant = {
-              id: `ctx-${idx}`,
+              id: plantId,
               cropId: p.cropId,
               customVarietyName: p.customVarietyName,
               plantingDate: p.plantingDate,
@@ -641,19 +655,27 @@ export function createGardenBrain(): Brain {
               isPerennial: false,
               createdAt: p.plantingDate,
               year: new Date(p.plantingDate).getFullYear(),
+              manualStatus: p.manualStatus as GardenPlant['manualStatus'],
             }
-            const alerts = detectCareAlerts(plant, now)
+            const alerts = detectCareAlerts(plant, now, { dismissals })
             for (const a of alerts) {
-              if (a.severity !== 'urgent' && a.severity !== 'critical') continue
               const crop = cropData[p.cropId]
               const name = p.customVarietyName || crop?.name || p.cropId
               const bedName = p.bedId ? bedById[p.bedId] : undefined
               const bedLabel = bedName ? ` in "${bedName}"` : ''
-              lines.push(`- ${name} (×${p.quantity})${bedLabel}: ${a.title.toUpperCase()} — ${a.actionHint || a.message}`)
+              const line = `- ${name} (×${p.quantity})${bedLabel}: ${a.title.toUpperCase()} — ${a.actionHint || a.message}`
+              if (a.severity === 'urgent' || a.severity === 'critical') {
+                urgentLines.push(line)
+              } else if (a.severity === 'soon') {
+                upcomingLines.push(line)
+              }
             }
           })
-          if (lines.length > 0) {
-            attentionBlock = `\nATTENTION NEEDED IN THIS USER'S GARDEN RIGHT NOW:\n${lines.join('\n')}\n\nWhen the user greets you, mention the most urgent of these by name and offer concrete next steps (harvest, pinch, list for sale, plant a replacement). Don't overwhelm — lead with the single most urgent, then mention you noticed others.\n`
+          if (urgentLines.length > 0) {
+            attentionBlock += `\nATTENTION NEEDED IN THIS USER'S GARDEN RIGHT NOW:\n${urgentLines.join('\n')}\n\nWhen the user greets you, mention the most urgent of these by name and offer concrete next steps (harvest, pinch, list for sale, plant a replacement). Don't overwhelm — lead with the single most urgent, then mention you noticed others.\n`
+          }
+          if (upcomingLines.length > 0) {
+            attentionBlock += `\nUPCOMING / ROUTINE CARE (mention naturally if it fits — don't lead with these):\n${upcomingLines.join('\n')}\n\nThese are soft heads-ups — pruning windows opening, harvest readiness approaching. Weave them in if the conversation is about that plant or a quiet greeting where the user has nothing more urgent. Skip them if attention items above already gave you plenty to mention.\n`
           }
         }
 
@@ -672,6 +694,14 @@ You have the ability to add plants, beds, and more to the user's garden tracker.
 - When the user mentions a bed by name, find it by fuzzy match — don't create duplicates
 - When harvest approaches, suggest they list surplus on LocalRoots to sell to neighbors
 - If someone asks "can you add plants to my garden?" — say YES! Tell them to just describe what they planted and you'll track it for them.
+
+CARE-ALERT WRITE POWERS (you can act on alerts, not just read them):
+When the user tells you they did a care action, ACT on it — don't just acknowledge.
+- "I pruned the tomatoes / pinched the basil / suckered them today" → confirm and you'll mark it done so the alert stops nagging. Reply like "Got it — marked your tomato pruning as done for this cycle. I'll remind you again in ~14 days."
+- "My basil is bolting / cilantro flowered / lettuce shot up" → confirm you've marked it bolting so the urgency is captured. Reply like "Marked your basil as bolting — harvest the leaves this week before they get bitter. Want me to help you list the harvest on LocalRoots?"
+- "Stop reminding me about pruning / I'll handle that, drop it" → confirm you'll dismiss this cycle. Reply like "Got it, I won't bring up the tomato pruning again this cycle. Just say the word when you've done it or want a fresh reminder."
+
+DON'T capture without a clear user statement. "I should prune them" is a thought, not an action — don't mark it done. "I pruned them" is an action — mark it. Use judgment.
 
 WHAT YOU KNOW ABOUT EACH TRACKED PLANT (already in the USER'S GARDEN block above):
 - Days since planting and approximate % to maturity

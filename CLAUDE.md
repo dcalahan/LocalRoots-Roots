@@ -431,6 +431,23 @@ Regional garden intelligence is loaded conditionally based on user's zone/locati
 | `frontend/src/app/api/garden-ai/local/route.ts` | Local marketplace listings endpoint |
 | `frontend/src/app/sell/layout.tsx` | Adds chat to sell pages |
 
+### Sage Brain Version — force conversation reset on upgrades
+
+Conversations get stamped with a brain version when they're saved. On the next chat open, if the stored version doesn't match the current `SAGE_BRAIN_VERSION`, the conversation is auto-cleared (server-side and client-side) and the user sees a soft banner: *"Sage learned some new things — starting a fresh chat."* Memories survive — they're user-owned facts about the gardener, not behavior contracts.
+
+**Single source of truth:** `frontend/src/lib/ai/sageBrainVersion.ts` exports `SAGE_BRAIN_VERSION = 'YYYY-MM-DD-short-slug'`.
+
+**Bump it whenever you ship a Sage change that should invalidate prior conversations:**
+- Add or change action verbs in `gardenActions.ts`
+- Restructure the system prompt (new sections, behavior rules)
+- Change knowledge files in ways that materially alter Sage's answers (`app-knowledge.json`, `regional/*`, crop data behavior)
+- Swap the model (e.g. Claude ↔ Venice)
+- Fix a fabrication or priming bug where stale conversation context would keep poisoning new responses
+
+Format: `YYYY-MM-DD-short-slug` — date is what matters, slug is for grep. The version is stamped on `garden:conv:{userId}` saves and checked on `GET /api/garden-ai`. Client-side localStorage `garden:conv:{userId}` carries `{ version, messages }`. Old unversioned localStorage shape is treated as stale and reset.
+
+**Don't bump for trivial changes** (UI tweaks, copy fixes that don't change Sage's answers). Bumping clears every active user's conversation, so save it for changes the user would actually feel.
+
 ## Sage App Suggestions
 
 Sage can capture user feedback (bugs, feature ideas, friction) during chat and forward it to the dev team. Captured suggestions appear in the admin dashboard under the **Sage Suggestions** tab.

@@ -101,7 +101,11 @@ export type GardenActionType =
   | 'add_bed'
   | 'update_bed'
   | 'delete_bed'
-  | 'assign_plant_to_bed';
+  | 'assign_plant_to_bed'
+  // ─── Care-alert execution (Sage acts on bolting/pruning/harvest in chat) ─
+  | 'mark_pruned'         // user pruned/pinched/suckered — dismiss this cycle
+  | 'mark_bolting'        // user said a plant is bolting — set manualStatus
+  | 'dismiss_care_alert'; // user said "stop reminding me about X" — dismiss this cycle
 
 export interface GardenAction {
   action: GardenActionType;
@@ -121,6 +125,8 @@ export interface GardenAction {
   bedType?: BedType;
   widthInches?: number;
   lengthInches?: number;
+  // care-alert related
+  alertType?: CareAlertType;  // for dismiss_care_alert — which alert family to dismiss
 }
 
 /** Community-shared plant varieties added by users. */
