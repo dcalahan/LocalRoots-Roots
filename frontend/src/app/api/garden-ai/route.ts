@@ -327,3 +327,33 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ messages: [], memories: [] })
   }
 }
+
+/**
+ * DELETE /api/garden-ai?userId=...
+ *
+ * Clears the user's conversation history from KV. Used by the "New conversation"
+ * button in Sage's chat UI. Memories are preserved — those are accumulated facts
+ * about the user that are valuable across conversations. Only the back-and-forth
+ * messages are wiped, which fixes the conversation-priming issue where Sage gets
+ * stuck saying "I don't have access" after one bad exchange.
+ *
+ * The client also needs to clear its localStorage `garden:conv:{userId}` key —
+ * this endpoint just handles the cloud backup side.
+ */
+export async function DELETE(request: NextRequest) {
+  const userId = request.nextUrl.searchParams.get('userId')
+  if (!userId) {
+    return NextResponse.json({ error: 'userId required' }, { status: 400 })
+  }
+  try {
+    await kv.del(`garden:conv:${userId}`)
+    console.log('[Garden AI] Conversation cleared for:', userId)
+    return NextResponse.json({ ok: true, cleared: 'conversation' })
+  } catch (err) {
+    console.error('[Garden AI] Failed to clear conversation:', err)
+    return NextResponse.json(
+      { error: 'Failed to clear conversation', detail: String(err) },
+      { status: 500 },
+    )
+  }
+}

@@ -687,9 +687,41 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                   </svg>
                 </button>
               )}
+              {/* New Conversation — clears history (but keeps memories about the user)
+                  Fixes the conversation-priming issue where Sage gets stuck on a
+                  prior position even after we update the system prompt or context. */}
+              <button
+                onClick={async () => {
+                  if (!confirm('Start a new conversation? Your accumulated memories about you stay; just the back-and-forth history is cleared.')) return;
+                  // Clear local
+                  if (localConvKey) {
+                    try { localStorage.removeItem(localConvKey); } catch { /* noop */ }
+                  }
+                  // Clear cloud (best-effort)
+                  if (userId) {
+                    try {
+                      await fetch(`/api/garden-ai?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' });
+                    } catch { /* noop — local was cleared so user gets fresh state on reload */ }
+                  }
+                  // Reset in-memory state
+                  setMessages([]);
+                  setHydrated(true);
+                  setError(null);
+                  toast({ title: 'New conversation started', description: 'Fresh slate. Sage still remembers what she knows about you.' });
+                }}
+                className="p-1 hover:bg-white/20 rounded"
+                title="Start a new conversation (clears chat history)"
+                aria-label="Start new conversation"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 hover:bg-white/20 rounded"
+                title="Close"
+                aria-label="Close Sage"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
