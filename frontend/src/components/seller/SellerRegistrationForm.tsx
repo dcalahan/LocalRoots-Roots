@@ -15,6 +15,7 @@ import { ImageUploader } from './ImageUploader';
 import { useToast } from '@/hooks/use-toast';
 import { useRegisterSeller } from '@/hooks/useRegisterSeller';
 import { uploadImage, uploadMetadata } from '@/lib/pinata';
+import { usePublicGardenProfile } from '@/hooks/usePublicGardenProfile';
 
 // Helper to convert base64 data URL to File
 function dataUrlToFile(dataUrl: string, filename: string): File {
@@ -37,8 +38,15 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   const router = useRouter();
   const { toast } = useToast();
   const { isConnected } = useAccount();
-  const { login, authenticated } = usePrivy();
+  const { login, authenticated, user: privyUser } = usePrivy();
   const { registerSeller, isPending, isSuccess, error, txHash } = useRegisterSeller();
+
+  // ─── Existing public garden profile lookup ──────────────────────────
+  // If the user already has a public garden profile (set up via /grow/my-garden),
+  // pre-fill name / description / photo from it. They've already told us this
+  // about their garden — no reason to make them type it again for selling.
+  const gardenerUserId = privyUser?.id || null;
+  const { profile: existingGardenProfile } = usePublicGardenProfile(gardenerUserId);
 
   // Form state
   const [name, setName] = useState('');
@@ -56,6 +64,36 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   const [deliveryRadiusKm, setDeliveryRadiusKm] = useState(10);
   const [profileImageHash, setProfileImageHash] = useState<string | null>(null);
   const [showLocationWarning, setShowLocationWarning] = useState(false);
+
+  // Pre-fill tracking — distinguishes "user typed nothing yet" from "user
+  // explicitly cleared and wants a fresh pitch."
+  const [prefillApplied, setPrefillApplied] = useState(false);
+  const [prefillDismissed, setPrefillDismissed] = useState(false);
+
+  // Apply the pre-fill once when the gardener profile arrives.
+  // Only writes into empty fields — never overwrites user input.
+  useEffect(() => {
+    if (!existingGardenProfile || existingGardenProfile.hidden) return;
+    if (prefillApplied || prefillDismissed) return;
+    if (name || description || profileImageHash) return; // user already typed something
+
+    if (existingGardenProfile.displayName) setName(existingGardenProfile.displayName);
+    if (existingGardenProfile.bio) setDescription(existingGardenProfile.bio);
+    // Prefer the garden photo (what neighbors actually want to see) over the avatar
+    const photoIpfs = existingGardenProfile.gardenPhotoIpfs || existingGardenProfile.profilePhotoIpfs;
+    if (photoIpfs) setProfileImageHash(photoIpfs);
+
+    setPrefillApplied(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingGardenProfile]);
+
+  const handleStartFresh = () => {
+    setName('');
+    setDescription('');
+    setProfileImageHash(null);
+    setPrefillApplied(false);
+    setPrefillDismissed(true);
+  };
 
   // Handle success
   useEffect(() => {
@@ -243,6 +281,36 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Pre-fill notice — shown when we've populated fields from the
+              user's existing public garden profile. Lets them know where
+              the data came from and offers an easy escape hatch if they
+              want a different pitch for selling vs. their public profile. */}
+          {prefillApplied && !prefillDismissed && (
+            <div className="bg-roots-secondary/10 border border-roots-secondary/30 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0">🌱</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-roots-secondary">
+                    Using your public garden profile
+                  </p>
+                  <p className="text-xs text-roots-gray mt-1 leading-relaxed">
+                    We've pre-filled your garden name, description, and photo from your
+                    {' '}<a href="/grow/my-garden" className="underline">public garden profile</a>.
+                    Edit anything below — or{' '}
+                    <button
+                      type="button"
+                      onClick={handleStartFresh}
+                      className="text-roots-primary underline font-medium"
+                    >
+                      start fresh
+                    </button>
+                    {' '}if you'd like a different pitch for selling.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Basic Info */}
           <div className="space-y-4">
             <div>
