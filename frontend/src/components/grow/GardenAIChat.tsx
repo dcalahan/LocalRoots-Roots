@@ -132,6 +132,13 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   // the user sends their first message in the new conversation.
   const [showResetBanner, setShowResetBanner] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Anchor ref for the most recently appended message — used so a long
+  // assistant response anchors at the TOP of the viewport (user reads from
+  // the start) instead of pinning to the bottom on every stream chunk.
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  // Tracks message count between renders so we only scroll when a NEW
+  // message is appended, not on every text chunk during streaming.
+  const prevMessagesLengthRef = useRef(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const growingProfileContext = useGrowingProfileSafe();
@@ -266,10 +273,24 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     setHydrated(true);
   }, [userId, hydrated, localConvKey, saveConvToLocal, saveMemoriesToLocal, messages.length]);
 
-  // Scroll to bottom when messages change
+  // Scroll on new messages only (not on every chunk during streaming).
+  //   - User just sent → pin to bottom so their message + typing dots are visible
+  //   - Sage's response just started → pin the START of her message to the
+  //     top of the viewport so user reads from the beginning of long replies
+  //     instead of always seeing the tail
+  // Subsequent chunks during streaming don't re-trigger because we depend
+  // on messages.length, not the messages array itself.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (messages.length > prevMessagesLengthRef.current) {
+      const last = messages[messages.length - 1];
+      if (last?.role === 'assistant') {
+        lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages.length, messages]);
 
   // Check speech support on mount
   useEffect(() => {
@@ -843,6 +864,10 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
               messages.map((message, i) => (
                 <div
                   key={i}
+                  // Last message gets the scroll anchor so a new assistant
+                  // response can be pinned to top-of-viewport (see scroll
+                  // useEffect above).
+                  ref={i === messages.length - 1 ? lastMessageRef : undefined}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { IS_MAINNET, NETWORK_LABEL } from '@/lib/chainConfig';
 
 export function Footer() {
   return (
@@ -35,10 +36,12 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom row - testnet note */}
-        <div className="mt-4 pt-4 border-t border-roots-gray/10 text-center text-xs text-roots-gray">
-          Currently in beta on Base Sepolia testnet
-        </div>
+        {/* Network status — only shown on testnets. Mainnet hides this row. */}
+        {!IS_MAINNET && (
+          <div className="mt-4 pt-4 border-t border-roots-gray/10 text-center text-xs text-roots-gray">
+            Currently in beta on {NETWORK_LABEL} testnet
+          </div>
+        )}
       </div>
     </footer>
   );
