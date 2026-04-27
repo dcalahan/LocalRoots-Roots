@@ -215,6 +215,68 @@ Ambassadors receive **two forms of compensation** during pre-launch:
 
 **Why both cash and Seeds?** Ambassadors get real money now (cash) plus equity upside (Seeds → $ROOTS). This rewards early ambassadors who are taking a risk on an unproven platform.
 
+## Sell + My Garden + Sage Unification — STRATEGIC PLAN
+
+**Status (Apr 26 2026):** approved by Doug, in active build.
+
+### Why this exists
+
+LocalRoots evolved in three layers added at different times: Sell marketplace (Q1 2026), then My Garden plant tracking (Q2 2026), then Sage AI (Q2 2026). The Sell-side "Add Produce Listing" picker is visually polished (real photos, category chips, In Season filter, search). The Grow-side "Add Plants to My Garden" picker is functional but plain (emoji-only, text-button grid). Both pickers share crop IDs (`tomato-cherry`, `basil`, etc.) but live in separate JSON catalogs (`produce-seeds.json` for Sell — has photos, seasons; `crop-growing-data.json` for Grow — has planting/harvest/bolting/pruning data). They never reconciled.
+
+The Sage system already mutates My Garden state from chat (`add_plant`, `mark_pruned`, etc. via `gardenActions.ts`). It does NOT yet drive listing creation.
+
+The seller's blank profile state ("Your Garden / Seedling") happens when on-chain `seller.storefrontIpfs` is empty/minimal. The PublicGardenProfile (KV-backed via `/api/gardener-profile`) typically has the user's real garden name, bio, photos, and location — those should auto-populate the seller profile.
+
+### Plan, in 4 phases
+
+**V1 — `ListFromGardenSheet` (small, ships first):**
+- New component `frontend/src/components/seller/ListFromGardenSheet.tsx`. Bottom sheet shown when user clicks "Add Listing" on `/sell/dashboard`. Reads `gardenPlants` (already on dashboard via `useMyGarden`), joins each plant with `getProduceById(cropId)` for photo, renders an inventory grid. Tap plant → routes to `/sell/listings/new?source=garden&crop=<id>&qty=<qty>` (existing prefill contract). Footer: "List something else →" routes to `/sell/listings/new` clean. Skipped entirely if user has no plants.
+- `frontend/src/lib/produce.ts` adds `getCatalogItem(cropId)` helper that joins photo+season from `produce-seeds.json` with name+category from `crop-growing-data.json`. Used by `ListFromGardenSheet` to handle crops that exist in the garden but not in produce-seeds (custom varieties fall back to parent crop's photo).
+- `frontend/src/app/sell/dashboard/page.tsx` swaps the two `<Link href="/sell/listings/new">` wrappers for buttons that open the sheet (with link-fallback when no plants).
+
+**V2 — Shared `ProducePicker` + bolting/pruning backfill (refactor):**
+- Extract `frontend/src/components/produce/ProducePicker.tsx` — shared search input + In Season filter + category chips + photo grid + empty state. Generic over `mode: 'single' | 'multi'`. Renders cards with photos from `produce-seeds.json`, falling back to category-emoji+name for crops only in `crop-growing-data.json`.
+- `frontend/src/components/seller/ProduceSelector.tsx` becomes a thin wrapper over `<ProducePicker mode="single" />`.
+- `frontend/src/components/grow/AddPlantsModal.tsx` step-1 grid replaced by `<ProducePicker mode="multi" categoryEmoji />`. Bed picker + custom-variety flow + step-2 (planting date / method / quantity) stay in `AddPlantsModal`.
+- **Bolting/pruning backfill in `frontend/src/data/crop-growing-data.json`:** today only ~6 crops have `bolting` data and ~4 have `pruning` data. Fill these for every applicable crop using horticultural defaults:
+  - `bolting: { daysToBoltMin, daysToBoltMax, heatTriggerF, advice }` — applies to leafy greens (lettuce, spinach, arugula, kale, cilantro, basil, chard, mustards, etc.) and some heat-sensitive root crops (radish, fennel, dill, fennel)
+  - `pruning: [{ triggerDays, recurringDays, type, title, message, actionHint }]` — applies to indeterminate tomatoes (suckers from day 30, every 14d), basil (pinch top from day 21, every 14d), cucumbers + squash (vine training from day 35), mint (cutbacks from day 45 every 21d), peppers (top pinch optional)
+  - Crops with no relevant bolting/pruning (most root vegetables, most fruits) get the field omitted — code already handles this.
+- This data flows through the existing `careAlerts.ts` system so Sage's "ATTENTION NEEDED" + "UPCOMING / ROUTINE CARE" tiers automatically improve once the backfill lands.
+
+**V2.5 — Sage `create_listing_draft` action:**
+- New action verb in `frontend/src/lib/gardenActions.ts`: `{action: 'create_listing_draft', cropId, quantity, pricePerUnit?, notes?}`. Extraction prompt teaches Sage to recognize "list X for sale", "I want to sell my Y", etc.
+- Handler routes user to `/sell/listings/new?source=sage&crop=<id>&qty=<qty>` rather than directly creating on-chain. Sage drafts; user signs. **Critical for the zero-liability posture: Sage suggests, the user transacts.**
+- `garden-brain.ts` "TRACKING POWERS" section extended.
+
+**Already shipped before this plan formed:**
+- `EditSellerProfileModal` pre-fill from PublicGardenProfile (so seller profile populates from existing garden data)
+- `SellerRegistrationForm` pre-fill from PublicGardenProfile + listing-intent routing from My Garden Sell button
+- Sell button on every plant card in My Garden (`GardenPlantCard.tsx` → `app:list-for-sale` event → routes to listing form with crop pre-filled)
+- Geohash full-precision restored (delivery-radius accuracy required it)
+- Seller pickup address moved to private KV (Phase 1 privacy)
+
+### File-by-file ownership
+
+| File | Phase | Role |
+|---|---|---|
+| `frontend/src/components/seller/ListFromGardenSheet.tsx` | V1 (new) | Inventory popup on Add Listing |
+| `frontend/src/lib/produce.ts` | V1 (modify) | `getCatalogItem` join helper |
+| `frontend/src/app/sell/dashboard/page.tsx` | V1 (modify) | Wire sheet to Add Listing buttons |
+| `frontend/src/components/produce/ProducePicker.tsx` | V2 (new) | Shared picker |
+| `frontend/src/components/seller/ProduceSelector.tsx` | V2 (modify) | Becomes wrapper |
+| `frontend/src/components/grow/AddPlantsModal.tsx` | V2 (modify) | Use shared picker |
+| `frontend/src/data/crop-growing-data.json` | V2 (modify) | Bolting/pruning backfill |
+| `frontend/src/lib/gardenActions.ts` | V2.5 (modify) | New action verb |
+| `frontend/src/lib/ai/garden-brain.ts` | V2.5 (modify) | System prompt extended |
+
+### Open architectural notes
+
+- **Catalog reconciliation strategy:** keep two JSON files (`produce-seeds.json` for photos+seasons; `crop-growing-data.json` for planting/harvest/care). Join at the API layer (`getCatalogItem`) rather than hard-merging. Defer hard merge until both files have stabilized.
+- **Custom varieties:** when a user has a Mojito Mint plant (custom variety of mint), the picker should show the photo from the parent crop (mint) but display the variety name. Already supported by `gardenStatus.getCropDisplayName(cropId, customVarietyName)`.
+- **Seeds → Roots Points rebrand:** the rebrand is mostly complete. KNOWN LEAK (Doug, Apr 26 2026): the `/leaderboard` page (linked from "Early Adopter Bonus → Learn more") still uses old "Seeds" terminology. Track in a follow-up commit alongside V1.
+- **Visual delta tolerance:** during V1, AddPlantsModal still looks plain. That's fine — V2 fixes it. Don't ship V1 with a half-refactored picker.
+
 ## Orders Architecture
 
 The app has two separate order viewing experiences based on authentication method:
