@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useGrowingProfileSafe } from '@/contexts/GrowingProfileContext';
 import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -150,6 +151,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const gardenUserId = privyUser?.id || null;
   const { activePlants: gardenPlants, beds: gardenBeds, applyActions: applyGardenActions } = useMyGarden(gardenUserId);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Voice state
   const [isListening, setIsListening] = useState(false);
@@ -607,6 +609,22 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                         toast({ title: `Marked ${name} as bolting 🌼`, description: 'Harvest soon — leaves turn bitter fast once they bolt.' });
                       } else if (action.action === 'dismiss_care_alert') {
                         toast({ title: `Got it — dropping that reminder`, description: 'Sage will stay quiet on this for now.' });
+                      } else if (action.action === 'create_listing_draft' && action.cropId) {
+                        // V2.5: Sage drafts a listing, user signs. Don't
+                        // mutate state — route to the listing form with
+                        // the crop pre-filled. User confirms price + photo
+                        // and signs the meta-tx themselves. Critical for
+                        // zero-liability posture: Sage suggests, user transacts.
+                        toast({
+                          title: `Drafted listing for ${name} 🌱`,
+                          description: 'Set your price and confirm to publish.',
+                        });
+                        const params = new URLSearchParams({
+                          source: 'sage',
+                          crop: action.cropId,
+                          qty: String(action.quantity || 1),
+                        });
+                        router.push(`/sell/listings/new?${params.toString()}`);
                       }
                     }
                   } catch (err) {

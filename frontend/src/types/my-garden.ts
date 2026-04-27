@@ -105,7 +105,9 @@ export type GardenActionType =
   // ─── Care-alert execution (Sage acts on bolting/pruning/harvest in chat) ─
   | 'mark_pruned'         // user pruned/pinched/suckered — dismiss this cycle
   | 'mark_bolting'        // user said a plant is bolting — set manualStatus
-  | 'dismiss_care_alert'; // user said "stop reminding me about X" — dismiss this cycle
+  | 'dismiss_care_alert'  // user said "stop reminding me about X" — dismiss this cycle
+  // ─── Sell from chat (V2.5 — Sage drafts, user signs) ───
+  | 'create_listing_draft'; // user said "list my X for sale" — route to listing form prefilled
 
 export interface GardenAction {
   action: GardenActionType;
