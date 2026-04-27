@@ -12,8 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
 import { formatCentsToUsd } from '@/hooks/useAmbassadorPayments';
 import { MarkPaidModal } from './MarkPaidModal';
-import { createPublicClient, http } from 'viem';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { createFreshPublicClient } from '@/lib/viemClient';
 import { AMBASSADOR_REWARDS_ADDRESS, ambassadorAbi, type Ambassador, type PaymentSummary, type AmbassadorProfile } from '@/lib/contracts/ambassador';
 import { getIpfsUrl } from '@/lib/pinata';
 
@@ -41,10 +40,11 @@ export function AmbassadorPaymentsTab() {
   const { data: ambassadors, isLoading: isLoadingAmbassadors, refetch } = useQuery({
     queryKey: ['allAmbassadors'],
     queryFn: async (): Promise<AmbassadorWithPayments[]> => {
-      const client = createPublicClient({
-        chain: baseSepolia,
-        transport: http(),
-      });
+      // Use the shared fallback-aware client so admin reads don't hang
+      // on rate-limited public RPC. Was previously raw createPublicClient
+      // with chain hardcoded to testnet — both bugs (rate limit + wrong
+      // chain on mainnet). Fixed Apr 27 2026 alongside the wagmi fallback.
+      const client = createFreshPublicClient();
 
       // Get next ambassador ID to know how many ambassadors exist
       const nextId = await client.readContract({
