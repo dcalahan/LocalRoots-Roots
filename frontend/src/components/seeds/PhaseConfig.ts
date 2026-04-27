@@ -216,6 +216,26 @@ export const AMBASSADOR_TIERS: AmbassadorTier[] = [
   },
 ];
 
+/**
+ * Chief Ambassador — a special, NON-tier-based designation given to the
+ * first wave of lead ambassadors (Matt Hunt and successors). Pre-launch
+ * it's set manually in their IPFS profile via `isChief: true`. At
+ * Phase 2 launch, the contract will introduce earn-based promotion
+ * (50 activated sellers + 10 direct ambassador recruits → auto-Chief).
+ *
+ * Render this style when a profile carries `isChief === true` —
+ * supersedes the recruit-count-based tier.
+ */
+export const CHIEF_AMBASSADOR_TIER: AmbassadorTier = {
+  name: 'Chief Ambassador',
+  minRecruits: 0, // not metric-gated pre-launch
+  emoji: '⭐',
+  color: 'text-roots-primary',
+  bgColor: 'bg-roots-primary/10',
+  borderColor: 'border-roots-primary',
+  description: 'Lead ambassador — building the first regions',
+};
+
 export function getAmbassadorTier(recruitedSellers: number): AmbassadorTier {
   for (let i = AMBASSADOR_TIERS.length - 1; i >= 0; i--) {
     if (recruitedSellers >= AMBASSADOR_TIERS[i].minRecruits) {

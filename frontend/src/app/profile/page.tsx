@@ -578,12 +578,14 @@ function AmbassadorSection({ highlight }: { highlight: boolean }) {
 
   const [method, setMethod] = useState<'venmo' | 'paypal' | 'zelle' | null>(null);
   const [handle, setHandle] = useState('');
+  const [bookingUrl, setBookingUrl] = useState('');
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (!ambassadorProfile || hydrated) return;
     setMethod(ambassadorProfile.paymentMethod || null);
     setHandle(ambassadorProfile.paymentHandle || '');
+    setBookingUrl(ambassadorProfile.bookingUrl || '');
     setHydrated(true);
   }, [ambassadorProfile, hydrated]);
 
@@ -647,6 +649,10 @@ function AmbassadorSection({ highlight }: { highlight: boolean }) {
       createdAt: ambassadorProfile?.createdAt || new Date().toISOString(),
       paymentMethod: method,
       paymentHandle: handle.trim(),
+      // Preserve isChief from the existing profile — only admin should
+      // flip this. Save bookingUrl from form (Calendly etc.).
+      isChief: ambassadorProfile?.isChief,
+      bookingUrl: bookingUrl.trim() || undefined,
     };
     const ok = await updateProfile(updated);
     if (ok) {
@@ -712,12 +718,37 @@ function AmbassadorSection({ highlight }: { highlight: boolean }) {
           be paid automatically in $ROOTS.
         </div>
 
+        {/* Booking URL — used by Chief Ambassadors and any ambassador who
+            wants prospective gardeners to schedule a call. Surfaces as a
+            "Book a call" CTA on the public /ambassadors directory card. */}
+        <div className="pt-4 border-t border-gray-100">
+          <Label htmlFor="bookingUrl">Booking URL (optional)</Label>
+          <Input
+            id="bookingUrl"
+            type="url"
+            placeholder="https://calendly.com/your-handle"
+            value={bookingUrl}
+            onChange={(e) => setBookingUrl(e.target.value)}
+            className="mt-1"
+          />
+          <p className="text-xs text-roots-gray mt-1">
+            Add your Calendly (or similar) link if you want gardeners to book
+            calls with you. Shows on your card in the public Ambassadors
+            directory.
+          </p>
+          {ambassadorProfile?.isChief && (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-roots-primary">
+              <span>⭐</span> You&apos;re a Chief Ambassador — your card is featured at the top of /ambassadors.
+            </p>
+          )}
+        </div>
+
         <Button
           onClick={handleSave}
           disabled={isPending || !method || !handle.trim()}
           className="bg-roots-primary hover:bg-roots-primary/90"
         >
-          {isPending ? 'Saving…' : 'Save payment method'}
+          {isPending ? 'Saving…' : 'Save changes'}
         </Button>
       </div>
     </SectionShell>

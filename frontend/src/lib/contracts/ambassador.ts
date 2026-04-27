@@ -347,6 +347,16 @@ export interface AmbassadorProfile {
   // Payment preferences (TEMPORARY - until $ROOTS launch)
   paymentMethod?: 'venmo' | 'paypal' | 'zelle';
   paymentHandle?: string; // @username for Venmo, email for PayPal/Zelle
+  // Chief Ambassador flag — set true on the first wave of lead ambassadors
+  // (Matt Hunt and successors). Pre-launch this is set manually in IPFS;
+  // post-launch (Phase 2 contract update), Chief tier becomes earn-based
+  // (50 activated sellers + 10 direct ambassador recruits). For now,
+  // an ambassador is a Chief iff their IPFS profile carries this flag.
+  isChief?: boolean;
+  // Optional Calendly/booking URL — surfaces as a "Book a call" CTA on
+  // their public ambassador surfaces. Used by Chief Ambassadors for
+  // scheduled outreach intros.
+  bookingUrl?: string;
 }
 
 // Payment record (stored in Vercel KV) - TEMPORARY until $ROOTS launch

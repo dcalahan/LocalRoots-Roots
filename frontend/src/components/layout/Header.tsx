@@ -39,12 +39,16 @@ export function Header() {
   // - Default → /orders (unified hub with Privy login)
   const ordersHref = pathname.startsWith('/buy') ? '/buy/orders' : '/orders';
 
-  const navLinks = [
+  // `highlight: true` styles the link with the secondary accent so it
+  // pops in the nav. Reserved for the Ambassador surface — they're the
+  // distribution layer the network depends on, undersold visually
+  // until now (Doug's ambassador-prominence push, Apr 27 2026).
+  const navLinks: { href: string; label: string; highlight?: boolean }[] = [
     { href: '/grow', label: 'Grow' },
     { href: '/gardeners', label: 'Neighbors\' Gardens' },
     { href: '/buy', label: 'Shop' },
     { href: '/sell', label: 'Sell' },
-    { href: '/ambassador', label: 'Ambassadors' },
+    { href: '/ambassador', label: 'Ambassadors', highlight: true },
     { href: '/about/vision', label: 'About' },
   ];
 
@@ -64,19 +68,25 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(link.href)
-                    ? 'bg-roots-primary/10 text-roots-primary'
-                    : 'text-gray-600 hover:text-roots-primary hover:bg-gray-50'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const active = isActive(link.href);
+              const baseClasses = 'px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5';
+              let classes: string;
+              if (active) {
+                // Active state — same primary highlight regardless of whether the link is normally accent-styled
+                classes = `${baseClasses} bg-roots-primary/10 text-roots-primary`;
+              } else if (link.highlight) {
+                // Accent state for ambassador link — teal text + subtle border so it pops
+                classes = `${baseClasses} text-roots-secondary border border-roots-secondary/40 hover:bg-roots-secondary/5`;
+              } else {
+                classes = `${baseClasses} text-gray-600 hover:text-roots-primary hover:bg-gray-50`;
+              }
+              return (
+                <Link key={link.href} href={link.href} className={classes}>
+                  {link.label}
+                </Link>
+              );
+            })}
 
             {/* Cart icon */}
             <Link
@@ -159,20 +169,27 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-100 mt-3 pt-3">
             <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(link.href)
-                      ? 'bg-roots-primary/10 text-roots-primary'
-                      : 'text-gray-600 hover:text-roots-primary hover:bg-gray-50'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const active = isActive(link.href);
+                let classes: string;
+                if (active) {
+                  classes = 'px-3 py-3 rounded-lg text-sm font-medium transition-colors bg-roots-primary/10 text-roots-primary';
+                } else if (link.highlight) {
+                  classes = 'px-3 py-3 rounded-lg text-sm font-medium transition-colors text-roots-secondary border border-roots-secondary/40';
+                } else {
+                  classes = 'px-3 py-3 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:text-roots-primary hover:bg-gray-50';
+                }
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={classes}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
               <div className="pt-2 pb-1 px-3">
                 <UnifiedWalletButton />
               </div>
