@@ -833,7 +833,7 @@ export default function SellerDashboard() {
                     {visibleListings.map((listing) => (
                       <div
                         key={listing.listingId}
-                        className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border transition-all ${
                           listing.active
                             ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 hover:border-green-300'
                             : listing.quantityAvailable === 0
@@ -867,7 +867,7 @@ export default function SellerDashboard() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                             listing.active
                               ? 'bg-green-100 text-green-700'

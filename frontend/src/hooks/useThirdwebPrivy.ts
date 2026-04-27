@@ -1,6 +1,6 @@
 'use client';
 
-import { EXPLORER_URL } from '@/lib/chainConfig';
+import { EXPLORER_URL, ACTIVE_CHAIN_ID, RPC_URL, IS_MAINNET } from '@/lib/chainConfig';
 
 import { useState, useEffect, useCallback } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -15,23 +15,36 @@ export const thirdwebClient = clientId
   ? createThirdwebClient({ clientId })
   : null;
 
-export const baseSepolia = defineChain({
-  id: 84532,
-  name: "Base Sepolia",
-  nativeCurrency: {
-    name: "Ethereum",
-    symbol: "ETH",
-    decimals: 18,
-  },
-  rpc: process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-  blockExplorers: [
-    {
-      name: "BaseScan",
-      url: "${EXPLORER_URL}",
-    },
-  ],
-  testnet: true,
-});
+// Active chain for thirdweb. Tracks NEXT_PUBLIC_NETWORK env var via
+// chainConfig — was previously HARDCODED to Base Sepolia even on mainnet,
+// causing credit card checkout to show "Coming Soon" forever (Doug
+// hit this Apr 28 2026 trying to buy on mainnet). The literal
+// `${EXPLORER_URL}` in the old explorer config was also a typo bug —
+// JSON object literal, not a template string.
+export const activeChain = defineChain(
+  IS_MAINNET
+    ? {
+        id: ACTIVE_CHAIN_ID,
+        name: 'Base',
+        nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
+        rpc: RPC_URL,
+        blockExplorers: [{ name: 'BaseScan', url: EXPLORER_URL }],
+      }
+    : {
+        id: ACTIVE_CHAIN_ID,
+        name: 'Base Sepolia',
+        nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
+        rpc: RPC_URL,
+        blockExplorers: [{ name: 'BaseScan', url: EXPLORER_URL }],
+        testnet: true as const,
+      },
+);
+
+// Backward-compat alias — the file used to export `baseSepolia` as the
+// hardcoded testnet chain. Existing imports (CreditCardCheckout, the
+// thirdweb test page) keep working; on mainnet, this alias now points
+// at the mainnet chain. Rename to `activeChain` in a follow-up cleanup.
+export const baseSepolia = activeChain;
 
 interface UseThirdwebPrivyResult {
   isReady: boolean;
