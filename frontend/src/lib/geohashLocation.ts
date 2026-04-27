@@ -343,6 +343,64 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
   }
 }
 
+// Cache for street-level reverse geocode results (separate from city-level cache)
+const streetCache = new Map<string, string | null>();
+
+/**
+ * Reverse-geocode coordinates into a navigable street address.
+ * Returns a string like "88 Cypress Marsh Dr, Hilton Head Island, SC 29928"
+ * that buyers can paste directly into Google Maps or Waze.
+ *
+ * Returns null if the address can't be resolved (Nominatim returns nothing
+ * useful, network error, etc.) — callers should fall back to coordinates
+ * or prompt the user to type their address.
+ *
+ * Uses zoom=18 (building level) and addressdetails=1 to get house_number,
+ * road, city, state, postcode. Cached by 4-decimal lat/lng (~10m precision).
+ */
+export async function reverseGeocodeStreet(
+  lat: number,
+  lng: number,
+): Promise<string | null> {
+  const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  if (streetCache.has(cacheKey)) return streetCache.get(cacheKey)!;
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'LocalRoots-Marketplace/1.0 (https://localroots.love)',
+        },
+      },
+    );
+    if (!response.ok) throw new Error(`Geocoding failed: ${response.status}`);
+
+    const data = await response.json();
+    const a = data.address || {};
+
+    // Build a navigable address. Skip pieces that are missing rather than
+    // emit "undefined" or empty commas.
+    const street = [a.house_number, a.road].filter(Boolean).join(' ');
+    const locality = a.city || a.town || a.village || a.hamlet || a.municipality || '';
+    const stateAbbrev = a.state ? (getUSStateAbbreviation(a.state) || a.state) : '';
+    const postcode = a.postcode || '';
+
+    const cityState = [locality, [stateAbbrev, postcode].filter(Boolean).join(' ')]
+      .filter(Boolean)
+      .join(', ');
+    const full = [street, cityState].filter(Boolean).join(', ');
+
+    const result = full || null;
+    streetCache.set(cacheKey, result);
+    return result;
+  } catch (error) {
+    console.error('[reverseGeocodeStreet] Error:', error);
+    streetCache.set(cacheKey, null);
+    return null;
+  }
+}
+
 /**
  * Get US state abbreviation from full name
  */

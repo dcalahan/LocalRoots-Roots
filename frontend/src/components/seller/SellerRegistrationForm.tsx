@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRegisterSeller } from '@/hooks/useRegisterSeller';
 import { uploadImage, uploadMetadata } from '@/lib/pinata';
 import { usePublicGardenProfile } from '@/hooks/usePublicGardenProfile';
+import { decodeGeohash, encodeLocation } from '@/lib/geohash';
 
 // Helper to convert base64 data URL to File
 function dataUrlToFile(dataUrl: string, filename: string): File {
@@ -77,6 +78,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
     latitude: number;
     longitude: number;
     geohash: string;
+    address?: string | null;
   } | null>(null);
   const [offersDelivery, setOffersDelivery] = useState(false);
   const [offersPickup, setOffersPickup] = useState(true);
@@ -103,6 +105,30 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
     const photoIpfs = existingGardenProfile.gardenPhotoIpfs || existingGardenProfile.profilePhotoIpfs;
     if (photoIpfs) setProfileImageHash(photoIpfs);
 
+    // Pre-fill approximate location from the gardener profile's geohash5
+    // (~5km cell — privacy-preserving, no street-level data exposed).
+    // Skips the "Your location helps buyers find you!" warning entirely.
+    // User can hit "Update Location" to refine to exact GPS for the
+    // navigable pickup address.
+    if (existingGardenProfile.geohash5 && !location) {
+      try {
+        const decoded = decodeGeohash(existingGardenProfile.geohash5);
+        // Re-encode at the seller's standard precision so the on-chain
+        // geohash matches the format the rest of the marketplace uses.
+        const sellerGeohash = encodeLocation(decoded.latitude, decoded.longitude);
+        setLocation({
+          latitude: decoded.latitude,
+          longitude: decoded.longitude,
+          geohash: sellerGeohash,
+          // No street address yet — user can hit "Update Location" for GPS,
+          // OR type their pickup address manually below.
+          address: null,
+        });
+      } catch {
+        /* malformed geohash — skip, user can set location manually */
+      }
+    }
+
     setPrefillApplied(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingGardenProfile]);
@@ -111,6 +137,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
     setName('');
     setDescription('');
     setProfileImageHash(null);
+    setLocation(null);
     setPrefillApplied(false);
     setPrefillDismissed(true);
   };
@@ -124,6 +151,18 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privyEmailAddress]);
+
+  // Auto-fill the Pickup location from the reverse-geocoded address when
+  // the user clicks "Get My Location." Only writes if the field is still
+  // empty — never overwrites what the user typed. Buyers paste this
+  // straight into Google Maps / Waze, so a real address (not coords)
+  // matters.
+  useEffect(() => {
+    if (location?.address && !pickupAddress.trim()) {
+      setPickupAddress(location.address);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.address]);
 
   // Handle success
   useEffect(() => {
@@ -390,9 +429,14 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
           {/* Location */}
           <div className="pt-4 border-t">
             <Label className="mb-3 block">Where are you located? (optional)</Label>
-            <LocationPicker onLocationSelect={setLocation} />
+            <LocationPicker
+              onLocationSelect={setLocation}
+              initialGeohash={location?.geohash}
+            />
             <p className="text-xs text-roots-gray mt-2">
-              This helps buyers find you. You can add this later if you prefer.
+              {location && !location.address
+                ? "We're using your approximate location from your garden profile. Tap \"Update Location\" to share an exact street address — buyers will only see it after they place an order."
+                : 'This helps buyers find you. You can add this later if you prefer.'}
             </p>
           </div>
 
@@ -511,30 +555,31 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
             </div>
           </div>
 
-          {/* Location Warning */}
+          {/* Location Warning — stacks vertically on mobile so neither button
+              gets clipped off-screen on narrow viewports. */}
           {showLocationWarning && (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
               <p className="text-sm text-amber-800 font-medium">
-                Your location helps buyers find you!
+                Your location helps buyers find you
               </p>
               <p className="text-sm text-amber-700">
                 Without it, your listings won&apos;t appear in local searches. Are you sure you want to continue?
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="default"
                   size="sm"
                   onClick={() => setShowLocationWarning(false)}
-                  className="border-amber-300 text-amber-800 hover:bg-amber-100"
+                  className="bg-amber-600 hover:bg-amber-700 text-white w-full sm:w-auto"
                 >
                   Go back and add location
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
-                  variant="ghost"
-                  className="text-amber-600 hover:text-amber-800"
+                  variant="outline"
+                  className="border-amber-300 text-amber-800 hover:bg-amber-100 w-full sm:w-auto"
                 >
                   Continue without location
                 </Button>
