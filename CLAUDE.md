@@ -784,12 +784,62 @@ export const AMBASSADOR_REWARDS_ADDRESS: Address = (
 | Treasury | Multi-sig with trusted community members |
 | Governance | DAO for protocol upgrades, fee changes |
 | Code | Fully open-source, documented so anyone can deploy |
+| **Mutable user state** | **Migrate off Vercel KV (single-source-of-takedown)** |
 
 **Checklist:**
 - [ ] Open-source all code with deployment documentation
 - [ ] Set up multi-sig treasury (Gnosis Safe or similar)
 - [ ] Create relayer documentation for community operators
 - [ ] Design governance token/DAO structure
+- [ ] Eliminate Vercel KV (see "KV Decentralization" below)
+
+#### KV Decentralization — why it matters
+
+**Doug's framing (Apr 26 2026):** "We need to eliminate KV as it is a single source of elimination of Local Roots by a government agency."
+
+Vercel KV (Upstash Redis) is the single chokepoint for nearly all mutable user state in the app. A subpoena or court order to either Vercel or Upstash could:
+- Force handover of every user's Sage conversations + memory facts
+- Force handover of seller pickup addresses (PII)
+- Force handover of buyer delivery addresses (Phase 2 work)
+- Disable the service entirely with a single takedown notice
+
+**What lives in KV today (audit point — keep updated):**
+
+| Key pattern | Data | Privacy class |
+|---|---|---|
+| `garden:conv:{userId}` | Sage conversation history | User-owned |
+| `garden:memories:{userId}` | Sage entity memory facts | User-owned |
+| `garden:my-garden:{userId}` | Plant + bed data | User-owned |
+| `garden:dismissals:{userId}` | Care alert dismissals | User-owned |
+| `seller:pickup:{ownerLower}` | Seller exact street address | **Sensitive (PII)** |
+| `sage:suggestion:{id}` + index | Bug reports / feature requests | Quasi-public |
+| `sage:soul` | Sage's persona evolution | App config |
+| `collection:<slug>` + index | Common Area garden collections | Public |
+| `payment:*` | Ambassador cash payment tracking | TEMPORARY (deletes at $ROOTS launch) |
+
+**Architectural options (no decision yet, document trade-offs):**
+
+| Option | Fits which data | Trade-offs |
+|---|---|---|
+| **Ceramic Network** (decentralized mutable streams, IPFS-backed, DID-aware) | Conversations, memories, my-garden, dismissals — anything user-owned | Requires Ceramic node infra; user identity → Ceramic DID layer; medium ecosystem maturity |
+| **Encrypted IPFS + on-chain CID pointer** | Sensitive PII (pickup, delivery addresses) — encrypt with recipient's pubkey, publish encrypted blob, store CID in order metadata or contract event | Mutability via versioning; encryption key management is the hard part |
+| **OrbitDB / Gun.js** (P2P databases) | Real-time-feeling collaborative data | Requires online peers; weaker durability guarantees |
+| **WeaveDB / Polybase** (decentralized SQL on Arweave/L1) | Structured queryable data (suggestions, collections) | Newer, smaller ecosystem |
+| **On-chain (EVM)** | Tiny structured records (e.g. dismissals as events) | Gas costs; not for variable-size strings |
+
+**Likely target architecture (initial sketch — not decided):**
+- User-owned mutable data (Sage convos, memories, my-garden, dismissals) → **Ceramic streams** keyed by Privy-derived DID. User retains control even if LocalRoots disappears.
+- Sensitive PII (pickup, delivery addresses) → **encrypted IPFS** keyed to the counterparty's wallet pubkey, CID delivered via order events. Even if storage is subpoenaed, contents are unreadable without the counterparty's signing key.
+- Public app data (Sage suggestions, collections) → can stay on a centralized index (a search problem, not a censorship problem) but with a decentralized canonical store underneath.
+
+**Why this is multi-month, not a sprint:**
+- Selecting the storage layer requires PoC + load testing
+- User identity migration: today's Privy-only flow → DID-bridged
+- Migration path for existing data
+- Encryption-at-rest for PII requires key-management UX (probably tied to Privy embedded wallet's signing capability)
+- Every API route that currently calls `kv.get/set/del` becomes a call to the abstraction layer, with a migration period where both backends co-exist
+
+**No new code paths should add new KV keys without flagging them in this table.** Treat KV usage as technical debt against the decentralization goal.
 
 ### Phase 4: Full Autonomy (Eventual)
 
