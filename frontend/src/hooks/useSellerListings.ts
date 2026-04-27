@@ -5,6 +5,7 @@ import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace
 import { createFreshPublicClient } from '@/lib/viemClient';
 import { useSellerStatus } from './useSellerStatus';
 import { getIpfsUrl } from '@/lib/pinata';
+import { resolveListingImage } from '@/lib/produce';
 
 interface ListingMetadata {
   produceName: string;
@@ -43,7 +44,7 @@ async function fetchIpfsMetadata(metadataUri: string): Promise<ListingMetadata |
       return {
         produceName: data.produceName || 'Unknown',
         description: data.description || '',
-        imageUrl: getImageUrl(data.images?.[0]),
+        imageUrl: resolveListingImage(data, getImageUrl),
         unit: data.unitName || data.unitId || 'unit',
         category: data.category || '',
       };
@@ -58,11 +59,10 @@ async function fetchIpfsMetadata(metadataUri: string): Promise<ListingMetadata |
     if (!response.ok) return null;
     const data = await response.json();
 
-    // Convert image hash to URL
     return {
       produceName: data.produceName || 'Unknown',
       description: data.description || '',
-      imageUrl: getImageUrl(data.images?.[0]),
+      imageUrl: resolveListingImage(data, getImageUrl),
       unit: data.unitName || data.unitId || 'unit',
       category: data.category || '',
     };
