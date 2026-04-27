@@ -1,17 +1,20 @@
 'use client'
 
-import * as Sentry from '@sentry/nextjs'
+// Sentry disabled Apr 28 2026 — see next.config.js header for re-enable
+// instructions. The global-error boundary still renders, but no longer
+// reports the error to Sentry.
+// import * as Sentry from '@sentry/nextjs'
 import NextError from 'next/error'
-import { useEffect } from 'react'
+// import { useEffect } from 'react'
 
 export default function GlobalError({
-  error,
+  error: _error,
 }: {
   error: Error & { digest?: string }
 }) {
-  useEffect(() => {
-    Sentry.captureException(error)
-  }, [error])
+  // useEffect(() => {
+  //   Sentry.captureException(_error)
+  // }, [_error])
 
   return (
     <html>

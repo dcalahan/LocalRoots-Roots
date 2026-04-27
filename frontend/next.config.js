@@ -1,4 +1,12 @@
-const { withSentryConfig } = require('@sentry/nextjs');
+// Sentry disabled Apr 28 2026 — too noisy on every Vercel build, and the
+// PII surface (sendDefaultPii + includeLocalVariables + session replays)
+// conflicts with the decentralization posture. Files preserved in case
+// we want to flip it back on. To re-enable: uncomment the require below,
+// uncomment the withSentryConfig wrapper at the bottom of this file, and
+// un-comment the bodies of sentry.server.config.ts, sentry.edge.config.ts,
+// src/instrumentation.ts, src/instrumentation-client.ts, and the
+// Sentry.captureException call in src/app/global-error.tsx.
+// const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -58,12 +66,15 @@ const nextConfig = {
   },
 };
 
-module.exports = withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-  tunnelRoute: '/monitoring',
-  sourcemaps: { deleteSourcemapsAfterUpload: true },
-});
+module.exports = nextConfig;
+
+// Sentry disabled — see header comment for re-enable instructions.
+// module.exports = withSentryConfig(nextConfig, {
+//   org: process.env.SENTRY_ORG,
+//   project: process.env.SENTRY_PROJECT,
+//   authToken: process.env.SENTRY_AUTH_TOKEN,
+//   silent: !process.env.CI,
+//   widenClientFileUpload: true,
+//   tunnelRoute: '/monitoring',
+//   sourcemaps: { deleteSourcemapsAfterUpload: true },
+// });
