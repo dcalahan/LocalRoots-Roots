@@ -190,16 +190,32 @@ export default function TokenomicsPage() {
         </section>
 
         {/* Token Allocation — kept on the page so ambassadors and serious
-            participants (like Matt) can see exactly how the network rewards
-            are split. This is a real, structural commitment, not marketing. */}
+            participants (like Matt) can see how the network rewards are
+            currently proposed to be split. PROPOSED, not final — these
+            numbers may shift before token launch. */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">How Network Rewards Are Allocated</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Proposed Allocation
+            </h2>
+            <span className="text-xs font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
+              Subject to Change
+            </span>
+          </div>
           <div className="prose prose-lg text-roots-gray mb-6">
             <p className="mb-4">
-              The future $ROOTS supply is fixed at 1 billion tokens — no more will
-              ever be created. Roots Points earned today determine how the
-              airdrop slice gets distributed. Here&apos;s the full breakdown:
+              The proposed total supply is 1 billion tokens, with no future
+              minting. The split below is a working draft — we&apos;re still
+              gathering input from ambassadors, gardeners, and the broader
+              community before locking these numbers in.
             </p>
+            <div className="not-prose bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 mb-2">
+              <strong>Currently under review:</strong> the 40% Community Treasury
+              slice. We&apos;re weighing whether some of that should shift to
+              the people doing the actual work of growing the network —
+              ambassadors and early users. Final numbers will be set before
+              the token launches.
+            </div>
           </div>
 
           {/* Visual Bar */}
@@ -220,11 +236,18 @@ export default function TokenomicsPage() {
                 <div className="w-4 h-4 bg-roots-secondary rounded-full flex-shrink-0" />
                 <div className="flex-1">
                   <div className="flex justify-between items-baseline">
-                    <h4 className="font-semibold">Community Treasury</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold">Community Treasury</h4>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                        Under review
+                      </span>
+                    </div>
                     <span className="text-sm font-bold">40%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Governed by the community. Used for ecosystem development, grants, and growing the network.
+                    Governed by the community. Funds ecosystem development, grants,
+                    and growing the network. We&apos;re considering reducing this
+                    slice and reallocating to ambassadors and early users.
                   </p>
                 </div>
               </CardContent>

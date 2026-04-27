@@ -21,6 +21,7 @@ import { AmbassadorTierCard, AmbassadorTierBadge } from '@/components/seeds/Amba
 import { getMultiplierInfo, AMBASSADOR_RECRUITMENT_BONUS, AMBASSADOR_COMMISSION_PERCENT } from '@/components/seeds/PhaseConfig';
 import { RecruitedFarmersWidget } from '@/components/ambassador/RecruitedFarmersWidget';
 import { PaymentStatusCard } from '@/components/ambassador/PaymentStatusCard';
+import { EarningsCalculator } from '@/components/ambassador/EarningsCalculator';
 import { ShareCardModal } from '@/components/ShareCardModal';
 import { useGovernanceStats } from '@/hooks/useGovernanceStats';
 import type { ShareCardData } from '@/lib/shareCards';
@@ -505,6 +506,12 @@ export default function AmbassadorDashboardPage() {
           profile={profile}
           onProfileUpdate={refetch}
         />
+
+        {/* Earnings Calculator — interactive "what could you make?" tool.
+            Doug's ambassador-prominence push (Apr 27 2026): the dashboard
+            shows what's been earned but not what's possible, leaving the
+            motivational case implicit. This card surfaces it. */}
+        <EarningsCalculator />
 
         {/* Ambassador Tier Progress Card */}
         <AmbassadorTierCard
