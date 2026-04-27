@@ -6,6 +6,7 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { savePickup } from '@/lib/sellerPickup';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
+import { usePrivyContact } from '@/hooks/usePrivyContact';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -88,13 +89,11 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   const gardenerUserId = privyUser?.id || null;
   const { profile: existingGardenProfile } = usePublicGardenProfile(gardenerUserId);
 
-  // Privy already has the user's email if they logged in via email auth.
-  // Pull it so we can pre-fill the contact field instead of asking for it
-  // a second time. Privy's email account is stored on user.email.address.
-  const privyEmail = ((privyUser as unknown as { email?: { address?: string } | string })?.email);
-  const privyEmailAddress = typeof privyEmail === 'string'
-    ? privyEmail
-    : (privyEmail?.address || '');
+  // Privy already has the user's email + phone if they linked them.
+  // Pull both via the shared hook so buyer + seller surfaces use the same
+  // source. Doug's principle (Apr 28 2026): if we already know who they
+  // are, don't ask again.
+  const { email: privyEmailAddress, phone: privyPhoneNumber } = usePrivyContact();
 
   // Form state
   const [name, setName] = useState('');
@@ -169,15 +168,21 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
     setPrefillDismissed(true);
   };
 
-  // Pre-fill email from Privy once it's available. Doesn't overwrite if
-  // the user has already typed something different (e.g. they want orders
-  // routed to a different inbox than their login email).
+  // Pre-fill email + phone from Privy once they're available. Doesn't
+  // overwrite if the user has already typed something different (e.g. they
+  // want orders routed to a different inbox / number than their login).
   useEffect(() => {
     if (privyEmailAddress && !email) {
       setEmail(privyEmailAddress);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privyEmailAddress]);
+  useEffect(() => {
+    if (privyPhoneNumber && !phone) {
+      setPhone(privyPhoneNumber);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privyPhoneNumber]);
 
   // Auto-fill the Pickup location from the reverse-geocoded address.
   // Buyers paste this into Google Maps / Waze, so we want a real navigable
@@ -676,7 +681,9 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
                 className="mt-1"
               />
               <p className="text-xs text-roots-gray mt-1">
-                For coordinating pickups/deliveries with buyers
+                {privyPhoneNumber && phone === privyPhoneNumber
+                  ? 'From your login — change this if buyers should reach you on a different number.'
+                  : 'For coordinating pickups/deliveries with buyers.'}
               </p>
             </div>
           </div>

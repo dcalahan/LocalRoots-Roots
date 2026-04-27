@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatRoots, rootsToFiat, formatFiat } from '@/lib/pricing';
 import { CartItem } from '@/contexts/CartContext';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
+import { usePrivyContact } from '@/hooks/usePrivyContact';
 
 interface GuestCheckoutProps {
   items: CartItem[];
@@ -38,6 +39,20 @@ export function GuestCheckout({
 
   const hasDeliveryItems = items.some(item => item.isDelivery);
   const totalUsd = Number(rootsToFiat(total));
+
+  // Pre-fill contact fields from Privy when the user is logged in. "Guest"
+  // checkout is named for the no-wallet flow, but a user might still be
+  // authenticated via Privy from another part of the app — if so, use what
+  // we know instead of asking again.
+  const { email: privyEmail, phone: privyPhone } = usePrivyContact();
+  useEffect(() => {
+    if (privyEmail && !email) setEmail(privyEmail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privyEmail]);
+  useEffect(() => {
+    if (privyPhone && !phone) setPhone(privyPhone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privyPhone]);
 
   const handleContinueToPayment = async () => {
     // Validation lives in lib/addressValidation.ts so buyer + seller
@@ -133,7 +148,11 @@ export function GuestCheckout({
                 placeholder="you@example.com"
                 className="mt-1"
               />
-              <p className="text-xs text-roots-gray mt-1">For order confirmation and tracking</p>
+              <p className="text-xs text-roots-gray mt-1">
+                {privyEmail && email === privyEmail
+                  ? 'From your login — change this if you want order updates sent to a different inbox.'
+                  : 'For order confirmation and tracking.'}
+              </p>
             </div>
             <div>
               <Label htmlFor="phone">Phone Number (optional)</Label>
@@ -145,6 +164,11 @@ export function GuestCheckout({
                 placeholder="(555) 123-4567"
                 className="mt-1"
               />
+              {privyPhone && phone === privyPhone && (
+                <p className="text-xs text-roots-gray mt-1">
+                  From your login — change this if you want delivery texts sent to a different number.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

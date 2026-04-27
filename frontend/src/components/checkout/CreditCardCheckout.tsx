@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { ThirdwebProvider, BuyWidget } from 'thirdweb/react';
 import { useThirdwebPrivy, thirdwebClient, baseSepolia } from '@/hooks/useThirdwebPrivy';
+import { usePrivyContact } from '@/hooks/usePrivyContact';
 import { IS_MAINNET } from '@/lib/chainConfig';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
 import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
@@ -31,6 +32,7 @@ function CreditCardCheckoutInner({
 }: CreditCardCheckoutProps) {
   const { ready, authenticated, login, user } = usePrivy();
   const { isReady, isConnected, isBridged, error: bridgeError, bridgeWallet } = useThirdwebPrivy();
+  const { email: privyEmail, phone: privyPhone } = usePrivyContact();
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -41,6 +43,19 @@ function CreditCardCheckoutInner({
 
   const hasDeliveryItems = items.some(item => item.isDelivery);
   const totalUsd = rootsToFiat(total);
+
+  // Pre-fill contact fields from Privy when the user is logged in. Same
+  // pattern as SellerRegistrationForm — if we already know who they are,
+  // don't ask again. Doesn't overwrite if they've typed something different
+  // (e.g. routing order updates to a separate inbox).
+  useEffect(() => {
+    if (privyEmail && !email) setEmail(privyEmail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privyEmail]);
+  useEffect(() => {
+    if (privyPhone && !phone) setPhone(privyPhone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [privyPhone]);
 
   // Check if thirdweb is configured
   if (!thirdwebClient) {
@@ -158,10 +173,18 @@ function CreditCardCheckoutInner({
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="you@example.com"
                 className="mt-1"
               />
+              <p className="text-xs text-roots-gray mt-1">
+                {privyEmail && email === privyEmail
+                  ? 'From your login — change this if you want order updates sent to a different inbox.'
+                  : "We'll send order confirmation and tracking here."}
+              </p>
             </div>
             <div>
               <Label htmlFor="phone">Phone Number (optional)</Label>
@@ -173,6 +196,11 @@ function CreditCardCheckoutInner({
                 placeholder="(555) 123-4567"
                 className="mt-1"
               />
+              {privyPhone && phone === privyPhone && (
+                <p className="text-xs text-roots-gray mt-1">
+                  From your login — change this if you want delivery texts sent to a different number.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
