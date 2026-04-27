@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +11,7 @@ import { ImageUploader } from './ImageUploader';
 import { useUpdateSeller } from '@/hooks/useUpdateSeller';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
+import { usePublicGardenProfile } from '@/hooks/usePublicGardenProfile';
 import { fromKm, toKm, getUnitLabel } from '@/lib/distance';
 import { uploadImage, uploadMetadata } from '@/lib/pinata';
 import type { SellerProfile } from '@/hooks/useSellerProfile';
@@ -37,6 +39,14 @@ export function EditSellerProfileModal({ profile, onClose, onSuccess }: EditSell
   const { toast } = useToast();
   const { preferences } = useUserPreferences();
   const { updateSeller, isPending, isSuccess, error, reset } = useUpdateSeller();
+  const { user: privyUser } = usePrivy();
+
+  // If the seller registered with empty/minimal IPFS metadata (Doug's case
+  // on mainnet — early registration submitted with placeholder data), we
+  // pre-fill the edit form from the user's PublicGardenProfile so they
+  // don't have to retype their garden name, bio, and photo.
+  const gardenerUserId = privyUser?.id || null;
+  const { profile: gardenProfile } = usePublicGardenProfile(gardenerUserId);
 
   const distanceUnit = preferences.distanceUnit;
 
@@ -49,6 +59,37 @@ export function EditSellerProfileModal({ profile, onClose, onSuccess }: EditSell
   const [deliveryRadius, setDeliveryRadius] = useState(
     Math.round(fromKm(profile.deliveryRadiusKm, distanceUnit))
   );
+
+  // Track whether we've applied the gardener-profile prefill so we don't
+  // re-apply on every render or fight the user's typing.
+  const [prefillApplied, setPrefillApplied] = useState(false);
+
+  // One-shot prefill: if seller metadata is empty AND the user has a
+  // public garden profile, copy over name, bio, and photo. Only fills
+  // empty fields — never overwrites.
+  useEffect(() => {
+    if (prefillApplied) return;
+    if (!gardenProfile || gardenProfile.hidden) return;
+    // Only prefill when the existing seller metadata is sparse (the
+    // 'Your Garden / Add a description...' placeholder state).
+    const sellerHasName = !!profile.metadata?.name;
+    const sellerHasDesc = !!profile.metadata?.description;
+    const sellerHasImage = !!profile.metadata?.imageUrl;
+    if (sellerHasName && sellerHasDesc && sellerHasImage) return;
+
+    if (!sellerHasName && gardenProfile.displayName && !name) {
+      setName(gardenProfile.displayName);
+    }
+    if (!sellerHasDesc && gardenProfile.bio && !description) {
+      setDescription(gardenProfile.bio);
+    }
+    if (!sellerHasImage && !imageUrl) {
+      const photoIpfs = gardenProfile.gardenPhotoIpfs || gardenProfile.profilePhotoIpfs;
+      if (photoIpfs) setImageUrl(photoIpfs);
+    }
+    setPrefillApplied(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gardenProfile, prefillApplied]);
 
   useEffect(() => {
     if (isSuccess) {
