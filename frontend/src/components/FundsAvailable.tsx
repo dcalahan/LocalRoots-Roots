@@ -4,7 +4,7 @@ import { useAccount, useBalance, useConnect, useDisconnect } from 'wagmi';
 import { useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
 import { base } from 'viem/chains';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { ACTIVE_CHAIN as baseSepolia, ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { ROOTS_TOKEN_ADDRESS } from '@/lib/contracts/marketplace';
 import { useDemoMode, isDemoModeAvailable } from '@/contexts/DemoModeContext';
 import { isTestWalletAvailable } from '@/lib/testWalletConnector';
@@ -62,6 +62,7 @@ export function FundsAvailable() {
   // Get native ETH balance
   const { data: ethBalance, isLoading: ethLoading } = useBalance({
     address,
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   // Get ROOTS token balance
@@ -70,6 +71,7 @@ export function FundsAvailable() {
     abi: erc20BalanceAbi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: ACTIVE_CHAIN_ID,
     query: {
       enabled: !!address,
       retry: false, // Don't retry on error
@@ -86,6 +88,7 @@ export function FundsAvailable() {
     abi: erc20BalanceAbi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: ACTIVE_CHAIN_ID,
     query: {
       enabled: !!address && !!usdcAddress,
       retry: false, // Don't retry on error

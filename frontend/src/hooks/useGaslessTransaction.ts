@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { usePublicClient, useSwitchChain } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { ACTIVE_CHAIN as baseSepolia, ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { type Address, encodeFunctionData } from 'viem';
 import {
   FORWARDER_ADDRESS,
@@ -42,7 +42,7 @@ export function useGaslessTransaction(): GaslessTransactionResult {
   const chainId = privyWallet?.chainId ? parseInt(privyWallet.chainId.split(':')[1] || '0') : undefined;
   const isConnected = authenticated && walletsReady && !!address;
 
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const { switchChainAsync } = useSwitchChain();
 
   const [isLoading, setIsLoading] = useState(false);

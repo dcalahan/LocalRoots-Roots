@@ -10,7 +10,7 @@ import {
   encodeFunctionData,
   isAddress,
 } from 'viem';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { ACTIVE_CHAIN as baseSepolia, ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import type { TokenSymbol } from './useWalletBalances';
 import {
   ROOTS_TOKEN_ADDRESS,
@@ -69,7 +69,7 @@ interface UseSendTokenResult {
 export function useSendToken(): UseSendTokenResult {
   const { authenticated } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
 
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);

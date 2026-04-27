@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useAccount, usePublicClient } from 'wagmi';
 import { formatUnits, type Address } from 'viem';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import {
   ROOTS_TOKEN_ADDRESS,
   USDC_ADDRESS,
@@ -86,7 +87,7 @@ export function useWalletBalances() {
   const { authenticated } = usePrivy();
   const { wallets } = useWallets();
   const { address: wagmiAddress, isConnected: isWagmiConnected } = useAccount();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
 
   // Get the wallet address (prefer Privy, fall back to wagmi)
   const privyWallet = wallets.find((w) => w.walletClientType === 'privy');

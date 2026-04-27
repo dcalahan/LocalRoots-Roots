@@ -2,6 +2,7 @@
 
 import { useAccount, useReadContract } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 
 /**
@@ -29,6 +30,7 @@ export function useAdminStatus() {
     abi: marketplaceAbi,
     functionName: 'isAdmin',
     args: address ? [address] : undefined,
+    chainId: ACTIVE_CHAIN_ID,
     query: {
       enabled: isConnected && !!address,
     },
@@ -38,6 +40,7 @@ export function useAdminStatus() {
     address: MARKETPLACE_ADDRESS,
     abi: marketplaceAbi,
     functionName: 'getAdmins',
+    chainId: ACTIVE_CHAIN_ID,
     query: {
       enabled: isConnected,
     },

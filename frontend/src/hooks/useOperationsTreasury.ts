@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useReadContract, useReadContracts } from 'wagmi';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import {
   OPERATIONS_TREASURY_ADDRESS,
   OPERATIONS_TREASURY_ABI,
@@ -33,6 +34,7 @@ export function useOperationsTreasury(): UseOperationsTreasuryReturn {
     address: contractAddress,
     abi: OPERATIONS_TREASURY_ABI,
     functionName: 'getBalance',
+    chainId: ACTIVE_CHAIN_ID,
     query: {
       enabled: !!contractAddress,
     },
@@ -43,6 +45,7 @@ export function useOperationsTreasury(): UseOperationsTreasuryReturn {
     address: contractAddress,
     abi: OPERATIONS_TREASURY_ABI,
     functionName: 'getServiceIds',
+    chainId: ACTIVE_CHAIN_ID,
     query: {
       enabled: !!contractAddress,
     },

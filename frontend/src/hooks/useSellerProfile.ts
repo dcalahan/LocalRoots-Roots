@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useReadContract } from 'wagmi';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { useSellerStatus } from './useSellerStatus';
 import { getIpfsUrl } from '@/lib/pinata';
@@ -83,6 +84,7 @@ export function useSellerProfile() {
     abi: marketplaceAbi,
     functionName: 'sellers',
     args: sellerId ? [BigInt(sellerId)] : undefined,
+    chainId: ACTIVE_CHAIN_ID,
     query: {
       enabled: sellerId !== null && sellerId !== undefined,
     },
