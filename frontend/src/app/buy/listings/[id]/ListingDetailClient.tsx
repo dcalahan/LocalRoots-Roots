@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PriceDisplay, PriceSummary } from '@/components/ui/PriceDisplay';
+import { SellerAmbassadorBadge } from '@/components/buyer/SellerAmbassadorBadge';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import type { ListingCardData } from '@/components/buyer/ListingCard';
@@ -126,10 +127,16 @@ export default function ListingDetailClient({ listing }: ListingDetailClientProp
 
           <Link
             href={`/buy/sellers/${listing.sellerId}`}
-            className="text-roots-gray hover:text-roots-primary mb-4 block"
+            className="text-roots-gray hover:text-roots-primary mb-3 block"
           >
             by {listing.seller.name} →
           </Link>
+
+          {/* Ambassador credit — surfaces who recruited this seller and
+              creates a recruiting hook for buyers ("be one too →"). Renders
+              nothing if seller had no recruiter. Doug's ambassador-prominence
+              push (Apr 27 2026). */}
+          <SellerAmbassadorBadge sellerId={listing.sellerId} />
 
           <div className="mb-4">
             <PriceDisplay amount={BigInt(listing.pricePerUnit)} size="lg" />
