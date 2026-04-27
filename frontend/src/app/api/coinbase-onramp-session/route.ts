@@ -33,7 +33,13 @@ import { randomBytes } from 'crypto';
 
 const COINBASE_API_HOST = 'api.developer.coinbase.com';
 const SESSION_TOKEN_PATH = '/onramp/v1/token';
-const ONRAMP_URL_BASE = 'https://pay.coinbase.com/v3/buy/input';
+// NOTE: this is `/buy/select-asset`, NOT `/v3/buy/input`. The offramp
+// counterpart uses `/v3/sell/input` but the buy flow's guest-checkout
+// entry point is the v1 path. Using v3/buy/input bounces the buyer to
+// login.coinbase.com instead of guest checkout — verified via Coinbase
+// docs (Apr 28 2026):
+// https://docs.cdp.coinbase.com/onramp-&-offramp/onramp-apis/generating-onramp-url
+const ONRAMP_URL_BASE = 'https://pay.coinbase.com/buy/select-asset';
 
 interface SessionTokenRequestBody {
   walletAddress?: string;
