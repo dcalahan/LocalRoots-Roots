@@ -43,7 +43,31 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   const { isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { login, authenticated, user: privyUser } = usePrivy();
-  const { registerSeller, isPending, isSuccess, error, txHash } = useRegisterSeller();
+  const { registerSeller, isPending, isWriting, isConfirming, isSuccess, error, txHash } = useRegisterSeller();
+
+  // Progressive status for the submit button — gasless flow has multiple
+  // stages (sign → relay submit → on-chain confirm), each can take seconds.
+  // Single "Registering on blockchain..." message felt stuck. This breaks
+  // it down so user sees forward motion. Also tracks how long we've been
+  // waiting so we can surface a 'still working — check console' nudge if
+  // it goes longer than expected.
+  const [waitStartedAt, setWaitStartedAt] = useState<number | null>(null);
+  const [secondsWaiting, setSecondsWaiting] = useState(0);
+  useEffect(() => {
+    if (isPending && !waitStartedAt) {
+      setWaitStartedAt(Date.now());
+    } else if (!isPending && waitStartedAt) {
+      setWaitStartedAt(null);
+      setSecondsWaiting(0);
+    }
+  }, [isPending, waitStartedAt]);
+  useEffect(() => {
+    if (!waitStartedAt) return;
+    const tick = setInterval(() => {
+      setSecondsWaiting(Math.floor((Date.now() - waitStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [waitStartedAt]);
 
   // Listing intent — set when user came from a "Sell" button on a My Garden
   // plant card. After successful registration we route them straight to the
@@ -678,16 +702,40 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Registering on blockchain...
+                {/* Progressive status — shows the user we're still working
+                    and which stage we're in. Single "Registering..." felt
+                    stuck during the multi-step gasless flow. */}
+                {!txHash && isWriting
+                  ? `Submitting to blockchain${secondsWaiting > 0 ? `... ${secondsWaiting}s` : '...'}`
+                  : isConfirming
+                    ? `Confirming on Base mainnet${secondsWaiting > 0 ? `... ${secondsWaiting}s` : '...'}`
+                    : `Registering${secondsWaiting > 0 ? `... ${secondsWaiting}s` : '...'}`}
               </>
             ) : (
               'Create My Seller Profile'
             )}
           </Button>
 
+          {/* Stuck-flow nudge: if we've been "pending" for 45s, gasless
+              flow is unusually slow and the user should check console. */}
+          {isPending && secondsWaiting >= 45 && (
+            <p className="text-xs text-center text-amber-700 mt-2">
+              Taking longer than usual. If you suspect an error, open your
+              browser console (or refresh and try again).
+            </p>
+          )}
+
           <p className="text-xs text-center text-roots-gray">
-            By signing up, you agree to our Terms of Service. We&apos;ll never
-            share your contact info with anyone.
+            By signing up, you agree to our{' '}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-roots-primary"
+            >
+              Terms of Service
+            </a>
+            . We&apos;ll never share your contact info with anyone.
           </p>
         </CardContent>
       </Card>

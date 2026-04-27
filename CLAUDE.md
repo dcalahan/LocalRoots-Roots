@@ -12,6 +12,29 @@ LocalRoots is a **gardening companion first, marketplace inside.** The AI garden
 - Primary CTA is "Start Growing" not "Browse Produce" or "Start Selling"
 - The AI should feel like a knowledgeable friend, not a product feature
 
+## Zero Liability via Decentralization — STRATEGIC PRINCIPLE
+
+**Doug's North Star (Apr 26 2026):** "Host food listings (food-safety liability is real) is why this must be a decentralized application. I want zero liability."
+
+LocalRoots is **infrastructure, not an operator.** The decentralized architecture isn't just censorship-resistant — it's the legal foundation for zero-liability defense. Every architectural decision should preserve this posture:
+
+- **Sellers are the food producers.** They list, they sell, they are legally responsible. LocalRoots does not inspect, certify, or guarantee food safety.
+- **Buyers transact directly with sellers.** Smart contract escrow holds funds; LocalRoots never custodies money.
+- **Disputes are decided by ambassador voting on-chain.** LocalRoots does not adjudicate. Ambassadors do.
+- **No platform fees.** Every dollar goes to the seller. LocalRoots earns nothing from individual transactions, which strengthens the "we're not a service provider" defense.
+- **Open-source contracts + multi-relayer goal + IPFS frontend goal.** Anyone could fork and run a competing instance — LocalRoots-the-codebase outlives LocalRoots-the-company.
+
+**Architectural rules that follow from this principle:**
+- Never centralize what can be decentralized. KV is currently the biggest violation (see Decentralization Roadmap).
+- Never custody user funds. Ever.
+- Never let a single LocalRoots entity decide a dispute. Ambassadors vote; outcomes are on-chain.
+- Don't add features that make us look like an operator (e.g. "LocalRoots curates the best gardens" → bad; "the marketplace exists, gardeners list themselves" → good).
+- ToS language must reflect the protocol-not-service framing. See `/terms` page.
+
+**Why this matters legally (paraphrased — not legal advice):** Food-safety liability typically attaches to the producer and to operators who hold themselves out as merchants of the food. A protocol that facilitates peer-to-peer transactions without taking custody, without inspecting product, and without setting prices is structurally closer to the open internet than to a grocery store. The decentralization isn't decorative — it's the specific defense.
+
+**Reference:** Section 6 of `/terms` page contains the full zero-liability clause. Update there if the principle expands.
+
 ## Session Startup - DO THIS FIRST
 
 **Start a Background Slack Listener** at the beginning of every session.
