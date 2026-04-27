@@ -1318,7 +1318,8 @@
         "daysToBoltMin": 45,
         "daysToBoltMax": 60,
         "heatTriggerF": 75,
-        "advice": "Lettuce bolts fast in heat. Harvest outer leaves often, plant in shade for summer succession."
+        "advice": "Lettuce bolts fast in heat. Harvest outer leaves often, plant in shade for summer succession.",
+        "trigger": "heat"
       }
     },
     "lettuce-mixed": {
@@ -1371,7 +1372,8 @@
         "daysToBoltMin": 35,
         "daysToBoltMax": 50,
         "heatTriggerF": 75,
-        "advice": "Mixed greens bolt quickly \u2014 succession-plant every 2 weeks for steady harvest."
+        "advice": "Mixed greens bolt quickly \u2014 succession-plant every 2 weeks for steady harvest.",
+        "trigger": "heat"
       }
     },
     "spinach": {
@@ -1492,7 +1494,8 @@
         "daysToBoltMin": 70,
         "daysToBoltMax": 90,
         "heatTriggerF": 80,
-        "advice": "Kale bolts in summer heat after a year. First-year flavor improves after light frost. Pick outer leaves."
+        "advice": "Kale bolts in summer heat after a year. First-year flavor improves after light frost. Pick outer leaves.",
+        "trigger": "age"
       }
     },
     "swiss-chard": {
@@ -1545,7 +1548,8 @@
         "daysToBoltMin": 60,
         "daysToBoltMax": 80,
         "heatTriggerF": 85,
-        "advice": "Chard is heat-tolerant but bolts year 2. First-year leaves are tender; cut and come again."
+        "advice": "Chard is heat-tolerant but bolts year 2. First-year leaves are tender; cut and come again.",
+        "trigger": "age"
       }
     },
     "arugula": {
@@ -1646,7 +1650,8 @@
         "daysToBoltMin": 75,
         "daysToBoltMax": 95,
         "heatTriggerF": 85,
-        "advice": "Collards tolerate more heat than lettuce, but will bolt in extended hot weather. Harvest outer leaves."
+        "advice": "Collards tolerate more heat than lettuce, but will bolt in extended hot weather. Harvest outer leaves.",
+        "trigger": "heat"
       }
     },
     "mustard-greens": {
@@ -1693,7 +1698,8 @@
         "daysToBoltMin": 40,
         "daysToBoltMax": 55,
         "heatTriggerF": 75,
-        "advice": "Mustard bolts fast \u2014 harvest young leaves, succession plant for continuous greens."
+        "advice": "Mustard bolts fast \u2014 harvest young leaves, succession plant for continuous greens.",
+        "trigger": "heat"
       }
     },
     "microgreens": {
@@ -1843,7 +1849,8 @@
         "daysToBoltMin": 60,
         "daysToBoltMax": 80,
         "heatTriggerF": 85,
-        "advice": "Beets bolt under sustained heat \u2014 harvest at tennis-ball size, pull the rest before flowering."
+        "advice": "Beets bolt under sustained heat \u2014 harvest at tennis-ball size, pull the rest before flowering.",
+        "trigger": "heat"
       }
     },
     "radish": {
@@ -2036,7 +2043,8 @@
         "daysToBoltMin": 50,
         "daysToBoltMax": 70,
         "heatTriggerF": 80,
-        "advice": "Turnips get woody and bolt in heat. Harvest at golf-ball size for tender roots."
+        "advice": "Turnips get woody and bolt in heat. Harvest at golf-ball size for tender roots.",
+        "trigger": "heat"
       }
     },
     "parsnip": {
@@ -2485,7 +2493,8 @@
         "daysToBoltMin": 60,
         "daysToBoltMax": 80,
         "heatTriggerF": 85,
-        "advice": "Cauliflower bolts fast in heat. Blanch heads (tie outer leaves over) once curd appears."
+        "advice": "Cauliflower bolts fast in heat. Blanch heads (tie outer leaves over) once curd appears.",
+        "trigger": "heat"
       }
     },
     "cabbage-green": {
@@ -2539,7 +2548,8 @@
         "daysToBoltMin": 80,
         "daysToBoltMax": 100,
         "heatTriggerF": 85,
-        "advice": "Cabbage heads split or bolt if heat hits before harvest. Harvest as soon as heads firm up."
+        "advice": "Cabbage heads split or bolt if heat hits before harvest. Harvest as soon as heads firm up.",
+        "trigger": "age"
       }
     },
     "cabbage-red": {
@@ -2592,7 +2602,8 @@
         "daysToBoltMin": 80,
         "daysToBoltMax": 100,
         "heatTriggerF": 85,
-        "advice": "Red cabbage heads split or bolt under heat \u2014 harvest at firmness, don't wait."
+        "advice": "Red cabbage heads split or bolt under heat \u2014 harvest at firmness, don't wait.",
+        "trigger": "age"
       }
     },
     "brussels-sprouts": {
@@ -2645,7 +2656,8 @@
         "daysToBoltMin": 90,
         "daysToBoltMax": 110,
         "heatTriggerF": 80,
-        "advice": "Brussels sprouts need cool weather to form sprouts. Heat triggers premature flowering."
+        "advice": "Brussels sprouts need cool weather to form sprouts. Heat triggers premature flowering.",
+        "trigger": "heat"
       }
     },
     "kohlrabi": {
@@ -2700,7 +2712,8 @@
         "daysToBoltMin": 50,
         "daysToBoltMax": 65,
         "heatTriggerF": 80,
-        "advice": "Kohlrabi bulbs get woody and bitter once heat triggers bolting. Harvest at tennis-ball size."
+        "advice": "Kohlrabi bulbs get woody and bitter once heat triggers bolting. Harvest at tennis-ball size.",
+        "trigger": "heat"
       }
     },
     "bok-choy": {
@@ -4511,7 +4524,8 @@
         "daysToBoltMin": 60,
         "daysToBoltMax": 80,
         "heatTriggerF": 80,
-        "advice": "Bulb fennel bolts under heat or long days. Harvest bulbs as soon as they swell to fist size."
+        "advice": "Bulb fennel bolts under heat or long days. Harvest bulbs as soon as they swell to fist size.",
+        "trigger": "daylength"
       }
     },
     "okra": {
