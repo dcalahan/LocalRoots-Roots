@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { ACTIVE_CHAIN as baseSepolia, ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { geohashToBytes8 } from '@/lib/geohash';
 import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
@@ -57,6 +57,7 @@ export function useRegisterSeller() {
     error: confirmError,
   } = useWaitForTransactionReceipt({
     hash,
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   const isWriting = isGaslessLoading || isWagmiWriting;
