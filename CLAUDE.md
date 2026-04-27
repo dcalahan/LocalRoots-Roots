@@ -1616,6 +1616,48 @@ The following v1 infrastructure is already implemented:
 - `DeployPhase2.s.sol` deployment scripts
 - `GenerateMerkleTree.ts` script
 
+### Pre-$ROOTS-Launch Checklist (work to do BEFORE the airdrop snapshot)
+
+These are commitments queued at the rate-and-self-purchase decision (Apr 28
+2026) but deferred until closer to $ROOTS launch. Doug's call: "We don't
+need to worry about those at the moment." Still need to ship before snapshot.
+
+- [ ] **Off-chain wash-trading filter for the merkle generator.** ~2-3 days
+  of work in `scripts/distribution/calculateAllocations.ts`. Detect address-
+  graph cliques (two wallets that exclusively transact with each other),
+  time-correlated activity bursts, identical-amount round-trips. Apply
+  reductions or zero-outs to flagged Roots Points before computing $ROOTS
+  allocations. Standard airdrop hygiene — Optimism, Arbitrum, Blur all do
+  versions of this. Open-source the script so anyone can audit. Also: flag
+  Doug's admin wallet `0x30C4343A742F922Ea8cF10e2042919C873274879` (and any
+  test wallets) as `internal_test = true` and zero out test-period RP.
+- [ ] **Airdrop methodology documentation.** Public document explaining how
+  RP → $ROOTS conversion works: the rate per category (seller / buyer /
+  ambassador), the early-adopter multiplier window math, the wash-trading
+  filter logic, the test-address annotations. Goes live alongside the
+  airdrop announcement so any participant can verify their allocation.
+- [ ] **Activation gate review.** `SELLER_MIN_UNIQUE_BUYERS = 2` in
+  AmbassadorRewards.sol checks address uniqueness, not human uniqueness.
+  Two of the same person's wallets pass. The on-chain mechanism stays as-is
+  (immutable contract); the merkle filter is the place to detect and
+  retroactively un-activate sellers whose 2 unique buyers are address-
+  graph clustered. Same script as the wash filter, same audit pass.
+
+These three items are interdependent — they all touch `calculateAllocations.ts`
+and the merkle generation flow. Recommend doing them as one focused 1-week
+sprint a month before snapshot rather than spreading across smaller sessions.
+
+**Decisions already made (don't re-relitigate):**
+- Buyer rate: 50 RP/$1 spent. Seller rate: 500 RP/$1 earned. 10:1 ratio.
+  (Doug-revised Apr 28 2026 after considering 50:1 — too punishing for
+  buyers — and 20:1 — too thin.)
+- Wash-trading defense lives off-chain at airdrop time, NOT via contract
+  migration. The deployed mainnet contract stays immutable.
+- Doug's existing test transactions get zeroed out at the merkle stage.
+  No contract migration to clean up history.
+
+Memo with full reasoning: `~/.claude/plans/localroots-buyer-rate-and-self-purchase.md`
+
 ### Key Files for Token Launch
 
 | Purpose | File Path |
