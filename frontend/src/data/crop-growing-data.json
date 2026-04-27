@@ -58,7 +58,7 @@
           "type": "sucker",
           "title": "Sucker your tomatoes",
           "message": "Indeterminate tomatoes need weekly suckering to keep fruit size up.",
-          "actionHint": "Snap off side shoots below the first flower cluster. Keep 1–2 main stems.",
+          "actionHint": "Snap off side shoots below the first flower cluster. Keep 1\u20132 main stems.",
           "recurringDays": 10
         }
       ]
@@ -167,7 +167,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 8
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 30,
+          "recurringDays": 14,
+          "type": "sucker",
+          "title": "Sucker pruning time",
+          "message": "Heirloom tomatoes are usually indeterminate \u2014 pinch suckers (shoots between main stem and branches) to keep airflow and direct energy into fruit.",
+          "actionHint": "Pinch suckers under the first flower cluster. Repeat every 1-2 weeks."
+        }
+      ]
     },
     "tomato-roma": {
       "name": "Roma Tomato",
@@ -215,7 +225,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 4
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 30,
+          "recurringDays": 14,
+          "type": "sucker",
+          "title": "Sucker pruning time",
+          "message": "Roma tomatoes can be semi-determinate \u2014 light suckering (bottom 6-12 inches) prevents disease and keeps the plant productive.",
+          "actionHint": "Remove suckers up to the first flower cluster. Light pruning only \u2014 don't over-thin."
+        }
+      ]
     },
     "pepper-bell-red": {
       "name": "Red Bell Pepper",
@@ -262,7 +282,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 8
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 30,
+          "recurringDays": 21,
+          "type": "pinch-top",
+          "title": "Top pinch for bushier plants",
+          "message": "Pinching the growing tip when the plant is 8-10 inches tall encourages a bushier, more productive plant.",
+          "actionHint": "Pinch the top growing point. The plant will branch into multiple stems."
+        }
+      ]
     },
     "pepper-bell-green": {
       "name": "Green Bell Pepper",
@@ -366,7 +396,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 10
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 30,
+          "recurringDays": 21,
+          "type": "pinch-top",
+          "title": "Top pinch for bushier plants",
+          "message": "Pinching the growing tip on a young jalapeno encourages branching and more pepper sites.",
+          "actionHint": "Pinch the top growing point at 8-10 inches tall."
+        }
+      ]
     },
     "pepper-habanero": {
       "name": "Habanero Pepper",
@@ -412,7 +452,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 8
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 30,
+          "recurringDays": 21,
+          "type": "pinch-top",
+          "title": "Top pinch for bushier plants",
+          "message": "Habaneros are slow growers \u2014 an early top pinch helps them branch and set more fruit.",
+          "actionHint": "Pinch the top growing point at 8-10 inches tall."
+        }
+      ]
     },
     "pepper-serrano": {
       "name": "Serrano Pepper",
@@ -459,7 +509,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 10
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 30,
+          "recurringDays": 21,
+          "type": "pinch-top",
+          "title": "Top pinch for bushier plants",
+          "message": "Serrano peppers benefit from an early top pinch to encourage branching.",
+          "actionHint": "Pinch the top growing point at 8-10 inches tall."
+        }
+      ]
     },
     "eggplant": {
       "name": "Eggplant",
@@ -506,7 +566,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 8
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 35,
+          "recurringDays": 21,
+          "type": "pinch-top",
+          "title": "Top pinch for bushier plants",
+          "message": "Eggplants benefit from a top pinch when 12 inches tall to encourage branching and more fruit.",
+          "actionHint": "Pinch the main growing tip. Side shoots will produce more fruit."
+        }
+      ]
     },
     "zucchini": {
       "name": "Zucchini",
@@ -556,7 +626,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 10
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 35,
+          "recurringDays": 21,
+          "type": "vine-train",
+          "title": "Old-leaf cleanup time",
+          "message": "Remove yellowing or powdery-mildew-affected lower leaves to improve airflow and direct energy to fruit.",
+          "actionHint": "Cut off lower leaves that are yellowing or showing mildew."
+        }
+      ]
     },
     "yellow-squash": {
       "name": "Yellow Squash",
@@ -606,7 +686,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 10
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 35,
+          "recurringDays": 21,
+          "type": "vine-train",
+          "title": "Old-leaf cleanup time",
+          "message": "Remove yellowing or affected lower leaves to keep airflow and prevent fungus spread.",
+          "actionHint": "Cut off lower leaves that are yellowing or showing mildew."
+        }
+      ]
     },
     "cucumber": {
       "name": "Cucumber",
@@ -665,7 +755,7 @@
           "type": "pinch-top",
           "title": "Pinch cucumber side shoots",
           "message": "Pinching early side shoots on vining cukes keeps energy in the main vine.",
-          "actionHint": "Pinch any side shoots below the first 4–5 leaves.",
+          "actionHint": "Pinch any side shoots below the first 4\u20135 leaves.",
           "recurringDays": 999
         }
       ]
@@ -719,7 +809,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 6
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 35,
+          "recurringDays": 21,
+          "type": "vine-train",
+          "title": "Vine training time",
+          "message": "Pickling cucumbers benefit from being trained up a trellis. Remove suckers below the first flower for better airflow.",
+          "actionHint": "Tie main vine to trellis. Pinch suckers below first female flower."
+        }
+      ]
     },
     "butternut-squash": {
       "name": "Butternut Squash",
@@ -768,7 +868,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 4
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 45,
+          "recurringDays": 30,
+          "type": "vine-train",
+          "title": "Vine training time",
+          "message": "Train winter squash vines to keep them off other beds. Pinch growing tips after several fruits set to focus energy.",
+          "actionHint": "Direct vines, then pinch tips once 3-4 fruits are sizing up."
+        }
+      ]
     },
     "acorn-squash": {
       "name": "Acorn Squash",
@@ -915,7 +1025,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 4
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 45,
+          "recurringDays": 30,
+          "type": "vine-train",
+          "title": "Vine training time",
+          "message": "Pumpkins sprawl wide. Direct vines, and after 2-3 pumpkins set, pinch growing tips to size them up.",
+          "actionHint": "Pinch growing tips of vines once 2-3 pumpkins are tennis-ball size."
+        }
+      ]
     },
     "watermelon": {
       "name": "Watermelon",
@@ -964,7 +1084,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 3
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 45,
+          "recurringDays": 30,
+          "type": "vine-train",
+          "title": "Vine training time",
+          "message": "Watermelon needs space. After 2-3 melons set, pinch growing tips to size them up rather than starting more.",
+          "actionHint": "Pinch growing tips once 2-3 melons are sizing up."
+        }
+      ]
     },
     "cantaloupe": {
       "name": "Cantaloupe",
@@ -1014,7 +1144,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 3
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 40,
+          "recurringDays": 21,
+          "type": "vine-train",
+          "title": "Vine training time",
+          "message": "Cantaloupe vines benefit from direction onto a trellis. Pinch tips after 4 melons set to size them.",
+          "actionHint": "Direct vines, then pinch tips when several melons are softball-sized."
+        }
+      ]
     },
     "honeydew": {
       "name": "Honeydew Melon",
@@ -1173,6 +1313,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 2
+      },
+      "bolting": {
+        "daysToBoltMin": 45,
+        "daysToBoltMax": 60,
+        "heatTriggerF": 75,
+        "advice": "Lettuce bolts fast in heat. Harvest outer leaves often, plant in shade for summer succession."
       }
     },
     "lettuce-mixed": {
@@ -1220,6 +1366,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 4
+      },
+      "bolting": {
+        "daysToBoltMin": 35,
+        "daysToBoltMax": 50,
+        "heatTriggerF": 75,
+        "advice": "Mixed greens bolt quickly \u2014 succession-plant every 2 weeks for steady harvest."
       }
     },
     "spinach": {
@@ -1335,6 +1487,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 12
+      },
+      "bolting": {
+        "daysToBoltMin": 70,
+        "daysToBoltMax": 90,
+        "heatTriggerF": 80,
+        "advice": "Kale bolts in summer heat after a year. First-year flavor improves after light frost. Pick outer leaves."
       }
     },
     "swiss-chard": {
@@ -1382,6 +1540,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 16
+      },
+      "bolting": {
+        "daysToBoltMin": 60,
+        "daysToBoltMax": 80,
+        "heatTriggerF": 85,
+        "advice": "Chard is heat-tolerant but bolts year 2. First-year leaves are tender; cut and come again."
       }
     },
     "arugula": {
@@ -1429,7 +1593,7 @@
         "daysToBoltMax": 55,
         "heatTriggerF": 75,
         "trigger": "heat",
-        "advice": "Pull whole plants and use the flowers — they are peppery and great in salads."
+        "advice": "Pull whole plants and use the flowers \u2014 they are peppery and great in salads."
       }
     },
     "collard-greens": {
@@ -1477,6 +1641,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 12
+      },
+      "bolting": {
+        "daysToBoltMin": 75,
+        "daysToBoltMax": 95,
+        "heatTriggerF": 85,
+        "advice": "Collards tolerate more heat than lettuce, but will bolt in extended hot weather. Harvest outer leaves."
       }
     },
     "mustard-greens": {
@@ -1518,6 +1688,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 3
+      },
+      "bolting": {
+        "daysToBoltMin": 40,
+        "daysToBoltMax": 55,
+        "heatTriggerF": 75,
+        "advice": "Mustard bolts fast \u2014 harvest young leaves, succession plant for continuous greens."
       }
     },
     "microgreens": {
@@ -1662,6 +1838,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 4
+      },
+      "bolting": {
+        "daysToBoltMin": 60,
+        "daysToBoltMax": 80,
+        "heatTriggerF": 85,
+        "advice": "Beets bolt under sustained heat \u2014 harvest at tennis-ball size, pull the rest before flowering."
       }
     },
     "radish": {
@@ -1716,7 +1898,7 @@
         "daysToBoltMax": 55,
         "heatTriggerF": 80,
         "trigger": "heat",
-        "advice": "Pull any remaining radishes — the roots turn woody once the plant bolts."
+        "advice": "Pull any remaining radishes \u2014 the roots turn woody once the plant bolts."
       }
     },
     "potato": {
@@ -1801,7 +1983,7 @@
         "Grown from slips (rooted sprouts), not seed potatoes",
         "Needs long warm season - 90+ frost-free days",
         "Harvest before first frost",
-        "Cure at 80-85°F for 10 days for best storage"
+        "Cure at 80-85\u00b0F for 10 days for best storage"
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -1849,6 +2031,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 3
+      },
+      "bolting": {
+        "daysToBoltMin": 50,
+        "daysToBoltMax": 70,
+        "heatTriggerF": 80,
+        "advice": "Turnips get woody and bolt in heat. Harvest at golf-ball size for tender roots."
       }
     },
     "parsnip": {
@@ -2292,6 +2480,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 2
+      },
+      "bolting": {
+        "daysToBoltMin": 60,
+        "daysToBoltMax": 80,
+        "heatTriggerF": 85,
+        "advice": "Cauliflower bolts fast in heat. Blanch heads (tie outer leaves over) once curd appears."
       }
     },
     "cabbage-green": {
@@ -2340,6 +2534,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 4
+      },
+      "bolting": {
+        "daysToBoltMin": 80,
+        "daysToBoltMax": 100,
+        "heatTriggerF": 85,
+        "advice": "Cabbage heads split or bolt if heat hits before harvest. Harvest as soon as heads firm up."
       }
     },
     "cabbage-red": {
@@ -2387,6 +2587,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 4
+      },
+      "bolting": {
+        "daysToBoltMin": 80,
+        "daysToBoltMax": 100,
+        "heatTriggerF": 85,
+        "advice": "Red cabbage heads split or bolt under heat \u2014 harvest at firmness, don't wait."
       }
     },
     "brussels-sprouts": {
@@ -2434,6 +2640,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 6
+      },
+      "bolting": {
+        "daysToBoltMin": 90,
+        "daysToBoltMax": 110,
+        "heatTriggerF": 80,
+        "advice": "Brussels sprouts need cool weather to form sprouts. Heat triggers premature flowering."
       }
     },
     "kohlrabi": {
@@ -2483,6 +2695,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 2
+      },
+      "bolting": {
+        "daysToBoltMin": 50,
+        "daysToBoltMax": 65,
+        "heatTriggerF": 80,
+        "advice": "Kohlrabi bulbs get woody and bitter once heat triggers bolting. Harvest at tennis-ball size."
       }
     },
     "bok-choy": {
@@ -2538,7 +2756,7 @@
         "daysToBoltMax": 65,
         "heatTriggerF": 75,
         "trigger": "heat",
-        "advice": "Harvest whole plants now — quality drops fast after bolting starts."
+        "advice": "Harvest whole plants now \u2014 quality drops fast after bolting starts."
       }
     },
     "green-beans": {
@@ -2868,7 +3086,7 @@
           "triggerDays": 21,
           "type": "pinch-top",
           "title": "Time to pinch your basil",
-          "message": "Your basil has about 4 leaf pairs — pinching the top now doubles the harvest.",
+          "message": "Your basil has about 4 leaf pairs \u2014 pinching the top now doubles the harvest.",
           "actionHint": "Cut just above the 2nd leaf pair from the top. Use the trimmings in tonight's dinner.",
           "recurringDays": 14
         }
@@ -2921,7 +3139,7 @@
         "daysToBoltMax": 60,
         "heatTriggerF": 75,
         "trigger": "heat",
-        "advice": "Harvest now. Cilantro flowers are edible (they become coriander seed) — let some go to seed for a free future crop."
+        "advice": "Harvest now. Cilantro flowers are edible (they become coriander seed) \u2014 let some go to seed for a free future crop."
       }
     },
     "parsley": {
@@ -2969,7 +3187,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 20
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 30,
+          "recurringDays": 14,
+          "type": "pinch-top",
+          "title": "Outer-leaf harvest time",
+          "message": "Always pick from the outside. Removing center leaves stops new growth \u2014 outer harvests keep the plant productive.",
+          "actionHint": "Pick outer stems at the base. Leave the center alone."
+        }
+      ]
     },
     "mint": {
       "name": "Mint",
@@ -3234,7 +3462,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 20
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 45,
+          "recurringDays": 21,
+          "type": "pinch-top",
+          "title": "Pinch tips to keep bushy",
+          "message": "Sage will get woody if not pinched. Regular tip-pinching encourages tender new growth.",
+          "actionHint": "Pinch the top inch of growing tips. Use the trimmings."
+        }
+      ]
     },
     "dill": {
       "name": "Dill",
@@ -3374,7 +3612,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 8
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 60,
+          "recurringDays": 30,
+          "type": "pinch-top",
+          "title": "Cutback for bushier growth",
+          "message": "Lavender gets leggy without regular trimming. Cut back \u2153 after each bloom flush to keep it compact.",
+          "actionHint": "Trim spent flower spikes, take \u2153 off the foliage."
+        }
+      ]
     },
     "lemongrass": {
       "name": "Lemongrass",
@@ -3541,7 +3789,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 6
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 60,
+          "recurringDays": 365,
+          "type": "cane-prune",
+          "title": "Annual cane pruning",
+          "message": "Raspberry canes are biennial \u2014 first-year canes (primocanes) bear next year's crop. Remove second-year canes (floricanes) after harvest.",
+          "actionHint": "After harvest, cut floricanes to ground. Thin primocanes to ~6 per linear foot."
+        }
+      ]
     },
     "blackberry": {
       "name": "Blackberries",
@@ -3582,7 +3840,17 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 6
-      }
+      },
+      "pruning": [
+        {
+          "triggerDays": 60,
+          "recurringDays": 365,
+          "type": "cane-prune",
+          "title": "Annual cane pruning",
+          "message": "Blackberry canes are biennial \u2014 second-year canes bear, then die. Remove spent canes after harvest, train primocanes for next year.",
+          "actionHint": "Cut spent floricanes to ground after harvest. Tie up primocanes."
+        }
+      ]
     },
     "grape": {
       "name": "Grapes",
@@ -4238,6 +4506,12 @@
       "harvestWindow": {
         "weeksFromMaturity": 0,
         "duration": 2
+      },
+      "bolting": {
+        "daysToBoltMin": 60,
+        "daysToBoltMax": 80,
+        "heatTriggerF": 80,
+        "advice": "Bulb fennel bolts under heat or long days. Harvest bulbs as soon as they swell to fist size."
       }
     },
     "okra": {
@@ -4419,9 +4693,9 @@
     "timingExplanation": "All timing is relative to last spring frost date unless otherwise noted. Negative weeks = before frost, positive = after.",
     "frostTolerance": {
       "none": "Cannot tolerate any frost",
-      "light": "Can survive brief light frost (28-32°F)",
-      "moderate": "Can survive frost to mid-20s°F",
-      "high": "Very cold hardy, can survive temps below 20°F",
+      "light": "Can survive brief light frost (28-32\u00b0F)",
+      "moderate": "Can survive frost to mid-20s\u00b0F",
+      "high": "Very cold hardy, can survive temps below 20\u00b0F",
       "indoor": "Grown indoors, not applicable"
     },
     "sunlight": {
