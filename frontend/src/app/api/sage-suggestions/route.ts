@@ -12,8 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
-import { ACTIVE_CHAIN } from '@/lib/chainConfig';
+import { createFreshPublicClient } from '@/lib/viemClient';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import {
   listSuggestions,
@@ -27,7 +26,7 @@ import {
 async function isAdmin(address: string | null): Promise<boolean> {
   if (!address) return false;
   try {
-    const client = createPublicClient({ chain: ACTIVE_CHAIN, transport: http() });
+    const client = createFreshPublicClient();
     const result = await client.readContract({
       address: MARKETPLACE_ADDRESS,
       abi: marketplaceAbi,

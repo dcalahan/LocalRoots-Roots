@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createWalletClient, createPublicClient, http, decodeEventLog, type Address } from 'viem';
+import { decodeEventLog, type Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { ACTIVE_CHAIN, RPC_URL } from '@/lib/chainConfig';
+import { createFreshPublicClient, createFreshWalletClient } from '@/lib/viemClient';
 import { FORWARDER_ADDRESS, ALLOWED_TARGETS, forwarderAbi } from '@/lib/contracts/forwarder';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { warmFacebookOgCache } from '@/lib/facebookOgScrape';
@@ -93,18 +93,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create wallet client for relayer
+    // Create relayer clients with fallback RPC chain. Single-http transport
+    // is the bug that hung listing creation Apr 27 2026 — when the public
+    // Base RPC rate-limits Vercel's egress IP, waitForTransactionReceipt
+    // polls a dead node for 60s and the UI hangs on "Creating…".
     const account = privateKeyToAccount(relayerPrivateKey as `0x${string}`);
-    const walletClient = createWalletClient({
-      account,
-      chain: ACTIVE_CHAIN,
-      transport: http(RPC_URL),
-    });
-
-    const publicClient = createPublicClient({
-      chain: ACTIVE_CHAIN,
-      transport: http(RPC_URL),
-    });
+    const walletClient = createFreshWalletClient(account);
+    const publicClient = createFreshPublicClient();
 
     // Log the request details for debugging
     console.log('[Relay] Forward request received:', {

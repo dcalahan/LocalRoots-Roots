@@ -28,17 +28,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http, verifyMessage, getAddress } from 'viem';
-import { ACTIVE_CHAIN, RPC_URL } from '@/lib/chainConfig';
+import { getAddress } from 'viem';
+import { createFreshPublicClient } from '@/lib/viemClient';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { kv } from '@/lib/kv';
 
 const MESSAGE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 
-const publicClient = createPublicClient({
-  chain: ACTIVE_CHAIN,
-  transport: http(RPC_URL),
-});
+// Use the shared fallback-aware client so server-side reads don't hang
+// on rate-limited public RPC. Same pattern as the relay route fix
+// (Apr 27 2026).
+const publicClient = createFreshPublicClient();
 
 interface SellerPickupRecord {
   address: string;

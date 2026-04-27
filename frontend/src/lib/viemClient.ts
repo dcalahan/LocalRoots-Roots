@@ -1,4 +1,4 @@
-import { createPublicClient, fallback, http } from 'viem';
+import { createPublicClient, createWalletClient, fallback, http, type Account } from 'viem';
 import { ACTIVE_CHAIN, RPC_URL, IS_MAINNET } from './chainConfig';
 
 // PRIMARY: env-configured RPC (set NEXT_PUBLIC_RPC_URL to an Alchemy / QuickNode /
@@ -61,3 +61,34 @@ export function createFreshPublicClient() {
 
 // For backwards compatibility - but prefer createFreshPublicClient() for fetches
 export const publicClient = createFreshPublicClient();
+
+/**
+ * Wallet client with the same fallback() RPC chain as the read client.
+ *
+ * Used by server-side routes that BROADCAST transactions (relay, faucet).
+ * Writes via single-RPC http() are vulnerable to the same rate-limit hang
+ * as reads — the sender's broadcast succeeds, but waitForTransactionReceipt
+ * polls the same RPC and stalls.
+ *
+ * Pass an Account; the chain + transports come from the shared config so
+ * adding a new RPC URL updates every layer (read, write, wagmi).
+ */
+export function createFreshWalletClient(account: Account) {
+  const transports = allRpcUrls.map((url) =>
+    http(url, {
+      batch: false,
+      retryCount: 2,
+      retryDelay: 500,
+      timeout: 10_000,
+    }),
+  );
+
+  return createWalletClient({
+    account,
+    chain: ACTIVE_CHAIN,
+    transport: fallback(transports, {
+      rank: { interval: 60_000 },
+      retryCount: 1,
+    }),
+  });
+}
