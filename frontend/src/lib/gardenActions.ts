@@ -41,6 +41,7 @@ VALID ACTIONS:
 - mark_pruned: User says they pruned/pinched/suckered/cut back a plant ("I just pinched the basil", "I suckered the tomatoes today", "cut back the mint"). NOT for harvesting whole plants (use mark_harvested) and NOT for the plant dying (use remove_plant).
 - mark_bolting: User says a plant is bolting / has flowered / went to seed ("my basil is going to flower", "the cilantro bolted", "lettuce is shooting up"). Sets the plant's status to bolting so the harvest-now urgency is recorded.
 - dismiss_care_alert: User explicitly tells you to stop bringing up a care alert ("stop reminding me about pruning", "I'll handle that later, don't bug me", "got it, drop it"). Use sparingly — only when the user is clearly waving off the current cycle's reminder, not just acknowledging.
+- create_listing_draft: User says they want to sell a crop ("list my tomatoes for sale", "I want to sell some basil", "sell 2 lbs of cucumbers", "put up a listing for my peppers"). Set cropId. Optionally include quantity if the user gave one. This action does NOT actually create a listing on-chain — it routes the user to the listing creation form with the crop pre-filled, so they can set price + photos + sign the transaction themselves. Sage drafts; the user transacts.
 
 CROP ID MAPPING (use these exact IDs):
 ${cropList}
@@ -73,6 +74,7 @@ Return ONLY a JSON array of actions. Examples:
 [{"action":"mark_pruned","cropId":"tomato-cherry"}]
 [{"action":"mark_bolting","cropId":"basil"}]
 [{"action":"dismiss_care_alert","cropId":"tomato-cherry","alertType":"prune-now"}]
+[{"action":"create_listing_draft","cropId":"tomato-cherry","quantity":3}]
 []
 
 JSON array:`;
@@ -94,11 +96,13 @@ export function parseGardenActions(response: string): GardenAction[] {
       'add_plant', 'remove_plant', 'mark_harvested', 'update_plant',
       'add_bed', 'update_bed', 'delete_bed', 'assign_plant_to_bed',
       'mark_pruned', 'mark_bolting', 'dismiss_care_alert',
+      'create_listing_draft',
     ];
     const cropRequired = [
       'add_plant', 'remove_plant', 'mark_harvested', 'update_plant',
       'assign_plant_to_bed',
       'mark_pruned', 'mark_bolting', 'dismiss_care_alert',
+      'create_listing_draft',
     ];
     for (const item of parsed) {
       if (!item.action || !validTypes.includes(item.action)) continue;
