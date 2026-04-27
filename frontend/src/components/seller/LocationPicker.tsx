@@ -4,12 +4,17 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { encodeLocation, decodeGeohash } from '@/lib/geohash';
+import { reverseGeocodeStreet } from '@/lib/geohashLocation';
 
 interface LocationPickerProps {
   onLocationSelect: (location: {
     latitude: number;
     longitude: number;
     geohash: string;
+    /** Resolved street address (e.g. "88 Cypress Marsh Dr, Hilton Head Island, SC 29928")
+     *  for callers that want to use it as a navigable pickup address. May be null
+     *  if Nominatim couldn't resolve the coords. */
+    address?: string | null;
   }) => void;
   initialGeohash?: string;
 }
@@ -21,6 +26,7 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
   const [error, setError] = useState<string | null>(null);
   const [addressQuery, setAddressQuery] = useState('');
   const [showAddressInput, setShowAddressInput] = useState(false);
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -49,7 +55,7 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
     setError(null);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         const geohash = encodeLocation(latitude, longitude);
 
@@ -57,7 +63,22 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
         setLocation(locationData);
         setState('success');
         setShowAddressInput(false);
+        // Fire onLocationSelect with coords first so the form has them
+        // immediately, then refine with the resolved address when ready.
         onLocationSelect(locationData);
+
+        // Reverse-geocode to a navigable street address. Best-effort —
+        // if Nominatim fails or returns nothing useful, we leave it null
+        // and the user can type their pickup address manually.
+        try {
+          const address = await reverseGeocodeStreet(latitude, longitude);
+          setResolvedAddress(address);
+          if (address) {
+            onLocationSelect({ ...locationData, address });
+          }
+        } catch {
+          /* non-critical — coords are still saved */
+        }
       },
       (err) => {
         let errorMessage = 'Unable to get your location. ';
@@ -103,7 +124,7 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
         return;
       }
 
-      const { lat, lon } = data[0];
+      const { lat, lon, display_name } = data[0];
       const latitude = parseFloat(lat);
       const longitude = parseFloat(lon);
       const geohash = encodeLocation(latitude, longitude);
@@ -111,7 +132,13 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
       const locationData = { latitude, longitude, geohash };
       setLocation(locationData);
       setState('success');
-      onLocationSelect(locationData);
+
+      // For address-search, Nominatim already returns display_name (full
+      // address). Use it directly if it looks navigable; otherwise fall
+      // back to a separate reverse-geocode call for cleaner formatting.
+      const address = display_name && /\d/.test(display_name) ? display_name : await reverseGeocodeStreet(latitude, longitude);
+      setResolvedAddress(address);
+      onLocationSelect({ ...locationData, address });
     } catch {
       setError('Failed to search address. Please try again.');
       setState('error');
@@ -207,19 +234,31 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
       )}
 
       {location && (
-        <div className="text-sm text-roots-gray">
-          <p>
-            Coordinates: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
-          </p>
-          <p className="text-xs text-gray-400">
-            Geohash: {location.geohash}
-          </p>
+        <div className="text-sm">
+          {resolvedAddress ? (
+            <div className="bg-roots-secondary/10 border border-roots-secondary/30 rounded-lg p-3">
+              <p className="text-xs uppercase tracking-wide text-roots-secondary font-semibold mb-1">
+                Address (used for buyer pickup directions)
+              </p>
+              <p className="text-roots-gray font-medium">{resolvedAddress}</p>
+              <p className="text-[11px] text-gray-500 mt-1.5">
+                Buyers will see this after they place an order, so they can navigate to you in Google Maps or Waze.
+              </p>
+            </div>
+          ) : (
+            <p className="text-roots-gray">
+              Coordinates saved: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+              <span className="block text-xs text-gray-500 mt-0.5">
+                Couldn't auto-detect a street address — please type your pickup address below.
+              </span>
+            </p>
+          )}
         </div>
       )}
 
       <p className="text-xs text-gray-500">
-        Your location is used to help buyers find local sellers. Only an approximate
-        location (neighborhood level) is stored on the blockchain.
+        Your exact address only goes to buyers AFTER they place an order. Public listings
+        only show approximate location (neighborhood level) for privacy.
       </p>
     </div>
   );
