@@ -10,6 +10,7 @@ import { useSellerOrders, OrderStatus, useAcceptOrder, useMarkReadyForPickup, us
 import { useSellerProfile } from '@/hooks/useSellerProfile';
 import { ImageUploader } from '@/components/seller/ImageUploader';
 import { EditListingModal } from '@/components/seller/EditListingModal';
+import { RecruiterCard } from '@/components/seller/RecruiterCard';
 import { useDeleteListing } from '@/hooks/useDeleteListing';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
@@ -682,6 +683,13 @@ export default function SellerDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Recruiter card — surfaces the ambassador who recruited this
+            seller. Renders nothing when there's no recruiter or while
+            loading. Doug's ambassador-prominence push (Apr 27 2026): the
+            seller-ambassador relationship was invisible after registration
+            even though it lives on-chain. */}
+        <RecruiterCard sellerId={profile?.sellerId} />
 
         {/* Seller Tier Progress Card */}
         <SellerTierCard completedSales={completedSales} className="mb-8" />
