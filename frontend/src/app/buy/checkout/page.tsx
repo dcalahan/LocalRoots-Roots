@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,6 +110,87 @@ export default function CheckoutPage() {
   const hasEnoughAllowance = allowance >= requiredAmount;
   const hasDeliveryAddress = !hasDeliveryItems || deliveryAddress.trim().length > 0;
 
+  // handleCheckout is defined here (before early returns) because the
+  // CreditCardCheckout onPaid callback below needs to call it. JS const
+  // declarations don't hoist — TDZ would bite us if we left it lower in
+  // the file. useCallback keeps the reference stable across renders.
+  const handleCheckout = useCallback(async () => {
+    console.log('[Checkout] Starting checkout, mode:', mode, 'items:', items.length);
+    console.log('[Checkout] Payment token:', paymentToken, 'balance:', balance.toString(), 'required:', requiredAmount.toString());
+    setStep('processing');
+
+    // First, check and handle approval if needed
+    if (!hasEnoughAllowance) {
+      setProcessingStatus(`Approving ${paymentToken} spending...`);
+      const approved = await approve(requiredAmount, tokenAddress);
+      if (!approved) {
+        setProcessingStatus('Approval failed');
+        setTimeout(() => setStep('review'), 2000);
+        return;
+      }
+      setAllowance(requiredAmount);
+    }
+
+    setProcessingStatus('Processing purchases...');
+
+    // Upload delivery info to IPFS if this is a delivery order
+    let buyerInfoIpfs = '';
+    if (hasDeliveryItems && deliveryAddress) {
+      try {
+        setProcessingStatus('Uploading delivery info...');
+        const deliveryData = {
+          address: deliveryAddress,
+          phone: deliveryPhone || undefined,
+          notes: deliveryNotes || undefined,
+          uploadedAt: Date.now(),
+        };
+        const result = await uploadMetadata(deliveryData, 'delivery-info.json');
+        buyerInfoIpfs = result.ipfsHash;
+        console.log('[Checkout] Uploaded delivery info to IPFS:', buyerInfoIpfs);
+      } catch (err) {
+        console.error('[Checkout] Failed to upload delivery info:', err);
+        setProcessingStatus('Failed to upload delivery info');
+        setTimeout(() => setStep('review'), 2000);
+        return;
+      }
+      setProcessingStatus('Processing purchases...');
+    }
+
+    const purchaseItems = items.map((item) => ({
+      listingId: BigInt(item.listingId),
+      quantity: BigInt(item.quantity),
+      isDelivery: item.isDelivery,
+      totalPrice: BigInt(item.pricePerUnit) * BigInt(item.quantity),
+      buyerInfoIpfs: item.isDelivery ? buyerInfoIpfs : '',
+      paymentToken,
+    }));
+
+    console.log('[Checkout] Calling checkout with', purchaseItems.length, 'items');
+    const result = await checkout(purchaseItems);
+    console.log('[Checkout] Checkout result:', result);
+
+    // Store total for complete screen before clearing
+    setCompletedOrderTotal(total);
+
+    // Clear successful items from cart
+    if (result.allSucceeded) {
+      clearCart();
+    } else if (result.successCount > 0) {
+      const failedIds = new Set(result.failedListingIds.map(id => id.toString()));
+      items.forEach(item => {
+        if (!failedIds.has(item.listingId)) {
+          removeItem(item.listingId);
+        }
+      });
+    }
+
+    setStep('complete');
+  }, [
+    mode, items, paymentToken, balance, requiredAmount, hasEnoughAllowance,
+    approve, tokenAddress, hasDeliveryItems, deliveryAddress, deliveryPhone,
+    deliveryNotes, checkout, total, clearCart, removeItem,
+  ]);
+
   // Empty cart handler
   if (items.length === 0 && step !== 'complete') {
     return (
@@ -123,16 +204,31 @@ export default function CheckoutPage() {
     );
   }
 
-  // Guest/Credit Card checkout mode
+  // Guest/Credit Card checkout mode — buyer pays via Coinbase Onramp,
+  // USDC lands in their Privy wallet, then we settle the marketplace
+  // order automatically using the same path crypto buyers take (just
+  // with paymentToken locked to USDC since that's what arrived).
   if (mode === 'guest') {
     return (
       <CreditCardCheckout
         items={items}
         total={total}
         onBack={() => setMode('select')}
-        onComplete={(orderIds) => {
-          clearCart();
-          setStep('complete');
+        onPaid={async (info) => {
+          // Pre-fill the delivery info from CC step into the parent's
+          // state so the existing settlement code path picks it up.
+          setDeliveryAddress(info.deliveryAddress);
+          setDeliveryPhone(info.phone);
+          setDeliveryNotes(info.deliveryNotes);
+          // Lock payment token to USDC — that's what just arrived.
+          setPaymentToken('USDC');
+          // Hand off to the same settlement flow used by Privy crypto
+          // buyers. handleCheckout reads paymentToken from state, so the
+          // setPaymentToken('USDC') above is what routes the purchase.
+          // We defer one tick so React applies the state changes first.
+          setTimeout(() => {
+            handleCheckout();
+          }, 0);
         }}
       />
     );
@@ -380,78 +476,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const handleCheckout = async () => {
-    console.log('[Checkout] Starting checkout, mode:', mode, 'items:', items.length);
-    console.log('[Checkout] Payment token:', paymentToken, 'balance:', balance.toString(), 'required:', requiredAmount.toString());
-    setStep('processing');
-
-    // First, check and handle approval if needed
-    if (!hasEnoughAllowance) {
-      setProcessingStatus(`Approving ${paymentToken} spending...`);
-      const approved = await approve(requiredAmount, tokenAddress);
-      if (!approved) {
-        setProcessingStatus('Approval failed');
-        setTimeout(() => setStep('review'), 2000);
-        return;
-      }
-      setAllowance(requiredAmount);
-    }
-
-    setProcessingStatus('Processing purchases...');
-
-    // Upload delivery info to IPFS if this is a delivery order
-    let buyerInfoIpfs = '';
-    if (hasDeliveryItems && deliveryAddress) {
-      try {
-        setProcessingStatus('Uploading delivery info...');
-        const deliveryData = {
-          address: deliveryAddress,
-          phone: deliveryPhone || undefined,
-          notes: deliveryNotes || undefined,
-          uploadedAt: Date.now(),
-        };
-        const result = await uploadMetadata(deliveryData, 'delivery-info.json');
-        buyerInfoIpfs = result.ipfsHash;
-        console.log('[Checkout] Uploaded delivery info to IPFS:', buyerInfoIpfs);
-      } catch (err) {
-        console.error('[Checkout] Failed to upload delivery info:', err);
-        setProcessingStatus('Failed to upload delivery info');
-        setTimeout(() => setStep('review'), 2000);
-        return;
-      }
-      setProcessingStatus('Processing purchases...');
-    }
-
-    const purchaseItems = items.map((item) => ({
-      listingId: BigInt(item.listingId),
-      quantity: BigInt(item.quantity),
-      isDelivery: item.isDelivery,
-      totalPrice: BigInt(item.pricePerUnit) * BigInt(item.quantity),
-      buyerInfoIpfs: item.isDelivery ? buyerInfoIpfs : '',
-      paymentToken,
-    }));
-
-    console.log('[Checkout] Calling checkout with', purchaseItems.length, 'items');
-    const result = await checkout(purchaseItems);
-    console.log('[Checkout] Checkout result:', result);
-
-    // Store total for complete screen before clearing
-    setCompletedOrderTotal(total);
-
-    // Clear successful items from cart
-    if (result.allSucceeded) {
-      clearCart();
-    } else if (result.successCount > 0) {
-      const failedIds = new Set(result.failedListingIds.map(id => id.toString()));
-      items.forEach(item => {
-        if (!failedIds.has(item.listingId)) {
-          removeItem(item.listingId);
-        }
-      });
-    }
-
-    setStep('complete');
-  };
+  // (handleCheckout was hoisted to before the early returns — see above.)
 
   // Complete screen
   if (step === 'complete') {
