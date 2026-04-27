@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { ThirdwebProvider, BuyWidget } from 'thirdweb/react';
 import { useThirdwebPrivy, thirdwebClient, baseSepolia } from '@/hooks/useThirdwebPrivy';
+import { IS_MAINNET } from '@/lib/chainConfig';
 import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -363,8 +364,11 @@ function CreditCardCheckoutInner({
   return null;
 }
 
-// Check if we're on testnet
-const isTestnet = baseSepolia.id === 84532; // Base Sepolia chain ID
+// Check if we're on testnet. Pulls from chainConfig (env-driven) instead
+// of comparing baseSepolia.id to itself — the old check was always true
+// because `baseSepolia` is now exported from useThirdwebPrivy as the
+// active chain (mainnet on prod). Doug hit this Apr 28 2026.
+const isTestnet = !IS_MAINNET;
 
 // Main component that wraps with ThirdwebProvider
 export function CreditCardCheckout(props: CreditCardCheckoutProps) {
