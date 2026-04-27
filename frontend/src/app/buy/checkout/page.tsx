@@ -23,6 +23,7 @@ import { CreditCardCheckout } from '@/components/checkout/CreditCardCheckout';
 import { BuyerWalletModal } from '@/components/BuyerWalletModal';
 import { type PaymentToken, PAYMENT_TOKENS, rootsToStablecoin } from '@/lib/contracts/marketplace';
 import { SeedsPreview } from '@/components/seeds/SeedsPreview';
+import { useSellerStatus } from '@/hooks/useSellerStatus';
 
 type CheckoutMode = 'select' | 'wallet' | 'privy' | 'guest';
 type CheckoutStep = 'review' | 'processing' | 'complete';
@@ -43,6 +44,17 @@ export default function CheckoutPage() {
   const { items, getTotal, getSellerTotals, clearSellerItems, clearCart, removeItem } = useCart();
   const { checkout, isPurchasing, progress, results } = useCheckout();
   const { getBalance, checkAllowance, approve, isApproving } = useTokenApproval();
+
+  // Detect "trying to buy my own listing" — the contract reverts at line
+  // 372 ("Cannot buy own listing"), but the UI was previously showing a
+  // misleading reward preview. If the connected wallet's sellerId
+  // matches any cart item's sellerId, mark the cart as containing own
+  // listings so SeedsPreview / Buy button render appropriately.
+  const { sellerId: mySellerId } = useSellerStatus();
+  const cartHasOwnListing = useMemo(
+    () => !!mySellerId && items.some((it) => it.sellerId === mySellerId),
+    [items, mySellerId],
+  );
 
   // Checkout mode: select payment method, wallet checkout, or guest checkout
   const [mode, setMode] = useState<CheckoutMode>('select');
@@ -161,6 +173,7 @@ export default function CheckoutPage() {
               usdAmount={rootsToFiat(total)}
               isSeller={false}
               showBreakdown={true}
+              isOwnListing={cartHasOwnListing}
               className="mt-4"
             />
           </CardContent>
@@ -656,6 +669,7 @@ export default function CheckoutPage() {
             usdAmount={rootsToFiat(total)}
             isSeller={false}
             showBreakdown={true}
+            isOwnListing={cartHasOwnListing}
             className="mt-4"
           />
 
@@ -690,10 +704,20 @@ export default function CheckoutPage() {
           className="w-full bg-roots-primary hover:bg-roots-primary/90"
           size="lg"
           onClick={handleCheckout}
-          disabled={!hasEnoughBalance || !hasDeliveryAddress || isPurchasing || isApproving}
+          disabled={!hasEnoughBalance || !hasDeliveryAddress || isPurchasing || isApproving || cartHasOwnListing}
         >
-          {isPurchasing || isApproving ? 'Processing...' : `Complete Purchase (${items.length} items)`}
+          {cartHasOwnListing
+            ? "You can't buy your own listing"
+            : isPurchasing || isApproving
+              ? 'Processing...'
+              : `Complete Purchase (${items.length} items)`}
         </Button>
+
+        {cartHasOwnListing && (
+          <p className="text-amber-600 text-sm text-center">
+            Your cart contains a listing you posted yourself. Remove it to continue.
+          </p>
+        )}
 
         {!hasDeliveryAddress && (
           <p className="text-amber-600 text-sm text-center">

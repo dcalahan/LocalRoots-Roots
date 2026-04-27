@@ -133,12 +133,13 @@ export default function TokenomicsPage() {
               <CardContent className="pt-6 text-center">
                 <div className="text-4xl mb-3">🛒</div>
                 <h3 className="text-lg font-bold mb-2">Buy Local</h3>
-                <div className="text-3xl font-bold text-roots-secondary mb-1">50</div>
+                <div className="text-3xl font-bold text-roots-secondary mb-1">10</div>
                 <p className="text-sm text-roots-gray mb-4">Roots Points per $1 spent</p>
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
-                    Every purchase supports a neighbor who grows food
-                    and earns you Roots Points.
+                    Sellers earn 50× what buyers earn — they&apos;re doing
+                    the real work of growing your food. Every purchase
+                    still earns you Roots Points and supports a neighbor.
                   </p>
                 </div>
               </CardContent>
@@ -187,6 +188,16 @@ export default function TokenomicsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Airdrop attribution disclosure */}
+          <p className="mt-4 text-xs text-roots-gray italic max-w-2xl mx-auto text-center">
+            The rates shown above are what apply at airdrop snapshot time.
+            On-chain Roots Points events may be emitted at slightly different
+            numerical rates as the protocol evolves — the airdrop calculation
+            script is the authoritative source of truth for converting Roots
+            Points into $ROOTS, and it&apos;s open-source so anyone can audit
+            it before launch.
+          </p>
         </section>
 
         {/* Token Allocation — kept on the page so ambassadors and serious
