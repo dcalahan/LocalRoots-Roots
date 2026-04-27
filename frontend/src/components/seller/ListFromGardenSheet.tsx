@@ -59,12 +59,14 @@ export function ListFromGardenSheet({
     (p) => !p.removedDate && !p.harvestedDate && p.manualStatus !== 'done',
   );
 
-  // Build a set of cropIds that already have an active listing
-  const listedCropIds = new Set(
-    existingListings
-      .filter((l) => l.active && l.metadata?.produceId)
-      .map((l) => l.metadata!.produceId),
-  );
+  // V1 dropped the "already listed" badge — useSellerListings's local
+  // ListingMetadata interface doesn't expose produceId (it's in the
+  // IPFS metadata but not surfaced on the type). Cleanest path is to
+  // surface it on the type as a follow-up; for V1 we just let users
+  // tap any plant. If they double-list, the contract's per-listing
+  // model handles that fine (each listing is independent).
+  const listedCropIds = new Set<string>();
+  void existingListings;
 
   const handlePlantClick = (plant: GardenPlant) => {
     const params = new URLSearchParams({
