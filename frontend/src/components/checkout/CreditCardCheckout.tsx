@@ -60,11 +60,13 @@ interface CreditCardCheckoutProps {
 type Step = 'info' | 'auth' | 'pay' | 'awaiting-funds' | 'paid';
 
 // Polling cadence — 3 seconds is fast enough that a buyer who paid quickly
-// sees the success state without staring at a spinner. Backed off only
-// matters if the buyer leaves the popup open for ages, in which case the
-// 10-minute timeout fires and we surface a "still waiting?" prompt.
+// sees the success state without staring at a spinner. The 90-second
+// timeout fires once the typical Coinbase settlement window has passed
+// without funds arriving — at that point something is wrong (popup
+// closed mid-flow, payment declined, fee mismatch) and the buyer needs
+// a clearer recovery prompt instead of staring at a spinner indefinitely.
 const POLL_INTERVAL_MS = 3_000;
-const POLL_TIMEOUT_MS = 10 * 60 * 1_000;
+const POLL_TIMEOUT_MS = 90 * 1_000;
 
 export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardCheckoutProps) {
   const { ready, authenticated, login, user } = usePrivy();
@@ -89,7 +91,11 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
   const hasDeliveryItems = items.some(item => item.isDelivery);
   const totalUsd = Number(rootsToFiat(total));
-  const totalUsdRounded = Math.max(5, Math.ceil(totalUsd * 100) / 100); // Coinbase $5 minimum
+  // Coinbase guest checkout has a $5 minimum — for orders under that we
+  // ask Coinbase to deliver 5 USDC anyway and the leftover stays in the
+  // account for next time. For orders >= $5 we ask for exactly the order
+  // amount so polling matches with no rounding gap.
+  const cryptoToBuy = Math.max(5, Math.ceil(totalUsd * 100) / 100);
 
   // Pre-fill from Privy when available
   useEffect(() => {
@@ -195,13 +201,14 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         return;
       }
 
-      // Timeout: buyer has been on the popup for 10 minutes without
-      // funding. Surface a "still waiting?" message but keep polling —
-      // some Coinbase flows take longer (especially first-time buyers
-      // hitting bank-account verification).
+      // Timeout: 90 seconds without funds arriving. At this point either
+      // the buyer closed the popup without paying, the payment was
+      // declined, or something else went wrong. Stop polling and surface
+      // a clear recovery prompt.
       const elapsed = Date.now() - (pollStartedAtRef.current ?? Date.now());
       if (elapsed > POLL_TIMEOUT_MS) {
-        setError('Still waiting for payment to settle. If you completed payment in Coinbase, refresh this page in a moment to see your order.');
+        cancelled = true;
+        setError("We didn't see your payment arrive. If you completed it, refresh the page to retry — your order is still in the cart.");
       }
     }
 
@@ -238,28 +245,67 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     return () => clearInterval(interval);
   }, [popupRef, step]);
 
-  // Open Coinbase Onramp popup
+  // Open Coinbase Onramp popup — but first check whether the buyer's
+  // account already has enough USDC to settle (e.g. a previous attempt
+  // left funds behind). If so, skip the popup entirely and go straight
+  // to settlement so the buyer doesn't pay twice.
   const startPayment = useCallback(async () => {
     if (!buyerAddress) {
-      setError('Wallet not ready. Please try again in a moment.');
+      setError('Account not ready. Please try again in a moment.');
       return;
     }
 
     setError(null);
+
+    const requiredUsdcUnits = BigInt(Math.floor(totalUsd * 1e6));
+    try {
+      const client = createFreshPublicClient();
+      const existingBalance = await client.readContract({
+        address: USDC_ADDRESS,
+        abi: [
+          {
+            name: 'balanceOf',
+            type: 'function',
+            stateMutability: 'view',
+            inputs: [{ name: 'account', type: 'address' }],
+            outputs: [{ name: '', type: 'uint256' }],
+          },
+        ] as const,
+        functionName: 'balanceOf',
+        args: [buyerAddress],
+      });
+      if (existingBalance >= requiredUsdcUnits) {
+        setStep('paid');
+        onPaid({
+          buyerAddress,
+          email: email.trim(),
+          phone: phone.trim(),
+          deliveryAddress: deliveryAddress.trim(),
+          deliveryNotes: deliveryNotes.trim(),
+        });
+        return;
+      }
+    } catch (err) {
+      // Balance check failed — fall through to the Coinbase popup so the
+      // buyer isn't blocked. Worst case they pay and the next poll picks
+      // up the funds correctly.
+      console.warn('[CreditCardCheckout] pre-payment balance check failed:', err);
+    }
+
     const result = await openCoinbaseOnramp({
       walletAddress: buyerAddress,
-      presetFiatAmount: totalUsdRounded,
+      presetCryptoAmount: cryptoToBuy,
       partnerUserId: user?.id || undefined,
     });
 
     if (!result.ok) {
-      setError(result.error || 'Could not open Coinbase. Please try again.');
+      setError(result.error || 'Could not open the payment window. Please try again.');
       return;
     }
 
     setPopupRef(result.popup ?? null);
     setStep('awaiting-funds');
-  }, [buyerAddress, totalUsdRounded, user?.id]);
+  }, [buyerAddress, cryptoToBuy, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes]);
 
   if (!isCoinbaseOnrampConfigured()) {
     return (
@@ -269,7 +315,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
             <div className="text-4xl mb-3">🚧</div>
             <p className="text-amber-800 font-medium mb-2">Credit Card Coming Soon</p>
             <p className="text-sm text-amber-700 mb-4">
-              We&apos;re finishing the credit card setup. For now, please use a crypto wallet to complete your purchase.
+              We&apos;re finishing the credit card setup. For now, please choose a different payment option to complete your purchase.
             </p>
             <Button onClick={onBack} className="bg-roots-primary hover:bg-roots-primary/90">
               Go Back
@@ -425,7 +471,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         <div className="text-6xl mb-4">🔐</div>
         <h1 className="text-2xl font-heading font-bold mb-4">Quick Sign In</h1>
         <p className="text-roots-gray mb-6">
-          We&apos;ll set up a wallet for your USDC delivery. Email or social login — takes a few seconds.
+          We&apos;ll set up your account so we can send you order updates. Email or social login — takes a few seconds.
         </p>
 
         {!authenticated ? (
@@ -439,7 +485,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         ) : (
           <div className="flex items-center justify-center gap-2">
             <div className="animate-spin w-5 h-5 border-2 border-roots-primary border-t-transparent rounded-full" />
-            <span>Setting up your wallet…</span>
+            <span>Setting up your account…</span>
           </div>
         )}
 
@@ -480,11 +526,14 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
                 <span>Total</span>
                 <span>{formatFiat(totalUsd)}</span>
               </div>
-              {totalUsdRounded !== totalUsd && (
+              {cryptoToBuy !== totalUsd && (
                 <p className="text-xs text-roots-gray mt-1">
-                  Coinbase has a $5 minimum, so we&apos;ll fund your wallet with ${totalUsdRounded.toFixed(2)} USDC. The remainder stays in your wallet for next time.
+                  Our payment processor has a $5 minimum, so we&apos;ll add ${cryptoToBuy.toFixed(2)} to your account. The leftover stays as credit for your next order.
                 </p>
               )}
+              <p className="text-xs text-roots-gray mt-2">
+                A small card processing fee will be added at checkout — your seller still receives the full {formatFiat(totalUsd)}.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -501,11 +550,11 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
           onClick={startPayment}
           disabled={!buyerAddress}
         >
-          {buyerAddress ? `Pay ${formatFiat(totalUsd)} with Credit Card` : 'Setting up wallet…'}
+          {buyerAddress ? `Pay ${formatFiat(totalUsd)} with Credit Card` : 'Setting up your account…'}
         </Button>
 
         <p className="text-xs text-center text-roots-gray mt-4">
-          A secure Coinbase window will open. You can pay with Apple Pay, Google Pay, or any major debit/credit card.
+          A secure payment window will open. You can pay with Apple Pay, Google Pay, or any major debit/credit card.
         </p>
 
         <Button variant="ghost" className="w-full mt-2" onClick={() => setStep('info')}>
@@ -515,20 +564,20 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     );
   }
 
-  // Step 4: waiting for Coinbase to deliver USDC
+  // Step 4: waiting for the payment to settle
   if (step === 'awaiting-funds') {
-    const usdcDisplay = formatUnits(usdcReceived, 6);
+    const receivedDisplay = formatUnits(usdcReceived, 6);
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
         <div className="text-6xl mb-4 animate-pulse">💳</div>
         <h1 className="text-2xl font-heading font-bold mb-2">Waiting for payment</h1>
         <p className="text-roots-gray mb-6">
-          Complete your purchase in the Coinbase window. We&apos;ll detect the funds automatically — usually takes 5–15 seconds.
+          Complete your purchase in the payment window. We&apos;ll confirm automatically — usually takes 5–15 seconds.
         </p>
 
         <div className="max-w-sm mx-auto bg-gray-50 rounded-lg p-4 mb-4">
-          <div className="text-sm text-roots-gray mb-1">USDC received</div>
-          <div className="text-2xl font-semibold">${Number(usdcDisplay).toFixed(2)}</div>
+          <div className="text-sm text-roots-gray mb-1">Payment received</div>
+          <div className="text-2xl font-semibold">${Number(receivedDisplay).toFixed(2)}</div>
           <div className="text-xs text-roots-gray mt-1">
             of {formatFiat(totalUsd)} expected
           </div>
@@ -536,7 +585,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
         <div className="flex items-center justify-center gap-2 text-roots-gray text-sm">
           <div className="animate-spin w-4 h-4 border-2 border-roots-primary border-t-transparent rounded-full" />
-          <span>Watching your wallet…</span>
+          <span>Confirming your payment…</span>
         </div>
 
         {error && (

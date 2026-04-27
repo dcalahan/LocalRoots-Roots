@@ -43,8 +43,17 @@ const ONRAMP_URL_BASE = 'https://pay.coinbase.com/buy/select-asset';
 
 interface SessionTokenRequestBody {
   walletAddress?: string;
-  /** USD amount to pre-fill on Coinbase. User can adjust. */
+  /**
+   * USD amount to pre-fill on Coinbase. Coinbase fees come OUT of the
+   * delivered USDC, so a $5.00 fiat preset delivers ~$4.88 USDC.
+   */
   presetFiatAmount?: number;
+  /**
+   * USDC amount to deliver. Coinbase calculates the fiat charge needed to
+   * cover the delivered amount + fees, so the buyer pays the fee on top.
+   * Prefer this when the delivered USDC must match an order total exactly.
+   */
+  presetCryptoAmount?: number;
   /** Optional Privy ID for partnerUserId tracking on Coinbase side. */
   partnerUserId?: string;
   /** URL to redirect to after the buyer completes payment. */
@@ -113,7 +122,7 @@ async function generateCoinbaseJwt(
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as SessionTokenRequestBody;
-    const { walletAddress, presetFiatAmount, partnerUserId, redirectUrl } = body;
+    const { walletAddress, presetFiatAmount, presetCryptoAmount, partnerUserId, redirectUrl } = body;
 
     // Validation
     if (!walletAddress) {
@@ -125,6 +134,12 @@ export async function POST(req: NextRequest) {
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
       return NextResponse.json(
         { error: 'walletAddress must be a 0x-prefixed 40-hex-char Ethereum address' },
+        { status: 400 },
+      );
+    }
+    if (presetFiatAmount !== undefined && presetCryptoAmount !== undefined) {
+      return NextResponse.json(
+        { error: 'Specify only one of presetFiatAmount or presetCryptoAmount' },
         { status: 400 },
       );
     }
@@ -141,6 +156,23 @@ export async function POST(req: NextRequest) {
       if (presetFiatAmount < 1) {
         return NextResponse.json(
           { error: 'presetFiatAmount must be at least $1' },
+          { status: 400 },
+        );
+      }
+    }
+    if (presetCryptoAmount !== undefined) {
+      if (typeof presetCryptoAmount !== 'number' || presetCryptoAmount <= 0) {
+        return NextResponse.json(
+          { error: 'presetCryptoAmount must be a positive number' },
+          { status: 400 },
+        );
+      }
+      // USDC is ~$1 per token, so $5 fiat minimum ≈ 5 USDC. Cap below that
+      // to give a clear client-side message before Coinbase rejects the
+      // session for being below their guest-checkout floor.
+      if (presetCryptoAmount < 1) {
+        return NextResponse.json(
+          { error: 'presetCryptoAmount must be at least 1 USDC' },
           { status: 400 },
         );
       }
@@ -216,6 +248,12 @@ export async function POST(req: NextRequest) {
     if (presetFiatAmount && presetFiatAmount > 0) {
       // Round to 2 decimals — Coinbase rejects more precision on USD
       params.set('presetFiatAmount', presetFiatAmount.toFixed(2));
+    }
+    if (presetCryptoAmount && presetCryptoAmount > 0) {
+      // 6 decimals matches USDC precision — Coinbase calculates the fiat
+      // charge (incl. fees) so the buyer pays the fee on top of the
+      // delivered USDC amount.
+      params.set('presetCryptoAmount', presetCryptoAmount.toFixed(6));
     }
     if (partnerUserId) {
       // Privy IDs can contain colons and exceed Coinbase's 49-char limit
