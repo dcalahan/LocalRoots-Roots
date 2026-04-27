@@ -257,10 +257,10 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
       )}
 
       <p className="text-xs text-gray-500">
-        <strong className="text-roots-secondary">Privacy:</strong> Public listings only
-        show your neighborhood (~5km area) — your exact pickup address is never visible
-        to potential buyers, only to confirmed buyers AFTER they place a pickup order
-        AND you accept it.
+        <strong className="text-roots-secondary">Privacy:</strong> Your exact pickup
+        address is private — only shared with confirmed buyers AFTER they place a
+        pickup order AND you accept it. Your approximate location is used on-chain
+        for distance calculations (so delivery radius works accurately).
       </p>
     </div>
   );

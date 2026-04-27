@@ -313,14 +313,20 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
       const storefrontIpfs = `ipfs://${metadataResult.ipfsHash}`;
       console.log('[Registration] Metadata uploaded to IPFS:', storefrontIpfs);
 
-      // Privacy: truncate the on-chain geohash to 5 characters (~5km cell).
-      // The contract field is bytes8, but only the first 5 chars carry
-      // meaningful information for proximity matching (matches the
-      // Marketplace.sellersByGeohash5 index precision). Trailing nulls are
-      // already padded by geohashToBytes8. This stops exact-location leak
-      // through public chain reads while keeping distance ranking intact.
-      const fullGeohash = location?.geohash || '9q8yyk8y'; // Default to SF area
-      const geohash = fullGeohash.slice(0, 5);
+      // Privacy vs delivery-accuracy trade-off (Doug, Apr 26):
+      // Earlier this commit chain truncated geohash to 5 chars (~5km cell)
+      // for privacy. But the on-chain geohash is also what buyer-side
+      // distance computations use to enforce a seller's delivery radius —
+      // and 5km imprecision means a seller who says "I deliver 6 miles"
+      // could appear deliverable to a buyer 10 miles away. Doug's call:
+      // delivery accuracy beats geohash privacy here.
+      //
+      // The proper privacy answer is to store the seller's exact lat/lng
+      // privately in KV (alongside pickup address) and do delivery-radius
+      // checks server-side against the private value. Tracked as TODO —
+      // until then, on-chain geohash stays at 8-char precision so delivery
+      // radius works correctly.
+      const geohash = location?.geohash || '9q8yyk8y'; // Default to SF area
 
       toast({
         title: 'Registering...',
