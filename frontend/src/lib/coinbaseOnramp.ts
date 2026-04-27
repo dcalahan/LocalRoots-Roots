@@ -24,8 +24,18 @@
 export interface OpenOnrampOptions {
   /** Buyer's wallet address — where USDC will be deposited. */
   walletAddress: string;
-  /** USD amount to pre-fill on Coinbase. User can still adjust. */
-  presetFiatAmount: number;
+  /**
+   * USD amount to pre-fill. Coinbase fees come OUT of the delivered USDC,
+   * so a $5.00 fiat preset delivers ~$4.88 USDC. Use this only when the
+   * exact delivered amount doesn't matter.
+   */
+  presetFiatAmount?: number;
+  /**
+   * USDC amount to deliver. Coinbase calculates the fiat charge needed to
+   * cover the delivered amount + fees, so the buyer pays the fee on top.
+   * Prefer this when the delivered USDC must match an order total exactly.
+   */
+  presetCryptoAmount?: number;
   /** Privy ID — used for tracking on Coinbase side, optional. */
   partnerUserId?: string;
   /** URL Coinbase redirects to after the buyer completes payment. */
@@ -71,8 +81,13 @@ export async function openCoinbaseOnramp(
   if (!isCoinbaseOnrampConfigured()) {
     return { ok: false, error: 'Coinbase Onramp not configured' };
   }
-  if (!opts.presetFiatAmount || opts.presetFiatAmount <= 0) {
-    return { ok: false, error: 'Amount must be greater than 0' };
+  const hasFiat = typeof opts.presetFiatAmount === 'number' && opts.presetFiatAmount > 0;
+  const hasCrypto = typeof opts.presetCryptoAmount === 'number' && opts.presetCryptoAmount > 0;
+  if (!hasFiat && !hasCrypto) {
+    return { ok: false, error: 'Must specify presetFiatAmount or presetCryptoAmount' };
+  }
+  if (hasFiat && hasCrypto) {
+    return { ok: false, error: 'Specify only one of presetFiatAmount or presetCryptoAmount' };
   }
 
   // Open a blank popup synchronously so browsers don't block it after the
@@ -90,6 +105,7 @@ export async function openCoinbaseOnramp(
       body: JSON.stringify({
         walletAddress: opts.walletAddress,
         presetFiatAmount: opts.presetFiatAmount,
+        presetCryptoAmount: opts.presetCryptoAmount,
         partnerUserId: opts.partnerUserId,
         redirectUrl: opts.redirectUrl,
       }),
