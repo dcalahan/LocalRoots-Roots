@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 import { decodeEventLog, type Address, zeroAddress } from 'viem';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import {
   MARKETPLACE_ADDRESS,
   marketplaceAbi,
@@ -33,7 +34,7 @@ interface PurchaseResult {
 
 export function usePurchase() {
   const { address, connector } = useAccount();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const { data: walletClient } = useWalletClient();
   const { approve, checkAllowance, isApproving } = useTokenApproval();
   const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();

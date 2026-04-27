@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useReadContract, usePublicClient } from 'wagmi';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { AMBASSADOR_REWARDS_ADDRESS, ambassadorAbi } from '@/lib/contracts/ambassador';
 import { decodeGeohash, reverseGeocode, type GeohashLocation } from '@/lib/geohashLocation';
@@ -65,7 +66,7 @@ export interface AmbassadorWithLocation {
  * Hook to fetch all sellers with location info for admin view
  */
 export function useAdminSellers() {
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const [sellers, setSellers] = useState<SellerWithLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export function useAdminSellers() {
     address: MARKETPLACE_ADDRESS,
     abi: marketplaceAbi,
     functionName: 'nextSellerId',
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   const fetchSellers = useCallback(async () => {
@@ -169,7 +171,7 @@ export function useAdminSellers() {
  * Hook to fetch all orders with seller location for admin view
  */
 export function useAdminOrders() {
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const [orders, setOrders] = useState<OrderWithLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,6 +180,7 @@ export function useAdminOrders() {
     address: MARKETPLACE_ADDRESS,
     abi: marketplaceAbi,
     functionName: 'nextOrderId',
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   const fetchOrders = useCallback(async () => {
@@ -279,7 +282,7 @@ export function useAdminOrders() {
  * Hook to fetch all ambassadors with location info for admin view
  */
 export function useAdminAmbassadors() {
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const [ambassadors, setAmbassadors] = useState<AmbassadorWithLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -288,6 +291,7 @@ export function useAdminAmbassadors() {
     address: AMBASSADOR_REWARDS_ADDRESS,
     abi: ambassadorAbi,
     functionName: 'nextAmbassadorId',
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   const fetchAmbassadors = useCallback(async () => {

@@ -3,12 +3,13 @@
 import { useState, useCallback } from 'react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 import { type Address } from 'viem';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, ROOTS_TOKEN_ADDRESS, erc20Abi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
 
 export function useTokenApproval() {
   const { address, connector } = useAccount();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const { data: walletClient } = useWalletClient();
 
   const [isApproving, setIsApproving] = useState(false);

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
 import { useGaslessTransaction } from './useGaslessTransaction';
@@ -12,7 +13,7 @@ import { useGaslessTransaction } from './useGaslessTransaction';
  */
 export function useCompleteOrder() {
   const { address, connector } = useAccount();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const { data: walletClient } = useWalletClient();
   const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
 
@@ -105,7 +106,7 @@ export function useCompleteOrder() {
  */
 export function useRaiseDispute() {
   const { address, connector } = useAccount();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const { data: walletClient } = useWalletClient();
   const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
 
