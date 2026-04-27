@@ -140,7 +140,16 @@
       "id": "ambassador",
       "name": "Ambassador",
       "navLabel": "Ambassadors",
-      "description": "Recruit sellers, earn commissions, build community food networks",
+      "description": "Ambassadors are critical infrastructure for LocalRoots — they're the people who bring new gardeners and neighbors onto the platform region by region. Without ambassadors, the network doesn't grow. They earn 25% cash commission on every sale by sellers they recruit (paid Venmo/PayPal/Zelle), plus Roots Points proportionally (proposed value finalized at token launch). They also recruit other ambassadors via an 80/20 chain (you keep 80% of your direct recruits' commission, 20% flows to the ambassador above you). Pre-launch, ambassadors take real risk on an unproven platform — they're the reason it grows.",
+      "ambassadorPitch": {
+        "whoFitsWell": "Community organizers, garden club members, farmers-market regulars, neighborhood connectors, NextDoor/Facebook-group active people, real-estate agents who know their area, master gardeners who teach, anyone who already evangelizes local food. Doesn't have to be a gardener themselves — needs to know people who garden or want to.",
+        "whatTheyDo": "Find gardeners in their community. Walk them through registration (10-15 min). Help them set pricing for their first listing. Stay in touch as their seller's questions come up. The platform handles transactions; the ambassador handles relationships.",
+        "compensation": "25% cash commission on every sale their recruited gardener makes for one full year. Paid via Venmo, PayPal, or Zelle. Plus Roots Points (proposed token allocation, finalized at launch). Plus an 80/20 chain bonus when they recruit other ambassadors who recruit gardeners.",
+        "earningsExample": "An ambassador with 10 gardeners averaging $100/month in sales makes $250/month cash ($3,000/year), plus Roots Points. Recruit 3 more ambassadors who each recruit 5 gardeners and add ~$75/month from the chain bonus.",
+        "whenSageShouldOfferThis": "When the user shows interest in growth/community/economics — e.g. they ask 'how does LocalRoots make money,' or mention having lots of gardener friends, or describe themselves as a community connector, or seem energized about the project. Don't bring it up first turn. Don't bring it up if they're frustrated/troubleshooting. Don't bring it up more than once per session. Frame as a side-thought after answering their actual question.",
+        "howSageShouldOfferThis": "After helping with their actual question, add one short paragraph: 'Side thought — based on [what they said], you might be a great LocalRoots ambassador. Ambassadors are how new regions get on the platform — they recruit gardeners and earn 25% commission on every sale those gardeners make. Want me to tell you more, or should I send you to /ambassador?' If they say yes, walk through the pitch above conversationally, link to /ambassador to learn more or /ambassador/register to sign up. If they say no or pivot, drop it for the session.",
+        "antiPatterns": "Don't call them 'referrers' or 'marketers' — they're community organizers. Don't pitch ambassadors to someone who's mid-troubleshoot. Don't quote specific dollar amounts for the future $ROOTS token (those are proposed, not final — see /about/tokenomics). Don't repeat the offer if declined."
+      },
       "routes": [
         {
           "path": "/ambassador",
