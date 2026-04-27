@@ -355,6 +355,28 @@ The seller's blank profile state ("Your Garden / Seedling") happens when on-chai
 - No way yet to edit Privy login methods from `/profile` — that lives in the Privy modal menu. Acceptable for v1.
 - The seller "save" flow uploads metadata to IPFS using gardener fields. If the gardener profile changes, the seller storefront is NOT auto-resynced — the user has to come back to `/profile` and re-save. Future improvement: a "Sync from Gardener" affordance, or a hook that re-uploads when the gardener saves.
 
+## Buyer/Seller Parity — STRATEGIC PRINCIPLE
+
+**Doug's framing (Apr 28 2026):** "buyer and seller work must be consistent."
+
+The codebase grew with the buyer flow and seller flow as separate tracks — separate components, separate hooks, separate validation. Drift accumulated: a buyer's delivery address could be accepted incomplete while a seller's pickup address had different rules; a buyer cart card showed a generic emoji for produce that the seller dashboard rendered with a real photo. Each surface had its own logic that was *almost* the same as the sibling surface.
+
+**Rule:** Before adding a validation rule, display fallback, or formatter to a buyer surface, check whether a sibling seller surface should enforce the same — and vice versa. If yes, extract to a shared module. Don't ship the buyer-side fix without the seller-side fix.
+
+**Shared modules already in place (use these — don't reinvent):**
+
+| Module | Use for | Used by |
+|---|---|---|
+| `lib/addressValidation.ts` — `validateAddress`, `validateEmail` | Any postal address or email field. Rejects addresses missing both a comma AND a 5-digit ZIP. | `GuestCheckout`, `CreditCardCheckout`, `SellerRegistrationForm`, `/profile` seller pickup |
+| `lib/produce.ts` — `resolveListingImage(data, resolveImageRef)` | Resolving a listing's display photo. Priority: uploaded → catalog by `produceId` → null. Resolver injected so each surface uses its preferred gateway. | `lib/listingData.ts` (buyer SSR), `hooks/useSellerListings.ts` (seller dashboard) |
+| `lib/produce.ts` — `getCatalogItem(cropId)` | Joining `produce-seeds.json` (photos, seasons) with `crop-growing-data.json` (planting/harvest data) for any catalog lookup. | Both Sell and Grow flows. |
+
+**When to extract a new shared module:** the moment you write the same logic twice. If you find yourself writing parallel code in a `seller/*` file and a `buyer/*` file (or `checkout/*` file), stop and extract. The cost of an extra module is dwarfed by the cost of drift bugs.
+
+**Toast vs inline error UX is allowed to differ:** seller registration + `/profile` use toast (transient), buyer checkout uses inline error state with clear-on-type. That's a UX choice, not a validation choice — the *rules* must match, the surface treatment can differ.
+
+**Don't add buyer-only or seller-only validation rules without a written reason.** If a buyer needs to enter a phone number with a specific format and a seller doesn't, that's worth a comment explaining why. Otherwise assume parity.
+
 ## Orders Architecture
 
 The app has two separate order viewing experiences based on authentication method:
