@@ -303,6 +303,44 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
 
     setShowLocationWarning(false);
 
+    // Defensive check: if the user is ALREADY registered as a seller on
+    // chain, the marketplace will revert with "Already registered as
+    // seller" — but the OZ ERC2771Forwarder swallows that revert message
+    // and bubbles it up as the cryptic FailedInnerCall(). Better UX is
+    // to detect this BEFORE we submit, and redirect to /sell/dashboard.
+    //
+    // This is a defense against a race condition where useSellerStatus
+    // hadn't finished its on-chain check before the user authenticated
+    // via Privy and clicked submit again.
+    try {
+      const { createFreshPublicClient } = await import('@/lib/viemClient');
+      const { MARKETPLACE_ADDRESS, marketplaceAbi } = await import('@/lib/contracts/marketplace');
+      // Use the canonical Privy embedded wallet address — that's what
+      // signs the meta-tx and what the contract sees as the seller.
+      const privyWalletAddress = (privyUser as unknown as { wallet?: { address?: string } })?.wallet?.address;
+      if (privyWalletAddress) {
+        const client = createFreshPublicClient();
+        const alreadySeller = await client.readContract({
+          address: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          functionName: 'isSeller',
+          args: [privyWalletAddress as `0x${string}`],
+        }) as boolean;
+        if (alreadySeller) {
+          toast({
+            title: "You're already a seller!",
+            description: 'Taking you to your dashboard.',
+          });
+          router.push('/sell/dashboard');
+          return;
+        }
+      }
+    } catch (err) {
+      // Don't block submission if the pre-check fails — the contract
+      // will still revert if duplicate, just with the cryptic error.
+      console.warn('[Registration] pre-check failed, proceeding:', err);
+    }
+
     try {
       // Upload profile image to IPFS if it's a base64 data URL
       let finalImageUrl = profileImageHash;
