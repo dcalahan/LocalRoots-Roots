@@ -91,11 +91,15 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
   const hasDeliveryItems = items.some(item => item.isDelivery);
   const totalUsd = Number(rootsToFiat(total));
-  // Coinbase guest checkout has a $5 minimum — for orders under that we
-  // ask Coinbase to deliver 5 USDC anyway and the leftover stays in the
-  // account for next time. For orders >= $5 we ask for exactly the order
-  // amount so polling matches with no rounding gap.
-  const cryptoToBuy = Math.max(5, Math.ceil(totalUsd * 100) / 100);
+  // Pad the fiat amount by ~3% to cover Coinbase's processing fee so the
+  // delivered USDC covers the order total. We use presetFiatAmount (not
+  // presetCryptoAmount) because empirically presetCryptoAmount hangs on
+  // Coinbase's guest-checkout phone-verification step (Apr 27 2026).
+  // Coinbase's typical card fee is ~2.49%, so 3% is a thin safety margin
+  // — small leftover credit (~$0.02 on a $5 order) stays in the buyer's
+  // account. Coinbase guest checkout also has a $5 fiat minimum.
+  const FEE_PAD = 1.03;
+  const fiatToCharge = Math.max(5, Math.ceil(totalUsd * FEE_PAD * 100) / 100);
 
   // Pre-fill from Privy when available
   useEffect(() => {
@@ -294,7 +298,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
     const result = await openCoinbaseOnramp({
       walletAddress: buyerAddress,
-      presetCryptoAmount: cryptoToBuy,
+      presetFiatAmount: fiatToCharge,
       partnerUserId: user?.id || undefined,
     });
 
@@ -305,7 +309,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
     setPopupRef(result.popup ?? null);
     setStep('awaiting-funds');
-  }, [buyerAddress, cryptoToBuy, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes]);
+  }, [buyerAddress, fiatToCharge, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes]);
 
   if (!isCoinbaseOnrampConfigured()) {
     return (
@@ -522,17 +526,20 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
               </div>
             )}
             <div className="border-t pt-2 mt-2">
-              <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
+              <div className="flex justify-between text-sm text-roots-gray">
+                <span>Order total</span>
                 <span>{formatFiat(totalUsd)}</span>
               </div>
-              {cryptoToBuy !== totalUsd && (
-                <p className="text-xs text-roots-gray mt-1">
-                  Our payment processor has a $5 minimum, so we&apos;ll add ${cryptoToBuy.toFixed(2)} to your account. The leftover stays as credit for your next order.
-                </p>
-              )}
+              <div className="flex justify-between text-sm text-roots-gray mt-1">
+                <span>Card processing fee (est.)</span>
+                <span>~${(fiatToCharge - totalUsd).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-lg mt-2 pt-2 border-t">
+                <span>You&apos;ll be charged</span>
+                <span>~${fiatToCharge.toFixed(2)}</span>
+              </div>
               <p className="text-xs text-roots-gray mt-2">
-                A small card processing fee will be added at checkout — your seller still receives the full {formatFiat(totalUsd)}.
+                Your seller receives the full {formatFiat(totalUsd)}. The processing fee is your card&apos;s, not LocalRoots&apos; — we don&apos;t take a cut.
               </p>
             </div>
           </CardContent>
