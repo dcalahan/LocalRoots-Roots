@@ -9,8 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { kv } from '@/lib/kv';
-import { createPublicClient, http } from 'viem';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { createFreshPublicClient } from '@/lib/viemClient';
 import type { PaymentRecord, PaymentSummary } from '@/lib/contracts/ambassador';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 
@@ -19,10 +18,7 @@ async function isAdmin(address: string): Promise<boolean> {
   if (!address) return false;
 
   try {
-    const client = createPublicClient({
-      chain: baseSepolia,
-      transport: http(),
-    });
+    const client = createFreshPublicClient();
 
     const result = await client.readContract({
       address: MARKETPLACE_ADDRESS,
