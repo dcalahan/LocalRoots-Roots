@@ -1,4 +1,5 @@
 import produceData from '@/data/produce-seeds.json';
+import { getCropGrowingInfo } from './plantingCalendar';
 
 export interface ProduceItem {
   id: string;
@@ -8,6 +9,34 @@ export interface ProduceItem {
   seasonEnd: number;
   image: string;
   tags: string[];
+}
+
+/**
+ * Joined catalog entry — combines `produce-seeds.json` (photos, seasons,
+ * tags — the visual data the Sell flow uses) with `crop-growing-data.json`
+ * (planting/harvest/care data — the operational data My Garden + Sage use).
+ *
+ * The two catalogs share crop IDs (`tomato-cherry`, `basil`, etc.) but
+ * never reconciled. This is the API-layer join that lets a single picker
+ * component serve both flows. Crops that exist in only one catalog
+ * gracefully fall back: if no produce-seeds entry, image is null and the
+ * caller renders an emoji+name fallback.
+ */
+export interface CatalogItem {
+  id: string;
+  name: string;
+  category: string;
+  /** From produce-seeds.json — null if crop is grow-only */
+  image: string | null;
+  /** Month range 1-12 — null if crop is grow-only */
+  seasonStart: number | null;
+  seasonEnd: number | null;
+  tags: string[];
+  /** From crop-growing-data.json — null if crop is sell-only */
+  daysToMaturity: { min: number; max: number } | null;
+  isPerennial: boolean;
+  hasBoltingData: boolean;
+  hasPruningData: boolean;
 }
 
 export interface UnitOfMeasure {
@@ -120,4 +149,40 @@ export function getMonthName(month: number): string {
  */
 export function formatSeasonRange(startMonth: number, endMonth: number): string {
   return `${getMonthName(startMonth)} - ${getMonthName(endMonth)}`;
+}
+
+/**
+ * Get a joined CatalogItem for a crop ID. Joins produce-seeds.json with
+ * crop-growing-data.json so a single object carries both visual and
+ * operational data. Returns null only if the crop ID exists in neither
+ * catalog (very rare — would mean a corrupt cropId in My Garden state).
+ *
+ * Used by ListFromGardenSheet to render plant inventory with photos,
+ * and by the future shared ProducePicker component (V2) for both Sell
+ * and Grow flows.
+ */
+export function getCatalogItem(cropId: string): CatalogItem | null {
+  const produceItem = produce.find((p) => p.id === cropId);
+  const growingInfo = getCropGrowingInfo(cropId);
+
+  if (!produceItem && !growingInfo) return null;
+
+  // Prefer produce-seeds for name + category (cleaner display strings),
+  // fall back to crop-growing-data
+  const name = produceItem?.name || growingInfo?.name || cropId;
+  const category = produceItem?.category || growingInfo?.category || 'other';
+
+  return {
+    id: cropId,
+    name,
+    category,
+    image: produceItem?.image || null,
+    seasonStart: produceItem?.seasonStart ?? null,
+    seasonEnd: produceItem?.seasonEnd ?? null,
+    tags: produceItem?.tags || [],
+    daysToMaturity: growingInfo?.daysToMaturity || null,
+    isPerennial: growingInfo?.isPerennial || false,
+    hasBoltingData: !!(growingInfo as unknown as { bolting?: unknown })?.bolting,
+    hasPruningData: !!((growingInfo as unknown as { pruning?: unknown[] })?.pruning?.length),
+  };
 }
