@@ -45,6 +45,7 @@ import { useAmbassadorStatus } from '@/hooks/useAmbassadorStatus';
 import { useAmbassadorProfile } from '@/hooks/useAmbassadorProfile';
 import { useUpdateAmbassadorProfile } from '@/hooks/useUpdateAmbassadorProfile';
 import { savePickup, fetchOwnPickup } from '@/lib/sellerPickup';
+import { validateAddress } from '@/lib/addressValidation';
 import { PublicGardenSettings } from '@/components/grow/PublicGardenSettings';
 import type { AmbassadorProfile } from '@/lib/contracts/ambassador';
 
@@ -347,6 +348,21 @@ function SellerSection({ highlight }: { highlight: boolean }) {
   };
 
   const handleSave = async () => {
+    // Validate pickup address before any IPFS / chain work — same rules
+    // as buyer delivery + seller registration. Doug's principle (Apr 28
+    // 2026): address validation must be consistent across surfaces.
+    if (offersPickup) {
+      const addressCheck = validateAddress(pickupAddress, true);
+      if (!addressCheck.ok) {
+        toast({
+          title: 'Pickup address looks incomplete',
+          description: addressCheck.error || 'Add street, city, state, ZIP.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     try {
       // Build metadata from GARDENER fields (single source of truth)
       const metadata = {

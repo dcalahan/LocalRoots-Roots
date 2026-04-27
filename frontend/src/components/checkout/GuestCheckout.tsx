@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatRoots, rootsToFiat, formatFiat } from '@/lib/pricing';
 import { CartItem } from '@/contexts/CartContext';
+import { validateAddress, validateEmail } from '@/lib/addressValidation';
 
 interface GuestCheckoutProps {
   items: CartItem[];
@@ -39,14 +40,19 @@ export function GuestCheckout({
   const totalUsd = Number(rootsToFiat(total));
 
   const handleContinueToPayment = async () => {
-    // Validate required fields
-    if (!email.trim()) {
-      setError('Email is required for order confirmation');
+    // Validation lives in lib/addressValidation.ts so buyer + seller
+    // surfaces all enforce the same rules.
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.ok) {
+      setError(emailCheck.error);
       return;
     }
-    if (hasDeliveryItems && !deliveryAddress.trim()) {
-      setError('Delivery address is required');
-      return;
+    if (hasDeliveryItems) {
+      const addressCheck = validateAddress(deliveryAddress, true);
+      if (!addressCheck.ok) {
+        setError(addressCheck.error);
+        return;
+      }
     }
     setError(null);
 
@@ -120,7 +126,10 @@ export function GuestCheckout({
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="you@example.com"
                 className="mt-1"
               />
@@ -155,7 +164,10 @@ export function GuestCheckout({
                 <Input
                   id="deliveryAddress"
                   value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  onChange={(e) => {
+                    setDeliveryAddress(e.target.value);
+                    if (error) setError(null);
+                  }}
                   placeholder="123 Main St, Apt 4B, City, State ZIP"
                   className="mt-1"
                 />

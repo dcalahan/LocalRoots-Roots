@@ -5,6 +5,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { ThirdwebProvider, BuyWidget } from 'thirdweb/react';
 import { useThirdwebPrivy, thirdwebClient, baseSepolia } from '@/hooks/useThirdwebPrivy';
 import { IS_MAINNET } from '@/lib/chainConfig';
+import { validateAddress, validateEmail } from '@/lib/addressValidation';
 import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,15 +60,20 @@ function CreditCardCheckoutInner({
     );
   }
 
-  // Step 1: Collect info
+  // Step 1: Collect info. Validation lives in lib/addressValidation.ts so
+  // buyer + seller surfaces all enforce the same rules.
   const handleContinue = () => {
-    if (!email.trim()) {
-      setError('Email is required');
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.ok) {
+      setError(emailCheck.error);
       return;
     }
-    if (hasDeliveryItems && !deliveryAddress.trim()) {
-      setError('Delivery address is required');
-      return;
+    if (hasDeliveryItems) {
+      const addressCheck = validateAddress(deliveryAddress, true);
+      if (!addressCheck.ok) {
+        setError(addressCheck.error);
+        return;
+      }
     }
     setError(null);
 
@@ -183,7 +189,13 @@ function CreditCardCheckoutInner({
                 <Input
                   id="deliveryAddress"
                   value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  onChange={(e) => {
+                    setDeliveryAddress(e.target.value);
+                    // Clear stale error as user fixes it — Doug saw the
+                    // "Delivery address is required" error linger after
+                    // typing, which felt like a broken state.
+                    if (error) setError(null);
+                  }}
                   placeholder="123 Main St, City, State ZIP"
                   className="mt-1"
                 />
@@ -295,14 +307,23 @@ function CreditCardCheckoutInner({
           </div>
         )}
 
-        {/* thirdweb BuyWidget for funding wallet */}
+        {/* thirdweb BuyWidget — used as our credit-card processor.
+            Mechanically: user enters card → thirdweb buys USDC into the
+            user's wallet → checkout settles the order from that USDC.
+            From the user's perspective they're "paying with credit card";
+            the USDC step is invisible plumbing. The widget label below
+            is set to "Pay with Credit Card" instead of the default
+            "Add Funds" so users don't think they landed on the wrong
+            page (Doug Apr 28 2026: "Going to cc checkout doesn't take
+            you to credit card."). */}
         <Card className="mb-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Enter Payment Details</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-roots-gray mb-4">
-              Enter your card details below to complete your purchase.
+              Enter your credit or debit card below. Apple Pay and Google Pay
+              are also supported.
             </p>
 
             <div className="border rounded-lg overflow-hidden">
@@ -311,7 +332,7 @@ function CreditCardCheckoutInner({
                 chain={baseSepolia}
                 tokenAddress={USDC_ADDRESS as `0x${string}`}
                 amount={totalUsd.toString()}
-                title="Add Funds"
+                title="Pay with Credit Card"
                 theme="light"
                 paymentMethods={["card", "crypto"]}
                 onSuccess={(data) => {

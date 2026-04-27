@@ -186,3 +186,32 @@ export function getCatalogItem(cropId: string): CatalogItem | null {
     hasPruningData: !!((growingInfo as unknown as { pruning?: unknown[] })?.pruning?.length),
   };
 }
+
+/**
+ * Resolve a listing's display image. Single source of truth used by both
+ * buyer-side `lib/listingData.ts` and seller-side `useSellerListings.ts`
+ * — Doug's principle (Apr 28 2026): the two surfaces must stay in sync.
+ *
+ * Priority:
+ *   1. The seller's uploaded photo for this specific listing
+ *   2. The catalog photo for the produce ID (e.g. basil-default.jpg)
+ *   3. null — caller renders an emoji or other fallback
+ *
+ * @param data Parsed listing metadata. Both `images` (array of IPFS hashes
+ *             or URLs) and `produceId` (catalog key like "basil") are
+ *             read; missing fields are tolerated.
+ * @param resolveImageRef A function that converts an IPFS hash or http URL
+ *             to a usable display URL. Different consumers have different
+ *             gateway preferences, so the resolver is injected.
+ */
+export function resolveListingImage(
+  data: { images?: unknown[]; produceId?: string },
+  resolveImageRef: (ref: string | null | undefined) => string | null,
+): string | null {
+  const uploaded = resolveImageRef(data.images?.[0] as string | null | undefined);
+  if (uploaded) return uploaded;
+  if (data.produceId) {
+    return getCatalogItem(data.produceId)?.image ?? null;
+  }
+  return null;
+}

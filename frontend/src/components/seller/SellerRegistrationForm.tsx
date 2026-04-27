@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAccount, useSignMessage } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { savePickup } from '@/lib/sellerPickup';
+import { validateAddress, validateEmail } from '@/lib/addressValidation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -267,22 +268,31 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   }, [error]);
 
   // For MVP, location is optional - we can collect it later
-  // Pickup address is required if offering pickup
+  // Pickup address is required if offering pickup. Same validation rules
+  // as the buyer delivery address — single source of truth in
+  // lib/addressValidation.ts. Doug's principle (Apr 28 2026): seller
+  // and buyer flows must enforce the same standards.
+  const emailValid = validateEmail(email).ok;
+  const pickupAddressCheck = validateAddress(pickupAddress, offersPickup);
   const isFormValid =
     name.trim().length > 0 &&
     description.trim().length > 0 &&
-    email.trim().length > 0 &&
-    email.includes('@') &&
+    emailValid &&
     (offersDelivery || offersPickup) &&
-    (!offersPickup || pickupAddress.trim().length > 0);
+    pickupAddressCheck.ok;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isFormValid) {
+      // Surface the most specific issue we can — pickup address gets a
+      // shape-specific error, otherwise generic.
+      const description = !pickupAddressCheck.ok
+        ? pickupAddressCheck.error || 'Please fill in all required fields.'
+        : 'Please fill in all required fields.';
       toast({
         title: 'Missing information',
-        description: 'Please fill in all required fields.',
+        description,
         variant: 'destructive',
       });
       return;

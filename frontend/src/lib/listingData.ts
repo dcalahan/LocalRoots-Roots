@@ -8,6 +8,7 @@
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
 import { getIpfsUrl } from '@/lib/pinata';
+import { resolveListingImage } from '@/lib/produce';
 import type { ListingCardData } from '@/components/buyer/ListingCard';
 
 interface ListingMetadata {
@@ -88,7 +89,7 @@ export async function fetchIpfsMetadata<T>(metadataUri: string): Promise<T | nul
       return {
         produceName: data.produceName || 'Unknown',
         description: data.description || '',
-        imageUrl: resolveImageUrl(data.images?.[0]),
+        imageUrl: resolveListingImage(data, resolveImageUrl),
         unit: data.unitName || data.unitId || 'unit',
         category: data.category || '',
         name: data.name || 'Local Seller',
@@ -115,7 +116,7 @@ export async function fetchIpfsMetadata<T>(metadataUri: string): Promise<T | nul
     return {
       produceName: data.produceName || 'Unknown',
       description: data.description || '',
-      imageUrl: resolveImageUrl(data.images?.[0]),
+      imageUrl: resolveListingImage(data, resolveImageUrl),
       unit: data.unitName || data.unitId || 'unit',
       category: data.category || '',
       name: data.name || 'Local Seller',
