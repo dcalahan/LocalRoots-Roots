@@ -538,6 +538,23 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
           </CardContent>
         </Card>
 
+        <Card className="mb-6 bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <h3 className="font-semibold text-blue-900 mb-2">Heads up — a few quick verification steps</h3>
+            <p className="text-sm text-blue-900 mb-3">
+              Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner Coinbase handles credit cards. They&apos;ll ask you to:
+            </p>
+            <ul className="text-sm text-blue-900 space-y-1 mb-3 ml-4 list-disc">
+              <li>Verify your phone with a text code</li>
+              <li>Confirm your billing address</li>
+              <li>Possibly approve the charge with your bank</li>
+            </ul>
+            <p className="text-xs text-blue-800">
+              About 2 minutes the first time. Coinbase remembers you for future orders, so it&apos;s much faster after that.
+            </p>
+          </CardContent>
+        </Card>
+
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
             <p className="text-sm text-red-700">{error}</p>
