@@ -196,23 +196,30 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
           </span>
         )}
 
-        {state === 'idle' && (
-          <button
-            type="button"
-            onClick={() => setShowAddressInput(true)}
-            className="text-sm text-roots-gray hover:text-roots-primary underline"
-          >
-            Or enter address
-          </button>
-        )}
+        {/* Manual entry escape hatch — visible in BOTH idle and success
+            states. GPS frequently picks the wrong house in dense
+            neighborhoods; users need a way to correct it without
+            jumping through hoops. */}
+        <button
+          type="button"
+          onClick={() => setShowAddressInput((v) => !v)}
+          className="text-sm text-roots-gray hover:text-roots-primary underline"
+        >
+          {showAddressInput
+            ? 'Hide address entry'
+            : state === 'success'
+              ? 'Wrong address? Enter manually'
+              : 'Or enter address'}
+        </button>
       </div>
 
       {error && (
         <p className="text-sm text-red-600">{error}</p>
       )}
 
-      {/* Manual address input */}
-      {showAddressInput && state !== 'success' && (
+      {/* Manual address input — now available even after a successful GPS
+          fix, so users can override an incorrect reverse-geocode. */}
+      {showAddressInput && (
         <div className="flex gap-2">
           <Input
             type="text"

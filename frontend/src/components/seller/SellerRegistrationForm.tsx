@@ -154,14 +154,25 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privyEmailAddress]);
 
-  // Auto-fill the Pickup location from the reverse-geocoded address when
-  // the user clicks "Get My Location." Only writes if the field is still
-  // empty — never overwrites what the user typed. Buyers paste this
-  // straight into Google Maps / Waze, so a real address (not coords)
-  // matters.
+  // Auto-fill the Pickup location from the reverse-geocoded address.
+  // Buyers paste this into Google Maps / Waze, so we want a real navigable
+  // address there. Two scenarios this needs to handle:
+  //   1. Empty field → first auto-fill (from GPS or manual address search)
+  //   2. Field has a previous auto-filled value → user just did "Wrong
+  //      address? Enter manually" and searched a corrected address — we
+  //      should swap to the new resolved address
+  // Never overwrite a value the user typed by hand. We track the last
+  // value we auto-filled so we can distinguish "auto-fill from before"
+  // from "user typed something specific."
+  const [lastAutoFilledPickup, setLastAutoFilledPickup] = useState<string | null>(null);
   useEffect(() => {
-    if (location?.address && !pickupAddress.trim()) {
-      setPickupAddress(location.address);
+    const newAddress = location?.address;
+    if (!newAddress) return;
+    const currentTrimmed = pickupAddress.trim();
+    const wasAutoFilled = currentTrimmed === lastAutoFilledPickup;
+    if (currentTrimmed === '' || wasAutoFilled) {
+      setPickupAddress(newAddress);
+      setLastAutoFilledPickup(newAddress);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location?.address]);
