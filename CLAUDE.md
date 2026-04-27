@@ -693,6 +693,20 @@ Example:
 - Wallet address mismatch (Privy vs wagmi)
 - Loading state stuck (async hook not resolving)
 
+**The "Creating…" hang on listing creation (or any gasless write) — Apr 27 2026 root cause + fix**
+
+Symptom: user signs Privy → form gets stuck on "Creating…" forever, never errors, never succeeds. Browser console shows repeated `POST https://mainnet.base.org/ 403 (Forbidden)` and/or `POST https://sepolia.base.org/ 403`.
+
+Root cause: TWO bugs stacked.
+
+1. **`useWaitForTransactionReceipt({ hash })` defaults to the FIRST chain in `wagmi.ts` `supportedChains`**, which is `baseSepolia` in our config (`[baseSepolia, base]`). Without an explicit `chainId`, the client polls Sepolia for a mainnet tx hash forever. The fix: every call site must pass `chainId: ACTIVE_CHAIN_ID` from `chainConfig.ts`. All seven sites are now patched (useCreateListing, useDeleteListing, useRegisterSeller, useUpdateListing, useUpdateSeller, useRegisterAmbassador, useAirdropClaim).
+
+2. **Public Base RPCs return 403 to browser-originated POSTs under load.** Not 429 — actual 403 forbidden. mainnet.base.org has been tightening its CORS / browser-origin policy. The viem `fallback()` transport rotates on errors, but if all 4 public RPCs in our chain (mainnet.base.org, base.publicnode.com, base-rpc.publicnode.com, 1rpc.io/base) are simultaneously rate-limited or 403'd, polling fails entirely. **Mitigation:** set `NEXT_PUBLIC_RPC_URL` to a paid RPC (Alchemy, QuickNode, Coinbase Cloud) — that becomes the primary in the fallback chain. Public RPCs are unreliable for production browser traffic.
+
+3. **Don't poll on the client when the relay already waited.** The `/api/relay` route does its own `waitForTransactionReceipt({ hash, timeout: 60_000 })` server-side BEFORE returning the hash. By the time the client gets the hash back, the tx is on-chain and confirmed. Re-polling on the client is wasted RPC requests AND fails when public RPCs return 403. `useCreateListing` now skips client polling for gasless flows entirely; the same pattern should propagate to the other write hooks (Phase 1.4 of the disaster-recovery plan).
+
+This bug class has bitten the codebase repeatedly because there's no enforced single way to talk to the chain. The architectural fix (single enforced read client + ESLint rule banning `createPublicClient({ transport: http() })` outside that module + eliminating wagmi entirely) is in `~/.claude/plans/localroots-auth-disaster-recovery-arc.md` — see "Auth + Disaster-Recovery Architecture Arc" section below for the strategic context.
+
 **Env Var Gotcha:** When setting env vars via CLI, trailing whitespace or newlines cause silent failures. Viem shows "Address is invalid" if there's whitespace.
 
 **Safe way to set Vercel env vars:**
@@ -1427,6 +1441,33 @@ POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
 - **Privy HTML warnings:** Console shows `<div>` inside `<p>` warnings - this is a Privy internal bug, cosmetic only
 - **DNS propagation:** After domain changes, can take up to 48 hours for full propagation
 - **Seller earnings page uses mock data:** FIXED (Feb 2026) - Now uses real data from `useSellerOrders()`
+- **Public Base RPC unreliability:** `mainnet.base.org` returns 403 Forbidden to browser-originated requests under load. Set `NEXT_PUBLIC_RPC_URL` to a paid RPC (Alchemy/QuickNode/Coinbase Cloud) for production reliability. Without it, every chain-read can hang on cold-cache loads. The viem `fallback()` transport in `viemClient.ts` and `wagmi.ts` rotates through public RPCs but degrades when all are rate-limited.
+
+## Auth + Disaster-Recovery Architecture Arc — STRATEGIC PLAN
+
+**Status (Apr 27 2026):** Doug-approved, pre-implementation. Full plan at `~/.claude/plans/localroots-auth-disaster-recovery-arc.md`.
+
+**Strategic premise:** Users' on-chain wallets must remain functional even if every centralized service we depend on disappears tomorrow.
+
+Three phases as one architectural arc:
+
+- **Phase 1 — Eliminate wagmi (5–6 weeks).** Single `useWallet()` hook + single `getReadClient()` + ESLint rule banning direct `createPublicClient` calls. Today's three coexisting chain-access patterns (wagmi, server-side viem, scattered direct viem) collapse to one enforced way. This prevents the recurring "I forgot the fallback" bug class that bit listing creation Apr 27 2026.
+- **Phase 2 — Self-custodial mode (3–4 weeks).** New users get passkey-secured ERC-4337 smart accounts. Privy embedded wallet becomes a *secondary signer*, not custody. If Privy disappears, the passkey signer still works. Existing users grandfathered (their EOA stays). All users prompted to export their Privy wallet seed phrase via `exportWallet()` so they have a portable copy.
+- **Phase 3 — Full disaster-recovery (9–11 weeks).** Storage abstraction over KV → Ceramic streams for user-owned data + encrypted IPFS for PII. IPFS frontend deployment (Fleek + ENS `localroots.eth`). Multi-relayer (3+ community-run). `/access` static page that survives a Privy outage.
+
+**Why this matters:** Privy is currently a single point of failure — embedded wallets use MPC and if Privy disappears with no warning, users CAN'T sign anything. Their on-chain assets are stranded. Phase 2 fixes that structurally. Phase 3 extends the same principle to data and frontend hosting.
+
+**Don't start Phase 1 mid-stride.** It's a 5–6 week focused effort with sequenced sub-phases (1.0 pre-flight → 1.1 abstractions → 1.2 reads → 1.3 gasless path → 1.4 seller writes → 1.5 BUYER FLOW (highest risk, real money) → 1.6 wallet UI → 1.7 signing → 1.8 remaining → 1.9 test wallet → 1.10 wagmi removal → 1.11 thirdweb chain bug fix). Each sub-phase has a mainnet test gate. The plan document has file:line detail for every migration target.
+
+**Strategic open questions Doug must decide before code:**
+1. Smart-account choice (ZeroDev / Safe / Biconomy)
+2. Passkey-only for new users, or always offer email + passkey?
+3. Migrate existing Privy-EOA users to smart accounts, or grandfather?
+4. Storage layer (Ceramic / WeaveDB / OrbitDB)
+5. PII encryption strategy (recipient pubkey / Lit Protocol)
+6. Aggressiveness of "back up your wallet" prompts
+
+See plan document for the full set.
 
 ## Roots Points vs $ROOTS — CRITICAL TERMINOLOGY
 
