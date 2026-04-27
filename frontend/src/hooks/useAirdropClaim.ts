@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { createFreshPublicClient } from '@/lib/viemClient';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import {
   SEEDS_AIRDROP_ADDRESS,
   seedsAirdropAbi,
@@ -73,6 +74,7 @@ export function useAirdropClaim(): AirdropClaim {
     isSuccess: isConfirmed,
   } = useWaitForTransactionReceipt({
     hash: claimTxHash,
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   // Fetch airdrop status from contract

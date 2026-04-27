@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, useSwitchChain } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { ACTIVE_CHAIN as baseSepolia, ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
 import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
@@ -50,16 +50,38 @@ export function useCreateListing() {
     reset: wagmiReset,
   } = useWriteContract();
 
-  // Use whichever hash is available (priority: gasless > direct > wagmi)
-  const hash = gaslessTxHash || directTxHash || wagmiHash;
+  // The relay route already waited for the transaction receipt server-side
+  // before returning the hash to us. Re-polling on the client wastes RPC
+  // requests AND fails when wagmi defaults to the wrong chain (it polled
+  // sepolia.base.org for a mainnet tx — Doug, Apr 27 2026). For gasless,
+  // the hash returning means the tx is already confirmed.
+  //
+  // Track gasless success synchronously when the hash arrives. Use
+  // useWaitForTransactionReceipt only for non-gasless paths (test wallet,
+  // wagmi direct). Pass explicit chainId so it polls the correct network.
+  const [gaslessSuccess, setGaslessSuccess] = useState(false);
+  useEffect(() => {
+    if (gaslessTxHash) {
+      setGaslessSuccess(true);
+    } else {
+      setGaslessSuccess(false);
+    }
+  }, [gaslessTxHash]);
+
+  const nonGaslessHash = directTxHash || wagmiHash;
 
   const {
-    isLoading: isConfirming,
-    isSuccess,
+    isLoading: isConfirmingNonGasless,
+    isSuccess: nonGaslessSuccess,
     error: confirmError,
   } = useWaitForTransactionReceipt({
-    hash,
+    hash: nonGaslessHash,
+    chainId: ACTIVE_CHAIN_ID,
   });
+
+  const hash = gaslessTxHash || nonGaslessHash;
+  const isConfirming = !gaslessTxHash && isConfirmingNonGasless;
+  const isSuccess = gaslessSuccess || nonGaslessSuccess;
 
   const isTestWallet = connector?.id === 'testWallet';
   const isWriting = isGaslessLoading || isDirectWriting || isWagmiWriting;
@@ -67,6 +89,7 @@ export function useCreateListing() {
 
   const reset = () => {
     setGaslessTxHash(null);
+    setGaslessSuccess(false);
     setDirectTxHash(null);
     setDirectError(null);
     setIsDirectWriting(false);

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
-import { ACTIVE_CHAIN as baseSepolia } from '@/lib/chainConfig';
+import { ACTIVE_CHAIN as baseSepolia, ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { isTestWalletAvailable, testWalletWriteContract } from '@/lib/testWalletConnector';
 import { usePrivyGaslessTransaction } from './usePrivyGaslessTransaction';
@@ -59,6 +59,7 @@ export function useUpdateSeller() {
     error: confirmError,
   } = useWaitForTransactionReceipt({
     hash,
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   const isTestWallet = connector?.id === 'testWallet';

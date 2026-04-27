@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useWaitForTransactionReceipt } from 'wagmi';
+import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { AMBASSADOR_REWARDS_ADDRESS, ambassadorAbi } from '@/lib/contracts/ambassador';
 import { useGaslessTransaction } from './useGaslessTransaction';
 import type { Hex } from 'viem';
@@ -26,6 +27,7 @@ export function useRegisterAmbassador() {
     error: confirmError,
   } = useWaitForTransactionReceipt({
     hash: txHash || undefined,
+    chainId: ACTIVE_CHAIN_ID,
   });
 
   const registerAmbassador = async (uplineId: bigint, profileIpfs: string) => {
