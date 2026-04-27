@@ -29,6 +29,7 @@ import { GrowingProfileCard, MonthlyCalendar, TechniqueGuideCard } from '@/compo
 import { MyGardenView } from '@/components/grow/MyGardenView';
 import { useMyGarden } from '@/hooks/useMyGarden';
 import { usePrivy } from '@privy-io/react-auth';
+import { ListFromGardenSheet } from '@/components/seller/ListFromGardenSheet';
 import guidesData from '@/data/technique-guides.json';
 import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
@@ -424,6 +425,10 @@ export default function SellerDashboard() {
   const [deletingListing, setDeletingListing] = useState<SellerListing | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [shareCardData, setShareCardData] = useState<ShareCardData | null>(null);
+  // V1: when user clicks "Add Listing" and they have plants in My Garden,
+  // we show ListFromGardenSheet first as an inventory quick-pick instead
+  // of routing straight to the empty listing form.
+  const [showListFromGardenSheet, setShowListFromGardenSheet] = useState(false);
   const { toast } = useToast();
   const { preferences } = useUserPreferences();
   const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
@@ -550,11 +555,23 @@ export default function SellerDashboard() {
             <h1 className="font-heading text-3xl font-bold">Seller Dashboard</h1>
             <p className="text-roots-gray">Manage your garden store</p>
           </div>
-          <Link href="/sell/listings/new">
-            <Button className="bg-roots-primary hover:bg-roots-primary/90">
+          {/* "Add Listing" — opens ListFromGardenSheet if user has plants
+              in My Garden, otherwise falls through directly to the listing
+              form (cleaner UX for first-time sellers with no inventory). */}
+          {gardenPlants.length > 0 ? (
+            <Button
+              className="bg-roots-primary hover:bg-roots-primary/90"
+              onClick={() => setShowListFromGardenSheet(true)}
+            >
               + Add Listing
             </Button>
-          </Link>
+          ) : (
+            <Link href="/sell/listings/new">
+              <Button className="bg-roots-primary hover:bg-roots-primary/90">
+                + Add Listing
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Profile Card */}
@@ -746,9 +763,20 @@ export default function SellerDashboard() {
                 ) : visibleListings.length === 0 ? (
                   <div className="text-center py-12 text-roots-gray">
                     <p className="mb-4">You haven&apos;t added any listings yet.</p>
-                    <Link href="/sell/listings/new">
-                      <Button className="bg-roots-primary">Add Your First Listing</Button>
-                    </Link>
+                    {/* Same logic as header button: open inventory sheet
+                        when user has My Garden plants, otherwise direct link */}
+                    {gardenPlants.length > 0 ? (
+                      <Button
+                        className="bg-roots-primary"
+                        onClick={() => setShowListFromGardenSheet(true)}
+                      >
+                        Add Your First Listing
+                      </Button>
+                    ) : (
+                      <Link href="/sell/listings/new">
+                        <Button className="bg-roots-primary">Add Your First Listing</Button>
+                      </Link>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1169,6 +1197,15 @@ export default function SellerDashboard() {
       <ShareCardModal
         data={shareCardData}
         onClose={() => setShareCardData(null)}
+      />
+
+      {/* List from My Garden inventory sheet — opens on Add Listing click
+          when user has plants. V1 of the unified seller flow. */}
+      <ListFromGardenSheet
+        isOpen={showListFromGardenSheet}
+        onClose={() => setShowListFromGardenSheet(false)}
+        plants={gardenPlants}
+        existingListings={listings}
       />
     </div>
   );

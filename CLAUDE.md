@@ -1350,25 +1350,30 @@ POST graph.facebook.com/?id={url}&scrape=true&access_token={appId}|{appSecret}
 - **DNS propagation:** After domain changes, can take up to 48 hours for full propagation
 - **Seller earnings page uses mock data:** FIXED (Feb 2026) - Now uses real data from `useSellerOrders()`
 
-## Seeds vs ROOTS Tokens - CRITICAL DISTINCTION
+## Roots Points vs $ROOTS — CRITICAL TERMINOLOGY
 
-**During pre-launch (NOW):** Sellers and ambassadors earn **Seeds**, NOT $ROOTS tokens.
+**REBRAND IN PROGRESS (decided April 2026):** the loyalty currency is now called **Roots Points** (RP) in all user-facing UI, NOT "Seeds." Reason: Matt Hunt and other non-crypto-native testers literally thought "Seeds" meant LocalRoots was mailing seed packets. Full plan in `~/.claude/plans/roots-points-rebrand-and-bootstrap-honesty.md`.
 
-- Seeds are on-chain events tracked in the subgraph
-- Seeds convert to $ROOTS tokens at a fixed ratio when the token launches
-- The UI should say "Seeds" everywhere, NOT "ROOTS" or "$ROOTS"
+**During pre-launch (NOW):** Sellers and ambassadors earn **Roots Points** (the loyalty rewards program), NOT $ROOTS tokens.
 
-**At $ROOTS launch (FUTURE):** Seeds become $ROOTS tokens via airdrop. After launch, participants earn $ROOTS directly.
+- Roots Points are on-chain events tracked in the subgraph (the underlying data structure is still called `Seeds` internally for now — variable names, hook names like `useSeeds`, etc. — that's a separate refactor; user-facing copy is what matters first)
+- Roots Points convert to $ROOTS tokens at a fixed ratio when the token launches (spring 2027)
+- **The UI must say "Roots Points" everywhere, NOT "Seeds" and NOT "ROOTS" or "$ROOTS"** until Phase 2 launches
 
-**Correct terminology:**
-| Context | Pre-Launch (NOW) | Post-Launch |
-|---------|------------------|-------------|
-| What sellers earn | Seeds | $ROOTS |
-| What ambassadors earn | Seeds + cash | $ROOTS |
-| Dashboard label | "Seeds earned" | "$ROOTS earned" |
-| Balance label | "Seeds balance" | "$ROOTS balance" |
+**At $ROOTS launch (Phase 2, spring 2027):** Roots Points become $ROOTS tokens via airdrop. After launch, participants earn $ROOTS directly.
 
-**Terminology fixed (Feb 2026):** Both `/sell/dashboard/page.tsx` and `/sell/earnings/page.tsx` now correctly use "Seeds" terminology.
+**Correct terminology in user-facing copy:**
+
+| Context | Pre-Launch (NOW) | Post-Launch ($ROOTS) |
+|---------|------------------|----------------------|
+| What sellers earn | Roots Points | $ROOTS |
+| What ambassadors earn | Roots Points + cash | $ROOTS |
+| Dashboard label | "Roots Points earned" | "$ROOTS earned" |
+| Balance label | "Roots Points balance" | "$ROOTS balance" |
+
+**Internal code is fine to keep using `Seeds`** in variable/function names (`useSeeds`, `formatSeeds`, etc.) until a dedicated rename refactor — those don't reach users. New code can use either.
+
+**Known leak fixed Apr 26 2026:** `/about/tokenomics` page (linked from Early Adopter Bonus banner's "Learn more") was still rendering "Seeds" in 40+ places. Now uses "Roots Points." If you find another page with user-facing "Seeds" copy, it's a bug — fix on sight.
 
 ## $ROOTS Token Launch — Distribution & Wallet
 

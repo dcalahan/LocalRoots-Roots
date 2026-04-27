@@ -11,7 +11,7 @@ export default function TokenomicsPage() {
       <div className="bg-gradient-to-b from-roots-secondary/10 to-roots-cream">
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Seeds & $ROOTS
+            Roots Points & $ROOTS
           </h1>
           <p className="text-xl text-roots-gray max-w-2xl mx-auto">
             Earn rewards for building your local food network.
@@ -22,16 +22,16 @@ export default function TokenomicsPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-12">
 
-        {/* What Are Seeds */}
+        {/* What Are Roots Points */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">What Are Seeds?</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">What Are Roots Points?</h2>
           <div className="prose prose-lg text-roots-gray">
             <p className="mb-4">
-              Seeds are loyalty rewards you earn for participating in LocalRoots.
+              Roots Points are loyalty rewards you earn for participating in LocalRoots.
             </p>
             <p className="mb-4">
-              Sell produce to a neighbor? You earn Seeds. Buy from a local grower? Seeds.
-              Help someone sign up as a seller? More Seeds.
+              Sell produce to a neighbor? You earn Roots Points. Buy from a local grower? Roots Points.
+              Help someone sign up as a seller? More Roots Points.
             </p>
             <p>
               Think of them like frequent-flyer miles for local food. The people who show up
@@ -66,10 +66,10 @@ export default function TokenomicsPage() {
                 <div className="prose text-roots-gray text-sm">
                   <p className="mb-3">
                     The marketplace is live on Base mainnet. Buy and sell real
-                    local food with real payments — and earn Seeds for every transaction.
+                    local food with real payments — and earn Roots Points for every transaction.
                   </p>
                   <p>
-                    Seeds earned now count toward the $ROOTS airdrop. The earlier
+                    Roots Points earned now count toward the $ROOTS airdrop. The earlier
                     you participate, the more you earn.
                   </p>
                 </div>
@@ -84,17 +84,17 @@ export default function TokenomicsPage() {
                     <span className="text-xl">🚀</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">Launch: Seeds That Count</h3>
+                    <h3 className="text-xl font-bold">Launch: Roots Points That Count</h3>
                     <p className="text-roots-primary font-medium text-sm">Coming soon</p>
                   </div>
                 </div>
                 <div className="prose text-roots-gray text-sm">
                   <p className="mb-3">
                     When we go live on mainnet, everyone starts fresh. That's when
-                    Seeds count for real.
+                    Roots Points count for real.
                   </p>
                   <p>
-                    Your Seeds determine your share of the $ROOTS airdrop. The more
+                    Your Roots Points determine your share of the $ROOTS airdrop. The more
                     you contribute to the network, the bigger your share.
                   </p>
                 </div>
@@ -122,12 +122,12 @@ export default function TokenomicsPage() {
           </div>
         </section>
 
-        {/* How You Earn Seeds */}
+        {/* How You Earn Roots Points */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">How You Earn Seeds</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">How You Earn Roots Points</h2>
           <div className="prose prose-lg text-roots-gray mb-6">
             <p>
-              There are three ways to participate. Each one earns Seeds.
+              There are three ways to participate. Each one earns Roots Points.
             </p>
           </div>
 
@@ -138,11 +138,11 @@ export default function TokenomicsPage() {
                 <div className="text-4xl mb-3">🧑‍🌾</div>
                 <h3 className="text-lg font-bold mb-2">Sell Produce</h3>
                 <div className="text-3xl font-bold text-roots-primary mb-1">500</div>
-                <p className="text-sm text-roots-gray mb-4">Seeds per $1 earned</p>
+                <p className="text-sm text-roots-gray mb-4">Roots Points per $1 earned</p>
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
-                    Sell $20 of tomatoes, earn 10,000 Seeds.
-                    Plus milestones: 10,000 Seeds for your first sale,
+                    Sell $20 of tomatoes, earn 10,000 Roots Points.
+                    Plus milestones: 10,000 Roots Points for your first sale,
                     25,000 at five sales, 50,000 at fifteen.
                   </p>
                 </div>
@@ -155,11 +155,11 @@ export default function TokenomicsPage() {
                 <div className="text-4xl mb-3">🛒</div>
                 <h3 className="text-lg font-bold mb-2">Buy Local</h3>
                 <div className="text-3xl font-bold text-roots-secondary mb-1">50</div>
-                <p className="text-sm text-roots-gray mb-4">Seeds per $1 spent</p>
+                <p className="text-sm text-roots-gray mb-4">Roots Points per $1 spent</p>
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
                     Every purchase supports a neighbor who grows food
-                    and earns you Seeds toward the airdrop.
+                    and earns you Roots Points toward the airdrop.
                   </p>
                 </div>
               </CardContent>
@@ -171,10 +171,10 @@ export default function TokenomicsPage() {
                 <div className="text-4xl mb-3">🌟</div>
                 <h3 className="text-lg font-bold mb-2">Build the Network</h3>
                 <div className="text-3xl font-bold text-roots-primary mb-1">25%</div>
-                <p className="text-sm text-roots-gray mb-4">of each sale as Seeds</p>
+                <p className="text-sm text-roots-gray mb-4">of each sale as Roots Points</p>
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
-                    Recruit a grower and earn Seeds worth 25% of every sale they make for a full year.
+                    Recruit a grower and earn Roots Points worth 25% of every sale they make for a full year.
                     You keep 80% — 20% goes to the ambassador who recruited you.
                   </p>
                 </div>
@@ -302,7 +302,7 @@ export default function TokenomicsPage() {
                     <span className="text-sm font-bold">10%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Distributed to Phase 1 participants based on Seeds earned. This is your reward for being here early.
+                    Distributed to Phase 1 participants based on Roots Points earned. This is your reward for being here early.
                   </p>
                 </div>
               </CardContent>
@@ -323,8 +323,8 @@ export default function TokenomicsPage() {
                 <div className="text-sm text-roots-secondary font-medium">Phase 1 — Now</div>
                 <div className="font-bold text-gray-900">Marketplace Live</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  Buy and sell local food with real payments. Every transaction earns Seeds.
-                  Early adopters earn 2x Seeds for the first 90 days.
+                  Buy and sell local food with real payments. Every transaction earns Roots Points.
+                  Early adopters earn 2x Roots Points for the first 90 days.
                 </p>
               </div>
             </div>
@@ -339,7 +339,7 @@ export default function TokenomicsPage() {
                 <div className="font-bold text-gray-900">Community Growth</div>
                 <p className="text-sm text-roots-gray mt-1">
                   More neighborhoods, more growers, more transactions. Proving the model works
-                  before launching a token. Your Seeds keep accumulating.
+                  before launching a token. Your Roots Points keep accumulating.
                 </p>
               </div>
             </div>
@@ -353,7 +353,7 @@ export default function TokenomicsPage() {
                 <div className="text-sm text-roots-primary font-medium">Phase 2 — Spring 2027</div>
                 <div className="font-bold text-gray-900">$ROOTS Token Launch</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  100M $ROOTS airdropped to Seeds holders based on their share.
+                  100M $ROOTS airdropped to Roots Points holders based on their share.
                   Ambassador commissions switch to automatic on-chain payments.
                   The people who helped build the network get rewarded.
                 </p>
@@ -382,7 +382,7 @@ export default function TokenomicsPage() {
           <div className="space-y-4">
             <Card>
               <CardContent className="pt-6">
-                <h4 className="font-semibold mb-2">Do I need a crypto wallet to earn Seeds?</h4>
+                <h4 className="font-semibold mb-2">Do I need a crypto wallet to earn Roots Points?</h4>
                 <p className="text-sm text-roots-gray">
                   No. When you sign up with your email or phone, we create an account for you
                   behind the scenes. You don't need to know anything about crypto to participate.
@@ -392,20 +392,20 @@ export default function TokenomicsPage() {
 
             <Card>
               <CardContent className="pt-6">
-                <h4 className="font-semibold mb-2">Are Seeds worth money right now?</h4>
+                <h4 className="font-semibold mb-2">Are Roots Points worth money right now?</h4>
                 <p className="text-sm text-roots-gray">
-                  Not directly — yet. Seeds are accumulating on-chain right now, and when
-                  $ROOTS launches (spring 2027), your Seeds determine your share of
-                  the airdrop. The more Seeds you earn now, the more $ROOTS you&apos;ll receive.
+                  Not directly — yet. Roots Points are accumulating on-chain right now, and when
+                  $ROOTS launches (spring 2027), your Roots Points determine your share of
+                  the airdrop. The more Roots Points you earn now, the more $ROOTS you&apos;ll receive.
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="pt-6">
-                <h4 className="font-semibold mb-2">Can I lose my Seeds?</h4>
+                <h4 className="font-semibold mb-2">Can I lose my Roots Points?</h4>
                 <p className="text-sm text-roots-gray">
-                  No. Every Seeds transaction is recorded on the Base blockchain as a permanent event.
+                  No. Every Roots Points transaction is recorded on the Base blockchain as a permanent event.
                   They can't be altered or taken away.
                 </p>
               </CardContent>
@@ -415,8 +415,8 @@ export default function TokenomicsPage() {
               <CardContent className="pt-6">
                 <h4 className="font-semibold mb-2">Is there an early adopter bonus?</h4>
                 <p className="text-sm text-roots-gray">
-                  Yes! Early participants earn bonus Seeds.
-                  The first 90 days earn 2x Seeds, days 91–180 earn 1.5x.
+                  Yes! Early participants earn bonus Roots Points.
+                  The first 90 days earn 2x Roots Points, days 91–180 earn 1.5x.
                   After that, it&apos;s 1x. The people who help build the network early get rewarded the most.
                 </p>
               </CardContent>
@@ -463,8 +463,8 @@ export default function TokenomicsPage() {
                 </Link>
               </div>
               <div className="mt-4">
-                <Link href="/seeds/leaderboard" className="text-sm text-roots-primary hover:underline">
-                  View Seeds Leaderboard →
+                <Link href="/leaderboard" className="text-sm text-roots-primary hover:underline">
+                  View Roots Points Leaderboard →
                 </Link>
               </div>
             </CardContent>
