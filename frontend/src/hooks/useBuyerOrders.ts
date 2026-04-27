@@ -247,7 +247,10 @@ async function fetchOrderIfBuyer(
         imageUrl: listingMeta?.imageUrl || null,
         sellerName: sellerMeta?.name || 'Local Seller',
         unit: listingMeta?.unit || 'unit',
-        sellerPickupAddress: sellerMeta?.address,
+        // sellerPickupAddress intentionally NOT included — used to come from
+        // public IPFS metadata which is a privacy leak. Buyers now fetch
+        // pickup address via signed GET /api/seller/pickup?orderId=N which
+        // only succeeds for confirmed buyers of accepted pickup orders.
       },
     };
   } catch (err) {

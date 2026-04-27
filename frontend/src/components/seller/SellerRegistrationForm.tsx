@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
+import { savePickup } from '@/lib/sellerPickup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,7 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const { login, authenticated, user: privyUser } = usePrivy();
   const { registerSeller, isPending, isSuccess, error, txHash } = useRegisterSeller();
 
@@ -166,25 +168,53 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
 
   // Handle success
   useEffect(() => {
-    if (isSuccess) {
-      toast({
-        title: 'Registration successful!',
-        description: 'You are now a registered seller on Local Roots.',
-      });
-      // Clear ambassador referral from localStorage
-      localStorage.removeItem('ambassadorRef');
+    if (!isSuccess) return;
 
-      // If they came from My Garden via a Sell button, take them straight
-      // to the listing creation flow with the crop pre-filled. Don't show
-      // the generic success card — keep the path continuous.
-      if (listingIntent && listingIntent.cropId) {
-        const params = new URLSearchParams({
-          source: 'garden',
-          crop: listingIntent.cropId,
-          qty: listingIntent.qty,
+    toast({
+      title: 'Registration successful!',
+      description: 'You are now a registered seller on Local Roots.',
+    });
+    // Clear ambassador referral from localStorage
+    localStorage.removeItem('ambassadorRef');
+
+    // Save pickup info to private KV store (NOT public IPFS). This runs in
+    // the background after on-chain registration succeeds. We deliberately
+    // skip this if the user didn't offer pickup or didn't enter an address.
+    // If the signature fails (user cancels), we fail open: registration is
+    // already complete, they can retry the save from /sell/dashboard's
+    // edit profile flow.
+    const trimmedPickup = pickupAddress.trim();
+    const trimmedPhone = phone.trim();
+    if (offersPickup && trimmedPickup) {
+      (async () => {
+        const result = await savePickup({
+          address: trimmedPickup,
+          phone: trimmedPhone || undefined,
+          signMessage: (msg) => signMessageAsync({ message: msg }) as Promise<`0x${string}`>,
         });
-        router.push(`/sell/listings/new?${params.toString()}`);
-      }
+        if (!result.ok) {
+          console.warn('[Registration] Pickup save failed (non-blocking):', result.error);
+          toast({
+            title: 'Pickup info not saved',
+            description: 'Registration completed, but we couldn\'t save your pickup details. Edit your profile from the dashboard to retry.',
+            variant: 'destructive',
+          });
+        } else {
+          console.log('[Registration] Pickup info saved to KV');
+        }
+      })();
+    }
+
+    // If they came from My Garden via a Sell button, take them straight
+    // to the listing creation flow with the crop pre-filled. Don't show
+    // the generic success card — keep the path continuous.
+    if (listingIntent && listingIntent.cropId) {
+      const params = new URLSearchParams({
+        source: 'garden',
+        crop: listingIntent.cropId,
+        qty: listingIntent.qty,
+      });
+      router.push(`/sell/listings/new?${params.toString()}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
@@ -252,20 +282,21 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
         console.log('[Registration] Image uploaded to IPFS:', finalImageUrl);
       }
 
-      // Create metadata JSON
+      // Create PUBLIC storefront metadata. Privacy rule: this blob is uploaded
+      // to IPFS and is publicly readable forever — so it must NEVER contain
+      // exact pickup address or phone. Those are private data sent only to
+      // confirmed buyers via /api/seller/pickup. Email is on a fence: it's
+      // technically reachable info, but only the seller-team-internal email
+      // notification path uses it; no buyer-facing UI surfaces it. Keeping
+      // it here for now matches existing behavior — flagged as a smaller
+      // follow-up if Doug wants email moved server-side too.
       const metadata: Record<string, any> = {
         name,
         description,
         email,
-        phone,
         imageUrl: finalImageUrl,
         createdAt: new Date().toISOString(),
       };
-
-      // Include pickup address if offering pickup
-      if (offersPickup && pickupAddress.trim()) {
-        metadata.address = pickupAddress.trim();
-      }
 
       // Include ambassador referral if present
       if (ambassadorId) {
@@ -282,8 +313,14 @@ export function SellerRegistrationForm({ ambassadorId }: SellerRegistrationFormP
       const storefrontIpfs = `ipfs://${metadataResult.ipfsHash}`;
       console.log('[Registration] Metadata uploaded to IPFS:', storefrontIpfs);
 
-      // Use a default geohash if location not set
-      const geohash = location?.geohash || '9q8yyk8y'; // Default to SF area
+      // Privacy: truncate the on-chain geohash to 5 characters (~5km cell).
+      // The contract field is bytes8, but only the first 5 chars carry
+      // meaningful information for proximity matching (matches the
+      // Marketplace.sellersByGeohash5 index precision). Trailing nulls are
+      // already padded by geohashToBytes8. This stops exact-location leak
+      // through public chain reads while keeping distance ranking intact.
+      const fullGeohash = location?.geohash || '9q8yyk8y'; // Default to SF area
+      const geohash = fullGeohash.slice(0, 5);
 
       toast({
         title: 'Registering...',
