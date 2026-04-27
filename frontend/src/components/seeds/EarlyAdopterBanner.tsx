@@ -25,11 +25,11 @@ export function EarlyAdopterBanner({ showLink = true, className = '', isPhase2 =
   return (
     <div className={`bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 px-4 ${className}`}>
       <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-sm md:text-base flex-wrap">
-        <span className="text-xl">🔥</span>
-        <span className="font-semibold">Early Adopter Bonus:</span>
+        <span className="text-xl">🌱</span>
+        <span className="font-semibold">We just went live!</span>
         <span>
-          Earn <strong>{info.multiplierDisplay} {PHASE1_LABEL}</strong> for the next{' '}
-          <strong>{info.daysRemaining} days</strong>!
+          Earn <strong>{info.multiplierDisplay} {PHASE1_LABEL}</strong> for{' '}
+          <strong>{info.daysRemaining} more days</strong> as an early adopter.
         </span>
         {showLink && (
           <Link href="/about/tokenomics" className="underline hover:no-underline ml-2">

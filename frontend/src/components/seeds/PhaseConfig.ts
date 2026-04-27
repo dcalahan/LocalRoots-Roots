@@ -1,7 +1,11 @@
 // Phase configuration constants
 
-// Phase 1 launch date (November 1, 2026)
-export const PHASE1_LAUNCH = new Date('2026-11-01T00:00:00Z');
+// Phase 1 launch date — actual Base mainnet deployment (April 25, 2026).
+// Was previously hardcoded to Nov 1 2026 (a planning placeholder). Now that
+// the marketplace is live, the banner needs to reflect the real launch so
+// the early-adopter window math is honest: 2x for first 90 days, 1.5x for
+// next 90, then standard 1x.
+export const PHASE1_LAUNCH = new Date('2026-04-25T00:00:00Z');
 export const DAY_90 = new Date(PHASE1_LAUNCH.getTime() + 90 * 24 * 60 * 60 * 1000);
 export const DAY_180 = new Date(PHASE1_LAUNCH.getTime() + 180 * 24 * 60 * 60 * 1000);
 

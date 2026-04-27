@@ -10,7 +10,6 @@ import { useSellerOrders, OrderStatus, useAcceptOrder, useMarkReadyForPickup, us
 import { useSellerProfile } from '@/hooks/useSellerProfile';
 import { ImageUploader } from '@/components/seller/ImageUploader';
 import { EditListingModal } from '@/components/seller/EditListingModal';
-import { EditSellerProfileModal } from '@/components/seller/EditSellerProfileModal';
 import { useDeleteListing } from '@/hooks/useDeleteListing';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/contexts/UserPreferencesContext';
@@ -423,7 +422,6 @@ export default function SellerDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('orders');
   const [editingListing, setEditingListing] = useState<SellerListing | null>(null);
   const [deletingListing, setDeletingListing] = useState<SellerListing | null>(null);
-  const [editingProfile, setEditingProfile] = useState(false);
   const [shareCardData, setShareCardData] = useState<ShareCardData | null>(null);
   // V1: when user clicks "Add Listing" and they have plants in My Garden,
   // we show ListFromGardenSheet first as an inventory quick-pick instead
@@ -432,7 +430,7 @@ export default function SellerDashboard() {
   const { toast } = useToast();
   const { preferences } = useUserPreferences();
   const { isSeller, isLoading: isCheckingSeller } = useSellerStatus();
-  const { profile, isLoading: isLoadingProfile, refetch: refetchProfile } = useSellerProfile();
+  const { profile, isLoading: isLoadingProfile } = useSellerProfile();
   const { listings, isLoading: isLoadingListings, refetch: refetchListings } = useSellerListings();
   const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSellerOrders();
   const { deleteListing, isPending: isDeleting, isSuccess: deleteSuccess, error: deleteError, reset: resetDelete } = useDeleteListing();
@@ -543,6 +541,15 @@ export default function SellerDashboard() {
   // Calculate completed sales for tier
   const completedSales = historyOrders.filter(o => o.status === OrderStatus.Completed).length;
 
+  // Soft setup-gating: seller profile must have a name + description and at
+  // least one fulfillment method (pickup or delivery) before they can list.
+  // Doug's principle: don't put someone on a sell flow that's half-broken.
+  const isReadyToSell = !!(
+    profile?.metadata?.name &&
+    profile?.metadata?.description &&
+    (profile?.offersPickup || profile?.offersDelivery)
+  );
+
   return (
     <div className="min-h-screen bg-roots-cream">
       {/* Early Adopter Banner - hidden in Phase 2 */}
@@ -557,8 +564,17 @@ export default function SellerDashboard() {
           </div>
           {/* "Add Listing" — opens ListFromGardenSheet if user has plants
               in My Garden, otherwise falls through directly to the listing
-              form (cleaner UX for first-time sellers with no inventory). */}
-          {gardenPlants.length > 0 ? (
+              form. Disabled until profile setup is complete (banner below
+              tells the user what's missing). */}
+          {!isReadyToSell ? (
+            <Button
+              className="bg-roots-primary hover:bg-roots-primary/90"
+              disabled
+              title="Finish your seller profile to start listing"
+            >
+              + Add Listing
+            </Button>
+          ) : gardenPlants.length > 0 ? (
             <Button
               className="bg-roots-primary hover:bg-roots-primary/90"
               onClick={() => setShowListFromGardenSheet(true)}
@@ -573,6 +589,42 @@ export default function SellerDashboard() {
             </Link>
           )}
         </div>
+
+        {/* Setup banner — shown when seller profile is incomplete. Doug's
+            principle: a seller shouldn't get past the dashboard onto a
+            half-broken sell flow. Soft gate (not redirect) so the user
+            can still SEE their dashboard and orders, just can't list
+            until the basics are in place. */}
+        {!isReadyToSell && !isLoadingProfile && (
+          <div className="mb-6 rounded-2xl border-2 border-roots-primary/40 bg-roots-primary/5 p-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="flex-1">
+                <h3 className="font-heading text-lg font-bold text-roots-primary mb-1">
+                  Finish setting up your storefront
+                </h3>
+                <p className="text-sm text-gray-700">
+                  Before you can list produce, complete these:
+                </p>
+                <ul className="mt-2 text-sm text-gray-700 space-y-1">
+                  {!profile?.metadata?.name && (
+                    <li>• Storefront name (set in your Gardener profile)</li>
+                  )}
+                  {!profile?.metadata?.description && (
+                    <li>• A short bio so buyers know who you are</li>
+                  )}
+                  {!profile?.offersPickup && !profile?.offersDelivery && (
+                    <li>• Choose pickup, delivery, or both</li>
+                  )}
+                </ul>
+              </div>
+              <Link href="/profile?section=seller">
+                <Button className="bg-roots-primary hover:bg-roots-primary/90 shrink-0">
+                  Finish setup →
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Profile Card */}
         <Card className="mb-8">
@@ -620,26 +672,16 @@ export default function SellerDashboard() {
                 </div>
               </div>
 
-              {/* Edit Button */}
-              <Button
-                variant="outline"
-                onClick={() => setEditingProfile(true)}
-                disabled={isLoadingProfile || !profile}
-              >
-                Edit Profile
-              </Button>
+              {/* Edit Profile — links to the unified /profile page where all
+                  identity, gardener, seller, ambassador, and buyer info lives. */}
+              <Link href="/profile?section=seller">
+                <Button variant="outline">
+                  Edit Profile
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
-
-        {/* Edit Profile Modal */}
-        {editingProfile && profile && (
-          <EditSellerProfileModal
-            profile={profile}
-            onClose={() => setEditingProfile(false)}
-            onSuccess={refetchProfile}
-          />
-        )}
 
         {/* Seller Tier Progress Card */}
         <SellerTierCard completedSales={completedSales} className="mb-8" />

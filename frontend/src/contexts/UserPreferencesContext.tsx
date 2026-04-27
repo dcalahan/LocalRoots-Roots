@@ -14,7 +14,7 @@ interface UserPreferences {
   } | null;
   lastVisitedPage: string | null;
   distanceUnit: DistanceUnit;
-  searchRadiusKm: number; // Buyer's search radius in km (default 10km / ~6 miles)
+  searchRadiusKm: number; // Buyer's search radius in km
 }
 
 interface UserPreferencesContextType {
@@ -29,8 +29,14 @@ interface UserPreferencesContextType {
   clearPreferences: () => void;
 }
 
-// Default search radius matches the seller default (10km / ~6 miles)
-const DEFAULT_SEARCH_RADIUS_KM = 10;
+// Pre-launch default: "Anywhere". Until seller density grows, buyers
+// shouldn't be greeted with a zero-result page just because there's no
+// seller within 6 miles. We surface every listing in the country and let
+// the buyer narrow it down once there's something to narrow.
+// 25,000 km is effectively unbounded for any single country.
+export const DEFAULT_SEARCH_RADIUS_KM = 25000;
+// Threshold at which we render "Anywhere" instead of a numeric distance.
+export const ANYWHERE_RADIUS_THRESHOLD_KM = 5000;
 
 const defaultPreferences: UserPreferences = {
   primaryRole: null,
@@ -66,6 +72,14 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         }
         // Ensure searchRadiusKm has a valid value (migration for old preferences)
         if (!parsed.searchRadiusKm || typeof parsed.searchRadiusKm !== 'number') {
+          parsed.searchRadiusKm = DEFAULT_SEARCH_RADIUS_KM;
+        }
+        // One-time bump: users who still have the legacy 10km default
+        // (the old DEFAULT_SEARCH_RADIUS_KM) probably never chose it
+        // explicitly — they were just stuck with the seed value. During
+        // pre-launch with sparse sellers, "no listings within 6 miles"
+        // is a worse UX than "see everything." Bump them to Anywhere.
+        if (parsed.searchRadiusKm === 10) {
           parsed.searchRadiusKm = DEFAULT_SEARCH_RADIUS_KM;
         }
         setPreferences(parsed);
