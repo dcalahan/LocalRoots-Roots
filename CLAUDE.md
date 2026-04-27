@@ -35,6 +35,46 @@ LocalRoots is **infrastructure, not an operator.** The decentralized architectur
 
 **Reference:** Section 6 of `/terms` page contains the full zero-liability clause. Update there if the principle expands.
 
+## Tokenomics: Proposed, Not Final — STRATEGIC PRINCIPLE
+
+**Doug's framing (Apr 27 2026):** "Maybe make the tokenomics a proposed or probable tokenomics? The treasury feels and reads large to me."
+
+The allocation chart on `/about/tokenomics` (40% community treasury, 25% ambassadors, 15% founders, 10% liquidity, 10% airdrop) is **PROPOSED, not final.** Until contracts deploy at $ROOTS launch, every percentage in that chart should be treated as a working draft and labeled as such in user-facing copy.
+
+**Rules:**
+- Any time the allocation chart is rendered, it must include a "Proposed Allocation (Subject to Change)" header or equivalent qualifier. Never present allocations as locked in.
+- The 40% treasury figure is under active review — Doug feels it reads as too large a slice. Proposals to reduce the treasury and reallocate (likely to ambassadors and/or airdrop) should be evaluated as ambassador prominence increases.
+- Pre-launch, never publish a final number anywhere (page, marketing email, Slack post) without flagging it as proposed.
+- Specific dates ("spring 2027 launch", etc.) should not appear in user-facing copy. The marketplace is live; the token launch is "later" — that's all.
+
+**Revisit when:** marketplace has 100+ active sellers OR Common Area outreach moves from cold to warm at scale. By then we'll have real signal on what proportion of value goes where, and Doug will lock in numbers.
+
+**See also:** `feedback_no_founder_allocation_copy.md` memory says "never highlight founder allocation in public copy." That memory is in tension with Doug's Apr 27 instruction to keep the allocations on the tokenomics page so ambassadors can see them. Resolution: the chart stays for now (ambassadors need it for their own pitch), but the "Founding Team" line is the most regulatory-sensitive — re-evaluate before any major outreach push.
+
+## Ambassadors Are Critical Infrastructure — STRATEGIC PRINCIPLE
+
+**Doug's framing (Apr 27 2026):** "Ambassadors need to be highlighted much more as we onboard them. I think we undersell how important they are throughout the application as well as how much they can make. Ambassadors are critical for success."
+
+LocalRoots's growth model lives or dies on ambassadors. They are not a side feature — they are the distribution layer. Every gardener and every buyer in a new region most likely arrived through an ambassador. The platform's economics (25% of every sale flows up the chain for a year) is generous on purpose, because ambassadors do the work the platform can't do at scale: actually meeting humans in their actual neighborhoods.
+
+**Rules for every UI/copy/marketing decision:**
+- **Lead with ambassadors in growth-side copy.** When explaining "how does this network grow," the answer is ambassadors, not Common Area, not SEO, not paid acquisition.
+- **Surface ambassador earning potential prominently.** Today the app underplays the math. Sellers see Roots Points multipliers; ambassadors should see equally prominent surfacing of "your potential earnings" — both cash commission today and Roots Points share at token launch.
+- **Ambassador prominence in the seller flow.** When a seller sees who recruited them on `/sell/register`, that's good — but the connection should persist (e.g. on the seller dashboard: "Your ambassador: [name] — message them with questions"). Right now the recruiter relationship goes invisible after registration.
+- **Public ambassador showcasing.** Top ambassadors deserve their own visibility, not just an internal leaderboard. Consider a public `/ambassadors` page showing active ambassadors by region. (Privacy-respecting — opt-in display name + region only.)
+- **The Chief Ambassador tier** (Matt Hunt + future) needs special UI treatment. Their recruits, their region, their share of GMV are all on-chain — surface them.
+- **Compensation visibility.** A registered ambassador's dashboard should answer "what would I make if I recruit X sellers" with concrete numbers, not vague language.
+- **Ambassador-driven UX in the buyer flow too.** When a buyer transacts with a seller, somewhere in the flow it should be discoverable that "this seller was recruited by [ambassador name]" — gives ambassadors their flowers and gives buyers a hook to say "huh, I should be an ambassador too."
+
+**Anti-patterns to avoid:**
+- "Become an Ambassador" buried in a footer link or hidden behind dropdown menus
+- Generic "earn rewards" copy that treats ambassadors as a tier of buyer/seller — they're a different role with a different value prop
+- Calling them "referrers" or "marketers" — they're community organizers; copy should reflect that
+
+**The big picture:** Pre-launch, ambassadors are taking risk on an unproven platform for cash now and Roots Points later. We owe them the spotlight. Post-launch, ambassadors are the reason new regions onboard. They never stop mattering.
+
+**Track in:** `project_ambassador_prominence_push.md` (next session — full UX/copy plan for elevating ambassador prominence across the app).
+
 ## Session Startup - DO THIS FIRST
 
 **Start a Background Slack Listener** at the beginning of every session.
@@ -276,6 +316,44 @@ The seller's blank profile state ("Your Garden / Seedling") happens when on-chai
 - **Custom varieties:** when a user has a Mojito Mint plant (custom variety of mint), the picker should show the photo from the parent crop (mint) but display the variety name. Already supported by `gardenStatus.getCropDisplayName(cropId, customVarietyName)`.
 - **Seeds → Roots Points rebrand:** the rebrand is mostly complete. KNOWN LEAK (Doug, Apr 26 2026): the `/leaderboard` page (linked from "Early Adopter Bonus → Learn more") still uses old "Seeds" terminology. Track in a follow-up commit alongside V1.
 - **Visual delta tolerance:** during V1, AddPlantsModal still looks plain. That's fine — V2 fixes it. Don't ship V1 with a half-refactored picker.
+
+## Unified Profile (`/profile`)
+
+**Shipped Apr 27 2026.** One page owns everything users edit about themselves. Replaces the old per-feature modal pattern (EditSellerProfileModal, PaymentPreferencesModal) where profile editing was scattered across surfaces.
+
+**Sections:**
+
+| Section | Source of truth | Read-only display? |
+|---|---|---|
+| Identity | Privy (email, phone, wallet) | Yes — login methods managed via wallet menu |
+| Gardener | KV `garden:profile:{userId}` (via `usePublicGardenProfile`) | No — embeds existing `<PublicGardenSettings />` |
+| Seller | On-chain seller record + IPFS metadata + KV `seller:pickup:{owner}` | No — pickup/delivery toggles, radius, private pickup address |
+| Ambassador | IPFS via `ambassador.profileIpfs` | No — Venmo/PayPal/Zelle prefs (TEMPORARY pre-$ROOTS) |
+| Buyer | n/a | Placeholder — saved delivery addresses coming soon |
+
+**Single-name principle:** Storefront name, photo, and bio are NOT editable in the Seller section — they're INHERITED from the gardener profile and shown read-only. One name across the whole app. Doug's call (Apr 27 2026): "make them the same."
+
+**Setup gating on `/sell/dashboard`:** A seller profile counts as ready-to-sell when (1) gardener-derived name is non-empty, (2) gardener-derived bio is non-empty, (3) at least one of `offersPickup` or `offersDelivery` is true. If incomplete, the dashboard renders a banner listing what's missing and disables the Add Listing button. Soft gate (not redirect) — user can still see their orders, just can't list.
+
+**Discoverability:** `UnifiedWalletButton` in the header includes a "Profile" link when the user is signed in. Don't bury this — it's the entry point to all profile editing.
+
+**Routing convention:** `?section=identity|gardener|seller|ambassador|buyer` scrolls to the named section on load and highlights it. Use this for deep links from elsewhere (e.g. seller dashboard's "Edit Profile" → `/profile?section=seller`).
+
+**Files:**
+- `frontend/src/app/profile/page.tsx` — the page itself, sectioned client component, Suspense-wrapped for `useSearchParams`
+- `frontend/src/components/grow/PublicGardenSettings.tsx` — embedded as the Gardener section
+- `frontend/src/hooks/usePublicGardenProfile.ts` + `useSellerProfile.ts` + `useAmbassadorProfile.ts` — read hooks
+- `frontend/src/hooks/useUpdateSeller.ts` + `useUpdateAmbassadorProfile.ts` — write hooks (gasless via Privy)
+- `frontend/src/lib/sellerPickup.ts` — signature-gated KV save/load for private pickup info
+
+**Deprecated (do not link to):**
+- `EditSellerProfileModal` — kept in tree for now in case of stragglers, but no UI surfaces it. Replace any new use with a link to `/profile?section=seller`.
+- `PaymentPreferencesModal` — same. `PaymentStatusCard` now links to `/profile?section=ambassador`.
+
+**Known gaps:**
+- Buyer section is a placeholder. Saved delivery addresses + pickup history when a real flow exists.
+- No way yet to edit Privy login methods from `/profile` — that lives in the Privy modal menu. Acceptable for v1.
+- The seller "save" flow uploads metadata to IPFS using gardener fields. If the gardener profile changes, the seller storefront is NOT auto-resynced — the user has to come back to `/profile` and re-save. Future improvement: a "Sync from Gardener" affordance, or a hook that re-uploads when the gardener saves.
 
 ## Orders Architecture
 
