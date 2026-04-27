@@ -54,6 +54,24 @@ function SellerRegistrationContent() {
     }
   }, [refParam]);
 
+  // Auto-clear stale ambassador refs that don't exist (or aren't active) on the
+  // current chain. This prevents a bug where a testnet ambassadorRef survives
+  // in localStorage after the user moves to mainnet — the form would otherwise
+  // submit ambassadorId=1 which reverts because that ambassador never registered
+  // on mainnet. Run only after the lookup finishes so we don't clear during the
+  // brief loading window.
+  useEffect(() => {
+    if (!ambassadorId) return;
+    if (isLoadingAmbassador) return;
+    if (referringAmbassador && referringAmbassador.active) return;
+
+    console.warn('[SellerRegister] Clearing stale ambassadorRef — not found or inactive on this chain:', ambassadorId.toString());
+    setAmbassadorId(null);
+    try {
+      localStorage.removeItem('ambassadorRef');
+    } catch { /* noop */ }
+  }, [ambassadorId, isLoadingAmbassador, referringAmbassador]);
+
   // Redirect if already a seller
   useEffect(() => {
     if (!isLoading && isSeller) {
