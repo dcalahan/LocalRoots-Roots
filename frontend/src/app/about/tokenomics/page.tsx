@@ -133,11 +133,11 @@ export default function TokenomicsPage() {
               <CardContent className="pt-6 text-center">
                 <div className="text-4xl mb-3">🛒</div>
                 <h3 className="text-lg font-bold mb-2">Buy Local</h3>
-                <div className="text-3xl font-bold text-roots-secondary mb-1">10</div>
+                <div className="text-3xl font-bold text-roots-secondary mb-1">50</div>
                 <p className="text-sm text-roots-gray mb-4">Roots Points per $1 spent</p>
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
-                    Sellers earn 50× what buyers earn — they&apos;re doing
+                    Sellers earn 10× what buyers earn — they&apos;re doing
                     the real work of growing your food. Every purchase
                     still earns you Roots Points and supports a neighbor.
                   </p>

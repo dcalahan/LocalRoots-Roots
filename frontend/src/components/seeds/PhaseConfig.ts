@@ -67,27 +67,24 @@ export function formatRewardAmount(amount: bigint | string | number, isPhase2: b
 
 // Seeds rates
 //
+// 10:1 seller:buyer ratio (500 seller / 50 buyer). Sellers do meaningfully
+// more work — grow, photograph, list, package, deliver. Buyers consume.
+// The 10× differential is enough to honor the value chain without making
+// buyer rewards feel like a nothing-burger. Doug-evaluated and re-approved
+// Apr 28 2026 after considering 50:1 (too punishing for buyers) and 20:1
+// (also too thin).
+//
 // IMPORTANT: these are the FRONTEND-DISPLAYED rates and the AIRDROP-APPLIED
-// rates. The deployed mainnet contract emits SeedsEarned events at an
-// older buyer rate (50/$ — see LocalRootsMarketplace.sol line 404).
-// The merkle-generation script at airdrop snapshot time is the
-// authoritative converter from RP → $ROOTS and applies these displayed
-// rates instead. This means the on-chain event count is a SIGNAL, not the
-// final attribution. Don't change these without coordinating the
+// rates. The deployed mainnet contract emits SeedsEarned events using
+// the same numerical rates (LocalRootsMarketplace.sol line 404). The
+// merkle-generation script at airdrop snapshot is still the authoritative
+// converter from RP → $ROOTS — it applies wash-trading filters, test-
+// address annotations, etc. Don't change these without coordinating the
 // merkle-generation logic.
 //
-// Reasoning behind 10:500 (1:50 buyer:seller ratio):
-//   - Sellers grow food, photograph, list, package, deliver. Real work.
-//   - Buyers consume. Light contribution per dollar.
-//   - 1:50 ratio honors the value chain. 1% rebate band matches consumer
-//     loyalty industry norms (Starbucks Stars, Sephora, Amex are all 1-3%).
-//   - $5 buyer purchase = 50 base RP / 100 RP with 2× early-adopter
-//     multiplier — round, satisfying, not punishing.
-//
 // Full memo: ~/.claude/plans/localroots-buyer-rate-and-self-purchase.md
-// (Doug-approved Apr 28 2026.)
 export const SEEDS_PER_DOLLAR_SELLER = 500;
-export const SEEDS_PER_DOLLAR_BUYER = 10;
+export const SEEDS_PER_DOLLAR_BUYER = 50;
 export const AMBASSADOR_COMMISSION_PERCENT = 25;
 export const AMBASSADOR_RECRUITMENT_BONUS = 2500;
 

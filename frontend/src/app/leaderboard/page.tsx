@@ -237,7 +237,7 @@ export default function LeaderboardPage() {
             <div className="text-center">
               <div className="text-3xl mb-2">🛒</div>
               <h3 className="font-medium mb-1">Buy Local</h3>
-              <p className="text-sm text-gray-600">10 Roots Points per $1 spent on purchases</p>
+              <p className="text-sm text-gray-600">50 Roots Points per $1 spent on purchases</p>
             </div>
             <div className="text-center">
               <div className="text-3xl mb-2">🌟</div>
