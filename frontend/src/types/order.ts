@@ -43,7 +43,9 @@ export interface OrderWithMetadata extends Order {
     imageUrl: string | null;
     sellerName: string;
     unit: string;
-    sellerPickupAddress?: string; // Address for pickup orders
+    // sellerPickupAddress removed: pickup address now lives in private KV,
+    // fetched via signed GET /api/seller/pickup?orderId=N. See SellerPickup
+    // helpers in lib/sellerPickup.ts.
   };
 }
 

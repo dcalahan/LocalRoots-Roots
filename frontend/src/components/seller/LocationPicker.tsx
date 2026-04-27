@@ -257,8 +257,10 @@ export function LocationPicker({ onLocationSelect, initialGeohash }: LocationPic
       )}
 
       <p className="text-xs text-gray-500">
-        Your exact address only goes to buyers AFTER they place an order. Public listings
-        only show approximate location (neighborhood level) for privacy.
+        <strong className="text-roots-secondary">Privacy:</strong> Public listings only
+        show your neighborhood (~5km area) — your exact pickup address is never visible
+        to potential buyers, only to confirmed buyers AFTER they place a pickup order
+        AND you accept it.
       </p>
     </div>
   );

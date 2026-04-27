@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,9 @@ import { PriceSummary } from '@/components/ui/PriceDisplay';
 import { useOrderDetail } from '@/hooks/useBuyerOrders';
 import { useCompleteOrder, useRaiseDispute } from '@/hooks/useOrderActions';
 import { OrderStatus, OrderStatusLabels, canRaiseDispute, getDisputeTimeRemaining, DISPUTE_WINDOW_SECONDS } from '@/types/order';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { getIpfsUrl } from '@/lib/pinata';
+import { fetchPickupForOrder } from '@/lib/sellerPickup';
 
 // Helper to convert image reference to displayable URL
 function resolveImageUrl(imageRef: string | null | undefined): string | null {
@@ -49,9 +50,33 @@ export default function OrderDetailPage() {
   const orderId = params.id as string;
 
   const { isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const { order, isLoading, error } = useOrderDetail(orderId);
   const { completeOrder, isCompleting, isSuccess: completeSuccess } = useCompleteOrder();
   const { raiseDispute, isDisputing, isSuccess: disputeSuccess } = useRaiseDispute();
+
+  // Pickup-info reveal state. Server only releases the seller's exact
+  // address after the buyer signs a per-order message AND the order is
+  // accepted/in-progress. Triggered by user click — don't auto-fetch on
+  // mount because each fetch needs a fresh wallet signature.
+  const [pickup, setPickup] = useState<{ address: string; phone?: string } | null>(null);
+  const [pickupError, setPickupError] = useState<string | null>(null);
+  const [pickupLoading, setPickupLoading] = useState(false);
+
+  const handleRevealPickup = async () => {
+    setPickupLoading(true);
+    setPickupError(null);
+    const result = await fetchPickupForOrder({
+      orderId,
+      signMessage: (msg) => signMessageAsync({ message: msg }) as Promise<`0x${string}`>,
+    });
+    setPickupLoading(false);
+    if (result.ok) {
+      setPickup({ address: result.address, phone: result.phone });
+    } else {
+      setPickupError(result.error);
+    }
+  };
 
   // Refresh page when actions complete
   useEffect(() => {
@@ -202,16 +227,66 @@ export default function OrderDetailPage() {
               <span className="text-roots-gray">Fulfillment:</span>{' '}
               <span className="font-medium">{order.isDelivery ? 'Delivery' : 'Pickup'}</span>
             </p>
-            {!order.isDelivery && order.metadata.sellerPickupAddress && (
-              <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-blue-800">Pickup Location:</p>
-                <p className="text-sm text-blue-700">{order.metadata.sellerPickupAddress}</p>
+            {!order.isDelivery && (
+              <div className="mt-3">
+                {pickup ? (
+                  // Address revealed — show + Maps/Waze deep links so buyer
+                  // can navigate without retyping
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 mb-1">Pickup Location:</p>
+                    <p className="text-sm text-blue-700 mb-2">{pickup.address}</p>
+                    {pickup.phone && (
+                      <p className="text-xs text-blue-700 mb-2">
+                        Seller phone: <a href={`tel:${pickup.phone}`} className="underline">{pickup.phone}</a>
+                      </p>
+                    )}
+                    <div className="flex gap-2 flex-wrap">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pickup.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs px-3 py-1.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                      >
+                        Open in Google Maps
+                      </a>
+                      <a
+                        href={`https://waze.com/ul?q=${encodeURIComponent(pickup.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs px-3 py-1.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                      >
+                        Open in Waze
+                      </a>
+                    </div>
+                  </div>
+                ) : order.status >= OrderStatus.Accepted &&
+                    order.status !== OrderStatus.Cancelled &&
+                    order.status !== OrderStatus.Refunded ? (
+                  // Order accepted by seller — buyer can reveal address now
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 mb-1">Pickup Location</p>
+                    <p className="text-xs text-blue-700 mb-2">
+                      Sign with your wallet to reveal the seller&apos;s address — only sent to confirmed buyers like you.
+                    </p>
+                    <Button
+                      onClick={handleRevealPickup}
+                      disabled={pickupLoading}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {pickupLoading ? 'Verifying...' : 'Show pickup address'}
+                    </Button>
+                    {pickupError && (
+                      <p className="text-xs text-red-600 mt-2">{pickupError}</p>
+                    )}
+                  </div>
+                ) : (
+                  // Pending — seller hasn't accepted yet
+                  <p className="text-xs text-roots-gray mt-1">
+                    Pickup details unlock once the seller accepts your order.
+                  </p>
+                )}
               </div>
-            )}
-            {!order.isDelivery && !order.metadata.sellerPickupAddress && (
-              <p className="text-xs text-roots-gray mt-1">
-                Contact the seller to coordinate pickup.
-              </p>
             )}
           </div>
 
