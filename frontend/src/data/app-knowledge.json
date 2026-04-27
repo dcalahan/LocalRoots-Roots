@@ -355,7 +355,7 @@
   "rootsPoints": {
     "_label": "Roots Points (RP) — LocalRoots' loyalty rewards program. Think Starbucks Stars or airline miles. Pre-launch this is called Roots Points; old code/docs may still say 'Seeds' — same thing.",
     "sellers": "500 Roots Points per $1 earned + milestone bonuses (10,000 RP for first sale, 25,000 at 5 sales, 50,000 at 15 sales)",
-    "buyers": "10 Roots Points per $1 spent (sellers earn 50× more — they're doing the real work of growing the food)",
+    "buyers": "50 Roots Points per $1 spent (sellers earn 10× more — they're doing the real work of growing the food)",
     "ambassadors": "25% of recruited sellers' Roots Points",
     "earlyAdopter": "2x Roots Points for first 90 days, 1.5x for days 91-180",
     "conversion": "Roots Points convert to $ROOTS tokens when the token launches in 2027",

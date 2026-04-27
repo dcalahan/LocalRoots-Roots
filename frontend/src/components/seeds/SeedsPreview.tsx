@@ -79,12 +79,13 @@ export function SeedsPreview({ usdAmount, isSeller = false, showBreakdown = fals
 /**
  * SeedsPreview helper note for callers:
  * - Sellers earn at SEEDS_PER_DOLLAR_SELLER (currently 500 RP/$).
- * - Buyers earn at SEEDS_PER_DOLLAR_BUYER (currently 10 RP/$).
- * - 50:1 ratio reflects the value chain — sellers grow food, buyers consume.
+ * - Buyers earn at SEEDS_PER_DOLLAR_BUYER (currently 50 RP/$).
+ * - 10:1 seller:buyer ratio reflects the value chain — sellers grow food
+ *   (real work), buyers consume (light contribution).
  * - The displayed rate is what the airdrop merkle script applies at
- *   snapshot. The on-chain SeedsEarned event may emit at a different
- *   numerical rate (the deployed mainnet contract is hardcoded at the
- *   pre-Apr-28 buyer rate of 50/$); the merkle script reconciles.
+ *   snapshot. The on-chain SeedsEarned event matches today; the merkle
+ *   script still applies wash-trading filters and test-address
+ *   annotations on top.
  * - See ~/.claude/plans/localroots-buyer-rate-and-self-purchase.md
  *   for the full reasoning.
  */
