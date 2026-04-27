@@ -8,7 +8,7 @@ import { LocationSearch } from '@/components/buyer/LocationSearch';
 import { ListingsGrid } from '@/components/buyer/ListingsGrid';
 import { FundsAvailable } from '@/components/FundsAvailable';
 import { useAllListings } from '@/hooks/useListings';
-import { useUserPreferences } from '@/contexts/UserPreferencesContext';
+import { useUserPreferences, ANYWHERE_RADIUS_THRESHOLD_KM } from '@/contexts/UserPreferencesContext';
 import { features } from '@/config/features';
 import { useAccount } from 'wagmi';
 import { approximateDistance, bytes8ToGeohash } from '@/lib/geohash';
@@ -72,8 +72,10 @@ export default function BuyPage() {
     });
   }, [location, listings, searchRadiusKm]);
 
-  // Radius options in km (will be displayed in user's preferred unit)
-  const radiusOptions = [5, 10, 25, 50, 100];
+  // Radius options in km. The last option (25000) renders as "Anywhere"
+  // and is the pre-launch default — until seller density grows, buyers
+  // should see every listing rather than a zero-state from a tight radius.
+  const radiusOptions = [10, 25, 50, 100, 500, 25000];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -141,7 +143,9 @@ export default function BuyPage() {
                   >
                     {radiusOptions.map((km) => (
                       <option key={km} value={km}>
-                        {Math.round(fromKm(km, distanceUnit))} {getShortUnitLabel(distanceUnit)}
+                        {km >= ANYWHERE_RADIUS_THRESHOLD_KM
+                          ? 'Anywhere'
+                          : `${Math.round(fromKm(km, distanceUnit))} ${getShortUnitLabel(distanceUnit)}`}
                       </option>
                     ))}
                   </select>
@@ -170,7 +174,9 @@ export default function BuyPage() {
               emptyMessage={
                 listings.length === 0
                   ? "No sellers have listed produce yet. Be the first to sell in your area!"
-                  : `No listings found within ${Math.round(fromKm(searchRadiusKm, distanceUnit))} ${getShortUnitLabel(distanceUnit)}. Try expanding your search radius.`
+                  : searchRadiusKm >= ANYWHERE_RADIUS_THRESHOLD_KM
+                    ? "No listings yet. We're still in early launch — check back soon."
+                    : `No listings found within ${Math.round(fromKm(searchRadiusKm, distanceUnit))} ${getShortUnitLabel(distanceUnit)}. Try expanding your search radius.`
               }
             />
             </section>

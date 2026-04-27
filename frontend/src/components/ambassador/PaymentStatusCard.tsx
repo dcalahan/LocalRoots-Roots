@@ -5,26 +5,27 @@
  * TEMPORARY - This entire component will be removed when $ROOTS token launches
  */
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAmbassadorPayments, formatCentsToUsd } from '@/hooks/useAmbassadorPayments';
-import { useAmbassadorOrders, calculateCommission } from '@/hooks/useAmbassadorOrders';
-import { PaymentPreferencesModal } from './PaymentPreferencesModal';
+import { useAmbassadorOrders } from '@/hooks/useAmbassadorOrders';
 import type { AmbassadorProfile } from '@/lib/contracts/ambassador';
 
 interface PaymentStatusCardProps {
   ambassadorId: string | null;
   profile: AmbassadorProfile | null;
+  /** @deprecated kept for backward compat — edits now happen on /profile */
   onProfileUpdate?: () => void;
 }
 
 export function PaymentStatusCard({
   ambassadorId,
   profile,
-  onProfileUpdate,
 }: PaymentStatusCardProps) {
-  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+  // Edit/setup buttons now route to the unified /profile page
+  // (?section=ambassador) instead of popping a modal here. Single source
+  // of truth for everything profile-related.
 
   // Fetch payment data from KV
   const { data: paymentData, isLoading: isLoadingPayments } = useAmbassadorPayments(ambassadorId);
@@ -88,24 +89,13 @@ export function PaymentStatusCard({
             <p className="text-sm text-roots-gray mb-4">
               Add your payment info to receive your earnings via Venmo, PayPal, or Zelle.
             </p>
-            <Button
-              onClick={() => setShowPreferencesModal(true)}
-              className="bg-roots-primary hover:bg-roots-primary/90"
-            >
-              Set Up Payment Method
-            </Button>
+            <Link href="/profile?section=ambassador">
+              <Button className="bg-roots-primary hover:bg-roots-primary/90">
+                Set Up Payment Method
+              </Button>
+            </Link>
           </CardContent>
         </Card>
-
-        <PaymentPreferencesModal
-          isOpen={showPreferencesModal}
-          onClose={() => setShowPreferencesModal(false)}
-          currentProfile={profile}
-          onSuccess={() => {
-            setShowPreferencesModal(false);
-            onProfileUpdate?.();
-          }}
-        />
       </>
     );
   }
@@ -160,13 +150,11 @@ export function PaymentStatusCard({
                     {formatPaymentMethod(profile.paymentMethod!, profile.paymentHandle!)}
                   </span>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPreferencesModal(true)}
-                >
-                  Edit
-                </Button>
+                <Link href="/profile?section=ambassador">
+                  <Button variant="outline" size="sm">
+                    Edit
+                  </Button>
+                </Link>
               </div>
 
               {/* Recent Payments */}
@@ -202,16 +190,6 @@ export function PaymentStatusCard({
           )}
         </CardContent>
       </Card>
-
-      <PaymentPreferencesModal
-        isOpen={showPreferencesModal}
-        onClose={() => setShowPreferencesModal(false)}
-        currentProfile={profile}
-        onSuccess={() => {
-          setShowPreferencesModal(false);
-          onProfileUpdate?.();
-        }}
-      />
     </>
   );
 }

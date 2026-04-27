@@ -11,16 +11,37 @@ export default function TokenomicsPage() {
       <div className="bg-gradient-to-b from-roots-secondary/10 to-roots-cream">
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Roots Points & $ROOTS
+            Roots Points
           </h1>
           <p className="text-xl text-roots-gray max-w-2xl mx-auto">
-            Earn rewards for building your local food network.
-            The more you participate, the more you earn.
+            Earn rewards for building your local food network. The more you
+            participate, the more you earn.
           </p>
         </div>
       </div>
 
       <main className="max-w-3xl mx-auto px-4 py-12">
+
+        {/* Decentralized application — the structural truth before everything else */}
+        <section className="mb-10">
+          <Card className="bg-roots-secondary/5 border-roots-secondary/30">
+            <CardContent className="pt-6">
+              <h3 className="font-bold text-gray-900 mb-2">
+                LocalRoots is a decentralized application, not a company.
+              </h3>
+              <p className="text-sm text-roots-gray">
+                The marketplace runs on smart contracts. Sellers list directly,
+                buyers transact directly, and the platform never custodies funds.
+                Disputes are resolved by ambassadors voting on-chain — not by a
+                support team. The codebase is open-source and could be run by
+                anyone, anywhere. We&apos;re building infrastructure, not an
+                operator. Roots Points and the future $ROOTS token follow the
+                same principle: rewards go to the people doing the work, not to
+                a corporate cap table.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
 
         {/* What Are Roots Points */}
         <section className="mb-12">
@@ -40,84 +61,42 @@ export default function TokenomicsPage() {
           </div>
         </section>
 
-        {/* Two Phases */}
+        {/* Status — what's live today */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">The Plan: Prove It, Then Share It</h2>
-          <div className="prose prose-lg text-roots-gray">
-            <p className="mb-4">
-              We're doing this in two phases. The idea is simple: build something real first,
-              then reward everyone who helped.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
-            {/* Preview */}
-            <Card className="border-t-4 border-amber-500">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center">
-                    <span className="text-xl">🧪</span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">Phase 1: Marketplace</h3>
-                    <p className="text-amber-600 font-medium text-sm">Live on mainnet</p>
-                  </div>
-                </div>
-                <div className="prose text-roots-gray text-sm">
-                  <p className="mb-3">
-                    The marketplace is live on Base mainnet. Buy and sell real
-                    local food with real payments — and earn Roots Points for every transaction.
-                  </p>
-                  <p>
-                    Roots Points earned now count toward the $ROOTS airdrop. The earlier
-                    you participate, the more you earn.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Launch */}
-            <Card className="border-t-4 border-roots-primary">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-roots-primary/10 rounded-full flex items-center justify-center">
-                    <span className="text-xl">🚀</span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">Launch: Roots Points That Count</h3>
-                    <p className="text-roots-primary font-medium text-sm">Coming soon</p>
-                  </div>
-                </div>
-                <div className="prose text-roots-gray text-sm">
-                  <p className="mb-3">
-                    When we go live on mainnet, everyone starts fresh. That's when
-                    Roots Points count for real.
-                  </p>
-                  <p>
-                    Your Roots Points determine your share of the $ROOTS airdrop. The more
-                    you contribute to the network, the bigger your share.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">What&apos;s Live Today</h2>
+          <Card className="border-t-4 border-roots-secondary">
+            <CardContent className="pt-6">
+              <div className="prose text-roots-gray">
+                <p className="mb-3">
+                  The LocalRoots marketplace is live. Real growers are listing real
+                  produce. Real neighbors are buying it. Every transaction earns Roots Points
+                  for the gardener, the buyer, and the ambassador who built that
+                  corner of the network.
+                </p>
+                <p>
+                  Roots Points are a record of your participation, kept on the Base
+                  blockchain. They never expire and can&apos;t be taken away. Earlier
+                  participants earn at higher rates — see the multipliers below.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
-        {/* Why This Way */}
+        {/* Why Roots Points first */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Why Do It This Way?</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">Why Roots Points First?</h2>
           <div className="prose prose-lg text-roots-gray">
             <p className="mb-4">
-              Most crypto projects launch a token first and hope something useful gets built later.
-              We're doing the opposite.
+              We&apos;re building the marketplace before anything else. Real growers, real
+              produce, real payments to real neighbors. That&apos;s the foundation.
             </p>
-            <p className="mb-4">
-              Build the marketplace. Get real people growing food and selling to neighbors.
-              Prove it works. <em>Then</em> launch the token.
-            </p>
-            <p className="font-semibold text-gray-900">
-              That way, when $ROOTS launches, it represents something real — an actual community
-              of people feeding their neighbors.
+            <p>
+              Roots Points reward the people who show up early — the gardeners who list
+              their first surplus, the buyers who try a new neighbor, the ambassadors
+              who introduce their community. As the marketplace matures, we&apos;ll
+              share more about how Roots Points evolve. For now: participate, earn,
+              and we&apos;ll keep you in the loop as plans firm up.
             </p>
           </div>
         </section>
@@ -159,7 +138,7 @@ export default function TokenomicsPage() {
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
                     Every purchase supports a neighbor who grows food
-                    and earns you Roots Points toward the airdrop.
+                    and earns you Roots Points.
                   </p>
                 </div>
               </CardContent>
@@ -210,13 +189,16 @@ export default function TokenomicsPage() {
           </Card>
         </section>
 
-        {/* Token Allocation */}
+        {/* Token Allocation — kept on the page so ambassadors and serious
+            participants (like Matt) can see exactly how the network rewards
+            are split. This is a real, structural commitment, not marketing. */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Where $ROOTS Tokens Go</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">How Network Rewards Are Allocated</h2>
           <div className="prose prose-lg text-roots-gray mb-6">
             <p className="mb-4">
-              There will be 1 billion $ROOTS tokens. That's it — no more will ever be created.
-              Here's how they're allocated:
+              The future $ROOTS supply is fixed at 1 billion tokens — no more will
+              ever be created. Roots Points earned today determine how the
+              airdrop slice gets distributed. Here&apos;s the full breakdown:
             </p>
           </div>
 
@@ -257,7 +239,7 @@ export default function TokenomicsPage() {
                     <span className="text-sm font-bold">25%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Paid to ambassadors who recruit sellers and build local food networks. Earned over time based on activity.
+                    Paid to ambassadors who recruit gardeners and build local food networks. Earned over time based on activity.
                   </p>
                 </div>
               </CardContent>
@@ -272,7 +254,9 @@ export default function TokenomicsPage() {
                     <span className="text-sm font-bold">15%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Locked for 6 months, then released gradually over 3 years. Vesting doesn&apos;t start until $ROOTS launches — we only do well if the community does well.
+                    Locked, then released gradually over 3 years. Vesting only
+                    starts when the token launches — we only do well if the
+                    community does well.
                   </p>
                 </div>
               </CardContent>
@@ -287,7 +271,7 @@ export default function TokenomicsPage() {
                     <span className="text-sm font-bold">10%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Makes $ROOTS tradeable when Phase 2 launches. Paired with USDC on Aerodrome (Base&apos;s largest exchange).
+                    Makes the token tradeable when it launches. Paired with USDC on Aerodrome (Base&apos;s largest DEX).
                   </p>
                 </div>
               </CardContent>
@@ -302,7 +286,7 @@ export default function TokenomicsPage() {
                     <span className="text-sm font-bold">10%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Distributed to Phase 1 participants based on Roots Points earned. This is your reward for being here early.
+                    Distributed to early participants based on Roots Points earned. This is the reward for being here early.
                   </p>
                 </div>
               </CardContent>
@@ -310,9 +294,9 @@ export default function TokenomicsPage() {
           </div>
         </section>
 
-        {/* Roadmap */}
+        {/* Where we are */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">The Roadmap</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">Where We Are</h2>
           <div className="space-y-6">
             <div className="flex gap-4">
               <div className="flex flex-col items-center">
@@ -320,11 +304,11 @@ export default function TokenomicsPage() {
                 <div className="w-0.5 flex-1 bg-roots-gray/20" />
               </div>
               <div className="pb-6">
-                <div className="text-sm text-roots-secondary font-medium">Phase 1 — Now</div>
+                <div className="text-sm text-roots-secondary font-medium">Today</div>
                 <div className="font-bold text-gray-900">Marketplace Live</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  Buy and sell local food with real payments. Every transaction earns Roots Points.
-                  Early adopters earn 2x Roots Points for the first 90 days.
+                  Buy and sell local food with real payments. Every transaction
+                  earns Roots Points. Early adopters earn 2x for the first 90 days.
                 </p>
               </div>
             </div>
@@ -335,27 +319,12 @@ export default function TokenomicsPage() {
                 <div className="w-0.5 flex-1 bg-roots-gray/20" />
               </div>
               <div className="pb-6">
-                <div className="text-sm text-roots-gray">2026–2027</div>
+                <div className="text-sm text-roots-gray">Next</div>
                 <div className="font-bold text-gray-900">Community Growth</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  More neighborhoods, more growers, more transactions. Proving the model works
-                  before launching a token. Your Roots Points keep accumulating.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div className="w-3 h-3 bg-roots-primary rounded-full" />
-                <div className="w-0.5 flex-1 bg-roots-gray/20" />
-              </div>
-              <div className="pb-6">
-                <div className="text-sm text-roots-primary font-medium">Phase 2 — Spring 2027</div>
-                <div className="font-bold text-gray-900">$ROOTS Token Launch</div>
-                <p className="text-sm text-roots-gray mt-1">
-                  100M $ROOTS airdropped to Roots Points holders based on their share.
-                  Ambassador commissions switch to automatic on-chain payments.
-                  The people who helped build the network get rewarded.
+                  More neighborhoods, more growers, more transactions. Proving the
+                  model works in real communities. Your Roots Points keep
+                  accumulating as the network expands.
                 </p>
               </div>
             </div>
@@ -366,10 +335,11 @@ export default function TokenomicsPage() {
               </div>
               <div>
                 <div className="text-sm text-roots-gray">Beyond</div>
-                <div className="font-bold text-gray-900">Community Governance</div>
+                <div className="font-bold text-gray-900">Community Ownership</div>
                 <p className="text-sm text-roots-gray mt-1">
-                  Treasury governed by token holders. Protocol upgrades decided by the community.
-                  LocalRoots becomes truly community-owned.
+                  We&apos;re building toward a network that&apos;s genuinely
+                  community-owned and -governed. More on what that looks like as
+                  the marketplace matures.
                 </p>
               </div>
             </div>
@@ -394,9 +364,10 @@ export default function TokenomicsPage() {
               <CardContent className="pt-6">
                 <h4 className="font-semibold mb-2">Are Roots Points worth money right now?</h4>
                 <p className="text-sm text-roots-gray">
-                  Not directly — yet. Roots Points are accumulating on-chain right now, and when
-                  $ROOTS launches (spring 2027), your Roots Points determine your share of
-                  the airdrop. The more Roots Points you earn now, the more $ROOTS you&apos;ll receive.
+                  Not directly. Roots Points are a record of your participation,
+                  recorded on the Base blockchain. The more you earn early, the
+                  bigger your share of whatever future rewards the community decides
+                  to share back. We&apos;ll communicate more as those plans firm up.
                 </p>
               </CardContent>
             </Card>
@@ -424,12 +395,14 @@ export default function TokenomicsPage() {
 
             <Card>
               <CardContent className="pt-6">
-                <h4 className="font-semibold mb-2">What is $ROOTS exactly?</h4>
+                <h4 className="font-semibold mb-2">Why focus on the marketplace first?</h4>
                 <p className="text-sm text-roots-gray">
-                  $ROOTS is a token on the Base network (built by Coinbase). When Phase 2 launches,
-                  it will be tradeable and used for ambassador commissions, community governance,
-                  and marketplace rewards. But we're not launching it until the marketplace has
-                  real traction — real neighbors buying and selling real food.
+                  Most platforms in this space launch a token and hope something
+                  useful gets built later. We&apos;re doing the opposite: build a
+                  marketplace people actually use, with real growers and real
+                  buyers. The rewards layer matters because it incentivizes the
+                  right behavior — but the gardening companion and the
+                  marketplace are the product, not a token.
                 </p>
               </CardContent>
             </Card>
