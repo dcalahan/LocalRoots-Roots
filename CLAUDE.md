@@ -131,6 +131,28 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 - Can "Login with Email" to view past orders
 - Orders tied to their Privy wallet address
 
+### USDC Approval — EIP-2612 Permit Path (CRITICAL)
+
+**Doug's hard rule:** "Users should never have to have ETH. We have a funded account of ETH for that."
+
+USDC's `approve()` cannot be ERC-2771 forwarded — USDC doesn't inherit `ERC2771Context`, so a forwarded call would set the allowance on the forwarder's address, not the user's. Without intervention, a fresh credit-card buyer (no ETH, only USDC from Coinbase Onramp) literally cannot complete the approval step before the marketplace can `transferFrom`.
+
+**Architectural fix (Apr 27 2026 evening):** EIP-2612 permit. The user signs a typed message off-chain (free, via Privy), our relayer submits `usdc.permit(owner, spender, value, deadline, v, r, s)` paying the ~50k gas. After the permit lands, the standard gasless purchase via `/api/relay` succeeds because the marketplace now has transferFrom rights. User never holds ETH at any point.
+
+**Files:**
+- `frontend/src/app/api/relay-permit/route.ts` — new server-side endpoint. Validates token + spender against allowlist (USDC + marketplace only), submits permit() from relayer wallet, waits for receipt server-side. Same rate-limit + abuse-defense pattern as `/api/relay`.
+- `frontend/src/hooks/useTokenApproval.ts` — branches in `approve()`: if the active address is a Privy embedded wallet AND token is USDC → permit flow. Otherwise → existing wagmi `walletClient.writeContract` path with `timeout: 30_000` + `checkAllowance` fallback (so a single bad RPC doesn't hang the UI forever).
+
+**Verified on-chain values (USDC on Base mainnet `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`):**
+- `name()` → `"USD Coin"`
+- `version()` → `"2"`
+- `eip712Domain()` (EIP-5267) → reverts (this implementation is FiatTokenV2_2 which predates EIP-5267) — values hard-coded in `useTokenApproval.ts`'s `USDC_PERMIT_DOMAIN` rather than read on-chain.
+- `PERMIT_TYPEHASH()` → standard EIP-2612 typehash, confirmed.
+
+**Adding more permit-supported tokens:** USDT permit support varies by deployment. Today only USDC is whitelisted. To add another token: (1) verify on-chain that it has `permit()` with the standard EIP-2612 typehash, (2) confirm the EIP-712 domain values (`name`, `version`), (3) add to `ALLOWED_PERMIT_TOKENS` in `relay-permit/route.ts` AND extend `USDC_PERMIT_DOMAIN` to a per-token map in `useTokenApproval.ts`. Both ends must change together.
+
+**Why this matters strategically:** preserves the zero-liability decentralization posture — no centralized "send users dust ETH" faucet on mainnet, no relayer drain attack surface beyond what `/api/relay` already has. The relayer pays for two transactions per first-time purchase (permit + purchase) but only one per subsequent purchase (allowance persists on USDC).
+
 ### Sellers & Ambassadors
 
 Both sellers and ambassadors use Privy embedded wallets with gasless meta-transactions:
