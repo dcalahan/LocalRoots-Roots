@@ -51,19 +51,22 @@ export function useCompleteOrder() {
           gas: 200000n,
         });
       } else if (useGasless) {
+        // Relay waits for receipt server-side, so client polling is redundant
+        // and fails when public Base RPCs 403. See useCreateListing pattern.
         console.log('[useCompleteOrder] Using gasless meta-transaction');
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'completeOrder',
           args: [orderId],
           gas: 200000n,
         });
-        if (!txHash) {
+        if (!result) {
           setError(gaslessError || 'Gasless transaction failed');
           return false;
         }
-        hash = txHash;
+        setIsSuccess(true);
+        return true;
       } else {
         hash = await walletClient!.writeContract({
           address: MARKETPLACE_ADDRESS,
@@ -73,7 +76,7 @@ export function useCompleteOrder() {
         });
       }
 
-      await publicClient.waitForTransactionReceipt({ hash });
+      await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
       setIsSuccess(true);
       return true;
     } catch (err: unknown) {
@@ -145,18 +148,19 @@ export function useRaiseDispute() {
         });
       } else if (useGasless) {
         console.log('[useRaiseDispute] Using gasless meta-transaction');
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'raiseDispute',
           args: [orderId],
           gas: 200000n,
         });
-        if (!txHash) {
+        if (!result) {
           setError(gaslessError || 'Gasless transaction failed');
           return false;
         }
-        hash = txHash;
+        setIsSuccess(true);
+        return true;
       } else {
         hash = await walletClient!.writeContract({
           address: MARKETPLACE_ADDRESS,
@@ -166,7 +170,7 @@ export function useRaiseDispute() {
         });
       }
 
-      await publicClient.waitForTransactionReceipt({ hash });
+      await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
       setIsSuccess(true);
       return true;
     } catch (err: unknown) {

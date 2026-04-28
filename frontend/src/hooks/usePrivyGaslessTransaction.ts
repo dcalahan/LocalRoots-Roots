@@ -11,6 +11,7 @@ import {
   forwardRequestTypes,
   type ForwardRequest,
 } from '@/lib/contracts/forwarder';
+import type { GaslessResult } from './useGaslessTransaction';
 
 interface GaslessTransactionParams {
   to: Address;
@@ -21,7 +22,7 @@ interface GaslessTransactionParams {
 }
 
 interface GaslessTransactionResult {
-  executeGasless: (params: GaslessTransactionParams) => Promise<`0x${string}` | null>;
+  executeGasless: (params: GaslessTransactionParams) => Promise<GaslessResult | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -50,7 +51,7 @@ export function usePrivyGaslessTransaction(): GaslessTransactionResult {
   const privyAddress = user?.wallet?.address as Address | undefined;
 
   const executeGasless = useCallback(
-    async (params: GaslessTransactionParams): Promise<`0x${string}` | null> => {
+    async (params: GaslessTransactionParams): Promise<GaslessResult | null> => {
       if (!authenticated || !privyAddress) {
         setError('Wallet not connected');
         return null;
@@ -170,7 +171,12 @@ export function usePrivyGaslessTransaction(): GaslessTransactionResult {
         }
 
         console.log('[usePrivyGaslessTransaction] Transaction hash:', result.transactionHash);
-        return result.transactionHash as `0x${string}`;
+        return {
+          hash: result.transactionHash as `0x${string}`,
+          orderId: result.orderId ? BigInt(result.orderId) : undefined,
+          listingId: result.listingId ? BigInt(result.listingId) : undefined,
+          sellerId: result.sellerId ? BigInt(result.sellerId) : undefined,
+        };
       } catch (err) {
         console.error('[usePrivyGaslessTransaction] Error:', err);
         const message = err instanceof Error ? err.message : 'Transaction failed';

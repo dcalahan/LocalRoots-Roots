@@ -101,7 +101,7 @@ export function useUpdateListing() {
     if (shouldUseGasless) {
       console.log('[useUpdateListing] Using gasless meta-transaction (Privy wallet)');
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'updateListing',
@@ -114,9 +114,9 @@ export function useUpdateListing() {
           ],
           gas: 300000n,
         });
-        if (txHash) {
-          console.log('[useUpdateListing] Gasless transaction sent:', txHash);
-          setGaslessTxHash(txHash);
+        if (result) {
+          console.log('[useUpdateListing] Gasless transaction sent:', result.hash);
+          setGaslessTxHash(result.hash);
         }
       } catch (err) {
         console.error('[useUpdateListing] Gasless transaction failed:', err);

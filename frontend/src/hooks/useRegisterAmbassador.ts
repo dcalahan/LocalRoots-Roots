@@ -43,7 +43,7 @@ export function useRegisterAmbassador() {
     }
 
     try {
-      const hash = await executeGasless({
+      const result = await executeGasless({
         to: AMBASSADOR_REWARDS_ADDRESS,
         abi: ambassadorAbi,
         functionName: 'registerAmbassador',
@@ -51,9 +51,9 @@ export function useRegisterAmbassador() {
         gas: 300000n,
       });
 
-      if (hash) {
-        console.log('[useRegisterAmbassador] Transaction sent:', hash);
-        setTxHash(hash);
+      if (result) {
+        console.log('[useRegisterAmbassador] Transaction sent:', result.hash);
+        setTxHash(result.hash);
       }
     } catch (err) {
       console.error('[useRegisterAmbassador] Failed:', err);
