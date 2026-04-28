@@ -131,6 +131,35 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 - Can "Login with Email" to view past orders
 - Orders tied to their Privy wallet address
 
+### Credit-Card Buyer Flow — Closure-Staleness Trap (CRITICAL)
+
+**Doug's principle:** the credit-card buyer flow has been the trickiest path in the codebase because it spans wagmi + Privy + Coinbase Onramp + a multi-step React state machine, with state mutations happening across component boundaries (CCC → parent's onPaid → handleCheckout → useTokenApproval → relay endpoints). Every layer that captures state in a closure is a bug waiting to happen.
+
+**The trap (Apr 27–28 2026 evening):** every "fix" tonight exposed a sibling bug at the next layer. The pattern was always the same shape: a child component (CCC) calls a parent callback (onPaid), which queues state updates and then invokes `handleCheckout` — but `handleCheckout` was captured in a closure built with the OLD state. React's batched-state model means the closure does NOT reflect setState calls queued earlier in the same tick.
+
+**Bugs found and fixed in one consolidated commit:**
+
+1. **paymentToken closure stale** — `handleCheckout` captured `paymentToken='ROOTS'` (default) when CCC's onPaid set `paymentToken='USDC'` and then called `handleCheckout` via setTimeout. Token address resolved to the ROOTS sentinel `0x000…0` (Phase 2 token, not deployed on mainnet), causing `ContractFunctionZeroDataError` on the allowance read. **Fix:** click handler at `page.tsx:291` sets `paymentToken='USDC'` BEFORE `setMode('guest')`. Plus `handleCheckout` now accepts an explicit `override` parameter so callers can pass the latest values without trusting React's render timing.
+
+2. **deliveryAddress closure stale (silent on-chain corruption)** — same closure bug, different field. CCC's onPaid set `setDeliveryAddress(info.deliveryAddress)` then `setTimeout(handleCheckout)`. `handleCheckout` captured `deliveryAddress=''` (default). On-chain orders went through with empty `buyerInfoIpfs` — meaning the seller had NO shipping info. This bug never reported because no credit-card buyer ever made it past the approval step. Would have surfaced as data corruption on first successful purchase. **Fix:** same `override` parameter approach — `handleCheckout({ deliveryAddress, deliveryPhone, deliveryNotes, paymentToken })` from onPaid.
+
+3. **`usePurchase` wagmi-only address resolution (HARD blocker)** — `useAccount()` doesn't always surface the Privy embedded wallet for credit-card buyers. `usePurchase.ts:36` early-returned with "Wallet not connected" before any approve/purchase logic ran, even after the permit landed on-chain. **Fix:** mirror the address-resolution pattern from `useTokenApproval` and `useSellerStatus`: `privyAddress ?? testWalletAddress ?? (wagmiConnected ? wagmiAddress : undefined)`.
+
+4. **`useTokenApproval` Privy detection tied to wagmi address** — earlier same-night bug, fixed earlier in the evening. Same pattern: detection should mirror `useSellerStatus`, not check wagmi-vs-Privy address equality.
+
+**Critical pattern to never repeat:** when a child callback hands off to a parent function, never call it via `setTimeout` and expect parent state updates queued in the same callback to be visible. Two correct fixes:
+- **Pass values explicitly as a parameter** (preferred — see `handleCheckout(override)` pattern in `page.tsx:117`).
+- **Read state from a ref** (works but clutters; only use when explicit params are awkward).
+
+The `setTimeout(fn, 0)` "wait for state" pattern is a code smell. Search for it before merging anything that touches a multi-component state handoff.
+
+**Files holding the consolidated fix:**
+- `frontend/src/app/buy/checkout/page.tsx` — `handleCheckout` accepts override, click handler locks `paymentToken='USDC'`, onPaid passes override directly.
+- `frontend/src/hooks/usePurchase.ts` — Privy-first address resolution.
+- `frontend/src/hooks/useTokenApproval.ts` — Privy-first address resolution + EIP-2612 permit branch.
+
+**Plan agent's audit doc:** see plan response in conversation history. Audit catalogues 7 blockers, 7 latents, 11 architectural smells. Items B5, L1–L11 not addressed in this commit and should be evaluated in a follow-up session.
+
 ### USDC Approval — EIP-2612 Permit Path (CRITICAL)
 
 **Doug's hard rule:** "Users should never have to have ETH. We have a funded account of ETH for that."

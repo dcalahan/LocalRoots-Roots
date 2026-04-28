@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { useWallets } from '@privy-io/react-auth';
 import { decodeEventLog, type Address, zeroAddress } from 'viem';
 import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import {
@@ -33,9 +34,10 @@ interface PurchaseResult {
 }
 
 export function usePurchase() {
-  const { address, connector } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
   const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const { data: walletClient } = useWalletClient();
+  const { wallets } = useWallets();
   const { approve, checkAllowance, isApproving } = useTokenApproval();
   const { executeGasless, isLoading: isGaslessLoading, error: gaslessError } = useGaslessTransaction();
 
@@ -43,6 +45,19 @@ export function usePurchase() {
   const [error, setError] = useState<string | null>(null);
 
   const isTestWallet = connector?.id === 'testWallet';
+
+  // Address resolution mirrors useTokenApproval / useSellerStatus. Credit-card
+  // buyers come in via a Privy embedded wallet that wagmi often does not
+  // surface — `useAccount()` returns `address: undefined` while
+  // `useWallets()` shows the embedded wallet just fine. Without this, the
+  // early return at the top of `purchase()` fired with "Wallet not connected"
+  // even after approval succeeded — exactly the next-blocker that the
+  // April 27 evening permit work papered over but didn't actually fix.
+  // Doug, Apr 28 2026.
+  const privyEmbeddedWallet = wallets.find((w) => w.walletClientType === 'privy');
+  const privyAddress = privyEmbeddedWallet?.address as Address | undefined;
+  const testWalletAddress = isTestWallet ? wagmiAddress : undefined;
+  const address = (privyAddress ?? testWalletAddress ?? (wagmiConnected ? wagmiAddress : undefined)) as Address | undefined;
 
   const purchase = useCallback(async (params: PurchaseParams): Promise<PurchaseResult | null> => {
     const useGasless = params.useGasless !== false; // Default to gasless
@@ -87,8 +102,11 @@ export function usePurchase() {
     setError(null);
 
     try {
-      // Check and request approval if needed for the correct token
-      // Note: Token approval still requires ETH for now - future improvement would use ERC20Permit
+      // Check and request approval if needed for the correct token.
+      // For Privy embedded wallets, useTokenApproval routes through the
+      // EIP-2612 permit relay (no user ETH required). For external wallets
+      // and the test wallet, it uses standard `walletClient.writeContract`
+      // (those wallets pay their own gas).
       const currentAllowance = await checkAllowance(tokenToApprove);
 
       if (currentAllowance < approvalAmount) {
