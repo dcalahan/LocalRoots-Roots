@@ -131,6 +131,53 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 - Can "Login with Email" to view past orders
 - Orders tied to their Privy wallet address
 
+### Credit-Card First-Buyer Top-off (CRITICAL — Reserve Wallet Must Be Funded)
+
+**Doug's North Star (Apr 26 → Apr 28 2026):** "Users should never have to have ETH. We have a funded account of ETH for that." Extended Apr 28: users should never have to do USDC math against Coinbase Onramp fees either.
+
+**The unsolvable math problem this fix addresses:**
+- Coinbase guest/unverified accounts have a per-transaction limit (~$5 for new users).
+- Coinbase card fees are ~2-3% of the fiat charge.
+- Cart $5 + 3% fee pad = $5.15 fiat charge → blocked by Coinbase limit.
+- Cart $5 + no fee pad = $5.00 fiat charge → Coinbase delivers ~$4.88 USDC after fees → poll never satisfies cart total → spinner forever.
+- **Either way, first-time credit-card buyers cannot complete a purchase.** Pre-Apr 28 production was deterministically broken for this entire user funnel.
+
+**The architectural fix:** `/api/relayer-topup` endpoint covers the inevitable Coinbase fee gap. Buyer pays exactly cart total, Coinbase delivers slightly less, our relayer wallet sends the small difference (capped at $1 USDC per request, 3 requests per buyer per UTC day), buyer's wallet ends up with the EXACT cart amount. Settlement proceeds normally.
+
+**Files:**
+- `frontend/src/app/api/relayer-topup/route.ts` — server-side endpoint. Reads buyer's actual on-chain balance (never trusts client), enforces rate limit (KV `topup:{address}:{YYYY-MM-DD}`), enforces hard cap ($1 USDC per request, $100 max target). On confirmed receipt, increments daily counter.
+- `frontend/src/components/checkout/CreditCardCheckout.tsx` — drops the 3% fee pad. After Coinbase delivers and the poll detects a positive-but-short delta, waits ≥15 seconds OR until popup closes, then makes ONE top-off request. `topOffAttemptedRef` ensures we don't spam the endpoint; `topOffInFlightRef` pauses threshold checking during the in-flight call.
+
+**Reserve funding model (Doug's action — REQUIRED before this works):**
+The relayer wallet (`0xe2034722F2973814CF829179889b7C27D8D00452`, `RELAYER_PRIVATE_KEY`) currently holds ~0.05 ETH for gas. To activate top-offs, send the relayer wallet ~$30 USDC on Base mainnet from the Operations Treasury (or any of Doug's USDC-holding wallets). At ~$0.15 average gap per first-time buyer, $30 covers ~200 first purchases. Refill SOP: monthly check + threshold alert when reserve < $10.
+
+**On-chain transfer command (one-shot from any USDC-holding wallet):**
+```bash
+cast send 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
+  "transfer(address,uint256)" \
+  0xe2034722F2973814CF829179889b7C27D8D00452 \
+  30000000 \
+  --private-key $YOUR_FUNDING_PK \
+  --rpc-url https://api.developer.coinbase.com/rpc/v1/base/$CDP_KEY
+```
+(`30000000` = $30 USDC × 1e6.) The relayer wallet uses the same key for ETH-gas relays and USDC top-offs; risk isolation (separate reserve wallet) is a follow-up architectural improvement, not blocking for v1.
+
+**Defense-in-depth:**
+- Server reads buyer's actual on-chain USDC balance — request body is only used for `buyerAddress` and `targetUsdcAmount`.
+- Hard cap on the gap we'll cover: `MAX_GAP_USDC_UNITS = 1_000_000n` ($1 USDC).
+- Hard cap on the target: `MAX_TARGET_USDC_UNITS = 100_000_000n` ($100).
+- Daily rate limit per buyer: `MAX_TOPOFFS_PER_BUYER_PER_DAY = 3`.
+- Reserve depletion check before broadcasting — surface a clean error if reserve is dry rather than failing in viem.
+- Counter only increments on confirmed receipt — failed transfers don't count against the buyer's quota.
+
+**Maximum loss vector:** even with abuse, no single buyer can trigger more than `3 × $1 = $3` per day from the reserve. To drain $30 from the reserve, an attacker would need 10 distinct buyer addresses each calling 3× per day — which would also each require legitimate Coinbase Onramp activity to create the on-chain shortfall the endpoint is designed to cover. Hard cap on reserve loss without legitimate activity is bounded by the reserve balance itself ($30 in v1).
+
+**Anti-patterns that would defeat this defense:**
+- Don't relax `MAX_GAP_USDC_UNITS` without rebalancing rate-limit math.
+- Don't trust client-supplied balance — always read on-chain.
+- Don't share the reserve wallet with platform-fee revenue (would conflict with "no platform fees" zero-liability principle).
+- Don't auto-fund the reserve from individual transactions; refill from Operations Treasury so the architecture remains "infrastructure, not operator."
+
 ### Credit-Card Buyer Flow — Closure-Staleness Trap (CRITICAL)
 
 **Doug's principle:** the credit-card buyer flow has been the trickiest path in the codebase because it spans wagmi + Privy + Coinbase Onramp + a multi-step React state machine, with state mutations happening across component boundaries (CCC → parent's onPaid → handleCheckout → useTokenApproval → relay endpoints). Every layer that captures state in a closure is a bug waiting to happen.
