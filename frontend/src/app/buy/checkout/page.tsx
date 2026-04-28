@@ -114,34 +114,70 @@ export default function CheckoutPage() {
   // CreditCardCheckout onPaid callback below needs to call it. JS const
   // declarations don't hoist — TDZ would bite us if we left it lower in
   // the file. useCallback keeps the reference stable across renders.
-  const handleCheckout = useCallback(async () => {
+  //
+  // CRITICAL — closure-staleness fix (Doug, Apr 28 2026): the credit-card
+  // flow used to call `setPaymentToken('USDC')` + `setDeliveryAddress(...)`
+  // + a 1-tick `setTimeout(handleCheckout, 0)` from CCC's onPaid. The state
+  // updates queued, but the captured `handleCheckout` reference inside the
+  // setTimeout closure was the OLD one — paymentToken='ROOTS' (the default),
+  // deliveryAddress=''. Result: approve was called with the ROOTS sentinel
+  // address (zero address, no contract), and on-chain orders went through
+  // with empty buyerInfoIpfs (no shipping info for the seller). Both bugs
+  // silent until production hit them.
+  //
+  // Fix: handleCheckout accepts an optional `override` payload so callers
+  // (specifically CCC's onPaid) can pass the latest values directly. The
+  // override wins over parent state. The setTimeout hack in onPaid is gone.
+  const handleCheckout = useCallback(async (override?: {
+    paymentToken?: PaymentToken;
+    deliveryAddress?: string;
+    deliveryPhone?: string;
+    deliveryNotes?: string;
+  }) => {
+    const effectivePaymentToken = override?.paymentToken ?? paymentToken;
+    const effectiveTokenAddress = override?.paymentToken
+      ? PAYMENT_TOKENS[override.paymentToken].address
+      : tokenAddress;
+    const effectiveDeliveryAddress = override?.deliveryAddress ?? deliveryAddress;
+    const effectiveDeliveryPhone = override?.deliveryPhone ?? deliveryPhone;
+    const effectiveDeliveryNotes = override?.deliveryNotes ?? deliveryNotes;
+    // requiredAmount is computed from `total` and `paymentToken`; recompute
+    // with the override so the approve call gets the right amount in the
+    // right token's units.
+    const effectiveRequiredAmount = effectivePaymentToken === 'ROOTS'
+      ? total
+      : rootsToStablecoin(total);
+
     console.log('[Checkout] Starting checkout, mode:', mode, 'items:', items.length);
-    console.log('[Checkout] Payment token:', paymentToken, 'balance:', balance.toString(), 'required:', requiredAmount.toString());
+    console.log('[Checkout] Payment token:', effectivePaymentToken, 'balance:', balance.toString(), 'required:', effectiveRequiredAmount.toString());
     setStep('processing');
 
-    // First, check and handle approval if needed
-    if (!hasEnoughAllowance) {
-      setProcessingStatus(`Approving ${paymentToken} spending...`);
-      const approved = await approve(requiredAmount, tokenAddress);
-      if (!approved) {
-        setProcessingStatus('Approval failed');
-        setTimeout(() => setStep('review'), 2000);
-        return;
-      }
-      setAllowance(requiredAmount);
+    // Approval check is on-chain — use the effective token, not whatever
+    // `hasEnoughAllowance` (parent state) thinks. usePurchase will re-check
+    // via its own checkAllowance anyway, so a missed permit here just leads
+    // to a redundant signature in the worst case, never a silent failure.
+    setProcessingStatus(`Approving ${effectivePaymentToken} spending...`);
+    const approved = await approve(effectiveRequiredAmount, effectiveTokenAddress);
+    if (!approved) {
+      setProcessingStatus('Approval failed');
+      setTimeout(() => setStep('review'), 2000);
+      return;
     }
+    setAllowance(effectiveRequiredAmount);
 
     setProcessingStatus('Processing purchases...');
 
-    // Upload delivery info to IPFS if this is a delivery order
+    // Upload delivery info to IPFS if this is a delivery order. Uses the
+    // effective values (override wins) so credit-card buyers don't ship
+    // with empty buyerInfoIpfs even though they entered the address in CCC.
     let buyerInfoIpfs = '';
-    if (hasDeliveryItems && deliveryAddress) {
+    if (hasDeliveryItems && effectiveDeliveryAddress) {
       try {
         setProcessingStatus('Uploading delivery info...');
         const deliveryData = {
-          address: deliveryAddress,
-          phone: deliveryPhone || undefined,
-          notes: deliveryNotes || undefined,
+          address: effectiveDeliveryAddress,
+          phone: effectiveDeliveryPhone || undefined,
+          notes: effectiveDeliveryNotes || undefined,
           uploadedAt: Date.now(),
         };
         const result = await uploadMetadata(deliveryData, 'delivery-info.json');
@@ -162,7 +198,7 @@ export default function CheckoutPage() {
       isDelivery: item.isDelivery,
       totalPrice: BigInt(item.pricePerUnit) * BigInt(item.quantity),
       buyerInfoIpfs: item.isDelivery ? buyerInfoIpfs : '',
-      paymentToken,
+      paymentToken: effectivePaymentToken,
     }));
 
     console.log('[Checkout] Calling checkout with', purchaseItems.length, 'items');
@@ -186,7 +222,7 @@ export default function CheckoutPage() {
 
     setStep('complete');
   }, [
-    mode, items, paymentToken, balance, requiredAmount, hasEnoughAllowance,
+    mode, items, paymentToken, balance, requiredAmount,
     approve, tokenAddress, hasDeliveryItems, deliveryAddress, deliveryPhone,
     deliveryNotes, checkout, total, clearCart, removeItem,
   ]);
@@ -222,20 +258,25 @@ export default function CheckoutPage() {
         total={total}
         onBack={() => setMode('select')}
         onPaid={async (info) => {
-          // Pre-fill the delivery info from CC step into the parent's
-          // state so the existing settlement code path picks it up.
+          // Pre-fill the delivery info into parent state so the rest of
+          // the UI (e.g. order summary, success screen) reflects the
+          // values the buyer just entered.
           setDeliveryAddress(info.deliveryAddress);
           setDeliveryPhone(info.phone);
           setDeliveryNotes(info.deliveryNotes);
-          // Lock payment token to USDC — that's what just arrived.
           setPaymentToken('USDC');
-          // Hand off to the same settlement flow used by Privy crypto
-          // buyers. handleCheckout reads paymentToken from state, so the
-          // setPaymentToken('USDC') above is what routes the purchase.
-          // We defer one tick so React applies the state changes first.
-          setTimeout(() => {
-            handleCheckout();
-          }, 0);
+          // Hand off to the settlement flow with an explicit override.
+          // The override wins inside handleCheckout regardless of whether
+          // React has applied the state updates above — it eliminates the
+          // closure-staleness bug where this onPaid captured a `handleCheckout`
+          // built when paymentToken was 'ROOTS' (default) and deliveryAddress
+          // was '' (default). No setTimeout hack needed. Doug, Apr 28 2026.
+          handleCheckout({
+            paymentToken: 'USDC',
+            deliveryAddress: info.deliveryAddress,
+            deliveryPhone: info.phone,
+            deliveryNotes: info.deliveryNotes,
+          });
         }}
       />
     );
@@ -288,7 +329,23 @@ export default function CheckoutPage() {
         <div className="space-y-3 mb-6">
           {/* Credit Card Option */}
           <button
-            onClick={() => setMode('guest')}
+            onClick={() => {
+              // Lock paymentToken to USDC the moment user picks credit card.
+              // Without this, paymentToken stays at its default ('ROOTS')
+              // until CreditCardCheckout calls onPaid → setPaymentToken('USDC').
+              // But by then, handleCheckout has already been captured in
+              // CCC's onPaid closure with the OLD paymentToken='ROOTS' in
+              // scope — so handleCheckout calls approve(amount, ZERO_ADDRESS)
+              // (the ROOTS sentinel address), which has no contract code,
+              // and viem throws ContractFunctionZeroDataError on the
+              // allowance() read. Symptom: 'Approval failed' with token
+              // 0x000…0 in the [useTokenApproval] log. Setting paymentToken
+              // here ensures the parent re-renders with paymentToken='USDC'
+              // BEFORE CCC mounts, so the captured handleCheckout has the
+              // correct token in its closure. Doug, Apr 28 2026.
+              setPaymentToken('USDC');
+              setMode('guest');
+            }}
             className="w-full p-4 rounded-lg border-2 border-roots-primary bg-roots-primary/5 hover:bg-roots-primary/10 transition-colors text-left"
           >
             <div className="flex items-center gap-3">
@@ -735,7 +792,7 @@ export default function CheckoutPage() {
         <Button
           className="w-full bg-roots-primary hover:bg-roots-primary/90"
           size="lg"
-          onClick={handleCheckout}
+          onClick={() => handleCheckout()}
           disabled={!hasEnoughBalance || !hasDeliveryAddress || isPurchasing || isApproving || cartHasOwnListing}
         >
           {cartHasOwnListing
