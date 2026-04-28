@@ -41,16 +41,16 @@ export function useAdminActions(): AdminActionsResult {
       setLastTxHash(null);
 
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'addAdmin',
           args: [newAdmin],
         });
 
-        if (txHash) {
-          setLastTxHash(txHash);
-          console.log('[useAdminActions] Admin added:', newAdmin, 'tx:', txHash);
+        if (result) {
+          setLastTxHash(result.hash);
+          console.log('[useAdminActions] Admin added:', newAdmin, 'tx:', result.hash);
           return true;
         }
         return false;
@@ -74,16 +74,16 @@ export function useAdminActions(): AdminActionsResult {
       setLastTxHash(null);
 
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'removeAdmin',
           args: [admin],
         });
 
-        if (txHash) {
-          setLastTxHash(txHash);
-          console.log('[useAdminActions] Admin removed:', admin, 'tx:', txHash);
+        if (result) {
+          setLastTxHash(result.hash);
+          console.log('[useAdminActions] Admin removed:', admin, 'tx:', result.hash);
           return true;
         }
         return false;
@@ -107,16 +107,16 @@ export function useAdminActions(): AdminActionsResult {
       setLastTxHash(null);
 
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'suspendSeller',
           args: [sellerId, reason],
         });
 
-        if (txHash) {
-          setLastTxHash(txHash);
-          console.log('[useAdminActions] Seller suspended:', sellerId.toString(), 'tx:', txHash);
+        if (result) {
+          setLastTxHash(result.hash);
+          console.log('[useAdminActions] Seller suspended:', sellerId.toString(), 'tx:', result.hash);
           return true;
         }
         return false;
@@ -140,16 +140,16 @@ export function useAdminActions(): AdminActionsResult {
       setLastTxHash(null);
 
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'unsuspendSeller',
           args: [sellerId],
         });
 
-        if (txHash) {
-          setLastTxHash(txHash);
-          console.log('[useAdminActions] Seller unsuspended:', sellerId.toString(), 'tx:', txHash);
+        if (result) {
+          setLastTxHash(result.hash);
+          console.log('[useAdminActions] Seller unsuspended:', sellerId.toString(), 'tx:', result.hash);
           return true;
         }
         return false;
@@ -173,16 +173,16 @@ export function useAdminActions(): AdminActionsResult {
       setLastTxHash(null);
 
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: AMBASSADOR_REWARDS_ADDRESS,
           abi: ambassadorAbi,
           functionName: 'adminSuspendAmbassador',
           args: [ambassadorId, reason],
         });
 
-        if (txHash) {
-          setLastTxHash(txHash);
-          console.log('[useAdminActions] Ambassador suspended:', ambassadorId.toString(), 'tx:', txHash);
+        if (result) {
+          setLastTxHash(result.hash);
+          console.log('[useAdminActions] Ambassador suspended:', ambassadorId.toString(), 'tx:', result.hash);
           return true;
         }
         return false;
@@ -206,16 +206,16 @@ export function useAdminActions(): AdminActionsResult {
       setLastTxHash(null);
 
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: AMBASSADOR_REWARDS_ADDRESS,
           abi: ambassadorAbi,
           functionName: 'adminUnsuspendAmbassador',
           args: [ambassadorId],
         });
 
-        if (txHash) {
-          setLastTxHash(txHash);
-          console.log('[useAdminActions] Ambassador unsuspended:', ambassadorId.toString(), 'tx:', txHash);
+        if (result) {
+          setLastTxHash(result.hash);
+          console.log('[useAdminActions] Ambassador unsuspended:', ambassadorId.toString(), 'tx:', result.hash);
           return true;
         }
         return false;
@@ -239,7 +239,7 @@ export function useAdminActions(): AdminActionsResult {
       setLastTxHash(null);
 
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'adminCancelOrder',
@@ -247,9 +247,9 @@ export function useAdminActions(): AdminActionsResult {
           gas: 1000000n, // Higher gas limit for complex operation
         });
 
-        if (txHash) {
-          setLastTxHash(txHash);
-          console.log('[useAdminActions] Order cancelled:', orderId.toString(), 'tx:', txHash);
+        if (result) {
+          setLastTxHash(result.hash);
+          console.log('[useAdminActions] Order cancelled:', orderId.toString(), 'tx:', result.hash);
           return true;
         }
         return false;

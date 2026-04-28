@@ -131,20 +131,28 @@ export function usePurchase() {
           gas: 500000n,
         });
       } else if (useGasless) {
-        // Use gasless transaction
+        // Gasless meta-transaction. The relay (/api/relay/route.ts) waits
+        // for the receipt server-side AND decodes OrderPlaced for us, so
+        // the result includes orderId — we don't need to poll the receipt
+        // again on the client. That client-side poll is the doomed pattern
+        // that hangs when public Base RPCs 403 under load. The same fix is
+        // already in useCreateListing; this propagates it to buyer flow.
         console.log('[usePurchase] Using gasless meta-transaction');
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'purchase',
           args: purchaseArgs,
           gas: 500000n,
         });
-        if (!txHash) {
+        if (!result) {
           setError(gaslessError || 'Gasless transaction failed');
           return null;
         }
-        hash = txHash;
+        return {
+          orderId: result.orderId ?? 0n,
+          txHash: result.hash,
+        };
       } else {
         // Use wallet client for regular wallets
         hash = await walletClient!.writeContract({
@@ -155,21 +163,25 @@ export function usePurchase() {
         });
       }
 
-      // Wait for confirmation
+      // Non-gasless paths (test wallet + walletClient) need to fetch the
+      // receipt themselves. The wallet that signed has ETH and a working
+      // provider; the public client times out cleanly via the explicit
+      // timeout instead of hanging forever if RPCs misbehave.
       console.log('[usePurchase] Waiting for transaction receipt:', hash);
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash,
+        timeout: 60_000,
+      });
       console.log('[usePurchase] Receipt status:', receipt.status, 'logs:', receipt.logs.length);
 
-      // Check if transaction reverted
       if (receipt.status === 'reverted') {
         console.error('[usePurchase] Transaction reverted!');
         setError('Transaction reverted on-chain');
         return null;
       }
 
-      // Parse OrderPlaced event to get orderId
+      // Parse OrderPlaced event to get orderId.
       let orderId = 0n;
-      console.log('[usePurchase] Parsing receipt logs, count:', receipt.logs.length);
       for (const log of receipt.logs) {
         try {
           const decoded = decodeEventLog({
@@ -177,10 +189,8 @@ export function usePurchase() {
             data: log.data,
             topics: log.topics,
           });
-          console.log('[usePurchase] Decoded event:', decoded.eventName);
           if (decoded.eventName === 'OrderPlaced') {
             orderId = (decoded.args as { orderId: bigint }).orderId;
-            console.log('[usePurchase] Found OrderPlaced, orderId:', orderId.toString());
             break;
           }
         } catch {

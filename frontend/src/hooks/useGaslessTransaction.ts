@@ -21,8 +21,26 @@ interface GaslessTransactionParams {
   gas?: bigint;
 }
 
+/**
+ * Outcome of a successful gasless transaction. The relay decodes
+ * marketplace events server-side (see /api/relay/route.ts) and returns
+ * the IDs alongside the hash so callers don't have to wait on a second
+ * receipt fetch — that re-poll is doomed when public Base RPCs 403
+ * under load. `hash` is always present on success; the ID fields are
+ * populated only when the corresponding event was emitted.
+ */
+export interface GaslessResult {
+  hash: `0x${string}`;
+  /** Set when the tx emitted an OrderPlaced event (marketplace.purchase). */
+  orderId?: bigint;
+  /** Set when the tx emitted a ListingCreated event. */
+  listingId?: bigint;
+  /** Set when the tx emitted a SellerRegistered event. */
+  sellerId?: bigint;
+}
+
 interface GaslessTransactionResult {
-  executeGasless: (params: GaslessTransactionParams) => Promise<`0x${string}` | null>;
+  executeGasless: (params: GaslessTransactionParams) => Promise<GaslessResult | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -49,7 +67,7 @@ export function useGaslessTransaction(): GaslessTransactionResult {
   const [error, setError] = useState<string | null>(null);
 
   const executeGasless = useCallback(
-    async (params: GaslessTransactionParams): Promise<`0x${string}` | null> => {
+    async (params: GaslessTransactionParams): Promise<GaslessResult | null> => {
       console.log('[useGaslessTransaction] executeGasless called', { address, isConnected, hasPublicClient: !!publicClient });
 
       if (!isConnected || !address) {
@@ -223,7 +241,12 @@ export function useGaslessTransaction(): GaslessTransactionResult {
         }
 
         console.log('[useGaslessTransaction] Transaction hash:', result.transactionHash);
-        return result.transactionHash as `0x${string}`;
+        return {
+          hash: result.transactionHash as `0x${string}`,
+          orderId: result.orderId ? BigInt(result.orderId) : undefined,
+          listingId: result.listingId ? BigInt(result.listingId) : undefined,
+          sellerId: result.sellerId ? BigInt(result.sellerId) : undefined,
+        };
       } catch (err) {
         console.error('[useGaslessTransaction] Error:', err);
         const message = err instanceof Error ? err.message : 'Transaction failed';

@@ -193,27 +193,46 @@ export async function POST(request: NextRequest) {
 
     console.log('[Relay] Transaction confirmed:', receipt.status);
 
-    // Warm Facebook OG cache for newly created listings
+    // Decode relevant marketplace events server-side so the client can skip
+    // its own waitForTransactionReceipt round-trip (which is doomed when
+    // public Base RPCs return 403 to browser POSTs under load). The client
+    // already paid for the receipt by waiting on us — no reason to make it
+    // pay again. Captured IDs are returned alongside the hash; clients that
+    // don't care about them just ignore the extra fields.
+    let listingId: bigint | undefined;
+    let orderId: bigint | undefined;
+    let sellerId: bigint | undefined;
+
     if (receipt.status === 'success' && to.toLowerCase() === MARKETPLACE_ADDRESS.toLowerCase()) {
-      try {
-        for (const log of receipt.logs) {
-          try {
-            const decoded = decodeEventLog({
-              abi: marketplaceAbi,
-              data: log.data,
-              topics: log.topics,
-            });
-            if (decoded.eventName === 'ListingCreated') {
-              const listingId = (decoded.args as { listingId: bigint }).listingId;
-              console.log('[Relay] New listing created, warming FB OG cache for listing', listingId.toString());
-              warmFacebookOgCache(`/buy/listings/${listingId}`).catch(() => {});
-            }
-          } catch {
-            // Not a matching event, skip
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: marketplaceAbi,
+            data: log.data,
+            topics: log.topics,
+          });
+          switch (decoded.eventName) {
+            case 'ListingCreated':
+              listingId = (decoded.args as { listingId: bigint }).listingId;
+              break;
+            case 'OrderPlaced':
+              orderId = (decoded.args as { orderId: bigint }).orderId;
+              break;
+            case 'SellerRegistered':
+              sellerId = (decoded.args as { sellerId: bigint }).sellerId;
+              break;
+            // AmbassadorRegistered lives on the AmbassadorRewards contract,
+            // not the marketplace — decoded separately if needed.
           }
+        } catch {
+          // Log doesn't decode against marketplaceAbi — skip.
         }
-      } catch {
-        // Non-critical — don't fail the relay response
+      }
+
+      // Warm Facebook OG cache for newly created listings (existing behavior).
+      if (listingId !== undefined) {
+        console.log('[Relay] New listing created, warming FB OG cache for listing', listingId.toString());
+        warmFacebookOgCache(`/buy/listings/${listingId}`).catch(() => {});
       }
     }
 
@@ -221,6 +240,10 @@ export async function POST(request: NextRequest) {
       success: true,
       transactionHash: txHash,
       status: receipt.status,
+      // BigInt isn't JSON-serializable — clients parse these back to BigInt.
+      listingId: listingId?.toString(),
+      orderId: orderId?.toString(),
+      sellerId: sellerId?.toString(),
     });
   } catch (error) {
     console.error('[Relay] Error:', error);

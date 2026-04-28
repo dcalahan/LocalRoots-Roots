@@ -93,7 +93,7 @@ export function useRegisterSeller() {
     if (authenticated && useGasless) {
       console.log('[useRegisterSeller] Using gasless meta-transaction (Privy wallet will be registered)');
       try {
-        const txHash = await executeGasless({
+        const result = await executeGasless({
           to: MARKETPLACE_ADDRESS,
           abi: marketplaceAbi,
           functionName: 'registerSeller',
@@ -107,9 +107,9 @@ export function useRegisterSeller() {
           ],
           gas: 500000n,
         });
-        if (txHash) {
-          console.log('[useRegisterSeller] Gasless transaction sent:', txHash);
-          setGaslessTxHash(txHash);
+        if (result) {
+          console.log('[useRegisterSeller] Gasless transaction sent:', result.hash);
+          setGaslessTxHash(result.hash);
         }
       } catch (err) {
         console.error('[useRegisterSeller] Gasless transaction failed:', err);
