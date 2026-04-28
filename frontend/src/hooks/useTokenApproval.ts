@@ -47,7 +47,7 @@ const PERMIT_TYPES = {
 };
 
 export function useTokenApproval() {
-  const { address, connector } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
   const publicClient = usePublicClient({ chainId: ACTIVE_CHAIN_ID });
   const { data: walletClient } = useWalletClient();
   const { wallets } = useWallets();
@@ -57,17 +57,29 @@ export function useTokenApproval() {
 
   const isTestWallet = connector?.id === 'testWallet';
 
-  // Privy embedded wallet detection. The credit-card buyer flow auto-creates
-  // a Privy embedded wallet (no ETH) — those need permit-based approval since
-  // they can't pay gas for a normal `approve()` tx. External wallets (Privy
-  // social login that brings a MetaMask, browser extensions) have ETH and
-  // use the existing wagmi-walletClient path. Match by address so we route
-  // correctly even if multiple wallets are connected.
+  // Address resolution mirrors useSellerStatus.ts (the canonical pattern in
+  // this codebase). Priority:
+  //   1. Privy embedded wallet — credit-card buyers and Privy-only users
+  //      live here. They have NO ETH; route them to the permit relay.
+  //   2. Test wallet (dev only) — pays its own gas.
+  //   3. Wagmi-reported address — covers external wallets (MetaMask, etc.)
+  //      and Privy users who surface through the wagmi adapter.
+  // The previous version of this hook tied detection to wagmi's address,
+  // but wagmi races / doesn't always surface the embedded wallet for
+  // credit-card buyers. The result was approve() bailing at the
+  // `if (!address)` early return BEFORE any logs fired — exactly the
+  // symptom Doug saw repeatedly Apr 27 2026 evening.
   const privyEmbeddedWallet = wallets.find((w) => w.walletClientType === 'privy');
-  const isUsingPrivyEmbedded =
-    !!privyEmbeddedWallet &&
-    !!address &&
-    privyEmbeddedWallet.address.toLowerCase() === address.toLowerCase();
+  const privyAddress = privyEmbeddedWallet?.address as Address | undefined;
+  const testWalletAddress = isTestWallet ? wagmiAddress : undefined;
+  const address = (privyAddress ?? testWalletAddress ?? (wagmiConnected ? wagmiAddress : undefined)) as Address | undefined;
+
+  // Use permit flow whenever a Privy embedded wallet exists — that wallet has
+  // no ETH and can't pay gas for a standard approve(). External wallets
+  // routed through the wagmi adapter (`walletClientType !== 'privy'`) are
+  // not in `wallets` with the 'privy' filter, so they correctly fall through
+  // to the wagmi walletClient path below.
+  const isUsingPrivyEmbedded = !!privyEmbeddedWallet;
 
   /**
    * Check the current allowance for a token
@@ -253,7 +265,17 @@ export function useTokenApproval() {
    * @param tokenAddress Optional token address (defaults to ROOTS)
    */
   const approve = useCallback(async (amount: bigint, tokenAddress?: Address): Promise<boolean> => {
+    console.log('[useTokenApproval] approve called', {
+      address,
+      privyAddress,
+      wagmiAddress,
+      isUsingPrivyEmbedded,
+      isTestWallet,
+      tokenAddress,
+      amount: amount.toString(),
+    });
     if (!address) {
+      console.warn('[useTokenApproval] No resolved address — bailing.');
       setError('Wallet not connected');
       return false;
     }
@@ -357,6 +379,8 @@ export function useTokenApproval() {
   }, [
     walletClient,
     address,
+    privyAddress,
+    wagmiAddress,
     publicClient,
     checkAllowance,
     isTestWallet,
