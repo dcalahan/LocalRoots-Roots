@@ -60,13 +60,15 @@ interface CreditCardCheckoutProps {
 type Step = 'info' | 'auth' | 'pay' | 'awaiting-funds' | 'paid';
 
 // Polling cadence — 3 seconds is fast enough that a buyer who paid quickly
-// sees the success state without staring at a spinner. The 90-second
-// timeout fires once the typical Coinbase settlement window has passed
-// without funds arriving — at that point something is wrong (popup
-// closed mid-flow, payment declined, fee mismatch) and the buyer needs
-// a clearer recovery prompt instead of staring at a spinner indefinitely.
+// sees the success state without staring at a spinner. Coinbase advertises
+// "5-15 seconds" for guest-checkout settlement but in practice it can take
+// 2-4 minutes for the on-chain transfer to land (verified Apr 27 2026 —
+// Coinbase shows "Bought $5.00" on their side while their internal status
+// is still "Pending" and USDC hasn't arrived). 5-minute timeout covers the
+// realistic window; if it still hasn't arrived after that, something
+// went wrong and the buyer needs a recovery prompt.
 const POLL_INTERVAL_MS = 3_000;
-const POLL_TIMEOUT_MS = 90 * 1_000;
+const POLL_TIMEOUT_MS = 5 * 60 * 1_000;
 
 export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardCheckoutProps) {
   const { ready, authenticated, login, user } = usePrivy();
