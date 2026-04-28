@@ -208,7 +208,14 @@ export default function CheckoutPage() {
   // USDC lands in their Privy wallet, then we settle the marketplace
   // order automatically using the same path crypto buyers take (just
   // with paymentToken locked to USDC since that's what arrived).
-  if (mode === 'guest') {
+  //
+  // Gate on `step === 'review'` so once handleCheckout transitions step
+  // to 'processing' or 'complete', the parent regains control and renders
+  // its own status / success screens. Without this gate, CreditCardCheckout
+  // keeps rendering its "Payment received / Placing your order on-chain..."
+  // forever even after the order succeeds, because the parent's success
+  // branch is unreachable while mode === 'guest'.
+  if (mode === 'guest' && step === 'review') {
     return (
       <CreditCardCheckout
         items={items}
