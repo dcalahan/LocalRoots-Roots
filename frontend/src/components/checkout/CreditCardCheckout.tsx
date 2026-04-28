@@ -90,18 +90,27 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
   const [usdcReceived, setUsdcReceived] = useState<bigint>(0n);
   const startingBalanceRef = useRef<bigint | null>(null);
   const pollStartedAtRef = useRef<number | null>(null);
+  // Tracks whether we've already requested a top-off this session so we
+  // don't fire it on every poll tick. One try per checkout is enough — if
+  // it fails (rate limit, reserve depleted, etc.) the existing 90s timeout
+  // surfaces a clean error.
+  const topOffAttemptedRef = useRef<boolean>(false);
+  // While the top-off RPC is in flight we pause threshold-checking so the
+  // UI doesn't briefly flicker through "We didn't see your payment arrive"
+  // on the cycle between Coinbase delivery and reserve top-off landing.
+  const topOffInFlightRef = useRef<boolean>(false);
 
   const hasDeliveryItems = items.some(item => item.isDelivery);
   const totalUsd = Number(rootsToFiat(total));
-  // Pad the fiat amount by ~3% to cover Coinbase's processing fee so the
-  // delivered USDC covers the order total. We use presetFiatAmount (not
-  // presetCryptoAmount) because empirically presetCryptoAmount hangs on
-  // Coinbase's guest-checkout phone-verification step (Apr 27 2026).
-  // Coinbase's typical card fee is ~2.49%, so 3% is a thin safety margin
-  // — small leftover credit (~$0.02 on a $5 order) stays in the buyer's
-  // account. Coinbase guest checkout also has a $5 fiat minimum.
-  const FEE_PAD = 1.03;
-  const fiatToCharge = Math.max(5, Math.ceil(totalUsd * FEE_PAD * 100) / 100);
+  // No fee pad. Buyer pays the exact cart amount in fiat (or the $5 Coinbase
+  // minimum, whichever is higher). The 3% pad we previously used pushed
+  // small carts ($5 → $5.15 charge) over Coinbase's per-transaction limit
+  // for unverified accounts ($5/tx), creating a deterministic block at the
+  // popup. Now: buyer pays exactly $5, Coinbase delivers ~$4.88 after fees,
+  // and the relayer top-off endpoint covers the shortfall so the buyer's
+  // wallet ends up with the full cart amount. See `/api/relayer-topup`.
+  // Doug, Apr 28 2026.
+  const fiatToCharge = Math.max(5, Math.ceil(totalUsd * 100) / 100);
 
   // Pre-fill from Privy when available
   useEffect(() => {
@@ -178,6 +187,10 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     async function tick() {
       if (cancelled) return;
 
+      // While a top-off RPC is in flight, skip this tick so we don't
+      // double-fire. The next tick will pick up the new balance.
+      if (topOffInFlightRef.current) return;
+
       const balance = await readBalance();
       const start = startingBalanceRef.current ?? 0n;
       const delta = balance > start ? balance - start : 0n;
@@ -207,11 +220,62 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         return;
       }
 
+      // Coinbase Onramp routinely under-delivers by ~2-3% (their card fee
+      // comes out of the fiat charge). When `delta` is positive but below
+      // threshold AND it's been long enough that we expect Coinbase has
+      // finished delivering, request a relayer top-off to cover the gap.
+      // The endpoint enforces a hard $1 cap and a 3-per-day limit per
+      // buyer, so a malicious caller can't drain the reserve.
+      const elapsed = Date.now() - (pollStartedAtRef.current ?? Date.now());
+      const popupClosed = popupRef ? popupRef.closed : false;
+      const eligibleForTopOff =
+        !topOffAttemptedRef.current &&
+        delta > 0n &&
+        delta < requiredUsdcUnits &&
+        // Wait ≥15s OR until popup is closed — gives Coinbase time to fully
+        // deliver before we conclude there's a fee gap. Without this we'd
+        // top off on every Coinbase pay before the full amount arrived.
+        (elapsed > 15_000 || popupClosed);
+
+      if (eligibleForTopOff) {
+        topOffAttemptedRef.current = true;
+        topOffInFlightRef.current = true;
+        try {
+          console.log(
+            `[CreditCardCheckout] Requesting top-off: delta=${delta}, required=${requiredUsdcUnits}, gap=${requiredUsdcUnits - delta}`
+          );
+          const target = balance + (requiredUsdcUnits - delta);
+          const res = await fetch('/api/relayer-topup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              buyerAddress,
+              targetUsdcAmount: target.toString(),
+            }),
+          });
+          const result = await res.json();
+          if (!res.ok) {
+            console.error('[CreditCardCheckout] Top-off failed:', result);
+            // Don't cancel polling — let the natural timeout fire so the
+            // buyer can refresh and retry through the leftover-balance
+            // shortcut.
+          } else {
+            console.log('[CreditCardCheckout] Top-off complete:', result);
+          }
+        } catch (err) {
+          console.error('[CreditCardCheckout] Top-off request error:', err);
+        } finally {
+          topOffInFlightRef.current = false;
+        }
+        // Fall through to the next tick; it'll re-read balance and
+        // (if top-off succeeded) hit the success branch above.
+        return;
+      }
+
       // Timeout: 90 seconds without funds arriving. At this point either
       // the buyer closed the popup without paying, the payment was
       // declined, or something else went wrong. Stop polling and surface
       // a clear recovery prompt.
-      const elapsed = Date.now() - (pollStartedAtRef.current ?? Date.now());
       if (elapsed > POLL_TIMEOUT_MS) {
         cancelled = true;
         setError("We didn't see your payment arrive. If you completed it, refresh the page to retry — your order is still in the cart.");
