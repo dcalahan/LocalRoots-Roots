@@ -102,15 +102,35 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
   const hasDeliveryItems = items.some(item => item.isDelivery);
   const totalUsd = Number(rootsToFiat(total));
-  // No fee pad. Buyer pays the exact cart amount in fiat (or the $5 Coinbase
-  // minimum, whichever is higher). The 3% pad we previously used pushed
-  // small carts ($5 → $5.15 charge) over Coinbase's per-transaction limit
-  // for unverified accounts ($5/tx), creating a deterministic block at the
-  // popup. Now: buyer pays exactly $5, Coinbase delivers ~$4.88 after fees,
-  // and the relayer top-off endpoint covers the shortfall so the buyer's
-  // wallet ends up with the full cart amount. See `/api/relayer-topup`.
-  // Doug, Apr 28 2026.
-  const fiatToCharge = Math.max(5, Math.ceil(totalUsd * 100) / 100);
+  // Pad the fiat charge by 2.5% so the buyer absorbs Coinbase's processing
+  // fee. Architecture (Doug, Apr 28 2026): "Sellers should never be paid
+  // more or less than the listed price; LocalRoots should not absorb
+  // Coinbase fees as a permanent subsidy."
+  //
+  // Empirical calibration of FEE_PAD = 1.025:
+  //   - For a $5 cart, fiatToCharge = ceil($5 × 1.025 × 100) / 100 = $5.13
+  //   - $5.13 was confirmed accepted by Coinbase + BoA's pre-auth check
+  //     (visible as a pending charge in Doug's BoA account Apr 28 evening)
+  //   - $5.15 (3% pad) was rejected with "Buy up to $5 per transaction as
+  //     current limit" — the per-tx threshold is somewhere between $5.13
+  //     and $5.15, and 2.5% lands cleanly under it.
+  //   - Coinbase's typical card fee is ~2.49%; 2.5% pad is the tightest
+  //     match that doesn't push the request over their limit.
+  //
+  // The marketplace contract pulls EXACTLY the listed cart price from the
+  // buyer's wallet at settlement (`safeTransferFrom(buyer, escrow,
+  // usdcAmount)` where `usdcAmount = _calculateStablecoinAmount(listed)`),
+  // not whatever the buyer happens to have. So if Coinbase happens to under-
+  // charge (e.g. fee is 2% on a given tx, buyer wallet ends with $5.03),
+  // any excess stays with the buyer as future-purchase credit; the seller
+  // is never overpaid.
+  //
+  // The /api/relayer-topup endpoint stays in place as defense-in-depth for
+  // the symmetric case: Coinbase's fee is HIGHER than 2.5% (it varies),
+  // buyer's wallet ends up short, top-off covers the small remaining gap.
+  // Reserve usage drops to near-zero per transaction in steady state.
+  const FEE_PAD = 1.025;
+  const fiatToCharge = Math.max(5, Math.ceil(totalUsd * FEE_PAD * 100) / 100);
 
   // Pre-fill from Privy when available
   useEffect(() => {

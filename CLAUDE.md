@@ -131,18 +131,20 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 - Can "Login with Email" to view past orders
 - Orders tied to their Privy wallet address
 
-### Credit-Card First-Buyer Top-off (CRITICAL — Reserve Wallet Must Be Funded)
+### Credit-Card Onramp: 2.5% Fee Pad + Reserve Top-off (Defense-in-Depth)
 
-**Doug's North Star (Apr 26 → Apr 28 2026):** "Users should never have to have ETH. We have a funded account of ETH for that." Extended Apr 28: users should never have to do USDC math against Coinbase Onramp fees either.
+**Doug's principle (Apr 28 2026):** "Sellers should never be paid more or less than the listed price. Local Roots should not take the hit for Coinbase charges."
 
-**The unsolvable math problem this fix addresses:**
-- Coinbase guest/unverified accounts have a per-transaction limit (~$5 for new users).
-- Coinbase card fees are ~2-3% of the fiat charge.
-- Cart $5 + 3% fee pad = $5.15 fiat charge → blocked by Coinbase limit.
-- Cart $5 + no fee pad = $5.00 fiat charge → Coinbase delivers ~$4.88 USDC after fees → poll never satisfies cart total → spinner forever.
-- **Either way, first-time credit-card buyers cannot complete a purchase.** Pre-Apr 28 production was deterministically broken for this entire user funnel.
+**Architecture:**
+1. **Buyer absorbs Coinbase's fee** via a 2.5% fiat pad in `CreditCardCheckout.tsx`. For a $5 cart, fiatToCharge = $5.13. Empirically calibrated — $5.13 fits inside Coinbase's per-transaction unverified limit (which blocks at $5.15+); 2.5% is the tightest match to Coinbase's typical ~2.49% card fee that doesn't trigger the cap.
+2. **Marketplace contract pulls exactly the listed price** at settlement, not whatever the buyer happens to hold. Any Coinbase under-charge (fee < 2.5%, buyer wallet ends with > listed price) stays with the buyer as future-purchase credit. Seller is never overpaid.
+3. **Reserve top-off (`/api/relayer-topup`) is defense-in-depth** for the symmetric case: Coinbase's fee on a particular tx runs higher than 2.5% (their fees vary), buyer's wallet ends short, top-off covers the small gap so the marketplace `safeTransferFrom` doesn't revert. In steady state the reserve is barely touched; it's not the primary mechanism.
 
-**The architectural fix:** `/api/relayer-topup` endpoint covers the inevitable Coinbase fee gap. Buyer pays exactly cart total, Coinbase delivers slightly less, our relayer wallet sends the small difference (capped at $1 USDC per request, 3 requests per buyer per UTC day), buyer's wallet ends up with the EXACT cart amount. Settlement proceeds normally.
+**Why we got here (Apr 28 2026 evening):**
+- Original code: 3% pad → $5.15 charge → blocked at Coinbase popup with "Buy up to $5 per transaction as current limit"
+- Mistaken correction: dropped pad entirely, built reserve top-off as primary fee-coverage mechanism. This violated the "LocalRoots doesn't subsidize transactions" principle.
+- Empirical evidence from Doug's BoA pending charges: $5.13 (2.5%-equivalent) was approved at Coinbase's popup level; $5.15 was blocked. The per-tx threshold is between them.
+- Final state: 2.5% pad as primary, reserve top-off as fallback. Both layers in place; reserve only fires on actual shortfalls.
 
 **Files:**
 - `frontend/src/app/api/relayer-topup/route.ts` — server-side endpoint. Reads buyer's actual on-chain balance (never trusts client), enforces rate limit (KV `topup:{address}:{YYYY-MM-DD}`), enforces hard cap ($1 USDC per request, $100 max target). On confirmed receipt, increments daily counter.
