@@ -6,7 +6,7 @@ import { type Address, formatUnits } from 'viem';
 import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
-import { isCoinbaseOnrampConfigured, openCoinbaseOnramp } from '@/lib/coinbaseOnramp';
+import { isCoinbaseOnrampConfigured, openBlankOnrampPopup, navigateOnrampPopup } from '@/lib/coinbaseOnramp';
 import { usePrivyContact } from '@/hooks/usePrivyContact';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
 import { readLocalDelivery } from '@/lib/buyerDelivery';
@@ -361,6 +361,14 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
     setError(null);
 
+    // ─── iOS Safari popup-blocker rule ──────────────────────────────────
+    // window.open MUST be called synchronously inside the user gesture,
+    // BEFORE any await. Any prior async work breaks the gesture context
+    // on iOS Safari and the popup gets blocked. So: open the blank popup
+    // first, do the balance check after, and either close-or-navigate the
+    // popup based on the result. Doug, Apr 29 2026 (Matt hit this on iPhone).
+    const popup = openBlankOnrampPopup();
+
     const requiredUsdcUnits = BigInt(Math.floor(totalUsd * 1e6));
     try {
       const client = createFreshPublicClient();
@@ -379,6 +387,9 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         args: [buyerAddress],
       });
       if (existingBalance >= requiredUsdcUnits) {
+        // Buyer already has enough USDC — no Coinbase needed. Close the
+        // popup we opened defensively.
+        if (popup) popup.close();
         setStep('paid');
         onPaid({
           buyerAddress,
@@ -396,7 +407,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
       console.warn('[CreditCardCheckout] pre-payment balance check failed:', err);
     }
 
-    const result = await openCoinbaseOnramp({
+    const result = await navigateOnrampPopup(popup, {
       walletAddress: buyerAddress,
       presetFiatAmount: fiatToCharge,
       partnerUserId: user?.id || undefined,
