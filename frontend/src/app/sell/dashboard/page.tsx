@@ -1133,10 +1133,24 @@ export default function SellerDashboard() {
                       </div>
                     )}
 
-                    {/* Active Orders (Ready/Out for Delivery) */}
+                    {/* Active Orders (Ready/Out for Delivery) — these are
+                        in the 48h escrow window. Seller has completed their
+                        part; funds release automatically when the window
+                        closes OR sooner if the buyer taps Accept. Per Doug
+                        (Apr 29 2026): keep the dispute mechanism unmentioned
+                        on both buyer and seller sides — no need to highlight
+                        it; we want both parties focused on the happy path. */}
                     {activeOrders.length > 0 && (
                       <div className="space-y-3">
-                        <h3 className="text-sm font-medium text-roots-gray uppercase">In Progress</h3>
+                        <h3 className="text-sm font-medium text-roots-gray uppercase">In Escrow — Awaiting Confirmation</h3>
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                          <p className="font-medium mb-1">You&apos;ve done your part. Funds are in smart-contract escrow.</p>
+                          <p className="text-amber-800">
+                            The buyer has up to <strong>48 hours</strong> after your proof upload to confirm receipt.
+                            They see an &quot;Accept Order&quot; button on their orders page that releases funds to you
+                            immediately. If they do nothing, funds release automatically when the window closes.
+                          </p>
+                        </div>
                         {activeOrders.map((order) => (
                           <div
                             key={order.orderId}
