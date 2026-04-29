@@ -7,6 +7,11 @@ import { GrowingProfileProvider } from '@/contexts/GrowingProfileContext';
 import { GrowingProfileCard, MonthlyCalendar, GardenAIChat } from '@/components/grow';
 import { usePrivy } from '@privy-io/react-auth';
 import { useMyGarden } from '@/hooks/useMyGarden';
+import { useSellerStatus } from '@/hooks/useSellerStatus';
+import { useSellerOrders, OrderStatus } from '@/hooks/useSellerOrders';
+import { useBuyerOrderUpdates } from '@/hooks/useBuyerOrderUpdates';
+import { PendingOrdersStrip } from '@/components/order/PendingOrdersStrip';
+import { OrderStatus as OrderStatusEnum } from '@/types/order';
 
 function GrowPageContent() {
   const { user } = usePrivy();
@@ -14,8 +19,60 @@ function GrowPageContent() {
   const { activePlants, beds } = useMyGarden(userId);
   const hasGarden = activePlants.length > 0 || beds.length > 0;
 
+  // /grow is many users' daily home — Doug spends most of his time here. So
+  // we surface BOTH role-relevant order banners: pending sales for sellers
+  // (calls to action), status-change notifications for buyers (info).
+  // Apr 29 2026.
+  const { isSeller } = useSellerStatus();
+  const { orders: sellerOrders } = useSellerOrders();
+  const sellerPendingCount = isSeller
+    ? sellerOrders.filter((o) => o.status === OrderStatus.Pending).length
+    : 0;
+  const { updateCount: buyerUpdateCount, mostRecent: buyerRecent } =
+    useBuyerOrderUpdates();
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <>
+      {/* Full-width pending-orders strip — visually matches EarlyAdopterBanner
+          so sellers spending time on /grow can't miss buyers waiting. Doug,
+          Apr 29 2026: "I would definitely want them in my Grow page, because
+          that's where I'd spend most of my time." */}
+      {sellerPendingCount > 0 && (
+        <PendingOrdersStrip
+          variant="seller-pending"
+          message={`You have ${sellerPendingCount} pending ${sellerPendingCount === 1 ? 'order' : 'orders'} waiting`}
+          detail="Buyers are waiting for you to accept or decline."
+          href="/sell/dashboard"
+          ctaLabel="View"
+        />
+      )}
+      {buyerUpdateCount > 0 && (
+        <PendingOrdersStrip
+          variant="buyer-update"
+          message={
+            buyerUpdateCount === 1
+              ? `Update on order #${buyerRecent?.orderId.toString()}`
+              : `${buyerUpdateCount} of your orders have updates`
+          }
+          detail={
+            buyerUpdateCount === 1 && buyerRecent
+              ? buyerRecent.status === OrderStatusEnum.Accepted
+                ? `${buyerRecent.metadata.sellerName} accepted your order.`
+                : buyerRecent.status === OrderStatusEnum.Cancelled
+                  ? `Order was cancelled.`
+                  : buyerRecent.status === OrderStatusEnum.ReadyForPickup
+                    ? 'Ready for pickup.'
+                    : buyerRecent.status === OrderStatusEnum.OutForDelivery
+                      ? 'Out for delivery.'
+                      : 'Status changed.'
+              : 'Tap View to see what changed.'
+          }
+          href="/orders"
+          ctaLabel="View"
+        />
+      )}
+
+      <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-heading font-bold mb-2">Your Garden</h1>
@@ -169,7 +226,8 @@ function GrowPageContent() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
 
