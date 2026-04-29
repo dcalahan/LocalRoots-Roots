@@ -31,7 +31,7 @@ import { useMyGarden } from '@/hooks/useMyGarden';
 import { usePrivy } from '@privy-io/react-auth';
 import { ListFromGardenSheet } from '@/components/seller/ListFromGardenSheet';
 import { DeclineOrderModal } from '@/components/order/DeclineOrderModal';
-import { OrderStatusBanner } from '@/components/order/OrderStatusBanner';
+import { PendingOrdersStrip } from '@/components/order/PendingOrdersStrip';
 import guidesData from '@/data/technique-guides.json';
 import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
@@ -596,6 +596,25 @@ export default function SellerDashboard() {
       {/* Early Adopter Banner - hidden in Phase 2 */}
       <EarlyAdopterBanner isPhase2={isPhase2} />
 
+      {/* Pending-orders strip — full-width alert positioned directly below
+          EarlyAdopterBanner so sellers can't miss buyers waiting for action.
+          Doug, Apr 29 2026: "Just like the 'We just went live'." */}
+      {(() => {
+        const pendingCount = pendingOrders.filter(
+          (o) => o.status === OrderStatus.Pending
+        ).length;
+        if (pendingCount === 0) return null;
+        return (
+          <PendingOrdersStrip
+            variant="seller-pending"
+            message={`You have ${pendingCount} pending ${pendingCount === 1 ? 'order' : 'orders'} waiting`}
+            detail="Buyers are waiting for you to accept or decline."
+            onClick={() => setActiveTab('orders')}
+            ctaLabel="View"
+          />
+        );
+      })()}
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
@@ -787,25 +806,6 @@ export default function SellerDashboard() {
             </Card>
           </Link>
         </div>
-
-        {/* Pending-orders banner — surfaces orders awaiting seller action so
-            sellers don't have to actively check the Orders tab. Click → jumps
-            to Orders tab. Apr 29 2026. */}
-        {(() => {
-          const pendingCount = pendingOrders.filter(
-            (o) => o.status === OrderStatus.Pending
-          ).length;
-          if (pendingCount === 0) return null;
-          return (
-            <OrderStatusBanner
-              tone="action"
-              message={`You have ${pendingCount} pending ${pendingCount === 1 ? 'order' : 'orders'} waiting for you`}
-              detail="Buyers are waiting for you to accept or decline. Tap View to respond."
-              onClick={() => setActiveTab('orders')}
-              ctaLabel="View"
-            />
-          );
-        })()}
 
         {/* Tabs */}
         <div className="flex gap-1 mb-6 border-b overflow-x-auto">

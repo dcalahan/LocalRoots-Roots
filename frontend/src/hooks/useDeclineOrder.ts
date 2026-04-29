@@ -12,14 +12,16 @@
  *
  *   See /api/seller/cancel-order for the auth + validation contract.
  *
- * Usage:
- *   const { decline, isPending, error, reset } = useDeclineOrder();
- *   const result = await decline({ orderId: 5n, reason: 'crop went bad...' });
- *   if (result?.success) { ... }
+ * Signing: tries Privy's embedded-wallet provider FIRST (same pattern as
+ *   useGaslessTransaction). Falls back to wagmi's useSignMessage if no
+ *   Privy embedded wallet is present (i.e. external-wallet sellers).
+ *   This avoids the "wagmi doesn't always surface Privy" race that bit
+ *   the credit-card buyer flow earlier.
  */
 
 import { useState, useCallback } from 'react';
 import { useSignMessage } from 'wagmi';
+import { useWallets } from '@privy-io/react-auth';
 
 export interface DeclineOrderResult {
   success: boolean;
@@ -33,6 +35,7 @@ export interface DeclineOrderResult {
 
 export function useDeclineOrder() {
   const { signMessageAsync } = useSignMessage();
+  const { wallets } = useWallets();
 
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,16 +58,63 @@ export function useDeclineOrder() {
         // /api/seller/cancel-order. If you change one, change both.
         const message = `LocalRoots: decline order ${orderIdStr} @ ${new Date().toISOString()}`;
 
-        let signature: `0x${string}`;
-        try {
-          signature = (await signMessageAsync({ message })) as `0x${string}`;
-        } catch (err) {
+        // Find the Privy embedded wallet first — that's how most sellers
+        // sign in. Fall back to wagmi's useSignMessage for external wallets
+        // OR for the rare case where Privy hasn't surfaced the embedded
+        // wallet yet but wagmi has.
+        const privyEmbeddedWallet = wallets.find(
+          (w) => w.walletClientType === 'privy'
+        );
+
+        let signature: `0x${string}` | null = null;
+        let signError: unknown = null;
+
+        // Path A: Privy embedded wallet — sign directly via the provider.
+        // Same pattern as useGaslessTransaction.ts:174-200 which works
+        // reliably for sellers + ambassadors throughout the app.
+        if (privyEmbeddedWallet) {
+          try {
+            const provider = await privyEmbeddedWallet.getEthereumProvider();
+            const sig = (await provider.request({
+              method: 'personal_sign',
+              params: [message, privyEmbeddedWallet.address],
+            })) as string;
+            signature = sig as `0x${string}`;
+          } catch (err) {
+            signError = err;
+            console.warn(
+              '[useDeclineOrder] Privy provider sign failed, will try wagmi:',
+              err
+            );
+          }
+        }
+
+        // Path B: fall back to wagmi's useSignMessage — works for external
+        // wallets and is the original pattern.
+        if (!signature) {
+          try {
+            signature = (await signMessageAsync({ message })) as `0x${string}`;
+          } catch (err) {
+            signError = err;
+          }
+        }
+
+        if (!signature) {
+          console.error('[useDeclineOrder] All signing paths failed:', signError);
           const msg =
-            err instanceof Error ? err.message.toLowerCase() : String(err);
-          if (msg.includes('rejected') || msg.includes('denied') || msg.includes('cancelled')) {
+            signError instanceof Error
+              ? signError.message.toLowerCase()
+              : String(signError);
+          if (
+            msg.includes('rejected') ||
+            msg.includes('denied') ||
+            msg.includes('cancelled')
+          ) {
             setError('Signature was cancelled.');
           } else {
-            setError('Failed to sign decline request.');
+            setError(
+              `Failed to sign decline request: ${signError instanceof Error ? signError.message : 'unknown error'}`
+            );
           }
           return null;
         }
@@ -108,7 +158,7 @@ export function useDeclineOrder() {
         setIsPending(false);
       }
     },
-    [signMessageAsync]
+    [signMessageAsync, wallets]
   );
 
   const reset = useCallback(() => {

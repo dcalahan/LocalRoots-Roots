@@ -17,8 +17,15 @@
 import Link from 'next/link';
 
 interface OrderStatusBannerProps {
-  /** Coral (seller/ambassador action) or teal (buyer info) accent. */
-  tone: 'action' | 'info';
+  /**
+   * Visual prominence:
+   * - `alert`  — eyepopping coral fill + white text + larger padding.
+   *              Use for action-required (seller has pending orders waiting).
+   * - `action` — coral-tinted background + coral text. Subtle but noticeable.
+   * - `info`   — teal-tinted background + teal text. For passive notifications
+   *              (buyer order status changed, ambassador recruit activity).
+   */
+  tone: 'alert' | 'action' | 'info';
   /** Headline shown left-aligned. Keep short. */
   message: string;
   /** Optional sub-line for context. */
@@ -42,21 +49,36 @@ export function OrderStatusBanner({
   ctaLabel = 'View',
   onDismiss,
 }: OrderStatusBannerProps) {
-  const accent =
-    tone === 'action'
+  // Visual treatment per tone.
+  //   alert: full coral background, white text, generous padding, icon —
+  //          built to demand attention. Use sparingly: action-required only.
+  //   action: subtle coral tint. Suggests-not-demands.
+  //   info:   subtle teal tint. Passive notification.
+  const isAlert = tone === 'alert';
+  const accent = isAlert
+    ? 'bg-roots-primary text-white border-0 shadow-md'
+    : tone === 'action'
       ? 'bg-roots-primary/10 border-roots-primary/30 text-roots-primary'
       : 'bg-roots-secondary/10 border-roots-secondary/30 text-roots-secondary';
 
-  const button =
-    tone === 'action'
+  const button = isAlert
+    ? 'bg-white text-roots-primary hover:bg-white/90'
+    : tone === 'action'
       ? 'bg-roots-primary hover:bg-roots-primary/90 text-white'
       : 'bg-roots-secondary hover:bg-roots-secondary/90 text-white';
+
+  const padding = isAlert ? 'px-5 py-4' : 'px-4 py-3';
+  const messageSize = isAlert ? 'text-base font-bold' : 'text-sm font-semibold';
+  const detailSize = isAlert ? 'text-sm mt-1' : 'text-xs mt-0.5 opacity-80';
+  const ctaSize = isAlert
+    ? 'text-sm px-4 py-2 rounded-md font-bold whitespace-nowrap'
+    : 'text-xs px-3 py-1.5 rounded-md font-medium';
 
   const cta = (
     <button
       type="button"
       onClick={onClick}
-      className={`text-xs px-3 py-1.5 rounded-md font-medium ${button}`}
+      className={`${ctaSize} ${button}`}
     >
       {ctaLabel}
     </button>
@@ -64,12 +86,17 @@ export function OrderStatusBanner({
 
   return (
     <div
-      className={`flex items-center gap-3 border rounded-lg px-4 py-3 mb-4 ${accent}`}
+      className={`flex items-center gap-3 border rounded-lg mb-4 ${accent} ${padding}`}
       role="status"
     >
+      {isAlert && (
+        <div className="text-2xl flex-shrink-0" aria-hidden>
+          🔔
+        </div>
+      )}
       <div className="flex-1">
-        <p className="text-sm font-semibold leading-tight">{message}</p>
-        {detail && <p className="text-xs mt-0.5 opacity-80">{detail}</p>}
+        <p className={`leading-tight ${messageSize}`}>{message}</p>
+        {detail && <p className={detailSize}>{detail}</p>}
       </div>
       {href ? <Link href={href}>{cta}</Link> : cta}
       {onDismiss && (
@@ -77,7 +104,7 @@ export function OrderStatusBanner({
           type="button"
           aria-label="Dismiss"
           onClick={onDismiss}
-          className="opacity-50 hover:opacity-100 transition-opacity p-1"
+          className={`${isAlert ? 'opacity-80 hover:opacity-100' : 'opacity-50 hover:opacity-100'} transition-opacity p-1`}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
