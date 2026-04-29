@@ -72,31 +72,68 @@ export interface OpenOnrampResult {
  * worse UX (we lose the parent page state) so we surface a clearer error
  * to the caller in that case rather than silently navigating away.
  */
-export async function openCoinbaseOnramp(
+/**
+ * Open a blank popup window synchronously. MUST be called from a user-
+ * gesture handler (e.g. onClick) WITHOUT any prior `await` — iOS Safari
+ * counts any prior async work as breaking the gesture context and will
+ * block the popup. Doug, Apr 29 2026: Matt hit this on iPhone.
+ *
+ * Pattern: caller opens this immediately on tap, then can do async work,
+ * then passes the resulting Window reference to navigateToOnramp() which
+ * sets the URL once the session is ready. If the caller decides Coinbase
+ * isn't needed (existing balance check passed), they call `popup.close()`
+ * themselves before navigating.
+ *
+ * Returns null if the browser blocked the popup outright. Caller should
+ * surface a "please allow popups" message in that case.
+ */
+export function openBlankOnrampPopup(): Window | null {
+  return window.open(
+    'about:blank',
+    'coinbase-onramp',
+    'width=500,height=750,scrollbars=yes,resizable=yes',
+  );
+}
+
+/**
+ * Mint a Coinbase Onramp session and navigate the given popup to the
+ * checkout URL. The popup must have been opened previously (synchronously,
+ * inside the user gesture) via openBlankOnrampPopup().
+ *
+ * If popup is null (e.g. browser blocked), this returns
+ * `{ ok: false, error: 'Popup was blocked...' }` so the caller can surface
+ * a clear message.
+ */
+export async function navigateOnrampPopup(
+  popup: Window | null,
   opts: OpenOnrampOptions,
 ): Promise<OpenOnrampResult> {
   if (!opts.walletAddress) {
+    if (popup) popup.close();
     return { ok: false, error: 'No wallet address' };
   }
   if (!isCoinbaseOnrampConfigured()) {
+    if (popup) popup.close();
     return { ok: false, error: 'Coinbase Onramp not configured' };
   }
   const hasFiat = typeof opts.presetFiatAmount === 'number' && opts.presetFiatAmount > 0;
   const hasCrypto = typeof opts.presetCryptoAmount === 'number' && opts.presetCryptoAmount > 0;
   if (!hasFiat && !hasCrypto) {
+    if (popup) popup.close();
     return { ok: false, error: 'Must specify presetFiatAmount or presetCryptoAmount' };
   }
   if (hasFiat && hasCrypto) {
+    if (popup) popup.close();
     return { ok: false, error: 'Specify only one of presetFiatAmount or presetCryptoAmount' };
   }
 
-  // Open a blank popup synchronously so browsers don't block it after the
-  // await. Sized for Coinbase's hosted checkout — fits Apple Pay sheet.
-  const popup = window.open(
-    'about:blank',
-    'coinbase-onramp',
-    'width=500,height=750,scrollbars=yes,resizable=yes',
-  );
+  if (!popup) {
+    return {
+      ok: false,
+      error:
+        'Popup was blocked. Please allow popups for localroots.love and try again.',
+    };
+  }
 
   try {
     const res = await fetch('/api/coinbase-onramp-session', {
@@ -114,29 +151,36 @@ export async function openCoinbaseOnramp(
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       const errMsg = body.error || `HTTP ${res.status}`;
-      if (popup) popup.close();
+      popup.close();
       return { ok: false, error: errMsg };
     }
 
     const { url } = (await res.json()) as { url: string };
     if (!url) {
-      if (popup) popup.close();
+      popup.close();
       return { ok: false, error: 'No URL returned from session endpoint' };
     }
 
-    if (popup) {
-      popup.location.href = url;
-      return { ok: true, popup };
-    }
-
-    // Popup blocked — caller should surface "please allow popups" rather
-    // than navigating the parent away (which kills the cart + checkout state).
-    return { ok: false, error: 'Popup was blocked. Please allow popups for localroots.love and try again.' };
+    popup.location.href = url;
+    return { ok: true, popup };
   } catch (err) {
-    if (popup) popup.close();
+    popup.close();
     return {
       ok: false,
       error: err instanceof Error ? err.message : 'Unknown error',
     };
   }
+}
+
+/**
+ * Convenience wrapper: opens popup + mints session in one call. ONLY safe
+ * to use if the caller has done NO async work since the user gesture.
+ * For flows that need to do anything async first (e.g. pre-payment balance
+ * check), use openBlankOnrampPopup() + navigateOnrampPopup() directly.
+ */
+export async function openCoinbaseOnramp(
+  opts: OpenOnrampOptions,
+): Promise<OpenOnrampResult> {
+  const popup = openBlankOnrampPopup();
+  return navigateOnrampPopup(popup, opts);
 }
