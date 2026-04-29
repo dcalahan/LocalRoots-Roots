@@ -12,6 +12,7 @@ import { OrderStatus, OrderStatusLabels, canRaiseDispute, getDisputeTimeRemainin
 import { useAccount, useSignMessage } from 'wagmi';
 import { getIpfsUrl } from '@/lib/pinata';
 import { fetchPickupForOrder } from '@/lib/sellerPickup';
+import { AddressLink, PhoneLink } from '@/components/order/ContactLinks';
 
 // Helper to convert image reference to displayable URL
 function resolveImageUrl(imageRef: string | null | undefined): string | null {
@@ -231,14 +232,18 @@ export default function OrderDetailPage() {
               <div className="mt-3">
                 {pickup ? (
                   // Address revealed — show + Maps/Waze deep links so buyer
-                  // can navigate without retyping
+                  // can navigate without retyping. Phone now uses PhoneLink
+                  // for tap-to-call AND tap-to-text. Doug, Apr 29 2026.
                   <div className="p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm font-medium text-blue-800 mb-1">Pickup Location:</p>
-                    <p className="text-sm text-blue-700 mb-2">{pickup.address}</p>
+                    <p className="text-sm text-blue-700 mb-2">
+                      <AddressLink address={pickup.address} />
+                    </p>
                     {pickup.phone && (
-                      <p className="text-xs text-blue-700 mb-2">
-                        Seller phone: <a href={`tel:${pickup.phone}`} className="underline">{pickup.phone}</a>
-                      </p>
+                      <div className="text-xs text-blue-700 mb-2">
+                        <span className="text-blue-800">Seller: </span>
+                        <PhoneLink phone={pickup.phone} />
+                      </div>
                     )}
                     <div className="flex gap-2 flex-wrap">
                       <a

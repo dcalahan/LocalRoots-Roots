@@ -33,6 +33,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { ListFromGardenSheet } from '@/components/seller/ListFromGardenSheet';
 import { DeclineOrderModal } from '@/components/order/DeclineOrderModal';
 import { PendingOrdersStrip } from '@/components/order/PendingOrdersStrip';
+import { AddressLink, PhoneLink } from '@/components/order/ContactLinks';
 import guidesData from '@/data/technique-guides.json';
 import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
@@ -1091,13 +1092,20 @@ export default function SellerDashboard() {
                               <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice, order.paymentToken).fiat}</p>
                               <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice, order.paymentToken).roots} {rewardLabel}</p>
                             </div>
-                            {/* Delivery address */}
+                            {/* Delivery address — clickable: address opens
+                                maps app, phone offers Call + Text actions.
+                                No PII custody — these are native URL schemes.
+                                Doug, Apr 29 2026. */}
                             {order.isDelivery && order.deliveryInfo && (
                               <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
                                 <p className="text-xs font-medium text-blue-800">Deliver to:</p>
-                                <p className="text-sm text-blue-900">{order.deliveryInfo.address}</p>
+                                <p className="text-sm text-blue-900">
+                                  <AddressLink address={order.deliveryInfo.address} />
+                                </p>
                                 {order.deliveryInfo.phone && (
-                                  <p className="text-xs text-blue-700 mt-1">📞 {order.deliveryInfo.phone}</p>
+                                  <div className="text-xs text-blue-700 mt-1.5">
+                                    <PhoneLink phone={order.deliveryInfo.phone} />
+                                  </div>
                                 )}
                                 {order.deliveryInfo.notes && (
                                   <p className="text-xs text-blue-600 mt-1 italic">{order.deliveryInfo.notes}</p>
@@ -1164,13 +1172,17 @@ export default function SellerDashboard() {
                                 </span>
                               </div>
                             </div>
-                            {/* Delivery address */}
+                            {/* Delivery address — clickable contact info */}
                             {order.isDelivery && order.deliveryInfo && (
                               <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
                                 <p className="text-xs font-medium text-blue-800">Deliver to:</p>
-                                <p className="text-sm text-blue-900">{order.deliveryInfo.address}</p>
+                                <p className="text-sm text-blue-900">
+                                  <AddressLink address={order.deliveryInfo.address} />
+                                </p>
                                 {order.deliveryInfo.phone && (
-                                  <p className="text-xs text-blue-700 mt-1">📞 {order.deliveryInfo.phone}</p>
+                                  <div className="text-xs text-blue-700 mt-1.5">
+                                    <PhoneLink phone={order.deliveryInfo.phone} />
+                                  </div>
                                 )}
                               </div>
                             )}
