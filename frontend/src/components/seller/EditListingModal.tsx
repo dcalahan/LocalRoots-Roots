@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { parseUnits, formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { useUpdateListing } from '@/hooks/useUpdateListing';
 import { useToast } from '@/hooks/use-toast';
 import type { SellerListing } from '@/hooks/useSellerListings';
+import { rootsToStablecoin, stablecoinToRoots } from '@/lib/contracts/marketplace';
 
 interface EditListingModalProps {
   listing: SellerListing;
@@ -20,9 +20,12 @@ export function EditListingModal({ listing, onClose, onSuccess }: EditListingMod
   const { toast } = useToast();
   const { updateListing, isPending, isSuccess, error, reset } = useUpdateListing();
 
-  const [pricePerUnit, setPricePerUnit] = useState(
-    formatUnits(BigInt(listing.pricePerUnit), 18)
-  );
+  // Listing prices live on-chain in ROOTS units (18 decimals, where 100 ROOTS
+  // = $1). Sellers should never see "ROOTS" — they think in dollars. Convert
+  // to USD for display + editing; convert back to ROOTS on save. Doug,
+  // Apr 28 2026.
+  const initialUsd = Number(rootsToStablecoin(BigInt(listing.pricePerUnit))) / 1_000_000;
+  const [priceUsd, setPriceUsd] = useState(initialUsd.toFixed(2));
   const [quantity, setQuantity] = useState(listing.quantityAvailable);
   const [active, setActive] = useState(listing.active);
 
@@ -61,8 +64,8 @@ export function EditListingModal({ listing, onClose, onSuccess }: EditListingMod
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const price = parseFloat(pricePerUnit);
-    if (isNaN(price) || price <= 0) {
+    const usd = parseFloat(priceUsd);
+    if (isNaN(usd) || usd <= 0) {
       toast({
         title: 'Invalid price',
         description: 'Please enter a valid price greater than 0.',
@@ -80,11 +83,20 @@ export function EditListingModal({ listing, onClose, onSuccess }: EditListingMod
       return;
     }
 
+    // Convert USD → ROOTS base units for the on-chain write.
+    // Math.round on (usd * 1e6) avoids floating-point edge cases like
+    // 4.50 × 1e6 = 4499999.999999999. Result is in USDC base units (6
+    // decimals), which stablecoinToRoots upcasts to ROOTS (18 decimals
+    // × the 100:1 USD-to-ROOTS ratio). For $4.50 → 4_500_000n →
+    // 450_000_000_000_000_000_000n (450 ROOTS).
+    const usdcUnits = BigInt(Math.round(usd * 1_000_000));
+    const rootsUnits = stablecoinToRoots(usdcUnits);
+
     try {
       await updateListing({
         listingId: BigInt(listing.listingId),
         metadataIpfs: listing.metadataIpfs,
-        pricePerUnit: parseUnits(pricePerUnit, 18),
+        pricePerUnit: rootsUnits,
         quantityAvailable: quantity,
         active,
       });
@@ -114,16 +126,20 @@ export function EditListingModal({ listing, onClose, onSuccess }: EditListingMod
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="price">Price (ROOTS)</Label>
+              <Label htmlFor="price">Price ($)</Label>
               <div className="relative mt-1">
+                <span className="absolute inset-y-0 left-3 flex items-center text-gray-500 pointer-events-none">
+                  $
+                </span>
                 <Input
                   id="price"
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={pricePerUnit}
-                  onChange={(e) => setPricePerUnit(e.target.value)}
+                  value={priceUsd}
+                  onChange={(e) => setPriceUsd(e.target.value)}
                   disabled={isPending}
+                  className="pl-7"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
