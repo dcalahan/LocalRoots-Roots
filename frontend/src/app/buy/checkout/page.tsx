@@ -355,9 +355,9 @@ export default function CheckoutPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <div className="font-semibold">Credit Card</div>
+                <div className="font-semibold">Card or Mobile Pay</div>
                 <div className="text-sm text-roots-gray">
-                  Visa, Mastercard, Apple Pay
+                  Debit card, Apple Pay, or Google Pay
                 </div>
               </div>
               <span className="text-xs bg-roots-primary/10 text-roots-primary px-2 py-1 rounded font-medium">
@@ -365,6 +365,18 @@ export default function CheckoutPage() {
               </span>
             </div>
           </button>
+
+          {/* $5 minimum disclosure for sub-$5 carts. Coinbase Onramp's
+              documented floor is $5 across all payment methods, so a $4.50
+              cart still gets a $5.00 charge. The difference (after Coinbase's
+              ~2.5% card fee) lands in the buyer's wallet as future-purchase
+              credit — but they need to know that BEFORE clicking, not as
+              a surprise on the next screen. Doug, Apr 29 2026. */}
+          {Number(rootsToFiat(total)) < 5 && (
+            <div className="text-xs text-roots-gray bg-amber-50 border border-amber-200 rounded p-3 -mt-1">
+              <strong className="text-amber-900">Note:</strong> Coinbase requires a $5 minimum charge for card payments. For carts under $5, you&apos;ll be charged $5 — the difference (~${(5 - Number(rootsToFiat(total))).toFixed(2)}) stays in your wallet as credit toward future purchases. Your seller still gets the full {formatFiat(rootsToFiat(total))}.
+            </div>
+          )}
 
           {/* Privy Wallet Option - Show for authenticated Privy users */}
           {privyAuthenticated && privyAddress && (
