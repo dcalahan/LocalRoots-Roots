@@ -14,7 +14,7 @@ import { useAccount } from 'wagmi';
 import { approximateDistance, bytes8ToGeohash } from '@/lib/geohash';
 import { fromKm, getShortUnitLabel } from '@/lib/distance';
 import { useBuyerOrderUpdates } from '@/hooks/useBuyerOrderUpdates';
-import { OrderStatusBanner } from '@/components/order/OrderStatusBanner';
+import { PendingOrdersStrip } from '@/components/order/PendingOrdersStrip';
 import { OrderStatus as OrderStatusEnum } from '@/types/order';
 
 interface Location {
@@ -28,7 +28,7 @@ export default function BuyPage() {
   const { preferences, setPreferredLocation, setSearchRadiusKm } = useUserPreferences();
   const { listings, isLoading } = useAllListings();
   const { isConnected } = useAccount();
-  const { updateCount, mostRecent, dismiss } = useBuyerOrderUpdates();
+  const { updateCount, mostRecent } = useBuyerOrderUpdates();
 
   // Use persisted location from preferences
   const location = preferences.preferredLocation;
@@ -82,12 +82,13 @@ export default function BuyPage() {
   const radiusOptions = [10, 25, 50, 100, 500, 25000];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Buyer order-status banner — surfaces accept/cancel/etc transitions
-          since the buyer's last visit. Click → /orders. Doug, Apr 29 2026. */}
+    <>
+      {/* Full-width buyer status-update strip — same eyepopping treatment as
+          the seller pending-orders strip so buyers can't miss accept/cancel
+          transitions. Doug, Apr 29 2026. */}
       {updateCount > 0 && (
-        <OrderStatusBanner
-          tone="info"
+        <PendingOrdersStrip
+          variant="buyer-update"
           message={
             updateCount === 1
               ? `Update on order #${mostRecent?.orderId.toString()}`
@@ -98,7 +99,7 @@ export default function BuyPage() {
               ? mostRecent.status === OrderStatusEnum.Accepted
                 ? `${mostRecent.metadata.sellerName} accepted your order.`
                 : mostRecent.status === OrderStatusEnum.Cancelled
-                  ? `Order was cancelled.${mostRecent.cancellationReason ? ' Tap View for the reason.' : ''}`
+                  ? `Order was cancelled.`
                   : mostRecent.status === OrderStatusEnum.ReadyForPickup
                     ? 'Ready for pickup.'
                     : mostRecent.status === OrderStatusEnum.OutForDelivery
@@ -108,9 +109,9 @@ export default function BuyPage() {
           }
           href="/orders"
           ctaLabel="View"
-          onDismiss={dismiss}
         />
       )}
+      <div className="max-w-6xl mx-auto px-4 py-8">
       {!location ? (
         // Location entry screen
         <div className="max-w-md mx-auto">
@@ -224,6 +225,7 @@ export default function BuyPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

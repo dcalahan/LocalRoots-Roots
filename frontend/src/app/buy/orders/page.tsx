@@ -123,6 +123,21 @@ function OrderCard({ order, onAccept, isAccepting, onDispute }: {
                 {statusDesc.icon} {statusDesc.text}
               </p>
 
+              {/* Cancellation reason — surfaced inline on cancelled orders so
+                  buyers don't have to click into the detail page just to
+                  know why their order was cancelled. The "Seller declined: "
+                  prefix is added by /api/seller/cancel-order to differentiate
+                  from admin moderation cancels; we strip it for display.
+                  Doug, Apr 29 2026. */}
+              {order.status === OrderStatus.Cancelled && order.cancellationReason && (
+                <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700">
+                  <span className="font-medium">Reason from seller: </span>
+                  {order.cancellationReason.startsWith('Seller declined: ')
+                    ? order.cancellationReason.slice('Seller declined: '.length)
+                    : order.cancellationReason}
+                </div>
+              )}
+
               <div className="mt-2 flex items-center justify-between">
                 <PriceDisplay amount={order.totalPrice} size="sm" />
                 <span className="text-sm text-roots-gray">

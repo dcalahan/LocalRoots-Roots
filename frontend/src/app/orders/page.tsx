@@ -91,6 +91,19 @@ function BuyerOrderCard({ order }: { order: OrderWithMetadata }) {
                 {OrderStatusLabels[order.status]}
               </span>
             </div>
+
+            {/* Cancellation reason — surfaced inline so buyers see WHY a
+                cancelled order was cancelled without clicking into detail.
+                Doug, Apr 29 2026. */}
+            {order.status === OrderStatus.Cancelled && order.cancellationReason && (
+              <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700">
+                <span className="font-medium">Reason from seller: </span>
+                {order.cancellationReason.startsWith('Seller declined: ')
+                  ? order.cancellationReason.slice('Seller declined: '.length)
+                  : order.cancellationReason}
+              </div>
+            )}
+
             <div className="mt-2 flex items-center justify-between">
               <PriceDisplay amount={order.totalPrice} size="sm" />
               <span className="text-sm text-roots-gray">
