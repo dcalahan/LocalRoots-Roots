@@ -22,6 +22,7 @@ import { PaymentTokenSelector } from '@/components/buyer/PaymentTokenSelector';
 import { CreditCardCheckout } from '@/components/checkout/CreditCardCheckout';
 import { BuyerWalletModal } from '@/components/BuyerWalletModal';
 import { type PaymentToken, PAYMENT_TOKENS, rootsToStablecoin } from '@/lib/contracts/marketplace';
+import { readLocalDelivery } from '@/lib/buyerDelivery';
 import { SeedsPreview } from '@/components/seeds/SeedsPreview';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 
@@ -72,6 +73,22 @@ export default function CheckoutPage() {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryPhone, setDeliveryPhone] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+
+  // Pre-fill delivery fields from the same-device localStorage cache.
+  // Buyer's saved record (set via /profile?section=buyer) lives in KV
+  // (signature-gated, durable cross-device) AND localStorage (no-sig fast
+  // read). This effect reads the localStorage cache once on mount; if it's
+  // empty (first-time buyer on this device), fields stay blank and the
+  // buyer enters them manually. Doug, Apr 29 2026.
+  useEffect(() => {
+    const cached = readLocalDelivery();
+    if (cached) {
+      if (cached.address && !deliveryAddress) setDeliveryAddress(cached.address);
+      if (cached.phone && !deliveryPhone) setDeliveryPhone(cached.phone);
+      if (cached.notes && !deliveryNotes) setDeliveryNotes(cached.notes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [processingStatus, setProcessingStatus] = useState('');
   const [completedOrderTotal, setCompletedOrderTotal] = useState<bigint>(0n);
 
@@ -617,9 +634,13 @@ export default function CheckoutPage() {
             </p>
           </>
         )}
-        <div className="flex gap-4 justify-center">
-          <Link href="/buy/orders">
-            <Button className="bg-roots-primary">View Orders</Button>
+        <div className="flex gap-4 justify-center flex-wrap">
+          {/* Privy users land on /orders (unified hub showing buyer + seller +
+              ambassador role tabs). External-wallet crypto buyers land on
+              /buy/orders. Direct buyers to the page where their order will
+              actually appear. Doug, Apr 29 2026. */}
+          <Link href={privyAuthenticated ? '/orders' : '/buy/orders'}>
+            <Button className="bg-roots-primary">View your order →</Button>
           </Link>
           <Link href="/buy">
             <Button variant="outline">Continue Shopping</Button>

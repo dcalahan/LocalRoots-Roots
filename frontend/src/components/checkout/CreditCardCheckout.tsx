@@ -9,6 +9,7 @@ import { createFreshPublicClient } from '@/lib/viemClient';
 import { isCoinbaseOnrampConfigured, openCoinbaseOnramp } from '@/lib/coinbaseOnramp';
 import { usePrivyContact } from '@/hooks/usePrivyContact';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
+import { readLocalDelivery } from '@/lib/buyerDelivery';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,6 +142,19 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     if (privyPhone && !phone) setPhone(privyPhone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [privyPhone]);
+
+  // Pre-fill delivery fields from the buyer's saved record (same-device
+  // localStorage cache, no signature required). Set via /profile?section=buyer.
+  // Falls through silently if no cache exists. Doug, Apr 29 2026.
+  useEffect(() => {
+    const cached = readLocalDelivery();
+    if (cached) {
+      if (cached.address && !deliveryAddress) setDeliveryAddress(cached.address);
+      if (cached.phone && !phone) setPhone(cached.phone);
+      if (cached.notes && !deliveryNotes) setDeliveryNotes(cached.notes);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Step transition: info → auth (if not logged in) → pay
   const handleContinue = () => {
