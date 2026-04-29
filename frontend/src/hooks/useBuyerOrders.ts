@@ -199,7 +199,7 @@ async function fetchOrderIfBuyer(
 
     const [
       listingId, sellerId, buyer, quantity, totalPrice, isDelivery,
-      status, createdAt, completedAt, rewardQueued, proofIpfs, proofUploadedAt, fundsReleased, buyerInfoIpfs, _paymentToken
+      status, createdAt, completedAt, rewardQueued, proofIpfs, proofUploadedAt, fundsReleased, buyerInfoIpfs, paymentToken
     ] = order;
 
     // Check if this order belongs to the buyer
@@ -272,6 +272,7 @@ async function fetchOrderIfBuyer(
       proofIpfs,
       proofUploadedAt,
       fundsReleased,
+      paymentToken: paymentToken as `0x${string}`,
       metadata: {
         produceName: listingMeta?.produceName || 'Unknown Product',
         imageUrl: listingMeta?.imageUrl || null,

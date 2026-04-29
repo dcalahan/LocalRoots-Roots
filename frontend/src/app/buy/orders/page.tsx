@@ -139,7 +139,7 @@ function OrderCard({ order, onAccept, isAccepting, onDispute }: {
               )}
 
               <div className="mt-2 flex items-center justify-between">
-                <PriceDisplay amount={order.totalPrice} size="sm" />
+                <PriceDisplay amount={order.totalPrice} paymentToken={order.paymentToken} size="sm" />
                 <span className="text-sm text-roots-gray">
                   {formatDate(order.createdAt)}
                 </span>

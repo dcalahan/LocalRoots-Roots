@@ -26,6 +26,12 @@ export interface Order {
   sellerId: bigint;
   buyer: `0x${string}`;
   quantity: bigint;
+  /**
+   * The total order amount, in the BASE UNITS of the token used to pay.
+   * For Phase 1 USDC orders, that's USDC base units (6 decimals).
+   * For Phase 2 ROOTS orders, that's ROOTS base units (18 decimals).
+   * Use `paymentToken` to disambiguate before formatting for display.
+   */
   totalPrice: bigint;
   isDelivery: boolean;
   status: OrderStatus;
@@ -35,6 +41,13 @@ export interface Order {
   proofIpfs: string;
   proofUploadedAt: bigint;
   fundsReleased: boolean;
+  /**
+   * Token address used for payment. Critical for `totalPrice` formatting.
+   * Apr 29 2026: previously dropped from the read which caused all
+   * USDC-paid orders to display as "<$0.01" because formatters assumed
+   * 18-decimal ROOTS units.
+   */
+  paymentToken: `0x${string}`;
 }
 
 export interface OrderWithMetadata extends Order {
