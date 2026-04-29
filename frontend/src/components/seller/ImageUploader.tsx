@@ -313,7 +313,8 @@ export function ImageUploader({
       />
 
       {preview ? (
-        /* Preview with remove button */
+        /* Preview with retake button — explicit label so users see they
+            can retake without hunting for the corner X. Doug, Apr 29 2026. */
         <div className="relative">
           <img
             src={preview}
@@ -327,11 +328,13 @@ export function ImageUploader({
           <button
             type="button"
             onClick={handleRemove}
-            className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-100"
+            className="absolute top-2 right-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/95 rounded-full shadow-md hover:bg-white text-sm font-medium text-gray-700"
+            aria-label="Retake photo"
           >
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
+            Retake
           </button>
         </div>
       ) : isMobile ? (
