@@ -31,6 +31,7 @@ import { useMyGarden } from '@/hooks/useMyGarden';
 import { usePrivy } from '@privy-io/react-auth';
 import { ListFromGardenSheet } from '@/components/seller/ListFromGardenSheet';
 import { DeclineOrderModal } from '@/components/order/DeclineOrderModal';
+import { OrderStatusBanner } from '@/components/order/OrderStatusBanner';
 import guidesData from '@/data/technique-guides.json';
 import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
@@ -786,6 +787,25 @@ export default function SellerDashboard() {
             </Card>
           </Link>
         </div>
+
+        {/* Pending-orders banner — surfaces orders awaiting seller action so
+            sellers don't have to actively check the Orders tab. Click → jumps
+            to Orders tab. Apr 29 2026. */}
+        {(() => {
+          const pendingCount = pendingOrders.filter(
+            (o) => o.status === OrderStatus.Pending
+          ).length;
+          if (pendingCount === 0) return null;
+          return (
+            <OrderStatusBanner
+              tone="action"
+              message={`You have ${pendingCount} pending ${pendingCount === 1 ? 'order' : 'orders'} waiting for you`}
+              detail="Buyers are waiting for you to accept or decline. Tap View to respond."
+              onClick={() => setActiveTab('orders')}
+              ctaLabel="View"
+            />
+          );
+        })()}
 
         {/* Tabs */}
         <div className="flex gap-1 mb-6 border-b overflow-x-auto">

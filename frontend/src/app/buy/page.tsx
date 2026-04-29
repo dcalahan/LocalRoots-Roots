@@ -13,6 +13,9 @@ import { features } from '@/config/features';
 import { useAccount } from 'wagmi';
 import { approximateDistance, bytes8ToGeohash } from '@/lib/geohash';
 import { fromKm, getShortUnitLabel } from '@/lib/distance';
+import { useBuyerOrderUpdates } from '@/hooks/useBuyerOrderUpdates';
+import { OrderStatusBanner } from '@/components/order/OrderStatusBanner';
+import { OrderStatus as OrderStatusEnum } from '@/types/order';
 
 interface Location {
   latitude: number;
@@ -25,6 +28,7 @@ export default function BuyPage() {
   const { preferences, setPreferredLocation, setSearchRadiusKm } = useUserPreferences();
   const { listings, isLoading } = useAllListings();
   const { isConnected } = useAccount();
+  const { updateCount, mostRecent, dismiss } = useBuyerOrderUpdates();
 
   // Use persisted location from preferences
   const location = preferences.preferredLocation;
@@ -79,6 +83,34 @@ export default function BuyPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Buyer order-status banner — surfaces accept/cancel/etc transitions
+          since the buyer's last visit. Click → /orders. Doug, Apr 29 2026. */}
+      {updateCount > 0 && (
+        <OrderStatusBanner
+          tone="info"
+          message={
+            updateCount === 1
+              ? `Update on order #${mostRecent?.orderId.toString()}`
+              : `${updateCount} of your orders have updates`
+          }
+          detail={
+            updateCount === 1 && mostRecent
+              ? mostRecent.status === OrderStatusEnum.Accepted
+                ? `${mostRecent.metadata.sellerName} accepted your order.`
+                : mostRecent.status === OrderStatusEnum.Cancelled
+                  ? `Order was cancelled.${mostRecent.cancellationReason ? ' Tap View for the reason.' : ''}`
+                  : mostRecent.status === OrderStatusEnum.ReadyForPickup
+                    ? 'Ready for pickup.'
+                    : mostRecent.status === OrderStatusEnum.OutForDelivery
+                      ? 'Out for delivery.'
+                      : 'Status changed.'
+              : 'Tap View to see what changed.'
+          }
+          href="/orders"
+          ctaLabel="View"
+          onDismiss={dismiss}
+        />
+      )}
       {!location ? (
         // Location entry screen
         <div className="max-w-md mx-auto">

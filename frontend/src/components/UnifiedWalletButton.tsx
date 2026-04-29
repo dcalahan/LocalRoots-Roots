@@ -137,6 +137,12 @@ export function UnifiedWalletButton() {
     return (
       <div className="flex items-center gap-1 md:gap-2">
         <Link
+          href="/orders"
+          className="text-xs md:text-sm text-roots-gray hover:text-roots-primary hidden sm:inline transition-colors"
+        >
+          Orders
+        </Link>
+        <Link
           href="/profile"
           className="text-xs md:text-sm text-roots-gray hover:text-roots-primary hidden sm:inline transition-colors"
         >

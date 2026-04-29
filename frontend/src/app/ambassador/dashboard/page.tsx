@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ImageUploader } from '@/components/seller/ImageUploader';
 import { useAmbassadorStatus } from '@/hooks/useAmbassadorStatus';
+import { useAmbassadorOrders } from '@/hooks/useAmbassadorOrders';
+import { OrderStatusBanner } from '@/components/order/OrderStatusBanner';
 import { useAmbassadorProfile } from '@/hooks/useAmbassadorProfile';
 import { useUpdateAmbassadorProfile } from '@/hooks/useUpdateAmbassadorProfile';
 import { useToast } from '@/hooks/use-toast';
@@ -45,6 +47,10 @@ export default function AmbassadorDashboardPage() {
   const { isAmbassador, ambassadorId, ambassador, isLoading, refetch } = useAmbassadorStatus();
   const { profile, isLoading: isLoadingProfile } = useAmbassadorProfile(ambassador?.profileIpfs);
   const { updateProfile, isPending: isUpdatingProfile, error: updateError } = useUpdateAmbassadorProfile();
+  // Pending orders from recruited sellers — drives the dashboard banner
+  // that nudges ambassadors to follow up with their recruits when buyers
+  // are waiting. Doug, Apr 29 2026.
+  const { data: ambassadorOrdersData } = useAmbassadorOrders(ambassadorId || undefined);
 
   // Phase 1: Fetch Seeds data
   const { data: seedsData, isLoading: isSeedsLoading } = useSeeds(address as Address);
@@ -328,6 +334,24 @@ export default function AmbassadorDashboardPage() {
             </Button>
           </div>
         </div>
+
+        {/* Recruited-seller pending-orders banner — surfaces when one of
+            their recruits has buyers waiting. Encourages ambassadors to nudge
+            recruits to accept/decline promptly. Doug, Apr 29 2026. */}
+        {(() => {
+          const pendingFromRecruits =
+            ambassadorOrdersData?.orders.filter((o) => o.status === 'Pending').length ?? 0;
+          if (pendingFromRecruits === 0) return null;
+          return (
+            <OrderStatusBanner
+              tone="action"
+              message={`Your recruits have ${pendingFromRecruits} pending ${pendingFromRecruits === 1 ? 'order' : 'orders'}`}
+              detail="A buyer is waiting on one of your recruited sellers. A quick nudge from you might unstick the sale."
+              href="/orders"
+              ctaLabel="View"
+            />
+          );
+        })()}
 
         {/* Profile Card */}
         <Card className="mb-8">

@@ -45,6 +45,7 @@ import { useAmbassadorStatus } from '@/hooks/useAmbassadorStatus';
 import { useAmbassadorProfile } from '@/hooks/useAmbassadorProfile';
 import { useUpdateAmbassadorProfile } from '@/hooks/useUpdateAmbassadorProfile';
 import { savePickup, fetchOwnPickup } from '@/lib/sellerPickup';
+import { saveDelivery, fetchOwnDelivery } from '@/lib/buyerDelivery';
 import { validateAddress } from '@/lib/addressValidation';
 import { PublicGardenSettings } from '@/components/grow/PublicGardenSettings';
 import type { AmbassadorProfile } from '@/lib/contracts/ambassador';
@@ -774,17 +775,137 @@ function AmbassadorSection({ highlight }: { highlight: boolean }) {
 // ─── 5. Buyer (placeholder) ─────────────────────────────────────────────────
 
 function BuyerSection({ highlight }: { highlight: boolean }) {
+  const { signMessageAsync } = useSignMessage();
+  const { toast } = useToast();
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Load existing record on mount (if any). Signature-gated by design —
+  // we ask the user to sign once on entry to confirm wallet ownership,
+  // then auto-fill the form. If they decline the signature, the form
+  // stays empty and they can still enter a new address.
+  const loadDelivery = async () => {
+    setIsLoading(true);
+    try {
+      const record = await fetchOwnDelivery({
+        signMessage: (msg) => signMessageAsync({ message: msg }) as Promise<`0x${string}`>,
+      });
+      if (record) {
+        setAddress(record.address || '');
+        setPhone(record.phone || '');
+        setNotes(record.notes || '');
+      }
+    } catch (err) {
+      console.warn('[BuyerSection] load delivery failed:', err);
+    } finally {
+      setIsLoading(false);
+      setHydrated(true);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!address.trim()) {
+      toast({
+        title: 'Address required',
+        description: 'Please enter a delivery address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsSaving(true);
+    const result = await saveDelivery({
+      address: address.trim(),
+      phone: phone.trim() || undefined,
+      notes: notes.trim() || undefined,
+      signMessage: (msg) => signMessageAsync({ message: msg }) as Promise<`0x${string}`>,
+    });
+    setIsSaving(false);
+    if (result.ok) {
+      toast({
+        title: 'Delivery info saved',
+        description: 'Future checkouts will pre-fill these details.',
+      });
+    } else {
+      toast({
+        title: 'Save failed',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <SectionShell
       id="buyer"
       title="Buyer"
-      description="Saved delivery addresses for faster checkout."
+      description="Saved delivery info for faster checkout. Sellers receive these details only when you place a delivery order."
       highlight={highlight}
     >
-      <p className="text-sm text-roots-gray">
-        Saved addresses are coming soon. Today, you enter delivery info at checkout for each
-        order.
-      </p>
+      {!hydrated ? (
+        <div className="space-y-3">
+          <p className="text-sm text-roots-gray">
+            Click below to load your saved delivery info, or enter new details to save.
+          </p>
+          <Button onClick={loadDelivery} disabled={isLoading} variant="outline">
+            {isLoading ? 'Loading…' : 'Load saved delivery info'}
+          </Button>
+          <p className="text-xs text-roots-gray">
+            (You'll be asked to sign a message — free, no gas — to confirm wallet ownership.)
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="buyer-delivery-address">Delivery address</Label>
+            <Input
+              id="buyer-delivery-address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="123 Garden Lane, Hilton Head SC 29928"
+              className="mt-1"
+              disabled={isSaving}
+            />
+          </div>
+          <div>
+            <Label htmlFor="buyer-delivery-phone">Phone (optional)</Label>
+            <Input
+              id="buyer-delivery-phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(555) 555-1234"
+              className="mt-1"
+              disabled={isSaving}
+            />
+          </div>
+          <div>
+            <Label htmlFor="buyer-delivery-notes">Delivery notes (optional)</Label>
+            <Input
+              id="buyer-delivery-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Gate code, leave at door, ring twice…"
+              className="mt-1"
+              disabled={isSaving}
+            />
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !address.trim()}
+            className="bg-roots-primary hover:bg-roots-primary/90"
+          >
+            {isSaving ? 'Saving…' : 'Save delivery info'}
+          </Button>
+          <p className="text-xs text-roots-gray">
+            Saved per-wallet. Sellers only see your address when you place a delivery order; this
+            record itself stays private.
+          </p>
+        </div>
+      )}
     </SectionShell>
   );
 }
