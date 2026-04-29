@@ -30,6 +30,7 @@ import { MyGardenView } from '@/components/grow/MyGardenView';
 import { useMyGarden } from '@/hooks/useMyGarden';
 import { usePrivy } from '@privy-io/react-auth';
 import { ListFromGardenSheet } from '@/components/seller/ListFromGardenSheet';
+import { DeclineOrderModal } from '@/components/order/DeclineOrderModal';
 import guidesData from '@/data/technique-guides.json';
 import { DISPUTE_WINDOW_SECONDS, formatTimeRemaining } from '@/types/order';
 
@@ -73,6 +74,7 @@ function getStatusLabel(status: OrderStatus): string {
 function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: () => void }) {
   const [showProofUpload, setShowProofUpload] = useState(false);
   const [proofImage, setProofImage] = useState<string | null>(null);
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { acceptOrder, isPending: isAccepting, isSuccess: acceptSuccess, error: acceptError, reset: resetAccept } = useAcceptOrder();
@@ -239,16 +241,35 @@ function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: (
   // Step 1: Pending orders need to be accepted first
   if (order.status === OrderStatus.Pending) {
     return (
-      <div className="flex gap-2 mt-2">
-        <Button
-          size="sm"
-          className="bg-roots-primary hover:bg-roots-primary/90"
-          onClick={handleAcceptOrder}
-          disabled={isAccepting}
-        >
-          {isAccepting ? 'Accepting...' : 'Accept Order'}
-        </Button>
-      </div>
+      <>
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <Button
+            size="sm"
+            className="bg-roots-primary hover:bg-roots-primary/90"
+            onClick={handleAcceptOrder}
+            disabled={isAccepting}
+          >
+            {isAccepting ? 'Accepting...' : 'Accept Order'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+            onClick={() => setShowDeclineModal(true)}
+            disabled={isAccepting}
+          >
+            Decline
+          </Button>
+        </div>
+        {showDeclineModal && (
+          <DeclineOrderModal
+            orderId={BigInt(order.orderId)}
+            productName={order.produceName || 'Order'}
+            onClose={() => setShowDeclineModal(false)}
+            onSuccess={() => onComplete()}
+          />
+        )}
+      </>
     );
   }
 
@@ -297,15 +318,33 @@ function OrderActions({ order, onComplete }: { order: SellerOrder; onComplete: (
     }
 
     return (
-      <div className="flex gap-2 mt-2">
-        <Button
-          size="sm"
-          className="bg-roots-secondary hover:bg-roots-secondary/90"
-          onClick={() => setShowProofUpload(true)}
-        >
-          {order.isDelivery ? 'Confirm Delivery' : 'Mark Ready'}
-        </Button>
-      </div>
+      <>
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <Button
+            size="sm"
+            className="bg-roots-secondary hover:bg-roots-secondary/90"
+            onClick={() => setShowProofUpload(true)}
+          >
+            {order.isDelivery ? 'Confirm Delivery' : 'Mark Ready'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+            onClick={() => setShowDeclineModal(true)}
+          >
+            Decline
+          </Button>
+        </div>
+        {showDeclineModal && (
+          <DeclineOrderModal
+            orderId={BigInt(order.orderId)}
+            productName={order.produceName || 'Order'}
+            onClose={() => setShowDeclineModal(false)}
+            onSuccess={() => onComplete()}
+          />
+        )}
+      </>
     );
   }
 

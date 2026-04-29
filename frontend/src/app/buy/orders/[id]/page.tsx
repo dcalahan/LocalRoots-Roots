@@ -423,6 +423,16 @@ export default function OrderDetailPage() {
                 <p className="text-xs text-gray-700 mt-1">
                   This order was cancelled. Any funds held have been returned to your wallet.
                 </p>
+                {order.cancellationReason && (
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <p className="text-xs font-medium text-gray-700">Reason from seller:</p>
+                    <p className="text-xs text-gray-700 mt-0.5">
+                      {order.cancellationReason.startsWith('Seller declined: ')
+                        ? order.cancellationReason.slice('Seller declined: '.length)
+                        : order.cancellationReason}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

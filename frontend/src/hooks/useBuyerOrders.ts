@@ -227,6 +227,36 @@ async function fetchOrderIfBuyer(
       fetchIpfsMetadata<SellerMetadata>(seller[2]),
     ]);
 
+    // For cancelled orders, fetch the OrderCancelledByAdmin event so we can
+    // surface the reason to the buyer. Both admin-cancellations and seller-
+    // declines flow through the same on-chain event (seller declines are
+    // prefixed with "Seller declined: " server-side at
+    // /api/seller/cancel-order). Apr 29 2026.
+    let cancellationReason: string | undefined;
+    if (status === OrderStatus.Cancelled) {
+      try {
+        const logs = await client.getContractEvents({
+          address: MARKETPLACE_ADDRESS,
+          abi: marketplaceAbi,
+          eventName: 'OrderCancelledByAdmin',
+          args: { orderId },
+          // The full historical range. Marketplace deployed Apr 25 2026, so
+          // this is bounded — fromBlock = 'earliest' is fine for v1.
+          fromBlock: 'earliest',
+          toBlock: 'latest',
+        });
+        if (logs.length > 0) {
+          const reasonArg = (logs[0] as { args?: { reason?: string } }).args?.reason;
+          if (typeof reasonArg === 'string') {
+            cancellationReason = reasonArg;
+          }
+        }
+      } catch (eventErr) {
+        // Non-fatal — order detail still renders without the reason.
+        console.warn(`Failed to fetch cancellation reason for order ${orderId}:`, eventErr);
+      }
+    }
+
     return {
       orderId,
       listingId,
@@ -252,6 +282,7 @@ async function fetchOrderIfBuyer(
         // pickup address via signed GET /api/seller/pickup?orderId=N which
         // only succeeds for confirmed buyers of accepted pickup orders.
       },
+      cancellationReason,
     };
   } catch (err) {
     console.error(`Error fetching order ${orderId}:`, err);
