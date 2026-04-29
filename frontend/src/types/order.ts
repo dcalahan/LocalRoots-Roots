@@ -47,6 +47,14 @@ export interface OrderWithMetadata extends Order {
     // fetched via signed GET /api/seller/pickup?orderId=N. See SellerPickup
     // helpers in lib/sellerPickup.ts.
   };
+  /**
+   * Cancellation reason from the OrderCancelledByAdmin event when the order
+   * was cancelled (status === Cancelled). For seller-initiated declines, the
+   * reason is prefixed with "Seller declined: " by /api/seller/cancel-order
+   * before submitting on-chain. UI should strip that prefix for display.
+   * Undefined for non-cancelled orders.
+   */
+  cancellationReason?: string;
 }
 
 // Dispute window is 48 hours (in seconds)
