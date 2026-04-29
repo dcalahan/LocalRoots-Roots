@@ -7,6 +7,7 @@ import { useAccount, useDisconnect } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { BuyerWalletModal } from './BuyerWalletModal';
+import { useWalletBalances } from '@/hooks/useWalletBalances';
 
 // LocalStorage key for tracking buyer wallet type
 const BUYER_WALLET_TYPE_KEY = 'buyer_wallet_type';
@@ -148,12 +149,7 @@ export function UnifiedWalletButton() {
         >
           Profile
         </Link>
-        <Link
-          href="/wallet"
-          className="text-xs md:text-sm text-roots-gray hover:text-roots-primary hidden md:inline transition-colors"
-        >
-          {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
-        </Link>
+        <WalletPill />
         <Button
           variant="outline"
           size="sm"
@@ -225,5 +221,52 @@ export function UnifiedWalletButton() {
         onPrivyLogin={handleBuyerPrivyLogin}
       />
     </>
+  );
+}
+
+/**
+ * WalletPill — header wallet display.
+ *
+ * Replaces the raw "0x30C4...4879" address chip with a friendly bubble
+ * showing total wallet value in USD. Click → /wallet for details.
+ *
+ * Doug, Apr 29 2026: "I would like to see something like Wallet and the
+ * USDC equivalent of the money in my wallet. Then I can click on it and
+ * see my holdings. We could move the privy wallet address to the Your
+ * Wallet page."
+ *
+ * Why USD instead of crypto units: aligns with the "crypto is invisible"
+ * positioning principle (CLAUDE.md). Sellers and buyers think in dollars.
+ * Showing "0x30C4…" or "9.76 USDC" both leak crypto-jargon. "$9.76" is
+ * universal.
+ */
+function WalletPill() {
+  const { balances, isLoading } = useWalletBalances();
+
+  // Sum every balance's USD value. Includes ETH, ROOTS, USDC, USDT.
+  const totalUsd = (balances || []).reduce(
+    (sum, b) => sum + (b.usdValue || 0),
+    0
+  );
+
+  // Formatting: under $0.01 reads as "$0", round normally otherwise.
+  const display = totalUsd < 0.01 ? '$0' : `$${totalUsd.toFixed(2)}`;
+
+  return (
+    <Link
+      href="/wallet"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-roots-primary/10 hover:bg-roots-primary/20 border border-roots-primary/30 text-roots-primary text-xs md:text-sm font-medium transition-colors"
+      title="Open your wallet"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a2 2 0 00-2-2h-3a2 2 0 100 4h3a2 2 0 002-2zm-2 0h-3M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" />
+      </svg>
+      <span>Wallet</span>
+      {isLoading ? (
+        <span className="opacity-60">…</span>
+      ) : (
+        <span className="font-bold">{display}</span>
+      )}
+    </Link>
   );
 }

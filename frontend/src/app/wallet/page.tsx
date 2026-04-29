@@ -115,10 +115,26 @@ export default function WalletPage() {
   return (
     <div className="min-h-screen bg-roots-cream">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Wallet</h1>
           <p className="text-roots-gray">
-            Manage your $ROOTS tokens and other assets
+            Your balances, your address, your control.
+          </p>
+        </div>
+
+        {/* Non-custodial explainer — gives buyers/sellers context for what
+            "your wallet" actually means. Plain language per CLAUDE.md
+            positioning principle: avoid crypto jargon, but be honest about
+            who controls what. Doug, Apr 29 2026: "We should explain to
+            people about the wallet on that page." */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
+          <p className="font-semibold mb-1">This is your wallet — only you can spend from it.</p>
+          <p className="text-blue-800">
+            LocalRoots can&apos;t see what&apos;s inside, can&apos;t move your funds, and can&apos;t
+            recover it for you. Your balance lives on-chain on Base; your account
+            (signed in via email or social) is the only key to it. When you make a
+            purchase, the marketplace takes exactly the amount you confirm — no more,
+            no less.
           </p>
         </div>
 
