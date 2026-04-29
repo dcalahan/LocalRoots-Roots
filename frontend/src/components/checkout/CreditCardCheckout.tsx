@@ -426,12 +426,12 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-2xl font-heading font-bold">Pay with Credit Card</h1>
+          <h1 className="text-2xl font-heading font-bold">Pay with Card</h1>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-blue-800">
-            <strong>Powered by Coinbase.</strong> Pay with Apple Pay, Google Pay, or any major card. Your payment opens in a secure window.
+            <strong>Powered by Coinbase.</strong> Pay with a debit card, Apple Pay, or Google Pay. Your payment opens in a secure window.
           </p>
         </div>
 
@@ -616,16 +616,31 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
                 <span>Order total</span>
                 <span>{formatFiat(totalUsd)}</span>
               </div>
-              <div className="flex justify-between text-sm text-roots-gray mt-1">
-                <span>Card processing fee (est.)</span>
-                <span>~${(fiatToCharge - totalUsd).toFixed(2)}</span>
-              </div>
+              {fiatToCharge > totalUsd && (
+                <div className="flex justify-between text-sm text-roots-gray mt-1">
+                  <span>
+                    {totalUsd < 5
+                      ? 'Coinbase $5 minimum + card fee'
+                      : 'Card processing fee (est.)'}
+                  </span>
+                  <span>~${(fiatToCharge - totalUsd).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold text-lg mt-2 pt-2 border-t">
                 <span>You&apos;ll be charged</span>
                 <span>~${fiatToCharge.toFixed(2)}</span>
               </div>
               <p className="text-xs text-roots-gray mt-2">
-                Your seller receives the full {formatFiat(totalUsd)}. The processing fee is your card&apos;s, not LocalRoots&apos; — we don&apos;t take a cut.
+                Your seller receives the full {formatFiat(totalUsd)}. LocalRoots takes no cut.
+                {totalUsd < 5 && (
+                  <>
+                    {' '}Coinbase requires a $5 minimum charge for card payments — any difference beyond their fee
+                    {' '}stays in your wallet as credit toward future purchases.
+                  </>
+                )}
+                {totalUsd >= 5 && (
+                  <> The card fee is your card&apos;s, not ours.</>
+                )}
               </p>
             </div>
           </CardContent>
@@ -635,7 +650,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
           <CardContent className="pt-6">
             <h3 className="font-semibold text-blue-900 mb-2">Heads up — a few quick verification steps</h3>
             <p className="text-sm text-blue-900 mb-3">
-              Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner Coinbase handles credit cards. They&apos;ll ask you to:
+              Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner Coinbase handles card payments. They&apos;ll ask you to:
             </p>
             <ul className="text-sm text-blue-900 space-y-1 mb-3 ml-4 list-disc">
               <li>Verify your phone with a text code</li>
@@ -660,11 +675,11 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
           onClick={startPayment}
           disabled={!buyerAddress}
         >
-          {buyerAddress ? `Pay ${formatFiat(totalUsd)} with Credit Card` : 'Setting up your account…'}
+          {buyerAddress ? `Pay ${formatFiat(fiatToCharge)} with Card` : 'Setting up your account…'}
         </Button>
 
         <p className="text-xs text-center text-roots-gray mt-4">
-          A secure payment window will open. You can pay with Apple Pay, Google Pay, or any major debit/credit card.
+          A secure payment window will open. You can pay with a debit card, Apple Pay, or Google Pay.
         </p>
 
         <Button variant="ghost" className="w-full mt-2" onClick={() => setStep('info')}>
