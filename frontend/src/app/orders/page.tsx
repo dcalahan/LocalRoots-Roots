@@ -105,7 +105,7 @@ function BuyerOrderCard({ order }: { order: OrderWithMetadata }) {
             )}
 
             <div className="mt-2 flex items-center justify-between">
-              <PriceDisplay amount={order.totalPrice} size="sm" />
+              <PriceDisplay amount={order.totalPrice} paymentToken={order.paymentToken} size="sm" />
               <span className="text-sm text-roots-gray">
                 {formatDate(order.createdAt)}
               </span>
@@ -142,7 +142,7 @@ function SellerOrderCard({ order }: { order: any }) {
               </span>
             </div>
             <div className="mt-2 flex items-center justify-between">
-              <PriceDisplay amount={BigInt(order.totalPrice)} size="sm" />
+              <PriceDisplay amount={BigInt(order.totalPrice)} paymentToken={order.paymentToken} size="sm" />
               <span className="text-sm text-roots-gray">
                 {formatDate(order.createdAt)}
               </span>

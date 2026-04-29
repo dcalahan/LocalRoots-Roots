@@ -84,6 +84,16 @@ export interface SellerOrder {
   proofIpfs: string;
   proofUploadedAt: Date | null;
   fundsReleased: boolean;
+  /**
+   * Payment token used for the order. Critical for price formatting:
+   *   - USDC_ADDRESS → totalPrice is in USDC base units (6 decimals)
+   *   - ROOTS_TOKEN_ADDRESS → totalPrice is in ROOTS base units (18 decimals)
+   *   - any other ERC-20 stablecoin in Phase 2 → 6 decimals
+   * Without this field, formatters can't tell whether to divide by 1e6 or
+   * 1e18, and the displayed value is wrong by 12 orders of magnitude.
+   * Doug, Apr 29 2026 (Matt's order showed "<$0.01" — this is the fix).
+   */
+  paymentToken: string;
   // Metadata from listing
   produceName?: string;
   // Delivery info (from local storage)
@@ -147,7 +157,7 @@ export function useSellerOrders() {
             proofUploadedAt,
             fundsReleased,
             buyerInfoIpfs,
-            _paymentToken,
+            paymentToken,
           ] = order;
 
           // Only include orders for this seller (compare as strings)
@@ -191,6 +201,7 @@ export function useSellerOrders() {
               proofIpfs,
               proofUploadedAt: proofUploadedAt > 0n ? new Date(Number(proofUploadedAt) * 1000) : null,
               fundsReleased,
+              paymentToken,
               produceName,
               deliveryInfo: deliveryInfo || undefined,
             });

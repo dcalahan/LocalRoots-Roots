@@ -439,7 +439,7 @@ export default function OrderDetailPage() {
 
           {/* Total */}
           <div className="pt-4 border-t">
-            <PriceSummary label="Total Paid" amount={order.totalPrice} />
+            <PriceSummary label="Total Paid" amount={order.totalPrice} paymentToken={order.paymentToken} />
           </div>
         </CardContent>
       </Card>

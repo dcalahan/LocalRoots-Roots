@@ -18,6 +18,7 @@ import { formatDistance } from '@/lib/distance';
 import { formatUnits } from 'viem';
 import { uploadImage } from '@/lib/pinata';
 import { rootsToFiat, formatFiat, formatRoots } from '@/lib/pricing';
+import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
 import { SellerTierCard, SellerTierBadge } from '@/components/seeds/SellerTierBadge';
 import { EarlyAdopterBanner } from '@/components/seeds/EarlyAdopterBanner';
 import { getRewardLabel } from '@/components/seeds/PhaseConfig';
@@ -50,8 +51,30 @@ function dataUrlToFile(dataUrl: string, filename: string): File {
 
 type Tab = 'listings' | 'orders' | 'history' | 'growing';
 
-function formatPrice(priceWei: string): { fiat: string; roots: string } {
-  const amount = BigInt(priceWei);
+/**
+ * Format a price stored on-chain as fiat ($) and ROOTS-equivalent strings.
+ *
+ * The amount's interpretation depends on which token it's stored in:
+ *   - ROOTS (18 decimals) — listings always store price here
+ *   - USDC (6 decimals) — Phase 1 orders store totalPrice here
+ *
+ * If a `paymentToken` is provided AND it's USDC, we first convert the
+ * USDC base units back to the equivalent ROOTS-base-unit value, then run
+ * the standard formatters. Without this, USDC-paid orders display as
+ * "<$0.01" because the math divides by 10^12 too many times. Doug, Apr 29
+ * 2026 — Matt's first credit-card-paid order surfaced this bug.
+ */
+function formatPrice(
+  priceWei: string,
+  paymentToken?: string,
+): { fiat: string; roots: string } {
+  let amount = BigInt(priceWei);
+  if (paymentToken && paymentToken.toLowerCase() === USDC_ADDRESS.toLowerCase()) {
+    // Convert USDC base units (6 decimals) → ROOTS base units (18 decimals).
+    // 1 USDC = 100 ROOTS internally; ROOTS has 12 more decimals than USDC,
+    // so multiply by 100 × 10^12 = 10^14.
+    amount = amount * 100n * 1_000_000_000_000n;
+  }
   return {
     fiat: formatFiat(rootsToFiat(amount)),
     roots: formatRoots(amount),
@@ -1065,8 +1088,8 @@ export default function SellerDashboard() {
                                   Buyer: {order.buyer.slice(0, 6)}...{order.buyer.slice(-4)}
                                 </p>
                               </div>
-                              <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
-                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} {rewardLabel}</p>
+                              <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice, order.paymentToken).fiat}</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice, order.paymentToken).roots} {rewardLabel}</p>
                             </div>
                             {/* Delivery address */}
                             {order.isDelivery && order.deliveryInfo && (
@@ -1130,8 +1153,8 @@ export default function SellerDashboard() {
                                 </span>
                               </div>
                               <div className="text-right">
-                                <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice).fiat}</p>
-                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} {rewardLabel}</p>
+                                <p className="font-bold text-roots-primary">{formatPrice(order.totalPrice, order.paymentToken).fiat}</p>
+                              <p className="text-xs text-roots-gray">{formatPrice(order.totalPrice, order.paymentToken).roots} {rewardLabel}</p>
                                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                   order.status === OrderStatus.ReadyForPickup
                                     ? 'bg-yellow-100 text-yellow-700'
@@ -1210,8 +1233,8 @@ export default function SellerDashboard() {
                               </span>
                             </td>
                             <td className="py-3 text-right">
-                              <div className="font-medium">{formatPrice(order.totalPrice).fiat}</div>
-                              <div className="text-xs text-roots-gray">{formatPrice(order.totalPrice).roots} {rewardLabel}</div>
+                              <div className="font-medium">{formatPrice(order.totalPrice, order.paymentToken).fiat}</div>
+                              <div className="text-xs text-roots-gray">{formatPrice(order.totalPrice, order.paymentToken).roots} {rewardLabel}</div>
                             </td>
                           </tr>
                         ))}

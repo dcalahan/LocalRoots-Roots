@@ -2,9 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { formatPricesWithFiat, detectUserCurrency, type SupportedCurrency } from '@/lib/pricing';
+import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
+
+/**
+ * Normalize an order/listing amount into ROOTS-equivalent base units (18
+ * decimals) for the standard formatters. If `paymentToken` indicates the
+ * amount is in USDC base units (6 decimals), convert it; otherwise return
+ * as-is. Without this, USDC-paid orders display as "<$0.01" because the
+ * formatters divide by 10^12 too many times. Doug, Apr 29 2026.
+ */
+function normalizeToRootsUnits(amount: bigint, paymentToken?: string): bigint {
+  if (paymentToken && paymentToken.toLowerCase() === USDC_ADDRESS.toLowerCase()) {
+    // USDC base units (6 decimals) → ROOTS base units (18 decimals).
+    // 1 USDC = 100 ROOTS internally; ROOTS has 12 more decimals than USDC,
+    // so multiply by 100 × 10^12 = 10^14.
+    return amount * 100n * 1_000_000_000_000n;
+  }
+  return amount;
+}
 
 interface PriceDisplayProps {
   amount: bigint;
+  /** Optional payment-token address. If USDC, `amount` is treated as 6-decimal base units. */
+  paymentToken?: string;
   size?: 'sm' | 'md' | 'lg';
   showRoots?: boolean;
   currency?: SupportedCurrency;
@@ -13,6 +33,7 @@ interface PriceDisplayProps {
 
 export function PriceDisplay({
   amount,
+  paymentToken,
   size = 'md',
   showRoots = true,
   currency,
@@ -24,7 +45,8 @@ export function PriceDisplay({
     setUserCurrency(currency || detectUserCurrency());
   }, [currency]);
 
-  const { roots, fiat } = formatPricesWithFiat(amount, userCurrency);
+  const normalizedAmount = normalizeToRootsUnits(amount, paymentToken);
+  const { roots, fiat } = formatPricesWithFiat(normalizedAmount, userCurrency);
 
   const sizeClasses = {
     sm: { fiat: 'text-sm font-medium', roots: 'text-xs' },
@@ -47,18 +69,21 @@ export function PriceDisplay({
 interface PriceSummaryProps {
   label: string;
   amount: bigint;
+  /** Optional payment-token address. If USDC, `amount` is treated as 6-decimal base units. */
+  paymentToken?: string;
   currency?: SupportedCurrency;
   className?: string;
 }
 
-export function PriceSummary({ label, amount, currency, className = '' }: PriceSummaryProps) {
+export function PriceSummary({ label, amount, paymentToken, currency, className = '' }: PriceSummaryProps) {
   const [userCurrency, setUserCurrency] = useState<SupportedCurrency>('USD');
 
   useEffect(() => {
     setUserCurrency(currency || detectUserCurrency());
   }, [currency]);
 
-  const { roots, fiat } = formatPricesWithFiat(amount, userCurrency);
+  const normalizedAmount = normalizeToRootsUnits(amount, paymentToken);
+  const { roots, fiat } = formatPricesWithFiat(normalizedAmount, userCurrency);
 
   return (
     <div className={`flex justify-between items-center ${className}`}>
