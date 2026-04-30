@@ -43,10 +43,16 @@ export function Header() {
   // pops in the nav. Reserved for the Ambassador surface — they're the
   // distribution layer the network depends on, undersold visually
   // until now (Doug's ambassador-prominence push, Apr 27 2026).
+  //
+  // Orders sits next to Shop because that's where buyers naturally look
+  // after a purchase ("Where do I see my order?"). Pre-Apr 30 2026 the
+  // only path was through the wallet dropdown — too buried for a
+  // first-time buyer like Matt. (Doug, Apr 30 2026.)
   const navLinks: { href: string; label: string; highlight?: boolean }[] = [
     { href: '/grow', label: 'Grow' },
     { href: '/gardeners', label: 'Neighbors\' Gardens' },
     { href: '/buy', label: 'Shop' },
+    { href: ordersHref, label: 'Orders' },
     { href: '/sell', label: 'Sell' },
     { href: '/ambassador', label: 'Ambassadors', highlight: true },
     { href: '/about/vision', label: 'About' },

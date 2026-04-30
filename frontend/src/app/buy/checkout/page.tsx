@@ -612,7 +612,7 @@ export default function CheckoutPage() {
               Your {successCount} {successCount === 1 ? 'order has' : 'orders have'} been placed successfully.
             </p>
             {/* Roots Points earned confirmation */}
-            <div className="inline-block bg-amber-50 border border-amber-200 rounded-lg px-6 py-4 mb-6">
+            <div className="inline-block bg-amber-50 border border-amber-200 rounded-lg px-6 py-4 mb-4">
               <div className="flex items-center justify-center gap-2 text-amber-900">
                 <span className="text-2xl">🌱</span>
                 <span className="font-semibold">Roots Points Earned!</span>
@@ -623,6 +623,18 @@ export default function CheckoutPage() {
                 showBreakdown={true}
                 className="mt-2 border-0 bg-transparent p-0"
               />
+            </div>
+            {/* What happens next — happy-path framing. Mirrors the seller-side
+                "In Escrow" explainer so both sides have the same mental model.
+                Doug (Apr 30 2026): make the post-purchase path obvious so the
+                first-time buyer knows where to look. */}
+            <div className="max-w-md mx-auto bg-roots-secondary/5 border border-roots-secondary/30 rounded-lg p-4 mb-6 text-left">
+              <p className="text-sm font-medium text-roots-secondary mb-2">What happens next</p>
+              <ul className="text-xs text-roots-gray space-y-1.5">
+                <li>• Your seller is notified and will start preparing your order.</li>
+                <li>• You&apos;ll see status updates (preparing → ready / out for delivery) on your <strong>Orders</strong> page.</li>
+                <li>• When it arrives, tap <strong>&quot;Accept Order&quot;</strong> to release funds to your seller. (Funds release automatically after 48 hours if you don&apos;t.)</li>
+              </ul>
             </div>
           </>
         ) : (

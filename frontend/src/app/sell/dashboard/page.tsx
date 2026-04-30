@@ -1182,7 +1182,7 @@ export default function SellerDashboard() {
                                     ? 'bg-yellow-100 text-yellow-700'
                                     : 'bg-blue-100 text-blue-700'
                                 }`}>
-                                  {getStatusLabel(order.status)}
+                                  {getStatusLabel(order.status)} — In escrow
                                 </span>
                               </div>
                             </div>
