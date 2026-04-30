@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WalletDashboard } from '@/components/wallet/WalletDashboard';
 import { UnifiedWalletButton } from '@/components/UnifiedWalletButton';
+import { PendingEscrowCard } from '@/components/seller/PendingEscrowCard';
 import { Wallet } from 'lucide-react';
 
 export default function WalletPage() {
@@ -137,6 +138,13 @@ export default function WalletPage() {
             no less.
           </p>
         </div>
+
+        {/* Pending escrow — funds the seller has earned that haven't yet
+            released from the marketplace contract. Renders nothing if the
+            user isn't a seller or has nothing in escrow. Doug, Apr 30 2026:
+            sellers shouldn't have to dig through individual orders to know
+            what's coming. */}
+        <PendingEscrowCard emphasize />
 
         <WalletDashboard />
 

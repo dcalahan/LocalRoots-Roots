@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { useSellerOrders, OrderStatus } from '@/hooks/useSellerOrders';
 import { useAmbassadorStatus } from '@/hooks/useAmbassadorStatus';
 import { useAmbassadorOrders, formatOrderStatus, calculateCommission } from '@/hooks/useAmbassadorOrders';
 import { OrderStatusLabels, type OrderWithMetadata } from '@/types/order';
+import { PendingEscrowCard } from '@/components/seller/PendingEscrowCard';
 import { getIpfsUrl } from '@/lib/pinata';
 import { formatUnits } from 'viem';
 
@@ -197,7 +199,20 @@ function AmbassadorOrderCard({ order }: { order: any }) {
 }
 
 export default function UnifiedOrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-4xl mx-auto px-4 py-8 text-center text-roots-gray">Loading…</div>
+      }
+    >
+      <UnifiedOrdersPageInner />
+    </Suspense>
+  );
+}
+
+function UnifiedOrdersPageInner() {
   const { authenticated, login, ready } = usePrivy();
+  const searchParams = useSearchParams();
 
   // Role detection
   const { isSeller, sellerId, isLoading: sellerLoading } = useSellerStatus();
@@ -219,11 +234,22 @@ export default function UnifiedOrdersPage() {
   if (isSeller) availableTabs.push('sales');
   if (isAmbassador) availableTabs.push('referrals');
 
-  // Default to first available tab, or purchases
-  const [activeTab, setActiveTab] = useState<TabType>('purchases');
+  // Default to first available tab, or purchases. If the URL carries
+  // ?tab=sales|purchases|referrals (e.g. from the wallet's pending-escrow
+  // card or the seller dashboard's "View orders" link), honor that and
+  // suppress the role-based auto-routing below — the user explicitly
+  // asked for that tab. Doug, Apr 30 2026.
+  const tabFromUrl = searchParams.get('tab') as TabType | null;
+  const validTabFromUrl: TabType | null =
+    tabFromUrl === 'purchases' || tabFromUrl === 'sales' || tabFromUrl === 'referrals'
+      ? tabFromUrl
+      : null;
+  const [activeTab, setActiveTab] = useState<TabType>(validTabFromUrl ?? 'purchases');
 
-  // Update active tab when roles are determined
+  // Update active tab when roles are determined — but only if the URL
+  // didn't pin a tab. Otherwise the deep-link gets clobbered.
   useEffect(() => {
+    if (validTabFromUrl) return;
     if (!sellerLoading && !ambassadorLoading) {
       if (isSeller && !hasPurchases) {
         setActiveTab('sales');
@@ -231,7 +257,7 @@ export default function UnifiedOrdersPage() {
         setActiveTab('referrals');
       }
     }
-  }, [sellerLoading, ambassadorLoading, isSeller, isAmbassador, hasPurchases]);
+  }, [sellerLoading, ambassadorLoading, isSeller, isAmbassador, hasPurchases, validTabFromUrl]);
 
   const isLoading = !ready || sellerLoading || ambassadorLoading;
 
@@ -396,6 +422,10 @@ export default function UnifiedOrdersPage() {
         {/* Sales Tab */}
         {activeTab === 'sales' && (
           <>
+            {/* Funds-in-escrow summary at the top of Sales. Hides its own
+                CTA because the seller is already on the orders page —
+                "View orders →" would be circular. */}
+            <PendingEscrowCard hideOrdersLink />
             {sellerOrdersLoading ? (
               <div className="text-center py-8 text-roots-gray">Loading sales...</div>
             ) : sellerOrders.length === 0 ? (
