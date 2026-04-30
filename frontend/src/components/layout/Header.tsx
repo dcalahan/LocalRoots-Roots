@@ -48,12 +48,17 @@ export function Header() {
   // after a purchase ("Where do I see my order?"). Pre-Apr 30 2026 the
   // only path was through the wallet dropdown — too buried for a
   // first-time buyer like Matt. (Doug, Apr 30 2026.)
+  //
+  // Barter sits between Sell and Ambassadors as a third trade mode
+  // alongside Shop and Sell. Coming Soon page until the feature lands.
+  // (Doug, Apr 30 2026.)
   const navLinks: { href: string; label: string; highlight?: boolean }[] = [
     { href: '/grow', label: 'Grow' },
     { href: '/gardeners', label: 'Neighbors\' Gardens' },
     { href: '/buy', label: 'Shop' },
     { href: ordersHref, label: 'Orders' },
     { href: '/sell', label: 'Sell' },
+    { href: '/barter', label: 'Barter' },
     { href: '/ambassador', label: 'Ambassadors', highlight: true },
     { href: '/about', label: 'About' },
   ];
