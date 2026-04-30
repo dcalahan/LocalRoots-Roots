@@ -13,13 +13,23 @@ export function Footer() {
             <span className="font-medium">Local Roots</span> — Neighbors Feeding Neighbors
           </div>
 
-          {/* Right side - links */}
-          <div className="flex items-center gap-6 text-sm">
+          {/* Right side - links. Tokenomics is its own footer entry
+              (not just buried under About) so anyone curious about the
+              token can find it directly from any page. Discoverability,
+              not promotion — see /about/page.tsx for the regulatory
+              framing. (Doug, Apr 30 2026.) */}
+          <div className="flex items-center gap-x-6 gap-y-2 text-sm flex-wrap justify-center">
             <Link
               href="/about"
               className="text-roots-gray hover:text-roots-primary transition-colors"
             >
               About
+            </Link>
+            <Link
+              href="/about/tokenomics"
+              className="text-roots-gray hover:text-roots-primary transition-colors"
+            >
+              Tokenomics
             </Link>
             <Link
               href="/government"

@@ -55,7 +55,7 @@ export function Header() {
     { href: ordersHref, label: 'Orders' },
     { href: '/sell', label: 'Sell' },
     { href: '/ambassador', label: 'Ambassadors', highlight: true },
-    { href: '/about/vision', label: 'About' },
+    { href: '/about', label: 'About' },
   ];
 
   return (

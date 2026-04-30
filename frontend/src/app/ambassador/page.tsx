@@ -224,12 +224,12 @@ export default function AmbassadorPage() {
                     <div className="text-sm text-roots-gray">per seller you onboard</div>
                   </div>
                 </div>
-                <div className="text-xs text-roots-gray mt-3 text-center">Paid automatically from the $ROOTS treasury</div>
+                <div className="text-xs text-roots-gray mt-3 text-center">Paid automatically from the on-chain treasury</div>
               </div>
               <div className="mt-4 p-3 bg-roots-primary/10 rounded-lg">
                 <p className="text-sm text-roots-gray">
                   <strong>Example:</strong> Onboard 10 sellers in Year 1. Each sells $100/month.
-                  That's <strong className="text-roots-primary">$250/month in $ROOTS</strong>.
+                  That&apos;s <strong className="text-roots-primary">$250/month in cash + Roots Points</strong>.
                   Keep recruiting to keep your earnings growing!
                 </p>
               </div>
@@ -275,6 +275,35 @@ export default function AmbassadorPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Tokenomics deep-dive link — ambassadors are the audience that
+              actively needs this info to recruit and pitch. Doug went
+              looking for tokenomics from /ambassador first and couldn't
+              find it (Apr 30 2026). Surfaced here, also linked from the
+              footer and the new /about hub. */}
+          <Card className="mt-6 bg-amber-50 border-amber-200">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🪙</span>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-amber-900 mb-1">
+                    How Roots Points convert to $ROOTS
+                  </h3>
+                  <p className="text-sm text-amber-800 mb-3">
+                    Today you earn <strong>cash commission</strong> (paid via Venmo/PayPal/Zelle) plus
+                    <strong> Roots Points</strong> on-chain. When the $ROOTS token launches, your Roots
+                    Points convert at a fixed rate. Allocations are <em>proposed and subject to change</em>
+                    until contracts deploy.
+                  </p>
+                  <Link href="/about/tokenomics">
+                    <Button variant="outline" className="border-amber-700 text-amber-900 hover:bg-amber-100">
+                      View proposed tokenomics →
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Recruit Other Ambassadors */}
