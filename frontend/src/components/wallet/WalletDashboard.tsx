@@ -14,6 +14,7 @@ import { ReceiveTokenSection } from './ReceiveTokenSection';
 import { SendTokenModal } from './SendTokenModal';
 import { SwapWidget } from './SwapWidget';
 import { CashOutSection } from './CashOutSection';
+import { BuyUsdcSection } from './BuyUsdcSection';
 
 interface TokenRowProps {
   token: TokenBalance;
@@ -124,6 +125,12 @@ export function WalletDashboard() {
 
       {/* Receive Section */}
       <ReceiveTokenSection walletAddress={walletAddress} />
+
+      {/* Buy USDC — Coinbase Onramp. Sits next to Receive because both
+          are "ways to get USDC into your wallet"; this is the
+          fund-with-card path that Coinbase asked us to surface as a
+          decoupled wallet-funding action (May 5 2026). */}
+      <BuyUsdcSection />
 
       {/* Send Section */}
       <Card>
