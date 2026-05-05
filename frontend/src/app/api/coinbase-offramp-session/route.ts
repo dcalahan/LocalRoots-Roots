@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT, importJWK } from 'jose';
 import { randomBytes } from 'crypto';
+import { getClientIp } from '@/lib/clientIp';
 
 const COINBASE_API_HOST = 'api.developer.coinbase.com';
 const SESSION_TOKEN_PATH = '/onramp/v1/token';
@@ -127,7 +128,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Call Coinbase to mint session token
+    // Call Coinbase to mint session token. `clientIp` is required by
+    // Coinbase for security validation — it binds the resulting quote
+    // to the originating user so the session token can't be reused
+    // from a different IP. Per CDP support (May 2 2026).
+    const clientIp = getClientIp(req);
+    const tokenRequestBody: Record<string, unknown> = {
+      addresses: [{ address: walletAddress, blockchains: ['base'] }],
+      assets: ['USDC'],
+    };
+    if (clientIp) tokenRequestBody.clientIp = clientIp;
+
     const cbResponse = await fetch(
       `https://${COINBASE_API_HOST}${SESSION_TOKEN_PATH}`,
       {
@@ -136,10 +147,7 @@ export async function POST(req: NextRequest) {
           Authorization: `Bearer ${jwt}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          addresses: [{ address: walletAddress, blockchains: ['base'] }],
-          assets: ['USDC'],
-        }),
+        body: JSON.stringify(tokenRequestBody),
       },
     );
 
