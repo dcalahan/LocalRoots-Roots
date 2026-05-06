@@ -25,7 +25,7 @@
  */
 
 import { useState } from 'react';
-import { CreditCard, ExternalLink, Info } from 'lucide-react';
+import { CreditCard, ExternalLink, Info, AlertCircle } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import {
   isCoinbaseOnrampConfigured,
   openCoinbaseOnramp,
 } from '@/lib/coinbaseOnramp';
+import { isCoinbaseDisabled } from '@/lib/coinbaseStatus';
 
 /** Default USD pre-fill on the Buy USDC button. Above the $5 guest-checkout
  *  floor and gives the user a real balance to spend after. They can edit
@@ -51,6 +52,11 @@ export function BuyUsdcSection() {
   const usdcAmount = usdcBalance ? Number(usdcBalance.formattedBalance) : 0;
 
   const configured = isCoinbaseOnrampConfigured();
+  // Manual override when Coinbase has revoked our app — set
+  // NEXT_PUBLIC_COINBASE_DISABLED=true in Vercel. We surface a clean
+  // banner instead of letting users hit a 502 from the session-token
+  // endpoint. Doug, May 5 2026 (Coinbase blocked our app).
+  const disabled = isCoinbaseDisabled();
 
   const handleBuy = async () => {
     if (!walletAddress) return;
@@ -88,7 +94,21 @@ export function BuyUsdcSection() {
           on LocalRoots whenever you&apos;re ready.
         </p>
 
-        {!configured && (
+        {disabled && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900">
+              <p className="font-medium">Temporarily unavailable</p>
+              <p className="text-xs mt-1 text-amber-800">
+                We&apos;re working with our payment partner to restore credit-card
+                wallet funding. Crypto wallet transfers and marketplace purchases
+                are still working in the meantime.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!disabled && !configured && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
             <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <div className="text-sm text-amber-800">
@@ -101,7 +121,7 @@ export function BuyUsdcSection() {
           </div>
         )}
 
-        {configured && (
+        {!disabled && configured && (
           <div className="mb-4 p-3 bg-roots-secondary/10 border border-roots-secondary/30 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="text-sm text-roots-gray">Current USDC balance:</span>
@@ -118,16 +138,18 @@ export function BuyUsdcSection() {
 
         <Button
           onClick={handleBuy}
-          disabled={!configured || !walletAddress || isOpening}
+          disabled={disabled || !configured || !walletAddress || isOpening}
           className="w-full bg-roots-secondary hover:bg-roots-secondary/90 disabled:opacity-50"
         >
           <ExternalLink className="w-4 h-4 mr-2" />
           {isOpening ? 'Opening Coinbase…' : `Buy USDC via Coinbase`}
         </Button>
 
-        <p className="text-xs text-roots-gray mt-3 text-center">
-          Default ${DEFAULT_BUY_FIAT}. You can change the amount inside Coinbase. $5 minimum per transaction.
-        </p>
+        {!disabled && (
+          <p className="text-xs text-roots-gray mt-3 text-center">
+            Default ${DEFAULT_BUY_FIAT}. You can change the amount inside Coinbase. $5 minimum per transaction.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Banknote, ExternalLink, Info } from 'lucide-react';
+import { Banknote, ExternalLink, Info, AlertCircle } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
   isCoinbaseOfframpConfigured,
   openCoinbaseOfframp,
 } from '@/lib/coinbaseOfframp';
+import { isCoinbaseDisabled } from '@/lib/coinbaseStatus';
 
 /**
  * Cash Out section — opens Coinbase Offramp in a new tab.
@@ -33,6 +34,10 @@ export function CashOutSection() {
   const usdcAmount = usdcBalance ? Number(usdcBalance.formattedBalance) : 0;
 
   const configured = isCoinbaseOfframpConfigured();
+  // Manual override when Coinbase has revoked our app — see
+  // BuyUsdcSection for context. Same env var disables both directions
+  // since they share project ID. Doug, May 5 2026.
+  const disabled = isCoinbaseDisabled();
 
   const handleCashOut = async () => {
     if (!walletAddress) return;
@@ -70,7 +75,22 @@ export function CashOutSection() {
           via Coinbase. Money lands in 1-3 business days.
         </p>
 
-        {!configured && (
+        {disabled && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900">
+              <p className="font-medium">Temporarily unavailable</p>
+              <p className="text-xs mt-1 text-amber-800">
+                We&apos;re working with our payment partner to restore bank cash-out.
+                In the meantime, you can send your USDC directly to a personal
+                Coinbase account or another wallet using the &ldquo;Send&rdquo;
+                button above.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!disabled && !configured && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
             <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <div className="text-sm text-amber-800">
@@ -84,14 +104,14 @@ export function CashOutSection() {
           </div>
         )}
 
-        {configured && !hasUsdc && (
+        {!disabled && configured && !hasUsdc && (
           <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-roots-gray">
             You don&apos;t have any USDC yet. Once you complete sales, your USDC
             will show up here and you&apos;ll be able to cash out.
           </div>
         )}
 
-        {configured && hasUsdc && (
+        {!disabled && configured && hasUsdc && (
           <div className="mb-4 p-3 bg-roots-secondary/10 border border-roots-secondary/30 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="text-sm text-roots-gray">Available to cash out:</span>
@@ -108,16 +128,18 @@ export function CashOutSection() {
 
         <Button
           onClick={handleCashOut}
-          disabled={!configured || !walletAddress || !hasUsdc || isOpening}
+          disabled={disabled || !configured || !walletAddress || !hasUsdc || isOpening}
           className="w-full bg-roots-secondary hover:bg-roots-secondary/90 disabled:opacity-50"
         >
           <ExternalLink className="w-4 h-4 mr-2" />
           {isOpening ? 'Opening Coinbase…' : 'Cash Out via Coinbase'}
         </Button>
 
-        <p className="text-xs text-roots-gray mt-3 text-center">
-          One-time KYC with Coinbase. Typical fee: ~2-3% of cash-out amount.
-        </p>
+        {!disabled && (
+          <p className="text-xs text-roots-gray mt-3 text-center">
+            One-time KYC with Coinbase. Typical fee: ~2-3% of cash-out amount.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

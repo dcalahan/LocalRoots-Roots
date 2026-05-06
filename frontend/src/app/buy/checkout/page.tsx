@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { isCoinbaseDisabled } from '@/lib/coinbaseStatus';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -344,44 +345,65 @@ export default function CheckoutPage() {
         <h2 className="text-lg font-semibold mb-4">How would you like to pay?</h2>
 
         <div className="space-y-3 mb-6">
-          {/* Credit Card Option */}
-          <button
-            onClick={() => {
-              // Lock paymentToken to USDC the moment user picks credit card.
-              // Without this, paymentToken stays at its default ('ROOTS')
-              // until CreditCardCheckout calls onPaid → setPaymentToken('USDC').
-              // But by then, handleCheckout has already been captured in
-              // CCC's onPaid closure with the OLD paymentToken='ROOTS' in
-              // scope — so handleCheckout calls approve(amount, ZERO_ADDRESS)
-              // (the ROOTS sentinel address), which has no contract code,
-              // and viem throws ContractFunctionZeroDataError on the
-              // allowance() read. Symptom: 'Approval failed' with token
-              // 0x000…0 in the [useTokenApproval] log. Setting paymentToken
-              // here ensures the parent re-renders with paymentToken='USDC'
-              // BEFORE CCC mounts, so the captured handleCheckout has the
-              // correct token in its closure. Doug, Apr 28 2026.
-              setPaymentToken('USDC');
-              setMode('guest');
-            }}
-            className="w-full p-4 rounded-lg border-2 border-roots-primary bg-roots-primary/5 hover:bg-roots-primary/10 transition-colors text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-roots-primary rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold">Card or Mobile Pay</div>
-                <div className="text-sm text-roots-gray">
-                  Debit card, Apple Pay, or Google Pay
+          {/* Credit Card Option — disabled when Coinbase has revoked our app
+              (set NEXT_PUBLIC_COINBASE_DISABLED=true). Showing a disabled
+              notice here prevents users from typing their delivery info
+              just to hit a 502 error on the next screen. Doug, May 5 2026. */}
+          {isCoinbaseDisabled() ? (
+            <div className="w-full p-4 rounded-lg border-2 border-amber-200 bg-amber-50 cursor-not-allowed">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-amber-300 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-amber-900">Card or Mobile Pay — Temporarily Unavailable</div>
+                  <div className="text-sm text-amber-800">
+                    We&apos;re working with our payment partner to restore credit-card checkout. Crypto wallet payments below are still working.
+                  </div>
                 </div>
               </div>
-              <span className="text-xs bg-roots-primary/10 text-roots-primary px-2 py-1 rounded font-medium">
-                Recommended
-              </span>
             </div>
-          </button>
+          ) : (
+            <button
+              onClick={() => {
+                // Lock paymentToken to USDC the moment user picks credit card.
+                // Without this, paymentToken stays at its default ('ROOTS')
+                // until CreditCardCheckout calls onPaid → setPaymentToken('USDC').
+                // But by then, handleCheckout has already been captured in
+                // CCC's onPaid closure with the OLD paymentToken='ROOTS' in
+                // scope — so handleCheckout calls approve(amount, ZERO_ADDRESS)
+                // (the ROOTS sentinel address), which has no contract code,
+                // and viem throws ContractFunctionZeroDataError on the
+                // allowance() read. Symptom: 'Approval failed' with token
+                // 0x000…0 in the [useTokenApproval] log. Setting paymentToken
+                // here ensures the parent re-renders with paymentToken='USDC'
+                // BEFORE CCC mounts, so the captured handleCheckout has the
+                // correct token in its closure. Doug, Apr 28 2026.
+                setPaymentToken('USDC');
+                setMode('guest');
+              }}
+              className="w-full p-4 rounded-lg border-2 border-roots-primary bg-roots-primary/5 hover:bg-roots-primary/10 transition-colors text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-roots-primary rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold">Card or Mobile Pay</div>
+                  <div className="text-sm text-roots-gray">
+                    Debit card, Apple Pay, or Google Pay
+                  </div>
+                </div>
+                <span className="text-xs bg-roots-primary/10 text-roots-primary px-2 py-1 rounded font-medium">
+                  Recommended
+                </span>
+              </div>
+            </button>
+          )}
 
           {/* $5 minimum disclosure for sub-$5 carts. Coinbase Onramp's
               documented floor is $5 across all payment methods, so a $4.50

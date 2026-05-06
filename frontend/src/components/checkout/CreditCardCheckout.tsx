@@ -7,6 +7,7 @@ import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
 import { isCoinbaseOnrampConfigured, openBlankOnrampPopup, navigateOnrampPopup } from '@/lib/coinbaseOnramp';
+import { isCoinbaseDisabled } from '@/lib/coinbaseStatus';
 import { usePrivyContact } from '@/hooks/usePrivyContact';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
 import { readLocalDelivery } from '@/lib/buyerDelivery';
@@ -421,6 +422,33 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     setPopupRef(result.popup ?? null);
     setStep('awaiting-funds');
   }, [buyerAddress, fiatToCharge, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes]);
+
+  // Manual override when Coinbase has revoked our app — set
+  // NEXT_PUBLIC_COINBASE_DISABLED=true in Vercel. Better to surface a
+  // clean "temporarily unavailable" message here than let the user
+  // type their address only to hit a 502 from the session-token
+  // endpoint. Doug, May 5 2026 (Coinbase blocked our app id).
+  if (isCoinbaseDisabled()) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="pt-6 text-center">
+            <div className="text-4xl mb-3">⏸️</div>
+            <p className="text-amber-900 font-medium mb-2">Credit Card Payments Temporarily Unavailable</p>
+            <p className="text-sm text-amber-800 mb-4">
+              We&apos;re working with our payment partner to restore credit-card
+              checkout. In the meantime, if you have a crypto wallet (or are
+              comfortable connecting one), the &ldquo;Pay with Crypto Wallet&rdquo;
+              option is still working.
+            </p>
+            <Button onClick={onBack} className="bg-roots-primary hover:bg-roots-primary/90">
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!isCoinbaseOnrampConfigured()) {
     return (
