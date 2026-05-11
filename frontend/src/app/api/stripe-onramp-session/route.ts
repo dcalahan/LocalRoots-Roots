@@ -106,34 +106,35 @@ export async function POST(req: NextRequest) {
     }
 
     // Build form-encoded body. Stripe v1 endpoints accept JSON too but the
-    // canonical pattern is form-encoded — being explicit about it avoids
-    // any "did this serialize right?" debugging later.
+    // canonical pattern is form-encoded.
+    //
+    // IMPORTANT: Stripe Crypto Onramp's API has all transaction params at
+    // the TOP LEVEL of the request body — NOT nested under
+    // `transaction_details` (that's the RESPONSE shape, not the request
+    // shape). Sending `transaction_details[destination_currency]` etc.
+    // returns 400 `parameter_unknown`. Confirmed against
+    // https://docs.stripe.com/api/crypto/onramp_sessions/create — May 11 2026.
+    //
+    // Also: `customer_information` is not a valid request parameter; use
+    // `kyc_details` instead (and only when pre-populating real KYC data,
+    // not arbitrary emails). Skipping email pre-fill for now — Stripe's
+    // hosted UI collects it inline.
     const params = new URLSearchParams();
-    params.append('wallet_addresses[ethereum]', walletAddress);
-    params.append('transaction_details[destination_currency]', 'usdc');
-    params.append('transaction_details[destination_network]', 'base');
+    params.append('wallet_addresses[base]', walletAddress);
+    params.append('destination_currency', 'usdc');
+    params.append('destination_network', 'base');
+    params.append('source_currency', 'usd');
 
     if (presetCryptoAmount !== undefined && presetCryptoAmount > 0) {
       // USDC precision; Stripe's API takes the amount as a string
-      params.append(
-        'transaction_details[destination_amount]',
-        presetCryptoAmount.toFixed(6),
-      );
+      params.append('destination_amount', presetCryptoAmount.toFixed(6));
     } else if (presetFiatAmount !== undefined && presetFiatAmount > 0) {
-      params.append(
-        'transaction_details[source_amount]',
-        presetFiatAmount.toFixed(2),
-      );
-    }
-
-    if (email) {
-      params.append('customer_information[email]', email);
+      params.append('source_amount', presetFiatAmount.toFixed(2));
     }
 
     // Lock the wallet so the buyer can't redirect funds elsewhere inside
-    // Stripe's UI. This is the security signal Stripe wants for embedded
-    // integrations per the Privy + Stripe recipe.
-    params.append('transaction_details[lock_wallet_address]', 'true');
+    // Stripe's UI. Top-level boolean per Stripe's API contract.
+    params.append('lock_wallet_address', 'true');
 
     // Pass client IP for fraud detection — Stripe's `customer_ip_address`
     // parameter mirrors the `clientIp` requirement Coinbase had. Same
@@ -142,6 +143,12 @@ export async function POST(req: NextRequest) {
     if (clientIp) {
       params.append('customer_ip_address', clientIp);
     }
+
+    // `email` from the request body is captured but not yet wired into
+    // Stripe — the `kyc_details` schema needs verification before we
+    // pre-fill anything KYC-adjacent. Left as TODO; the unused-var
+    // suppression silences lint without removing the contract.
+    void email;
 
     const stripeResp = await fetch(STRIPE_API_URL, {
       method: 'POST',
