@@ -382,43 +382,21 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     const useStripe = isStripeOnrampEnabled();
     const popup = useStripe ? openBlankStripePopup() : openBlankCoinbasePopup();
 
-    const requiredUsdcUnits = BigInt(Math.floor(totalUsd * 1e6));
-    try {
-      const client = createFreshPublicClient();
-      const existingBalance = await client.readContract({
-        address: USDC_ADDRESS,
-        abi: [
-          {
-            name: 'balanceOf',
-            type: 'function',
-            stateMutability: 'view',
-            inputs: [{ name: 'account', type: 'address' }],
-            outputs: [{ name: '', type: 'uint256' }],
-          },
-        ] as const,
-        functionName: 'balanceOf',
-        args: [buyerAddress],
-      });
-      if (existingBalance >= requiredUsdcUnits) {
-        // Buyer already has enough USDC — no Coinbase needed. Close the
-        // popup we opened defensively.
-        if (popup) popup.close();
-        setStep('paid');
-        onPaid({
-          buyerAddress,
-          email: email.trim(),
-          phone: phone.trim(),
-          deliveryAddress: deliveryAddress.trim(),
-          deliveryNotes: deliveryNotes.trim(),
-        });
-        return;
-      }
-    } catch (err) {
-      // Balance check failed — fall through to the Coinbase popup so the
-      // buyer isn't blocked. Worst case they pay and the next poll picks
-      // up the funds correctly.
-      console.warn('[CreditCardCheckout] pre-payment balance check failed:', err);
-    }
+    // ─── REMOVED Apr/May 2026: pre-payment balance auto-skip ──────────
+    // Previous behavior: if buyer's wallet already had >= cart total in
+    // USDC, we'd skip the card flow entirely and just pull from balance.
+    // This silently overrode the user's explicit "Pay with Card" choice
+    // and made it impossible to test the card flow from a funded wallet.
+    // (Doug, May 11 2026: "If I try to use this particular wallet to pay
+    // for my order, if I use a credit card will LR override my desire to
+    // use a credit card and just use my balance? I think it was doing
+    // that with Coinbase before?")
+    //
+    // The user already chose between "Card or Mobile Pay" vs "Your
+    // Account Wallet" on the previous screen. If they're here, they
+    // want card. Respect that choice. Buyers who want to spend from
+    // their existing USDC balance should use the "Your Account Wallet"
+    // option on /buy/checkout.
 
     const result = useStripe
       ? await navigateStripeOnrampPopup(popup, {
