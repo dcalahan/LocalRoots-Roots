@@ -403,6 +403,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
           walletAddress: buyerAddress,
           presetFiatAmount: fiatToCharge,
           email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
         })
       : await navigateCoinbasePopup(popup, {
           walletAddress: buyerAddress,
@@ -715,20 +716,31 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         <Card className="mb-6 bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
             <h3 className="font-semibold text-blue-900 mb-2">
-              {useStripeCopy ? 'Heads up — a quick verification step' : 'Heads up — a few quick verification steps'}
+              {useStripeCopy ? 'Heads up — first-time card setup takes ~2 minutes' : 'Heads up — a few quick verification steps'}
             </h3>
             {useStripeCopy ? (
               <>
                 <p className="text-sm text-blue-900 mb-3">
-                  Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner Stripe handles card payments. They may ask you to:
+                  Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner <strong>Stripe</strong> handles card payments via <strong>Stripe Link</strong> (the same secure checkout used by Shopify, Robinhood, and many other sites). First-time setup takes about 2 minutes. They&apos;ll ask you to:
                 </p>
                 <ul className="text-sm text-blue-900 space-y-1 mb-3 ml-4 list-disc">
-                  <li>Confirm your email</li>
-                  <li>Verify your identity (typically a quick on-screen check)</li>
-                  <li>Approve the charge with your bank</li>
+                  <li>Confirm your email and phone number</li>
+                  <li>Provide your name, date of birth, and Social Security Number for identity verification</li>
+                  <li>Enter your card, Apple Pay, or Google Pay details</li>
                 </ul>
+                <details className="text-xs text-blue-800 mb-3">
+                  <summary className="cursor-pointer font-medium underline decoration-dotted">Why is SSN required?</summary>
+                  <div className="mt-2 pl-2 border-l-2 border-blue-300 text-blue-900">
+                    <p className="mb-2">
+                      US federal law (the Bank Secrecy Act) requires anyone selling crypto for fiat to verify customer identity. The SSN check is done by Stripe — the regulated counterparty — not by LocalRoots.
+                    </p>
+                    <p>
+                      <strong>LocalRoots never sees your SSN.</strong> It goes directly from your browser to Stripe&apos;s servers. We see only that the purchase succeeded.
+                    </p>
+                  </div>
+                </details>
                 <p className="text-xs text-blue-800">
-                  About 1-2 minutes the first time. Stripe remembers you for future orders, so it&apos;s much faster after that.
+                  Future LocalRoots purchases (and any other Stripe Link site) skip these steps — typically 10 seconds to check out after first-time setup.
                 </p>
               </>
             ) : (

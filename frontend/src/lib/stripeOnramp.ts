@@ -28,8 +28,10 @@ export interface OpenOnrampOptions {
   presetFiatAmount?: number;
   /** USDC amount to deliver. Stripe back-calculates the fiat charge. */
   presetCryptoAmount?: number;
-  /** Optional email pre-fill for the buyer (smooths Stripe's KYC step). */
+  /** Email pre-fill (smooths Stripe Link signup). */
   email?: string;
+  /** Phone pre-fill (smooths Stripe Link signup). E.164 ideal but Stripe normalizes. */
+  phone?: string;
 }
 
 export interface OpenOnrampResult {
@@ -115,6 +117,7 @@ export async function navigateStripeOnrampPopup(
         presetFiatAmount: opts.presetFiatAmount,
         presetCryptoAmount: opts.presetCryptoAmount,
         email: opts.email,
+        phone: opts.phone,
       }),
     });
 

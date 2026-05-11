@@ -82,7 +82,11 @@ export function BuyUsdcSection() {
       const result = useStripe
         ? await openStripeOnramp({
             walletAddress,
+            // Privy exposes these as `user.email.address` / `user.phone.number`
+            // when the user logged in via that method. Pre-fill smooths
+            // Stripe Link signup; values are still editable in Stripe's UI.
             email: user?.email?.address || undefined,
+            phone: user?.phone?.number || undefined,
             presetFiatAmount: DEFAULT_BUY_FIAT,
           })
         : await openCoinbaseOnramp({

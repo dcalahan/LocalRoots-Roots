@@ -38,14 +38,34 @@ interface SessionRequestBody {
   presetFiatAmount?: number;
   /** USDC amount to pre-fill. Stripe calculates the fiat charge needed. */
   presetCryptoAmount?: number;
-  /** Optional email pre-fill for the buyer. */
+  /** Email pre-fill — passed to Stripe as `kyc_details[email]`. */
   email?: string;
+  /** Phone pre-fill (E.164 or local format) — passed as `kyc_details[phone]`. */
+  phone?: string;
 }
+
+/**
+ * Testing notes (Stripe Crypto Onramp test mode, May 11 2026):
+ * Real SSN + test card 4242 FAILS with "An unknown error occurred"
+ * because Stripe's fraud rules reject the real-name/real-SSN + test-card
+ * combination. Use the documented test allowlist:
+ *
+ *   - Card:   4242 4242 4242 4242 (any future expiry, any CVC, any ZIP)
+ *   - SSN:    000-00-0000
+ *   - OTP:    000000
+ *   - DOB:    any reasonable date
+ *   - Name:   any non-empty values
+ *
+ * Real KYC data is only accepted in LIVE mode (once Stripe approves the
+ * Crypto Onramp application). Doug burned a test cycle on this — don't
+ * repeat the mistake. Source:
+ * https://docs.stripe.com/crypto/onramp + Stripe testing docs.
+ */
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as SessionRequestBody;
-    const { walletAddress, presetFiatAmount, presetCryptoAmount, email } = body;
+    const { walletAddress, presetFiatAmount, presetCryptoAmount, email, phone } = body;
 
     // Validation — mirror the Coinbase route's shape so callers don't have to learn a new contract.
     if (!walletAddress) {
@@ -149,11 +169,25 @@ export async function POST(req: NextRequest) {
       params.append('customer_ip_address', clientIp);
     }
 
-    // `email` from the request body is captured but not yet wired into
-    // Stripe — the `kyc_details` schema needs verification before we
-    // pre-fill anything KYC-adjacent. Left as TODO; the unused-var
-    // suppression silences lint without removing the contract.
-    void email;
+    // Pre-fill KYC fields via `kyc_details` when we have them. Per
+    // Stripe docs, kyc_details is an object whose sub-fields populate
+    // the Stripe Link signup UI so users don't retype values we
+    // already have. Email/phone are the safest to pass — name/DOB/SSN
+    // we don't have, so the user enters those in Stripe Link directly.
+    //
+    // Notes on sub-field naming:
+    //   - email: `kyc_details[email]` (single string)
+    //   - phone: `kyc_details[phone]` (E.164-ish, Stripe normalizes)
+    //
+    // If a sub-field isn't supported, Stripe responds 400 with a
+    // `parameter_unknown` error and the exact path it didn't like —
+    // we can iterate cleanly from there.
+    if (email && email.includes('@')) {
+      params.append('kyc_details[email]', email);
+    }
+    if (phone) {
+      params.append('kyc_details[phone]', phone);
+    }
 
     const stripeResp = await fetch(STRIPE_API_URL, {
       method: 'POST',
