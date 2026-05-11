@@ -110,35 +110,37 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
   const hasDeliveryItems = items.some(item => item.isDelivery);
   const totalUsd = Number(rootsToFiat(total));
-  // Pad the fiat charge by 2.5% so the buyer absorbs Coinbase's processing
-  // fee. Architecture (Doug, Apr 28 2026): "Sellers should never be paid
-  // more or less than the listed price; LocalRoots should not absorb
-  // Coinbase fees as a permanent subsidy."
+
+  // Provider-aware copy + fee math. Hoisted to component scope so JSX can
+  // condition on it. Doug, May 11 2026 (after Coinbase auto-rejection May 5).
+  const useStripeCopy = isStripeOnrampEnabled();
+
+  // Pad the fiat charge so the buyer absorbs the card-processing fee.
+  // Architecture (Doug, Apr 28 2026): "Sellers should never be paid more
+  // or less than the listed price; LocalRoots should not absorb processing
+  // fees as a permanent subsidy."
   //
-  // Empirical calibration of FEE_PAD = 1.025:
-  //   - For a $5 cart, fiatToCharge = ceil($5 × 1.025 × 100) / 100 = $5.13
-  //   - $5.13 was confirmed accepted by Coinbase + BoA's pre-auth check
-  //     (visible as a pending charge in Doug's BoA account Apr 28 evening)
-  //   - $5.15 (3% pad) was rejected with "Buy up to $5 per transaction as
-  //     current limit" — the per-tx threshold is somewhere between $5.13
-  //     and $5.15, and 2.5% lands cleanly under it.
-  //   - Coinbase's typical card fee is ~2.49%; 2.5% pad is the tightest
-  //     match that doesn't push the request over their limit.
+  // Provider-specific:
+  //   - Stripe Crypto Onramp: ~1.5% + $0.30 per transaction, $1 floor.
+  //     For a $4.50 cart: ceil(4.50 × 1.015 + 0.30) = $4.87. Buyer charged
+  //     $4.87, seller gets $4.50, ~$0.07 reserve stays in buyer wallet.
+  //   - Coinbase Onramp (legacy / rollback): 2.5% pad, $5 floor — calibrated
+  //     against Coinbase's per-tx limit. See pre-May-11 history for the
+  //     full empirical rationale.
   //
   // The marketplace contract pulls EXACTLY the listed cart price from the
   // buyer's wallet at settlement (`safeTransferFrom(buyer, escrow,
-  // usdcAmount)` where `usdcAmount = _calculateStablecoinAmount(listed)`),
-  // not whatever the buyer happens to have. So if Coinbase happens to under-
-  // charge (e.g. fee is 2% on a given tx, buyer wallet ends with $5.03),
-  // any excess stays with the buyer as future-purchase credit; the seller
-  // is never overpaid.
-  //
-  // The /api/relayer-topup endpoint stays in place as defense-in-depth for
-  // the symmetric case: Coinbase's fee is HIGHER than 2.5% (it varies),
-  // buyer's wallet ends up short, top-off covers the small remaining gap.
-  // Reserve usage drops to near-zero per transaction in steady state.
-  const FEE_PAD = 1.025;
-  const fiatToCharge = Math.max(5, Math.ceil(totalUsd * FEE_PAD * 100) / 100);
+  // usdcAmount)`), not whatever the buyer happens to have. So any excess
+  // stays with the buyer as future-purchase credit; the seller is never
+  // overpaid. The /api/relayer-topup endpoint covers the asymmetric case
+  // where the actual fee exceeds the pad (defense-in-depth).
+  const FEE_PAD = useStripeCopy ? 1.015 : 1.025;
+  const FLAT_FEE = useStripeCopy ? 0.30 : 0;
+  const FLOOR = useStripeCopy ? 1 : 5;
+  const fiatToCharge = Math.max(
+    FLOOR,
+    Math.ceil((totalUsd * FEE_PAD + FLAT_FEE) * 100) / 100,
+  );
 
   // Pre-fill from Privy when available
   useEffect(() => {
@@ -508,7 +510,15 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-blue-800">
-            <strong>Powered by Coinbase.</strong> Pay with a debit card, Apple Pay, or Google Pay. Your payment opens in a secure window.
+            {useStripeCopy ? (
+              <>
+                <strong>Powered by Stripe.</strong> Pay with a debit card, Apple Pay, or Google Pay. Your payment opens in a secure window. $1 minimum.
+              </>
+            ) : (
+              <>
+                <strong>Powered by Coinbase.</strong> Pay with a debit card, Apple Pay, or Google Pay. Your payment opens in a secure window.
+              </>
+            )}
           </p>
         </div>
 
@@ -696,7 +706,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
               {fiatToCharge > totalUsd && (
                 <div className="flex justify-between text-sm text-roots-gray mt-1">
                   <span>
-                    {totalUsd < 5
+                    {!useStripeCopy && totalUsd < 5
                       ? 'Coinbase $5 minimum + card fee'
                       : 'Card processing fee (est.)'}
                   </span>
@@ -709,13 +719,14 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
               </div>
               <p className="text-xs text-roots-gray mt-2">
                 Your seller receives the full {formatFiat(totalUsd)}. LocalRoots takes no cut.
-                {totalUsd < 5 && (
+                {useStripeCopy ? (
+                  <> The small card-processing fee is paid to Stripe, not us.</>
+                ) : totalUsd < 5 ? (
                   <>
                     {' '}Coinbase requires a $5 minimum charge for card payments — any difference beyond their fee
                     {' '}stays in your wallet as credit toward future purchases.
                   </>
-                )}
-                {totalUsd >= 5 && (
+                ) : (
                   <> The card fee is your card&apos;s, not ours.</>
                 )}
               </p>
@@ -725,18 +736,38 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
         <Card className="mb-6 bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
-            <h3 className="font-semibold text-blue-900 mb-2">Heads up — a few quick verification steps</h3>
-            <p className="text-sm text-blue-900 mb-3">
-              Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner Coinbase handles card payments. They&apos;ll ask you to:
-            </p>
-            <ul className="text-sm text-blue-900 space-y-1 mb-3 ml-4 list-disc">
-              <li>Verify your phone with a text code</li>
-              <li>Confirm your billing address</li>
-              <li>Possibly approve the charge with your bank</li>
-            </ul>
-            <p className="text-xs text-blue-800">
-              About 2 minutes the first time. Coinbase remembers you for future orders, so it&apos;s much faster after that.
-            </p>
+            <h3 className="font-semibold text-blue-900 mb-2">
+              {useStripeCopy ? 'Heads up — a quick verification step' : 'Heads up — a few quick verification steps'}
+            </h3>
+            {useStripeCopy ? (
+              <>
+                <p className="text-sm text-blue-900 mb-3">
+                  Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner Stripe handles card payments. They may ask you to:
+                </p>
+                <ul className="text-sm text-blue-900 space-y-1 mb-3 ml-4 list-disc">
+                  <li>Confirm your email</li>
+                  <li>Verify your identity (typically a quick on-screen check)</li>
+                  <li>Approve the charge with your bank</li>
+                </ul>
+                <p className="text-xs text-blue-800">
+                  About 1-2 minutes the first time. Stripe remembers you for future orders, so it&apos;s much faster after that.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-blue-900 mb-3">
+                  Because no single company owns LocalRoots — it&apos;s a community-run marketplace — our payment partner Coinbase handles card payments. They&apos;ll ask you to:
+                </p>
+                <ul className="text-sm text-blue-900 space-y-1 mb-3 ml-4 list-disc">
+                  <li>Verify your phone with a text code</li>
+                  <li>Confirm your billing address</li>
+                  <li>Possibly approve the charge with your bank</li>
+                </ul>
+                <p className="text-xs text-blue-800">
+                  About 2 minutes the first time. Coinbase remembers you for future orders, so it&apos;s much faster after that.
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 

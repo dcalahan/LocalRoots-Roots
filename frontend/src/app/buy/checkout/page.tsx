@@ -415,7 +415,10 @@ export default function CheckoutPage() {
               ~2.5% card fee) lands in the buyer's wallet as future-purchase
               credit — but they need to know that BEFORE clicking, not as
               a surprise on the next screen. Doug, Apr 29 2026. */}
-          {Number(rootsToFiat(total)) < 5 && (
+          {/* Coinbase-only $5 minimum disclosure. Stripe Crypto Onramp's
+              floor is $1, so when Stripe is the active provider this
+              warning isn't relevant and we hide it. */}
+          {!isStripeOnrampEnabled() && Number(rootsToFiat(total)) < 5 && (
             <div className="text-xs text-roots-gray bg-amber-50 border border-amber-200 rounded p-3 -mt-1">
               <strong className="text-amber-900">Note:</strong> Coinbase requires a $5 minimum charge for card payments. For carts under $5, you&apos;ll be charged $5 — the difference (~${(5 - Number(rootsToFiat(total))).toFixed(2)}) stays in your wallet as credit toward future purchases. Your seller still gets the full {formatFiat(rootsToFiat(total))}.
             </div>
