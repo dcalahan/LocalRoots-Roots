@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { isCoinbaseDisabled } from '@/lib/coinbaseStatus';
+import { isStripeOnrampEnabled } from '@/lib/stripeOnramp';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -348,8 +349,11 @@ export default function CheckoutPage() {
           {/* Credit Card Option — disabled when Coinbase has revoked our app
               (set NEXT_PUBLIC_COINBASE_DISABLED=true). Showing a disabled
               notice here prevents users from typing their delivery info
-              just to hit a 502 error on the next screen. Doug, May 5 2026. */}
-          {isCoinbaseDisabled() ? (
+              just to hit a 502 error on the next screen. Doug, May 5 2026.
+              When Stripe is enabled (NEXT_PUBLIC_USE_STRIPE_ONRAMP=true),
+              the disabled banner is suppressed — Stripe is the active
+              provider, so credit-card checkout is live again. */}
+          {isCoinbaseDisabled() && !isStripeOnrampEnabled() ? (
             <div className="w-full p-4 rounded-lg border-2 border-amber-200 bg-amber-50 cursor-not-allowed">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-amber-300 rounded-lg flex items-center justify-center">

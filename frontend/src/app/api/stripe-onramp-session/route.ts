@@ -1,0 +1,202 @@
+/**
+ * Mint a Stripe Crypto Onramp session for a buyer's wallet.
+ *
+ * Replaces the Coinbase Onramp path (Coinbase blocked our app on May 5
+ * 2026). Stripe acquired Privy in 2025, so this is a first-party
+ * Stripe-ecosystem integration: USDC delivered to the buyer's Privy
+ * embedded wallet on Base mainnet, with Stripe as merchant of record
+ * on the fiat-to-crypto purchase.
+ *
+ * Flow:
+ *   1. Frontend POSTs { walletAddress, presetFiatAmount? | presetCryptoAmount?, email? }
+ *   2. We hit Stripe's REST API at api.stripe.com/v1/crypto/onramp_sessions
+ *      using STRIPE_SECRET_KEY (sk_test_... or sk_live_...)
+ *   3. Stripe returns { id, client_secret, redirect_url }
+ *   4. We return the redirect_url to the frontend, which opens it in a popup
+ *      (same pattern as the old Coinbase flow — minimizes UI churn)
+ *
+ * Note: Stripe Crypto Onramp is still in Preview at the API level. The
+ * Stripe Node SDK doesn't expose `crypto.onrampSessions.create` as a typed
+ * method yet, so we hit the v1 endpoint with form-encoded body directly.
+ * Switch to the SDK method when it gets first-class support.
+ *
+ * Env vars (server-side only):
+ *   - STRIPE_SECRET_KEY  Stripe API secret key
+ *
+ * Reference: https://docs.stripe.com/api/crypto/onramp_sessions/create
+ * Reference: https://docs.privy.io/recipes/stripe-headless-onramp
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getClientIp } from '@/lib/clientIp';
+
+const STRIPE_API_URL = 'https://api.stripe.com/v1/crypto/onramp_sessions';
+
+interface SessionRequestBody {
+  walletAddress?: string;
+  /** USD amount to pre-fill on Stripe's hosted UI. Optional. */
+  presetFiatAmount?: number;
+  /** USDC amount to pre-fill. Stripe calculates the fiat charge needed. */
+  presetCryptoAmount?: number;
+  /** Optional email pre-fill for the buyer. */
+  email?: string;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = (await req.json()) as SessionRequestBody;
+    const { walletAddress, presetFiatAmount, presetCryptoAmount, email } = body;
+
+    // Validation — mirror the Coinbase route's shape so callers don't have to learn a new contract.
+    if (!walletAddress) {
+      return NextResponse.json(
+        { error: 'walletAddress is required' },
+        { status: 400 },
+      );
+    }
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return NextResponse.json(
+        { error: 'walletAddress must be a 0x-prefixed 40-hex-char Ethereum address' },
+        { status: 400 },
+      );
+    }
+    if (presetFiatAmount !== undefined && presetCryptoAmount !== undefined) {
+      return NextResponse.json(
+        { error: 'Specify only one of presetFiatAmount or presetCryptoAmount' },
+        { status: 400 },
+      );
+    }
+    if (presetFiatAmount !== undefined) {
+      if (typeof presetFiatAmount !== 'number' || presetFiatAmount <= 0) {
+        return NextResponse.json(
+          { error: 'presetFiatAmount must be a positive number' },
+          { status: 400 },
+        );
+      }
+      // Stripe Crypto Onramp has a $1 floor (vs Coinbase's $5) — much friendlier
+      // to small basil purchases. Validate above 1 to give a clean error.
+      if (presetFiatAmount < 1) {
+        return NextResponse.json(
+          { error: 'presetFiatAmount must be at least $1' },
+          { status: 400 },
+        );
+      }
+    }
+    if (presetCryptoAmount !== undefined) {
+      if (typeof presetCryptoAmount !== 'number' || presetCryptoAmount <= 0) {
+        return NextResponse.json(
+          { error: 'presetCryptoAmount must be a positive number' },
+          { status: 400 },
+        );
+      }
+      if (presetCryptoAmount < 1) {
+        return NextResponse.json(
+          { error: 'presetCryptoAmount must be at least 1 USDC' },
+          { status: 400 },
+        );
+      }
+    }
+
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      return NextResponse.json(
+        { error: 'STRIPE_SECRET_KEY is not configured' },
+        { status: 500 },
+      );
+    }
+
+    // Build form-encoded body. Stripe v1 endpoints accept JSON too but the
+    // canonical pattern is form-encoded — being explicit about it avoids
+    // any "did this serialize right?" debugging later.
+    const params = new URLSearchParams();
+    params.append('wallet_addresses[ethereum]', walletAddress);
+    params.append('transaction_details[destination_currency]', 'usdc');
+    params.append('transaction_details[destination_network]', 'base');
+
+    if (presetCryptoAmount !== undefined && presetCryptoAmount > 0) {
+      // USDC precision; Stripe's API takes the amount as a string
+      params.append(
+        'transaction_details[destination_amount]',
+        presetCryptoAmount.toFixed(6),
+      );
+    } else if (presetFiatAmount !== undefined && presetFiatAmount > 0) {
+      params.append(
+        'transaction_details[source_amount]',
+        presetFiatAmount.toFixed(2),
+      );
+    }
+
+    if (email) {
+      params.append('customer_information[email]', email);
+    }
+
+    // Lock the wallet so the buyer can't redirect funds elsewhere inside
+    // Stripe's UI. This is the security signal Stripe wants for embedded
+    // integrations per the Privy + Stripe recipe.
+    params.append('transaction_details[lock_wallet_address]', 'true');
+
+    // Pass client IP for fraud detection — Stripe's `customer_ip_address`
+    // parameter mirrors the `clientIp` requirement Coinbase had. Same
+    // helper we already use for both Coinbase routes.
+    const clientIp = getClientIp(req);
+    if (clientIp) {
+      params.append('customer_ip_address', clientIp);
+    }
+
+    const stripeResp = await fetch(STRIPE_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+
+    if (!stripeResp.ok) {
+      const errText = await stripeResp.text().catch(() => 'unknown');
+      console.error(
+        '[stripe-onramp-session] Stripe API error:',
+        stripeResp.status,
+        errText,
+      );
+      return NextResponse.json(
+        {
+          error: `Stripe API error (${stripeResp.status})`,
+          detail: errText.slice(0, 500),
+        },
+        { status: 502 },
+      );
+    }
+
+    const data = (await stripeResp.json()) as {
+      id?: string;
+      client_secret?: string;
+      redirect_url?: string;
+    };
+
+    if (!data.redirect_url) {
+      console.error(
+        '[stripe-onramp-session] no redirect_url in response:',
+        data,
+      );
+      return NextResponse.json(
+        { error: 'Stripe returned no redirect URL' },
+        { status: 502 },
+      );
+    }
+
+    return NextResponse.json({
+      url: data.redirect_url,
+      id: data.id,
+      clientSecret: data.client_secret,
+    });
+  } catch (err) {
+    console.error('[stripe-onramp-session] unexpected error:', err);
+    return NextResponse.json(
+      {
+        error: err instanceof Error ? err.message : 'Unknown error',
+      },
+      { status: 500 },
+    );
+  }
+}

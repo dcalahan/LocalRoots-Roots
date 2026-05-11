@@ -36,6 +36,11 @@ import {
   openCoinbaseOnramp,
 } from '@/lib/coinbaseOnramp';
 import { isCoinbaseDisabled } from '@/lib/coinbaseStatus';
+import {
+  isStripeOnrampConfigured,
+  isStripeOnrampEnabled,
+  openStripeOnramp,
+} from '@/lib/stripeOnramp';
 
 /** Default USD pre-fill on the Buy USDC button. Above the $5 guest-checkout
  *  floor and gives the user a real balance to spend after. They can edit
@@ -51,22 +56,40 @@ export function BuyUsdcSection() {
   const usdcBalance = balances.find(b => b.symbol === 'USDC');
   const usdcAmount = usdcBalance ? Number(usdcBalance.formattedBalance) : 0;
 
-  const configured = isCoinbaseOnrampConfigured();
-  // Manual override when Coinbase has revoked our app — set
-  // NEXT_PUBLIC_COINBASE_DISABLED=true in Vercel. We surface a clean
-  // banner instead of letting users hit a 502 from the session-token
-  // endpoint. Doug, May 5 2026 (Coinbase blocked our app).
-  const disabled = isCoinbaseDisabled();
+  // Three-way provider state:
+  //   - useStripe=true:    new Stripe Crypto Onramp path (post-May 11 2026)
+  //   - disabled=true:     Coinbase path disabled (blocked app); show banner
+  //   - configured=true:   legacy Coinbase path (kept for rollback safety)
+  //
+  // Once Stripe is verified in production, the Coinbase code can be removed
+  // entirely. Until then, both paths coexist behind feature flags so we can
+  // flip back instantly if Stripe has unexpected issues.
+  const useStripe = isStripeOnrampEnabled();
+  const stripeConfigured = isStripeOnrampConfigured();
+  const coinbaseConfigured = isCoinbaseOnrampConfigured();
+  const coinbaseDisabled = isCoinbaseDisabled();
+
+  // Resolved provider for this render: prefer Stripe when enabled+configured.
+  const configured = useStripe ? stripeConfigured : coinbaseConfigured;
+  // The banner only shows when Coinbase is the active path AND it's disabled.
+  // Stripe being live overrides the disabled banner.
+  const disabled = !useStripe && coinbaseDisabled;
 
   const handleBuy = async () => {
     if (!walletAddress) return;
     setIsOpening(true);
     try {
-      const result = await openCoinbaseOnramp({
-        walletAddress,
-        partnerUserId: user?.id || undefined,
-        presetFiatAmount: DEFAULT_BUY_FIAT,
-      });
+      const result = useStripe
+        ? await openStripeOnramp({
+            walletAddress,
+            email: user?.email?.address || undefined,
+            presetFiatAmount: DEFAULT_BUY_FIAT,
+          })
+        : await openCoinbaseOnramp({
+            walletAddress,
+            partnerUserId: user?.id || undefined,
+            presetFiatAmount: DEFAULT_BUY_FIAT,
+          });
       if (!result.ok) {
         toast({
           title: "Couldn't open Buy USDC",
@@ -89,9 +112,9 @@ export function BuyUsdcSection() {
       </CardHeader>
       <CardContent>
         <p className="text-roots-gray text-sm mb-4">
-          Fund your wallet with USDC using a credit card, Apple Pay, or Google Pay
-          via Coinbase. Your USDC lands in this wallet on Base — ready to spend
-          on LocalRoots whenever you&apos;re ready.
+          Fund your wallet with USDC using a credit card, Apple Pay, or Google Pay.
+          Your USDC lands in this wallet on Base — ready to spend on LocalRoots
+          whenever you&apos;re ready.
         </p>
 
         {disabled && (
@@ -114,7 +137,7 @@ export function BuyUsdcSection() {
             <div className="text-sm text-amber-800">
               <p className="font-medium">Buy USDC — not configured</p>
               <p className="text-xs mt-1">
-                Coinbase Onramp credentials aren&apos;t set up in this environment.
+                Payment provider credentials aren&apos;t set up in this environment.
                 Reach out to support if you see this message in production.
               </p>
             </div>
@@ -142,12 +165,13 @@ export function BuyUsdcSection() {
           className="w-full bg-roots-secondary hover:bg-roots-secondary/90 disabled:opacity-50"
         >
           <ExternalLink className="w-4 h-4 mr-2" />
-          {isOpening ? 'Opening Coinbase…' : `Buy USDC via Coinbase`}
+          {isOpening ? 'Opening…' : 'Buy USDC'}
         </Button>
 
         {!disabled && (
           <p className="text-xs text-roots-gray mt-3 text-center">
-            Default ${DEFAULT_BUY_FIAT}. You can change the amount inside Coinbase. $5 minimum per transaction.
+            Default ${DEFAULT_BUY_FIAT}. You can change the amount on the next screen.
+            {useStripe ? ' $1 minimum.' : ' $5 minimum per transaction.'}
           </p>
         )}
       </CardContent>

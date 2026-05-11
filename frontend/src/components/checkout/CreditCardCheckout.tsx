@@ -6,8 +6,14 @@ import { type Address, formatUnits } from 'viem';
 import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { USDC_ADDRESS } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
-import { isCoinbaseOnrampConfigured, openBlankOnrampPopup, navigateOnrampPopup } from '@/lib/coinbaseOnramp';
+import { isCoinbaseOnrampConfigured, openBlankOnrampPopup as openBlankCoinbasePopup, navigateOnrampPopup as navigateCoinbasePopup } from '@/lib/coinbaseOnramp';
 import { isCoinbaseDisabled } from '@/lib/coinbaseStatus';
+import {
+  isStripeOnrampConfigured,
+  isStripeOnrampEnabled,
+  openBlankOnrampPopup as openBlankStripePopup,
+  navigateStripeOnrampPopup,
+} from '@/lib/stripeOnramp';
 import { usePrivyContact } from '@/hooks/usePrivyContact';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
 import { readLocalDelivery } from '@/lib/buyerDelivery';
@@ -368,7 +374,11 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     // on iOS Safari and the popup gets blocked. So: open the blank popup
     // first, do the balance check after, and either close-or-navigate the
     // popup based on the result. Doug, Apr 29 2026 (Matt hit this on iPhone).
-    const popup = openBlankOnrampPopup();
+    //
+    // Provider selection happens at popup-open time so the gesture context
+    // is preserved regardless of which provider gets used.
+    const useStripe = isStripeOnrampEnabled();
+    const popup = useStripe ? openBlankStripePopup() : openBlankCoinbasePopup();
 
     const requiredUsdcUnits = BigInt(Math.floor(totalUsd * 1e6));
     try {
@@ -408,11 +418,17 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
       console.warn('[CreditCardCheckout] pre-payment balance check failed:', err);
     }
 
-    const result = await navigateOnrampPopup(popup, {
-      walletAddress: buyerAddress,
-      presetFiatAmount: fiatToCharge,
-      partnerUserId: user?.id || undefined,
-    });
+    const result = useStripe
+      ? await navigateStripeOnrampPopup(popup, {
+          walletAddress: buyerAddress,
+          presetFiatAmount: fiatToCharge,
+          email: email.trim() || undefined,
+        })
+      : await navigateCoinbasePopup(popup, {
+          walletAddress: buyerAddress,
+          presetFiatAmount: fiatToCharge,
+          partnerUserId: user?.id || undefined,
+        });
 
     if (!result.ok) {
       setError(result.error || 'Could not open the payment window. Please try again.');
@@ -428,7 +444,11 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
   // clean "temporarily unavailable" message here than let the user
   // type their address only to hit a 502 from the session-token
   // endpoint. Doug, May 5 2026 (Coinbase blocked our app id).
-  if (isCoinbaseDisabled()) {
+  //
+  // When Stripe is enabled (NEXT_PUBLIC_USE_STRIPE_ONRAMP=true), the
+  // disabled banner is suppressed — Stripe is the active provider, so
+  // there's nothing to disable.
+  if (isCoinbaseDisabled() && !isStripeOnrampEnabled()) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <Card className="border-amber-200 bg-amber-50">
@@ -450,7 +470,11 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     );
   }
 
-  if (!isCoinbaseOnrampConfigured()) {
+  // "Not configured" gate — check whichever provider is active.
+  const _configured = isStripeOnrampEnabled()
+    ? isStripeOnrampConfigured()
+    : isCoinbaseOnrampConfigured();
+  if (!_configured) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <Card className="border-amber-200 bg-amber-50">
