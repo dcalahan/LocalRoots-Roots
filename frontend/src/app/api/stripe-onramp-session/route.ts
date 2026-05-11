@@ -120,7 +120,12 @@ export async function POST(req: NextRequest) {
     // not arbitrary emails). Skipping email pre-fill for now — Stripe's
     // hosted UI collects it inline.
     const params = new URLSearchParams();
-    params.append('wallet_addresses[base]', walletAddress);
+    // NB: wallet_addresses key for Base is `base_network` (asymmetric
+    // naming — every other chain uses just the chain name, but Base
+    // has the `_network` suffix). Verified against Stripe's docs
+    // (https://docs.stripe.com/api/crypto/onramp_sessions/object) and
+    // confirmed via 400 from `wallet_addresses[base]` on May 11 2026.
+    params.append('wallet_addresses[base_network]', walletAddress);
     params.append('destination_currency', 'usdc');
     params.append('destination_network', 'base');
     params.append('source_currency', 'usd');
