@@ -1,5 +1,58 @@
 # LocalRoots Project Guidelines
 
+## Operating Principles — READ FIRST
+
+**These are the non-negotiable HOW-to-work rules. Re-read at every session start. Doug has explicitly enforced both.**
+
+### 1. Think like a Business Analyst, not a programmer
+
+Pick the right thing, not the easy thing. Before recommending an implementation, frame the task in terms of:
+- Strategic goals
+- Architectural integrity
+- User experience
+- Regulatory / liability posture
+- Total cost over time (not just hours-to-ship)
+
+If you can't name the business / strategic / liability goal a fix serves, you're solving the wrong problem. Lead with architectural correctness, not shipping speed. When the user is exhausted, do NOT downgrade to the easier path on their behalf — present the right answer with honest trade-offs and let them decide. They'd rather work longer tonight than redo it tomorrow.
+
+Apply to external comms too: when drafting copy for partners (Stripe, Coinbase, Vercel, etc.), watch for phrases that sound defensive or evasive. State architectural facts and let the reader draw conclusions; don't editorialize on regulatory positioning to a regulator's partner.
+
+Full doc: `memory/feedback_business_analyst_first.md`.
+
+### 2. Test code BEFORE shipping it. Never send untested code to Doug.
+
+Doug is a professional QA. Code that hasn't been exercised through its user-facing path is **untested**, regardless of unit tests, typecheck, or bundle inspection. Sending him untested fixes turns him into the test harness for changes he didn't author. He has fired people for this pattern.
+
+**What counts as tested:**
+- Exact user-facing code path exercised end-to-end
+- Actual states (closures, refs, props, async timing) observed under realistic conditions
+- The failure mode reproduced BEFORE the fix and absent AFTER
+
+**What does NOT count as tested:**
+- TypeScript compiles
+- New symbols appear in the deployed bundle
+- An isolated server-side endpoint test passes
+- A unit-test of one isolated function
+- "I read the code carefully"
+
+**When you can't drive it end-to-end yourself, say so explicitly.** State what you COULD verify and what you COULDN'T. Do not present partial verification as full verification. When Doug must be the harness, make the cost obvious — list the exact step to exercise and the diagnostic that proves the fix.
+
+**Anti-pattern to NEVER repeat:** shipping a "fix" claiming it works, then needing Doug to discover the sibling bug it exposes, then shipping another "fix" — three rounds of this in one session is a fire-able pattern.
+
+For Stripe / external API integrations specifically: **curl-verify each new parameter against the production endpoint BEFORE shipping the code change.** Stripe (and others) have undocumented or partially documented schemas — guessing and shipping is a shortcut. Use curl to test the request shape end-to-end before claiming a fix works. If verification requires credentials only the user has, name that constraint and pause; do not ship guesses.
+
+Full doc: `memory/feedback_test_before_shipping.md`.
+
+### 3. Verify before claiming. Ask before guessing. Name limits before they cost time.
+
+The one-line meta-rule that governs both of the above:
+
+- Before shipping a new parameter / API call / behavior → verify against the authoritative source (curl, docs, openapi, support email)
+- Before asserting something is true → cite the verification path; don't say "tested" when only "typechecks" is true
+- Before recommending a test that requires Doug's manual effort → verify everything verifiable on your own side first; name what's unverifiable and why
+
+If the authoritative answer doesn't exist publicly, the right move is to **email the vendor's support directly** (Stripe approval emails include `support@stripe.com`; Coinbase, Privy, Venice all have known channels). Do NOT iterate guesses in production hoping one sticks. That's the shortcut Doug is calling out.
+
 ## Product Positioning — CRITICAL CONTEXT
 
 LocalRoots is a **gardening companion first, marketplace inside.** The AI gardening assistant is the front door — it delivers immediate single-player value. The marketplace (buy/sell local food) is a feature that emerges naturally when users have surplus harvest. "Neighbors Feeding Neighbors" is the brand soul, woven into every page (header tagline, footer), but NOT the headline.
@@ -131,7 +184,33 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 - Can "Login with Email" to view past orders
 - Orders tied to their Privy wallet address
 
-### Credit-Card Onramp: 2.5% Fee Pad + Reserve Top-off (Defense-in-Depth)
+### Credit-Card Onramp: Stripe (primary) + Coinbase (legacy, blocked)
+
+**Major architectural pivot — May 5-11 2026.** Coinbase auto-rejected our CDP Onramp/Offramp application on May 5 with no path to a human (paid support tier required), and BLOCKED our app id `37ee8da0-6945-4c8f-9f73-f7cb5bc4dabc` at the API layer (502 with `{"code":"ERROR_CODE_NOT_FOUND","message":"NotFound: app id ... is blocked"}`). Migrated to **Stripe Crypto Onramp** via Privy (Stripe acquired Privy in 2025 → first-party ecosystem stack: Privy wallet + Stripe Crypto Onramp + USDC on Base). Same zero-liability posture: Stripe is the merchant of record on fiat-to-crypto; LocalRoots never custodies funds. Full timeline + decisions: `memory/coinbase_blocked_stripe_migration.md`.
+
+**Current state (May 11 2026):**
+- Stripe Crypto Onramp is the **primary provider** in production behind feature flag `NEXT_PUBLIC_USE_STRIPE_ONRAMP=true`. Test mode usable now; live mode pending Stripe approval (24-48h).
+- Coinbase paths kept in tree for rollback safety. `NEXT_PUBLIC_COINBASE_DISABLED=true` keeps the Cash Out "temporarily unavailable" banner firing (Stripe has no crypto offramp, Coinbase offramp blocked, Bridge integration is the planned replacement).
+- Pre-payment balance auto-skip was REMOVED (`1cee1b9`) — was silently overriding the user's explicit "Pay with Card" choice when wallet had enough USDC.
+
+**Feature flags (all in Vercel env vars):**
+
+| Variable | Purpose | When set |
+|---|---|---|
+| `STRIPE_SECRET_KEY` | Server-side Stripe API key | Required for session-token route |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Client-side Stripe key | Baked into bundle at build time |
+| `NEXT_PUBLIC_USE_STRIPE_ONRAMP=true` | Activates Stripe path everywhere | Buy USDC + Card checkout route through Stripe instead of Coinbase |
+| `NEXT_PUBLIC_COINBASE_DISABLED=true` | Cash Out "temporarily unavailable" banner | Independent of Stripe flag; gates only the offramp |
+
+**Files added for Stripe migration:**
+- `frontend/src/lib/stripeOnramp.ts` — client helpers mirroring `coinbaseOnramp.ts` API surface
+- `frontend/src/app/api/stripe-onramp-session/route.ts` — server-side session mint via `api.stripe.com/v1/crypto/onramp_sessions` REST API (no typed SDK method yet for Crypto Onramp). Passes `clientIp` via shared `lib/clientIp.ts`.
+
+**Legal entity for Stripe KYB:** Common Area LLC (Delaware, EIN 41-5376265). NOT a separate LocalRoots LLC — Doug specifically doesn't want to form a new entity for tax/admin reasons. LocalRoots is a DBA / product line of Common Area. Standard pattern for serial entrepreneurs running multiple products under one entity.
+
+**Bridge offramp is the planned replacement for Cash Out** (already plugin-enabled in Doug's Privy dashboard). Not yet integrated. Tracked in `coinbase_blocked_stripe_migration.md`.
+
+### Credit-Card Onramp: 2.5% Fee Pad + Reserve Top-off (Defense-in-Depth — legacy Coinbase logic, retained)
 
 **Doug's principle (Apr 28 2026):** "Sellers should never be paid more or less than the listed price. Local Roots should not take the hit for Coinbase charges."
 
