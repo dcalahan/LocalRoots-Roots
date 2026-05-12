@@ -8,7 +8,12 @@
  *
  * Doug approved the strategic plan May 12 2026. Full design at
  * `<repo>/roots-points-expansion-plan.md`. Decisions locked:
- *   - Off-chain RP indexed by lowercased Privy embedded wallet address
+ *   - Off-chain RP indexed by a stable user key (lowercased). The key can
+ *     be either a Privy embedded wallet address (`0x...`) OR a Privy user
+ *     DID (`did:privy:cmxxx`). The library is content-agnostic; whichever
+ *     identifier the calling surface naturally has is fine. At airdrop
+ *     snapshot, `scripts/distribution/calculateAllocations.ts` resolves
+ *     both to the final wallet address via the Privy Management API.
  *   - Anonymous users never earn (no Privy ID, no airdrop eligibility)
  *   - Per-verb daily and lifetime caps protect against farming
  *   - Dedup via `setnx` on `rp:offchain:event:{eventId}` — idempotent retries
@@ -265,9 +270,11 @@ function computeEventId(verbId: VerbId, dedupKey: string): string {
  * primary action isn't blocked.
  *
  * @param verbId    Which earning verb (see VERBS registry)
- * @param privyAddress The user's lowercased Privy embedded wallet address.
- *                  Pass `null` or empty string for anonymous users — the
- *                  call short-circuits with `credited: false, reason: 'anonymous'`
+ * @param privyAddress Stable user identifier. Accepts either a Privy
+ *                  embedded wallet address (`0x...`) or a Privy user DID
+ *                  (`did:privy:...`). Normalized to lowercase before use.
+ *                  Pass `null` / empty for anonymous users — short-circuits
+ *                  with `credited: false, reason: 'anonymous'`.
  * @param dedupKey  Verb-specific unique identifier (e.g. `plantId`,
  *                  `{userId}:{YYYY-MM-DD}`). Same key, same eventId, same
  *                  no-op behavior on retry.
