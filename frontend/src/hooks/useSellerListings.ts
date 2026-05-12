@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
 import { useSellerStatus } from './useSellerStatus';
-import { getIpfsUrl } from '@/lib/pinata';
+import { getIpfsUrl, fetchIpfsJson } from '@/lib/pinata';
 import { resolveListingImage } from '@/lib/produce';
 
 interface ListingMetadata {
@@ -50,21 +50,17 @@ async function fetchIpfsMetadata(metadataUri: string): Promise<ListingMetadata |
       };
     }
 
-    // Handle IPFS hashes
-    const url = metadataUri.startsWith('ipfs://')
-      ? `https://gateway.pinata.cloud/ipfs/${metadataUri.slice(7)}`
-      : `https://gateway.pinata.cloud/ipfs/${metadataUri}`;
-
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = await response.json();
+    // Handle IPFS hashes — race ipfs.io + Pinata via shared helper
+    const raw = await fetchIpfsJson(metadataUri);
+    if (!raw) return null;
+    const data = raw as Record<string, unknown> & { images?: unknown[]; produceId?: string };
 
     return {
-      produceName: data.produceName || 'Unknown',
-      description: data.description || '',
+      produceName: (data.produceName as string) || 'Unknown',
+      description: (data.description as string) || '',
       imageUrl: resolveListingImage(data, getImageUrl),
-      unit: data.unitName || data.unitId || 'unit',
-      category: data.category || '',
+      unit: (data.unitName as string) || (data.unitId as string) || 'unit',
+      category: (data.category as string) || '',
     };
   } catch (err) {
     console.error('Error parsing metadata:', err);

@@ -7,7 +7,7 @@
 
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
-import { getIpfsUrl } from '@/lib/pinata';
+import { getIpfsUrl, fetchIpfsJson } from '@/lib/pinata';
 import { resolveListingImage } from '@/lib/produce';
 import type { ListingCardData } from '@/components/buyer/ListingCard';
 
@@ -99,44 +99,18 @@ export async function fetchIpfsMetadata<T>(metadataUri: string): Promise<T | nul
     }
   }
 
-  // Multi-gateway race. The public Pinata gateway (gateway.pinata.cloud) is
-  // hard rate-limited and routinely takes 4–7s for cold-cache reads —
-  // empirically slower than our 5s abort timeout, which produced silent
-  // "Unknown Product" fallbacks on /buy. ipfs.io serves the same CIDs in
-  // ~150ms. Race both so a single-gateway hiccup doesn't blank the card.
-  // Matches the working pattern in `lib/pinata.ts` getIpfsUrl().
-  const cid = metadataUri.startsWith('ipfs://') ? metadataUri.slice(7) : metadataUri;
-  const gateways = [
-    `https://ipfs.io/ipfs/${cid}`,
-    `https://gateway.pinata.cloud/ipfs/${cid}`,
-  ];
+  const raw = await fetchIpfsJson(metadataUri);
+  if (!raw) return null;
+  const data = raw as Record<string, unknown> & { images?: unknown[]; produceId?: string };
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    const response = await Promise.any(
-      gateways.map(async (url) => {
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res;
-      }),
-    );
-    clearTimeout(timeout);
-
-    const data = await response.json();
-
-    return {
-      produceName: data.produceName || 'Unknown',
-      description: data.description || '',
-      imageUrl: resolveListingImage(data, resolveImageUrl),
-      unit: data.unitName || data.unitId || 'unit',
-      category: data.category || '',
-      name: data.name || 'Local Seller',
-    } as T;
-  } catch {
-    return null;
-  }
+  return {
+    produceName: (data.produceName as string) || 'Unknown',
+    description: (data.description as string) || '',
+    imageUrl: resolveListingImage(data, resolveImageUrl),
+    unit: (data.unitName as string) || (data.unitId as string) || 'unit',
+    category: (data.category as string) || '',
+    name: (data.name as string) || 'Local Seller',
+  } as T;
 }
 
 /**

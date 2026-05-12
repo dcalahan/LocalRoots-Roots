@@ -59,4 +59,54 @@ export function getIpfsUrl(ipfsHash: string): string {
   return `https://ipfs.io/ipfs/${ipfsHash}`;
 }
 
+/**
+ * Fetch JSON from IPFS by CID. Races ipfs.io + Pinata gateways so a
+ * single-gateway slowdown (Pinata public gateway routinely takes 4–7s
+ * for cold-cache reads) doesn't blank the UI. Returns the parsed JSON
+ * (as a generic record) or null on timeout / both gateways failing.
+ *
+ * Accepts a bare CID, `ipfs://CID`, or already-extracted hash. Does
+ * NOT handle `data:application/json,` URIs or test fixtures — call
+ * sites should branch on those formats before calling this.
+ *
+ * Default timeout: 5s. Pinata cold reads have been measured at 4–7s
+ * on the public free-tier gateway, while ipfs.io serves the same CIDs
+ * in ~150ms — so most requests will race ipfs.io's response and
+ * abort the Pinata fetch as soon as ipfs.io completes.
+ *
+ * Used by every listing/seller/order surface that reads IPFS
+ * metadata. Centralizing here keeps gateway choice + timeout
+ * consistent across buyer and seller views (see CLAUDE.md
+ * "Buyer/Seller Parity").
+ */
+export async function fetchIpfsJson(
+  cidOrUri: string,
+  timeoutMs = 5000,
+): Promise<Record<string, unknown> | null> {
+  if (!cidOrUri) return null;
+  const cid = cidOrUri.startsWith('ipfs://') ? cidOrUri.slice(7) : cidOrUri;
+  const gateways = [
+    `https://ipfs.io/ipfs/${cid}`,
+    `https://gateway.pinata.cloud/ipfs/${cid}`,
+  ];
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await Promise.any(
+      gateways.map(async (url) => {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res;
+      }),
+    );
+    return (await response.json()) as Record<string, unknown>;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export { pinata };

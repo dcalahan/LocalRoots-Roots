@@ -5,7 +5,7 @@ import { useReadContract } from 'wagmi';
 import { ACTIVE_CHAIN_ID } from '@/lib/chainConfig';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { useSellerStatus } from './useSellerStatus';
-import { getIpfsUrl } from '@/lib/pinata';
+import { getIpfsUrl, fetchIpfsJson } from '@/lib/pinata';
 
 interface StorefrontMetadata {
   name?: string;
@@ -55,23 +55,14 @@ async function fetchStorefrontMetadata(storefrontIpfs: string): Promise<Storefro
     }
   }
 
-  // Handle IPFS hashes
-  try {
-    const url = storefrontIpfs.startsWith('ipfs://')
-      ? `https://gateway.pinata.cloud/ipfs/${storefrontIpfs.slice(7)}`
-      : `https://gateway.pinata.cloud/ipfs/${storefrontIpfs}`;
-
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return {
-      name: data.name || undefined,
-      description: data.description || undefined,
-      imageUrl: resolveImageUrl(data.imageUrl),
-    };
-  } catch {
-    return null;
-  }
+  // Handle IPFS hashes — race ipfs.io + Pinata via shared helper
+  const data = await fetchIpfsJson(storefrontIpfs);
+  if (!data) return null;
+  return {
+    name: (data.name as string) || undefined,
+    description: (data.description as string) || undefined,
+    imageUrl: resolveImageUrl(data.imageUrl as string | undefined),
+  };
 }
 
 export function useSellerProfile() {

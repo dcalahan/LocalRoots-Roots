@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ListingsGrid } from '@/components/buyer/ListingsGrid';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { publicClient } from '@/lib/viemClient';
-import { getIpfsUrl } from '@/lib/pinata';
+import { getIpfsUrl, fetchIpfsJson } from '@/lib/pinata';
 import type { ListingCardData } from '@/components/buyer/ListingCard';
 
 // Helper to convert image reference to displayable URL
@@ -70,18 +70,15 @@ async function fetchIpfsMetadata(metadataUri: string): Promise<SellerMetadata | 
     }
   }
 
+  // Race ipfs.io + Pinata via shared helper
+  const data = await fetchIpfsJson(metadataUri);
+  if (!data) return null;
   try {
-    const url = metadataUri.startsWith('ipfs://')
-      ? `https://gateway.pinata.cloud/ipfs/${metadataUri.slice(7)}`
-      : `https://gateway.pinata.cloud/ipfs/${metadataUri}`;
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = await response.json();
     return {
-      name: data.name || 'Local Seller',
-      description: data.description || '',
-      imageUrl: resolveImageUrl(data.imageUrl),
-      email: data.email,
+      name: (data.name as string) || 'Local Seller',
+      description: (data.description as string) || '',
+      imageUrl: resolveImageUrl(data.imageUrl as string | undefined),
+      email: data.email as string | undefined,
       phone: data.phone,
     };
   } catch {
@@ -355,21 +352,15 @@ async function fetchListingMetadata(metadataUri: string): Promise<ListingMetadat
     }
   }
 
-  try {
-    const url = metadataUri.startsWith('ipfs://')
-      ? `https://gateway.pinata.cloud/ipfs/${metadataUri.slice(7)}`
-      : `https://gateway.pinata.cloud/ipfs/${metadataUri}`;
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return {
-      produceName: data.produceName || 'Unknown',
-      description: data.description || '',
-      imageUrl: resolveImageUrl(data.images?.[0] || data.imageUrl),
-      unit: data.unitName || data.unitId || 'unit',
-      category: data.category || '',
-    };
-  } catch {
-    return null;
-  }
+  // Race ipfs.io + Pinata via shared helper
+  const data = await fetchIpfsJson(metadataUri);
+  if (!data) return null;
+  const images = data.images as unknown[] | undefined;
+  return {
+    produceName: (data.produceName as string) || 'Unknown',
+    description: (data.description as string) || '',
+    imageUrl: resolveImageUrl((images?.[0] as string | undefined) || (data.imageUrl as string | undefined)),
+    unit: (data.unitName as string) || (data.unitId as string) || 'unit',
+    category: (data.category as string) || '',
+  };
 }

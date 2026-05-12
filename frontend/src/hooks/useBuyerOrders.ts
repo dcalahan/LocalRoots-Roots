@@ -5,7 +5,7 @@ import { useAccount } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { MARKETPLACE_ADDRESS, marketplaceAbi } from '@/lib/contracts/marketplace';
 import { createFreshPublicClient } from '@/lib/viemClient';
-import { getIpfsUrl } from '@/lib/pinata';
+import { getIpfsUrl, fetchIpfsJson } from '@/lib/pinata';
 import { OrderStatus, type Order, type OrderWithMetadata } from '@/types/order';
 
 interface ListingMetadata {
@@ -87,26 +87,21 @@ async function fetchIpfsMetadata<T>(ipfsHash: string): Promise<T | null> {
     }
   }
 
-  try {
-    const url = ipfsHash.startsWith('ipfs://')
-      ? `https://gateway.pinata.cloud/ipfs/${ipfsHash.slice(7)}`
-      : `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+  // Race ipfs.io + Pinata via shared helper. Pinata public gateway is
+  // hard rate-limited (4–7s cold reads); ipfs.io serves the same CIDs
+  // in ~150ms.
+  const data = await fetchIpfsJson(ipfsHash);
+  if (!data) return null;
 
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = await response.json();
-
-    // Convert image hash to URL and return normalized metadata
-    return {
-      produceName: data.produceName || 'Unknown',
-      description: data.description || '',
-      imageUrl: resolveImageUrl(data.images?.[0]),
-      unit: data.unitName || data.unitId || 'unit',
-      name: data.name || 'Local Seller',
-    } as T;
-  } catch {
-    return null;
-  }
+  // Convert image hash to URL and return normalized metadata
+  const images = data.images as unknown[] | undefined;
+  return {
+    produceName: (data.produceName as string) || 'Unknown',
+    description: (data.description as string) || '',
+    imageUrl: resolveImageUrl(images?.[0] as string | undefined),
+    unit: (data.unitName as string) || (data.unitId as string) || 'unit',
+    name: (data.name as string) || 'Local Seller',
+  } as T;
 }
 
 export function useBuyerOrders() {
