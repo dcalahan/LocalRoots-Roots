@@ -257,6 +257,7 @@ function buildAppKnowledgeContext(): string {
     flows: { id: string; trigger: string; steps: string[] }[]
     rootsPoints: Record<string, string>
     auth: Record<string, string>
+    paymentExperience?: Record<string, string>
     tone: string[]
   }
 
@@ -306,6 +307,21 @@ function buildAppKnowledgeContext(): string {
   ctx += `- Sellers & Ambassadors: ${ak.auth.sellersAmbassadors}\n`
   ctx += `- Crypto Buyers: ${ak.auth.cryptoBuyers}\n`
   ctx += `- Credit Card Buyers: ${ak.auth.creditCardBuyers}\n\n`
+
+  // Payment experience (Stripe Link first-time-vs-returning friction)
+  // Critical when users hit the KYC wall on first purchase and don't
+  // understand why a $5 basil order is asking for SSN.
+  if (ak.paymentExperience) {
+    const pe = ak.paymentExperience
+    ctx += `CREDIT-CARD PAYMENT EXPERIENCE — Sage needs this so users understand Stripe friction:\n`
+    if (pe.creditCardProvider) ctx += `- Provider: ${pe.creditCardProvider}\n`
+    if (pe.firstPurchase) ctx += `- FIRST purchase: ${pe.firstPurchase}\n`
+    if (pe.returningPurchase) ctx += `- RETURNING purchases: ${pe.returningPurchase}\n`
+    if (pe.minimum) ctx += `- Minimum: ${pe.minimum}\n`
+    if (pe.supportedPaymentMethods) ctx += `- Payment methods: ${pe.supportedPaymentMethods}\n`
+    if (pe.tone) ctx += `- TONE: ${pe.tone}\n`
+    ctx += `\n`
+  }
 
   // Flows
   ctx += `KEY FLOWS TO GUIDE USERS THROUGH:\n`

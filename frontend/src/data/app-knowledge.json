@@ -79,7 +79,7 @@
         {
           "path": "/buy/checkout",
           "name": "Checkout",
-          "description": "Pay with credit card, crypto wallet, or account balance. Supports ROOTS, USDC, and USDT tokens.",
+          "description": "Pay with credit card (via Stripe), crypto wallet, or account balance. Supports ROOTS, USDC, and USDT tokens. First-time credit-card buyers go through Stripe Link identity verification (~2 min); after that, future purchases are one-tap. $1 minimum.",
           "authRequired": false
         },
         {
@@ -366,6 +366,15 @@
     "sellersAmbassadors": "Email, phone, Google, Apple, or Instagram via Privy. No crypto wallet needed — all transactions are gasless.",
     "cryptoBuyers": "Connect an external wallet to pay with ROOTS, USDC, or USDT.",
     "creditCardBuyers": "Sign in with email to pay by credit card."
+  },
+  "paymentExperience": {
+    "_label": "What buyers experience at checkout. Important context when users ask why card payments feel slow, or hesitate to enter sensitive info.",
+    "creditCardProvider": "LocalRoots uses Stripe Crypto Onramp for credit/debit card purchases. Stripe is the merchant of record on the card transaction; LocalRoots never sees or stores card numbers. The USDC then settles to the buyer's wallet on Base, and from there to the seller.",
+    "firstPurchase": "First-time card purchases take about 2 minutes because Stripe Link (Stripe's identity layer) collects name, date of birth, address, phone, the last 4 of SSN, and sometimes asks for an ID photo via a QR code on your phone. This is a US regulatory requirement for any fiat-to-crypto purchase — every onramp does it. It feels heavy because it IS heavy the first time.",
+    "returningPurchase": "Once Stripe Link has verified you, every future purchase — on LocalRoots OR any other Stripe-powered site (Shopify, DoorDash, thousands of others) — is one-tap. Same email, same phone, no re-entering. The first purchase is the slow one; #2 onward is faster than most checkouts you've used.",
+    "minimum": "$1 minimum per purchase. No upper limit for verified Stripe Link users.",
+    "supportedPaymentMethods": "Credit card, debit card, Apple Pay, Google Pay.",
+    "tone": "When users complain about KYC friction, validate that it's annoying but explain it's a one-time cost. Don't apologize for it — it's a US regulatory floor, not a LocalRoots design choice. Emphasize that Stripe Link memory makes #2 fast. If a user is stuck mid-flow (ID scan, can't verify email, etc.), acknowledge the friction and offer to pass it along as feedback — don't pretend the experience is smooth when it isn't."
   },
   "tone": [
     "Guide users conversationally — 'head to the Sell page' not 'navigate to /sell/register'",

@@ -188,10 +188,11 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 
 **Major architectural pivot — May 5-11 2026.** Coinbase auto-rejected our CDP Onramp/Offramp application on May 5 with no path to a human (paid support tier required), and BLOCKED our app id `37ee8da0-6945-4c8f-9f73-f7cb5bc4dabc` at the API layer (502 with `{"code":"ERROR_CODE_NOT_FOUND","message":"NotFound: app id ... is blocked"}`). Migrated to **Stripe Crypto Onramp** via Privy (Stripe acquired Privy in 2025 → first-party ecosystem stack: Privy wallet + Stripe Crypto Onramp + USDC on Base). Same zero-liability posture: Stripe is the merchant of record on fiat-to-crypto; LocalRoots never custodies funds. Full timeline + decisions: `memory/coinbase_blocked_stripe_migration.md`.
 
-**Current state (May 11 2026):**
-- Stripe Crypto Onramp is the **primary provider** in production behind feature flag `NEXT_PUBLIC_USE_STRIPE_ONRAMP=true`. Test mode usable now; live mode pending Stripe approval (24-48h).
+**Current state (May 12 2026):**
+- Stripe Crypto Onramp is the **primary provider** in production behind feature flag `NEXT_PUBLIC_USE_STRIPE_ONRAMP=true`. **Stripe approved the application for live mode** on May 11-12 2026 — live keys deployed, real USD → USDC purchases working.
 - Coinbase paths kept in tree for rollback safety. `NEXT_PUBLIC_COINBASE_DISABLED=true` keeps the Cash Out "temporarily unavailable" banner firing (Stripe has no crypto offramp, Coinbase offramp blocked, Bridge integration is the planned replacement).
 - Pre-payment balance auto-skip was REMOVED (`1cee1b9`) — was silently overriding the user's explicit "Pay with Card" choice when wallet had enough USDC.
+- **Stripe Link identity friction is real and expected:** first-time buyers go through full KYC (name, DOB, address, SSN, phone, sometimes ID scan via QR code). Stripe Link then remembers them across all Stripe-powered sites — second purchase is one-tap. The first-time burden is a US regulatory floor, not something we can engineer around. Sage's system prompt teaches users this; don't try to "fix" the KYC step with fewer prompts.
 
 **Feature flags (all in Vercel env vars):**
 
@@ -533,6 +534,42 @@ The seller's blank profile state ("Your Garden / Seedling") happens when on-chai
 - Buyer section is a placeholder. Saved delivery addresses + pickup history when a real flow exists.
 - No way yet to edit Privy login methods from `/profile` — that lives in the Privy modal menu. Acceptable for v1.
 - The seller "save" flow uploads metadata to IPFS using gardener fields. If the gardener profile changes, the seller storefront is NOT auto-resynced — the user has to come back to `/profile` and re-save. Future improvement: a "Sync from Gardener" affordance, or a hook that re-uploads when the gardener saves.
+
+## IPFS Reads — Single Gateway Pattern (CRITICAL)
+
+**Doug's framing (May 12 2026):** "Doug, all listings showed as 'Unknown Product' this morning."
+
+LocalRoots stores listing metadata, seller profiles, dispute evidence, and ambassador profiles on IPFS as JSON. Every UI surface that displays this data fetches the IPFS JSON in the browser or server. **The gateway choice matters** — the public Pinata gateway (`gateway.pinata.cloud`) is hard rate-limited and routinely takes 4–7s for cold-cache reads. `ipfs.io` serves the same CIDs in ~150ms.
+
+**The bug that motivated this rule (May 12 2026):** Five files had independently-written `fetchIpfsMetadata` functions, each hardcoded to `gateway.pinata.cloud` with a 5s `AbortController` timeout. Pinata's cold reads were exceeding the timeout, the fetch was aborting, and listings rendered as "Unknown Product" with no error logged anywhere. Doug saw it the morning of May 12 2026 in incognito mode — exact pattern: "finds my garden but not the product or picture."
+
+**The rule: every IPFS JSON read goes through `fetchIpfsJson` in `lib/pinata.ts`.**
+
+```typescript
+// lib/pinata.ts
+export async function fetchIpfsJson(
+  cidOrUri: string,
+  timeoutMs = 5000,
+): Promise<Record<string, unknown> | null>
+```
+
+Races `ipfs.io` + `gateway.pinata.cloud` via `Promise.any`. ipfs.io wins ~99% of the time. Pinata stays in the race as a fallback for the rare ipfs.io hiccup. Returns null on timeout or both gateways failing. Does NOT handle `data:application/json,` or test fixtures — call sites branch on those before calling this.
+
+**OG meta is the documented exception.** `resolveOgImageUrl` in `lib/listingData.ts` intentionally uses `gateway.pinata.cloud` because Facebook's crawler has historically had reliability issues with ipfs.io. This is the only place hardcoded Pinata is acceptable. Comment in the file documents why.
+
+**Anti-patterns that would defeat this defense:**
+- Don't write a one-off `fetch('https://gateway.pinata.cloud/ipfs/' + cid)` anywhere. Use `fetchIpfsJson` for JSON, `getIpfsUrl` for image src URLs.
+- Don't loosen the 5s timeout to "make Pinata work" — that just makes the bad path slower instead of fixing the symptom. The race makes timeout irrelevant when ipfs.io is up.
+- Don't add a third gateway without measuring it. ipfs.io is the fast path; adding gateways that are slower than the timeout just adds load without improving availability.
+
+**Files that legitimately call `fetchIpfsJson` (as of May 12 2026):**
+- `src/lib/listingData.ts` — buyer SSR (`/buy/listings/[id]`) and `/buy` page hydration via `useAllListings`
+- `src/hooks/useSellerListings.ts` — seller dashboard
+- `src/hooks/useBuyerOrders.ts` — buyer + Privy orders
+- `src/hooks/useSellerProfile.ts` — seller profile metadata
+- `src/app/buy/sellers/[sellerId]/page.tsx` — seller storefront (two call sites — seller meta + listing meta)
+
+If you add a new IPFS-JSON surface, add it to this list when you commit.
 
 ## Buyer/Seller Parity — STRATEGIC PRINCIPLE
 

@@ -79,7 +79,7 @@ async function fetchIpfsMetadata(metadataUri: string): Promise<SellerMetadata | 
       description: (data.description as string) || '',
       imageUrl: resolveImageUrl(data.imageUrl as string | undefined),
       email: data.email as string | undefined,
-      phone: data.phone,
+      phone: data.phone as string | undefined,
     };
   } catch {
     return null;
