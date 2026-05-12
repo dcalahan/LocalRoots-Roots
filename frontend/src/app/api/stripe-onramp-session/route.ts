@@ -169,23 +169,32 @@ export async function POST(req: NextRequest) {
       params.append('customer_ip_address', clientIp);
     }
 
-    // Pre-fill KYC fields via `kyc_details` when we have them. Per
-    // Stripe's API (verified via curl on May 11 2026):
-    //   - `kyc_details[email]` IS accepted ✓
-    //   - `kyc_details[phone]` is NOT accepted (returns 400
-    //     `parameter_unknown`). Tried both — phone isn't a documented
-    //     sub-field, so we collect it from the user in Stripe Link's
-    //     UI flow instead. May revisit if Stripe expands the schema.
+    // We do NOT pre-fill identity fields via `kyc_details`. Two real
+    // failure modes observed in production (May 11 2026):
     //
-    // Other sub-fields exist (name, dob, address) but we don't have
-    // those server-side, so the user enters them in Stripe Link.
-    if (email && email.includes('@')) {
-      params.append('kyc_details[email]', email);
-    }
-    // Phone is accepted from the request body for forward-compatibility
-    // and to keep the client→server contract intact. Not currently
-    // forwarded to Stripe — kept here so we can wire it up if Stripe
-    // adds the sub-field.
+    //   - `kyc_details[email]` IS accepted by the API but causes
+    //     Stripe Link to LOCK the session to that email. If the user
+    //     has an existing Stripe Link account under a different
+    //     email, they get "Please login with the account that you
+    //     previously used for this purchase" and cannot proceed.
+    //     Because most users have a Stripe Link account from prior
+    //     use on other sites (Shopify, Robinhood, etc.) under
+    //     whatever email they signed up with first, pre-filling
+    //     forces a conflict for the majority of users.
+    //
+    //   - `kyc_details[phone]` returns 400 `parameter_unknown` — not
+    //     a documented sub-field.
+    //
+    // Architectural correction: when an external identity layer like
+    // Stripe Link exists, don't pre-fill identity fields. Let the
+    // user's existing identity authenticate them in the provider's
+    // own UI. Pre-fill is only helpful for first-time users with no
+    // existing account; for everyone else, it creates friction.
+    //
+    // The route still accepts `email` and `phone` in the request body
+    // for forward-compatibility (don't break callers) but neither is
+    // forwarded to Stripe.
+    void email;
     void phone;
 
     const stripeResp = await fetch(STRIPE_API_URL, {
