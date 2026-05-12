@@ -170,24 +170,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Pre-fill KYC fields via `kyc_details` when we have them. Per
-    // Stripe docs, kyc_details is an object whose sub-fields populate
-    // the Stripe Link signup UI so users don't retype values we
-    // already have. Email/phone are the safest to pass — name/DOB/SSN
-    // we don't have, so the user enters those in Stripe Link directly.
+    // Stripe's API (verified via curl on May 11 2026):
+    //   - `kyc_details[email]` IS accepted ✓
+    //   - `kyc_details[phone]` is NOT accepted (returns 400
+    //     `parameter_unknown`). Tried both — phone isn't a documented
+    //     sub-field, so we collect it from the user in Stripe Link's
+    //     UI flow instead. May revisit if Stripe expands the schema.
     //
-    // Notes on sub-field naming:
-    //   - email: `kyc_details[email]` (single string)
-    //   - phone: `kyc_details[phone]` (E.164-ish, Stripe normalizes)
-    //
-    // If a sub-field isn't supported, Stripe responds 400 with a
-    // `parameter_unknown` error and the exact path it didn't like —
-    // we can iterate cleanly from there.
+    // Other sub-fields exist (name, dob, address) but we don't have
+    // those server-side, so the user enters them in Stripe Link.
     if (email && email.includes('@')) {
       params.append('kyc_details[email]', email);
     }
-    if (phone) {
-      params.append('kyc_details[phone]', phone);
-    }
+    // Phone is accepted from the request body for forward-compatibility
+    // and to keep the client→server contract intact. Not currently
+    // forwarded to Stripe — kept here so we can wire it up if Stripe
+    // adds the sub-field.
+    void phone;
 
     const stripeResp = await fetch(STRIPE_API_URL, {
       method: 'POST',
