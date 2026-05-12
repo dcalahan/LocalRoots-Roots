@@ -53,4 +53,20 @@ export const kv = {
     const result = await kvCommand('KEYS', pattern)
     return (result as string[]) || []
   },
+
+  /**
+   * SET if Not eXists — atomic "claim this key" primitive. Returns true if
+   * the key was set (caller "won" the claim), false if the key already
+   * existed (someone else set it first). Race-safe by construction.
+   *
+   * Used as the dedup primitive for off-chain Roots Points credit events:
+   * the eventId is computed from the verb + dedup payload, and the first
+   * caller to claim the eventId wins; concurrent retries are no-ops.
+   */
+  async setnx(key: string, value: unknown): Promise<boolean> {
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value)
+    const result = await kvCommand('SET', key, serialized, 'NX')
+    // Upstash returns "OK" when SET succeeded, null when NX rejected it
+    return result === 'OK'
+  },
 }
