@@ -99,18 +99,31 @@ export async function fetchIpfsMetadata<T>(metadataUri: string): Promise<T | nul
     }
   }
 
-  try {
-    const url = metadataUri.startsWith('ipfs://')
-      ? `https://gateway.pinata.cloud/ipfs/${metadataUri.slice(7)}`
-      : `https://gateway.pinata.cloud/ipfs/${metadataUri}`;
+  // Multi-gateway race. The public Pinata gateway (gateway.pinata.cloud) is
+  // hard rate-limited and routinely takes 4–7s for cold-cache reads —
+  // empirically slower than our 5s abort timeout, which produced silent
+  // "Unknown Product" fallbacks on /buy. ipfs.io serves the same CIDs in
+  // ~150ms. Race both so a single-gateway hiccup doesn't blank the card.
+  // Matches the working pattern in `lib/pinata.ts` getIpfsUrl().
+  const cid = metadataUri.startsWith('ipfs://') ? metadataUri.slice(7) : metadataUri;
+  const gateways = [
+    `https://ipfs.io/ipfs/${cid}`,
+    `https://gateway.pinata.cloud/ipfs/${cid}`,
+  ];
 
+  try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await Promise.any(
+      gateways.map(async (url) => {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res;
+      }),
+    );
     clearTimeout(timeout);
 
-    if (!response.ok) return null;
     const data = await response.json();
 
     return {
