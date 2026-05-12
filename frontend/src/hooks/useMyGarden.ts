@@ -113,16 +113,36 @@ export function useMyGarden(userId: string | null) {
     }
   }, [userId]);
 
-  // Debounced cloud sync
+  // Debounced cloud sync. PUT response includes off-chain Roots Points
+  // credit info (plant-added is the only live verb as of Phase 1.0). On
+  // a successful credit, we dispatch `app:rp-credited` on window so the
+  // header pill + profile section refetch and the RPCreditToaster
+  // surfaces a toast — all decoupled from this hook.
   const syncToCloud = useCallback((updatedPlants: GardenPlant[], updatedBeds: GardenBed[]) => {
     if (!userId) return;
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => {
-      fetch('/api/my-garden', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, plants: updatedPlants, beds: updatedBeds }),
-      }).catch(() => { /* non-critical */ });
+    syncTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/my-garden', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, plants: updatedPlants, beds: updatedBeds }),
+        });
+        if (!res.ok) return;
+        const data = (await res.json().catch(() => null)) as {
+          rp?: { credited: number; rpAmount: number; newTotal: number; cappedCount: number };
+        } | null;
+        if (typeof window !== 'undefined' && data?.rp) {
+          // Fire even when credited is 0 — listeners (useOffchainRP) need to
+          // know about cap rejections to potentially surface a different UX,
+          // and refetching when total hasn't changed is harmless.
+          window.dispatchEvent(
+            new CustomEvent('app:rp-credited', { detail: { ...data.rp, userId } }),
+          );
+        }
+      } catch {
+        // Non-critical — primary plant data is already in localStorage
+      }
     }, 2000);
   }, [userId]);
 

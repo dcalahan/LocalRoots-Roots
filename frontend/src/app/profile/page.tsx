@@ -48,9 +48,11 @@ import { savePickup, fetchOwnPickup } from '@/lib/sellerPickup';
 import { saveDelivery, fetchOwnDelivery } from '@/lib/buyerDelivery';
 import { validateAddress } from '@/lib/addressValidation';
 import { PublicGardenSettings } from '@/components/grow/PublicGardenSettings';
+import { useOffchainRP } from '@/hooks/useOffchainRP';
+import { VERBS, type VerbId } from '@/lib/offchainRP';
 import type { AmbassadorProfile } from '@/lib/contracts/ambassador';
 
-type SectionId = 'identity' | 'gardener' | 'seller' | 'ambassador' | 'buyer';
+type SectionId = 'identity' | 'roots-points' | 'gardener' | 'seller' | 'ambassador' | 'buyer';
 
 export default function ProfilePage() {
   return (
@@ -120,6 +122,7 @@ function ProfilePageInner() {
       <SectionNav highlight={sectionParam} />
 
       <IdentitySection />
+      <RootsPointsSection userId={userId} highlight={sectionParam === 'roots-points'} />
       <GardenerSection userId={userId} highlight={sectionParam === 'gardener'} />
       <SellerSection highlight={sectionParam === 'seller'} />
       <AmbassadorSection highlight={sectionParam === 'ambassador'} />
@@ -133,6 +136,7 @@ function ProfilePageInner() {
 function SectionNav({ highlight }: { highlight: SectionId | null }) {
   const links: { id: SectionId; label: string }[] = [
     { id: 'identity', label: 'Identity' },
+    { id: 'roots-points', label: 'Roots Points' },
     { id: 'gardener', label: 'Gardener' },
     { id: 'seller', label: 'Seller' },
     { id: 'ambassador', label: 'Ambassador' },
@@ -225,6 +229,89 @@ function IdentitySection() {
           </div>
         )}
       </dl>
+    </SectionShell>
+  );
+}
+
+// ─── 1b. Roots Points (off-chain earning summary) ───────────────────────────
+
+/**
+ * Read-only summary of the user's off-chain Roots Points. The on-chain RP
+ * (from marketplace sales, purchases, ambassador chain commissions) is NOT
+ * shown here — that lives on the existing /leaderboard surface and seller
+ * dashboard. This section is specifically for engagement-based RP that
+ * doesn't have an on-chain source: garden tracking, photos, Sage chat
+ * (Phase 2+), etc.
+ *
+ * Doug's call (May 12 2026): off-chain RP visibility is private to the user.
+ * Public ranking stays the existing on-chain leaderboard. So this section
+ * never exposes other users' totals.
+ */
+function RootsPointsSection({
+  userId,
+  highlight,
+}: {
+  userId: string | null;
+  highlight: boolean;
+}) {
+  const { total, byVerb, isLoading } = useOffchainRP(userId);
+
+  // Show all verbs that have ever been earned, sorted by descending RP.
+  // Verbs the user has never earned are not shown — that would clutter the
+  // page with 13 rows of "0 RP" and make the live ones harder to find.
+  const earnedRows = (Object.entries(byVerb) as [VerbId, { rp: number; count: number; lastEarnedAt: string }][])
+    .filter(([, row]) => row && row.rp > 0)
+    .sort((a, b) => b[1].rp - a[1].rp);
+
+  return (
+    <SectionShell
+      id="roots-points"
+      title="Your Roots Points"
+      description="Loyalty rewards you earn through gardening, sharing, and using the app. They convert to $ROOTS when the token launches."
+      highlight={highlight}
+    >
+      <div className="space-y-4">
+        {/* Total */}
+        <div className="flex items-baseline justify-between border-b border-gray-100 pb-4">
+          <span className="text-sm text-roots-gray">Total Roots Points</span>
+          <span className="font-heading text-3xl font-bold text-roots-secondary">
+            {isLoading ? '…' : total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </span>
+        </div>
+
+        {/* Per-verb breakdown */}
+        {earnedRows.length > 0 ? (
+          <dl className="space-y-2 text-sm">
+            {earnedRows.map(([verbId, row]) => {
+              const verbLabel = VERBS[verbId]?.label ?? verbId;
+              return (
+                <div key={verbId} className="flex justify-between gap-4">
+                  <dt className="text-roots-gray">
+                    {verbLabel}{' '}
+                    <span className="text-xs text-roots-gray/70">× {row.count}</span>
+                  </dt>
+                  <dd className="font-medium">
+                    {row.rp.toLocaleString()} RP
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        ) : (
+          <p className="text-sm text-roots-gray">
+            Add a plant to your garden to start earning Roots Points.
+          </p>
+        )}
+
+        <div className="text-xs text-roots-gray pt-2 border-t border-gray-100">
+          <Link
+            href="/about/tokenomics"
+            className="text-roots-secondary hover:underline"
+          >
+            What do Roots Points become? →
+          </Link>
+        </div>
+      </div>
     </SectionShell>
   );
 }

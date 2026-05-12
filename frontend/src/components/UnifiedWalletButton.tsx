@@ -8,6 +8,7 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { BuyerWalletModal } from './BuyerWalletModal';
 import { useWalletBalances } from '@/hooks/useWalletBalances';
+import { useOffchainRP } from '@/hooks/useOffchainRP';
 
 // LocalStorage key for tracking buyer wallet type
 const BUYER_WALLET_TYPE_KEY = 'buyer_wallet_type';
@@ -39,7 +40,7 @@ export function setBuyerWalletType(type: BuyerWalletType) {
  */
 export function UnifiedWalletButton() {
   const pathname = usePathname();
-  const { authenticated, login, logout, ready: privyReady } = usePrivy();
+  const { authenticated, login, logout, ready: privyReady, user: privyUser } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
   const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
   const { disconnect: wagmiDisconnect } = useDisconnect();
@@ -149,6 +150,7 @@ export function UnifiedWalletButton() {
         >
           Profile
         </Link>
+        <RootsPointsPill userId={privyUser?.id} />
         <WalletPill />
         <Button
           variant="outline"
@@ -262,6 +264,54 @@ function WalletPill() {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a2 2 0 00-2-2h-3a2 2 0 100 4h3a2 2 0 002-2zm-2 0h-3M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" />
       </svg>
       <span>Wallet</span>
+      {isLoading ? (
+        <span className="opacity-60">…</span>
+      ) : (
+        <span className="font-bold">{display}</span>
+      )}
+    </Link>
+  );
+}
+
+/**
+ * RootsPointsPill — header display of user's off-chain Roots Points total.
+ *
+ * Visually quiet by Doug's explicit call (May 12 2026):
+ *   - Small text, no animations on increment
+ *   - No streak counter, no flashing, no "you earned!" excitement
+ *   - Sits to the LEFT of the WalletPill so it reads as "earnings → balance"
+ *   - Teal (roots-secondary) accent to associate it with growing/garden
+ *     semantics, distinguishing it from the coral wallet pill
+ *
+ * Hidden when no userId (anonymous) — anonymous users earn no RP.
+ *
+ * Click → /about/tokenomics so users can see what RP becomes.
+ *
+ * Refresh model: useOffchainRP refetches on mount + when userId changes.
+ * For real-time updates after a credit (e.g. immediately after AddPlantsModal
+ * saves), the mutating component should call refetch() — wire that in the
+ * surface that owns the action, not here.
+ *
+ * Future: when a user has been onboarded but truly has 0 RP, the pill still
+ * renders ("🌱 0"). That's intentional — it's their starting line and the
+ * click affordance to /about/tokenomics still works.
+ */
+function RootsPointsPill({ userId }: { userId?: string }) {
+  const { total, isLoading } = useOffchainRP(userId);
+
+  if (!userId) return null;
+
+  // Quiet formatting: 1234 → "1,234". No trailing decimals, no animations.
+  const display = total.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+  return (
+    <Link
+      href="/about/tokenomics"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-roots-secondary/10 hover:bg-roots-secondary/20 border border-roots-secondary/30 text-roots-secondary text-xs md:text-sm font-medium transition-colors"
+      title="Roots Points — your loyalty rewards. Tap to learn what they become."
+    >
+      <span aria-hidden="true">🌱</span>
+      <span className="hidden sm:inline">RP</span>
       {isLoading ? (
         <span className="opacity-60">…</span>
       ) : (
