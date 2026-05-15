@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { RPCreditToaster } from '@/components/RPCreditToaster';
+import { RootsPointsOnboardingModal } from '@/components/RootsPointsOnboardingModal';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { TestnetBanner } from '@/components/layout/TestnetBanner';
@@ -65,6 +66,7 @@ export default function RootLayout({
           <Footer />
           <Toaster />
           <RPCreditToaster />
+          <RootsPointsOnboardingModal />
         </Providers>
       </body>
     </html>

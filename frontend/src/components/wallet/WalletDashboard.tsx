@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { RefreshCw, Loader2, Send } from 'lucide-react';
+import { usePrivy } from '@privy-io/react-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +12,7 @@ import {
   formatUsdValue,
   type TokenBalance,
 } from '@/hooks/useWalletBalances';
+import { useOffchainRP } from '@/hooks/useOffchainRP';
 import { ReceiveTokenSection } from './ReceiveTokenSection';
 import { SendTokenModal } from './SendTokenModal';
 import { SwapWidget } from './SwapWidget';
@@ -35,6 +38,46 @@ function TokenRow({ token }: TokenRowProps) {
         <p className="text-sm text-roots-gray">{formatUsdValue(token.usdValue)}</p>
       </div>
     </div>
+  );
+}
+
+/**
+ * RootsPointsRow — shows the user's combined Roots Points total alongside
+ * the ERC-20 tokens in the wallet. Visually distinct from tokens with a
+ * "Pre-launch" badge so users don't think RP is tradeable yet.
+ *
+ * Click → /about/tokenomics for the conversion-to-$ROOTS explanation.
+ *
+ * Currently shows off-chain RP only (KV-stored engagement points). Future:
+ * sum with on-chain RP from the subgraph once that hook is exposed.
+ */
+function RootsPointsRow({ userId }: { userId?: string }) {
+  const { total, isLoading } = useOffchainRP(userId);
+  if (!userId) return null;
+  return (
+    <Link
+      href="/about/tokenomics"
+      className="flex items-center justify-between py-3 border-b last:border-b-0 hover:bg-roots-secondary/5 -mx-3 px-3 rounded transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        <span className="text-2xl" aria-hidden="true">🌱</span>
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="font-medium">RP</p>
+            <span className="text-[10px] font-semibold uppercase tracking-wide bg-roots-secondary/15 text-roots-secondary px-1.5 py-0.5 rounded">
+              Pre-launch
+            </span>
+          </div>
+          <p className="text-sm text-roots-gray">Roots Points</p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="font-medium">
+          {isLoading ? '…' : total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+        </p>
+        <p className="text-xs text-roots-gray">Tap for tokenomics →</p>
+      </div>
+    </Link>
   );
 }
 
@@ -69,6 +112,7 @@ export function WalletDashboard() {
     walletAddress,
     isConnected,
   } = useWalletBalances();
+  const { user: privyUser } = usePrivy();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
@@ -108,6 +152,7 @@ export function WalletDashboard() {
           ) : (
             <>
               <div className="divide-y">
+                <RootsPointsRow userId={privyUser?.id} />
                 {balances.map((token) => (
                   <TokenRow key={token.symbol} token={token} />
                 ))}
