@@ -46,6 +46,35 @@ export async function POST(request: NextRequest) {
       );
     }
     await recordDismissals(userId, ids);
+
+    // Credit care-alert-acted-on for any urgent-severity alerts dismissed.
+    // AlertId format is `${plantId}:${type}:${cycle}` (see careAlerts.ts).
+    // Parse the type and credit only if it's in the urgent set. Dedup key
+    // is the alertId — re-dismissing same alert never re-credits.
+    const URGENT_TYPES = new Set([
+      'bolting',
+      'bolt-risk',
+      'prune-now',
+      'prune-overdue',
+      'harvest-urgent',
+      'frost-warning',
+      'heat-wave',
+    ]);
+    const urgentIds = ids.filter(id => {
+      const parts = id.split(':');
+      if (parts.length < 2) return false;
+      return URGENT_TYPES.has(parts[1]);
+    });
+    if (urgentIds.length > 0) {
+      const { credit } = await import('@/lib/offchainRP');
+      for (const alertId of urgentIds) {
+        const result = await credit('care-alert-acted-on', userId, alertId);
+        if (result.ok && result.credited) {
+          console.log('[care-dismissals] +15 RP care-alert-acted-on for', userId, alertId);
+        }
+      }
+    }
+
     return NextResponse.json({ ok: true, recorded: ids.length });
   } catch (err) {
     console.error('[care-dismissals POST] error:', err);

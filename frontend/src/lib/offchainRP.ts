@@ -196,14 +196,14 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     rpAmount: 200,
     lifetimeCap: 1,
     label: 'Public garden profile published',
-    live: false,
+    live: true,
   },
   'care-alert-acted-on': {
     id: 'care-alert-acted-on',
     rpAmount: 15,
     dailyCap: 5,
     label: 'Care action completed',
-    live: false,
+    live: true,
   },
   'listing-created': {
     id: 'listing-created',
@@ -217,7 +217,7 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     rpAmount: 5,
     dailyCap: 10,
     label: 'Share card sent',
-    live: false,
+    live: true,
   },
   'recruited-gardener-activated': {
     id: 'recruited-gardener-activated',

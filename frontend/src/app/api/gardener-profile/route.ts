@@ -149,6 +149,27 @@ export async function POST(request: NextRequest) {
 
     await upsertProfile(profile);
     warmFacebookOgCache(`/gardeners/${encodeURIComponent(userId)}`).catch(() => {});
+
+    // Credit `public-profile-published` if this is a fresh publish event:
+    //   - No previous profile, or previous profile was hidden, AND
+    //   - The new profile has bio + at least one photo (avoids crediting
+    //     for empty/placeholder profiles that get auto-saved on form open)
+    // One-time per account via the verb's lifetimeCap: 1.
+    const wasUnpublished = !existing || existing.hidden === true;
+    const hasMeaningfulContent = !!profile.bio && (
+      !!profile.profilePhotoIpfs || !!profile.gardenPhotoIpfs
+      || !!profile.profilePhotoUrl || !!profile.gardenPhotoUrl
+    );
+    if (wasUnpublished && hasMeaningfulContent) {
+      // Dynamic import to avoid pulling RP deps into route module unless
+      // we actually need them.
+      const { credit } = await import('@/lib/offchainRP');
+      const result = await credit('public-profile-published', userId, userId);
+      if (result.ok && result.credited) {
+        console.log('[garden-profile] +200 RP public-profile-published for', userId);
+      }
+    }
+
     return NextResponse.json({ ok: true, profile });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

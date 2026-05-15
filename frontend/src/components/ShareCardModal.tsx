@@ -1,8 +1,49 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+
+/**
+ * Report a share event server-side for off-chain Roots Points crediting.
+ * Fire-and-forget — failure never blocks the share itself. On success,
+ * dispatches `app:rp-credited` so the toaster shows "+5 RP" and the
+ * header pill auto-refreshes.
+ */
+async function reportShareSent(
+  userId: string | undefined,
+  cardType: string,
+  target: string,
+): Promise<void> {
+  if (!userId) return;
+  try {
+    const res = await fetch('/api/share-cards/sent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, cardType, target }),
+    });
+    if (!res.ok) return;
+    const data = await res.json().catch(() => null) as {
+      credited?: boolean;
+      rpAmount?: number;
+      newTotal?: number;
+    } | null;
+    if (typeof window !== 'undefined' && data?.credited) {
+      window.dispatchEvent(new CustomEvent('app:rp-credited', {
+        detail: {
+          userId,
+          credited: 1,
+          rpAmount: data.rpAmount || 0,
+          newTotal: data.newTotal || 0,
+          cappedCount: 0,
+        },
+      }));
+    }
+  } catch {
+    /* fire-and-forget — non-blocking */
+  }
+}
 import {
   generateCard,
   shareCard,
@@ -31,6 +72,8 @@ interface ShareCardModalProps {
 
 export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalProps) {
   const { toast } = useToast();
+  const { user: privyUser } = usePrivy();
+  const userId = privyUser?.id;
   const [cardImage, setCardImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -90,6 +133,7 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     if (!cardImage) return;
     const text = getShareText(data, 'generic');
     await shareCard(cardImage, text, shareUrl);
+    reportShareSent(userId, data.type, 'native');
   };
 
   const handleCopyLink = async () => {
@@ -98,18 +142,21 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
       setCopiedLink(true);
       toast({ title: 'Link copied!' });
       setTimeout(() => setCopiedLink(false), 2000);
+      reportShareSent(userId, data.type, 'copy-link');
     }
   };
 
   const handleSms = () => {
     const text = getShareText(data, 'sms');
     window.open(getSmsShareUrl(text), '_blank');
+    reportShareSent(userId, data.type, 'sms');
   };
 
   const handleEmail = () => {
     const subject = getEmailSubject(data);
     const body = getShareText(data, 'email');
     window.location.href = getEmailShareUrl(subject, body);
+    reportShareSent(userId, data.type, 'email');
   };
 
   const handleDownload = async () => {
@@ -127,6 +174,7 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file] });
+        reportShareSent(userId, data.type, 'native-download');
         return;
       } catch (e) {
         if ((e as Error).name === 'AbortError') return;
@@ -136,6 +184,7 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     // Fallback for desktop
     downloadImage(cardImage, filename);
     toast({ title: 'Image downloaded!' });
+    reportShareSent(userId, data.type, 'download');
   };
 
   const handleSaveForInstagram = async () => {
@@ -159,6 +208,7 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file], text, url: shareUrl });
+        reportShareSent(userId, data.type, 'instagram');
         return;
       } catch (e) {
         if ((e as Error).name === 'AbortError') return; // user cancelled
@@ -172,6 +222,7 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
       title: 'Image saved + caption copied!',
       description: 'Open Instagram → share from camera roll → paste caption. Add a link sticker in Stories!',
     });
+    reportShareSent(userId, data.type, 'instagram');
   };
 
   const handleSaveForFacebook = async () => {
@@ -184,12 +235,14 @@ export function ShareCardModal({ data, onClose, sellerGeohash }: ShareCardModalP
       title: 'Link + caption copied!',
       description: 'Open Facebook → create a post → paste. The link preview will appear automatically.',
     });
+    reportShareSent(userId, data.type, 'facebook');
   };
 
   const handlePostToNextDoor = async () => {
     const text = getShareText(data, 'nextdoor');
     await copyToClipboard(text);
     window.open('https://nextdoor.com', '_blank');
+    reportShareSent(userId, data.type, 'nextdoor');
     toast({
       title: 'Text copied!',
       description: 'Create a post on NextDoor and paste your message',

@@ -286,6 +286,10 @@ describe('offchainRP — VERBS registry sanity', () => {
       'plant-update',
       'harvest-logged',
       'bed-photo',
+      // Batch B (May 15 2026):
+      'public-profile-published',
+      'care-alert-acted-on',
+      'share-card-sent',
       // plant-photo stays declared but live: false until the
       // GardenPlant type gets a photoIpfs field.
     ])
