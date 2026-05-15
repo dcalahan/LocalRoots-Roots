@@ -106,11 +106,11 @@ export default function TokenomicsPage() {
           <h2 className="text-3xl font-bold mb-6 text-gray-900">How You Earn Roots Points</h2>
           <div className="prose prose-lg text-roots-gray mb-6">
             <p>
-              There are three ways to participate. Each one earns Roots Points.
+              There are four ways to participate. Each one earns Roots Points.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Sellers */}
             <Card>
               <CardContent className="pt-6 text-center">
@@ -156,6 +156,25 @@ export default function TokenomicsPage() {
                   <p className="text-xs text-roots-gray">
                     Recruit a grower and earn Roots Points worth 25% of every sale they make for a full year.
                     You keep 80% — 20% goes to the ambassador who recruited you.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Garden With Sage — NEW Phase 2 */}
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <div className="text-4xl mb-3">🌱</div>
+                <h3 className="text-lg font-bold mb-2">Garden With Sage</h3>
+                <div className="text-3xl font-bold text-roots-secondary mb-1">~500</div>
+                <p className="text-sm text-roots-gray mb-4">Roots Points per engaged day</p>
+                <div className="border-t pt-3">
+                  <p className="text-xs text-roots-gray">
+                    Earn for using the app: a daily check-in with Sage (10),
+                    adding a plant (25 each, up to 4/day), logging a harvest
+                    (40), photographing a bed (50). For people who garden
+                    every day, that&apos;s ~500 RP daily without a single
+                    marketplace transaction.
                   </p>
                 </div>
               </CardContent>
@@ -220,28 +239,53 @@ export default function TokenomicsPage() {
               gathering input from ambassadors, gardeners, and the broader
               community before locking these numbers in.
             </p>
-            <div className="not-prose bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 mb-2">
-              <strong>Currently under review:</strong> the 40% Community Treasury
-              slice. We&apos;re weighing whether some of that should shift to
-              the people doing the actual work of growing the network —
-              ambassadors and early users. Final numbers will be set before
-              the token launches.
+            <div className="not-prose bg-roots-secondary/10 border border-roots-secondary/30 rounded-xl p-4 text-sm text-roots-gray mb-2">
+              <strong>Updated May 2026:</strong> we&apos;ve revised the proposed
+              split. The Community Treasury is reduced from 40% to 25%, and
+              that 15 points reallocated: 5 to ambassadors (now 30%) and 10
+              to the airdrop (now 20%). Half the total supply now flows
+              directly to the people doing the work — ambassadors and early
+              users. Final numbers will be locked before the token launches.
             </div>
           </div>
 
           {/* Visual Bar */}
           <div className="mb-6">
             <div className="h-10 rounded-full overflow-hidden flex">
-              <div className="bg-roots-secondary h-full" style={{ width: '40%' }} />
-              <div className="bg-roots-primary h-full" style={{ width: '25%' }} />
+              {/* Order: Ambassadors (30) → Community Treasury (25) → Airdrop (20) → Founding Team (15) → Liquidity (10) */}
+              <div className="bg-roots-primary h-full" style={{ width: '30%' }} />
+              <div className="bg-roots-secondary h-full" style={{ width: '25%' }} />
+              <div className="bg-roots-primary/50 h-full" style={{ width: '20%' }} />
               <div className="bg-gray-800 h-full" style={{ width: '15%' }} />
               <div className="bg-roots-secondary/50 h-full" style={{ width: '10%' }} />
-              <div className="bg-roots-primary/50 h-full" style={{ width: '10%' }} />
             </div>
           </div>
 
-          {/* Allocation Details */}
+          {/* Allocation Details — ordered largest to smallest */}
           <div className="space-y-3">
+            <Card>
+              <CardContent className="py-4 flex items-center gap-4">
+                <div className="w-4 h-4 bg-roots-primary rounded-full flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex justify-between items-baseline">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold">Ambassador Rewards</h4>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide bg-roots-secondary/20 text-roots-secondary px-1.5 py-0.5 rounded">
+                        +5
+                      </span>
+                    </div>
+                    <span className="text-sm font-bold">30%</span>
+                  </div>
+                  <p className="text-sm text-roots-gray">
+                    Paid to ambassadors who recruit gardeners and build local
+                    food networks. Earned over time based on activity. The
+                    largest single category — ambassadors are critical
+                    infrastructure for the network.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardContent className="py-4 flex items-center gap-4">
                 <div className="w-4 h-4 bg-roots-secondary rounded-full flex-shrink-0" />
@@ -250,15 +294,15 @@ export default function TokenomicsPage() {
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold">Community Treasury</h4>
                       <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
-                        Under review
+                        −15
                       </span>
                     </div>
-                    <span className="text-sm font-bold">40%</span>
+                    <span className="text-sm font-bold">25%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Governed by the community. Funds ecosystem development, grants,
-                    and growing the network. We&apos;re considering reducing this
-                    slice and reallocating to ambassadors and early users.
+                    Governed by the community. Funds ecosystem development,
+                    grants, and growing the network. Reduced from 40% so
+                    more of the supply flows to people doing actual work.
                   </p>
                 </div>
               </CardContent>
@@ -266,14 +310,22 @@ export default function TokenomicsPage() {
 
             <Card>
               <CardContent className="py-4 flex items-center gap-4">
-                <div className="w-4 h-4 bg-roots-primary rounded-full flex-shrink-0" />
+                <div className="w-4 h-4 bg-roots-primary/50 rounded-full flex-shrink-0" />
                 <div className="flex-1">
                   <div className="flex justify-between items-baseline">
-                    <h4 className="font-semibold">Ambassador Rewards</h4>
-                    <span className="text-sm font-bold">25%</span>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold">Airdrop to Early Users</h4>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide bg-roots-secondary/20 text-roots-secondary px-1.5 py-0.5 rounded">
+                        +10
+                      </span>
+                    </div>
+                    <span className="text-sm font-bold">20%</span>
                   </div>
                   <p className="text-sm text-roots-gray">
-                    Paid to ambassadors who recruit gardeners and build local food networks. Earned over time based on activity.
+                    Distributed to early participants based on Roots Points
+                    earned — including the new garden-engagement Roots Points
+                    (Sage check-ins, plants, harvests, photos). Doubled from
+                    10% to reflect the broader earning surface.
                   </p>
                 </div>
               </CardContent>
@@ -310,21 +362,14 @@ export default function TokenomicsPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            <Card>
-              <CardContent className="py-4 flex items-center gap-4">
-                <div className="w-4 h-4 bg-roots-primary/50 rounded-full flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="flex justify-between items-baseline">
-                    <h4 className="font-semibold">Airdrop to Early Users</h4>
-                    <span className="text-sm font-bold">10%</span>
-                  </div>
-                  <p className="text-sm text-roots-gray">
-                    Distributed to early participants based on Roots Points earned. This is the reward for being here early.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Headline summary */}
+          <div className="mt-6 bg-roots-secondary/5 border border-roots-secondary/20 rounded-xl p-4 text-sm text-roots-gray">
+            <strong className="text-gray-900">Half the supply flows to the
+            people doing the work.</strong> Ambassador Rewards (30%) +
+            Airdrop to Early Users (20%) = 50% of the total token supply
+            going directly to the community. That&apos;s the headline.
           </div>
         </section>
 

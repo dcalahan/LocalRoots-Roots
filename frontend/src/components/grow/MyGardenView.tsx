@@ -233,7 +233,10 @@ export function MyGardenView({
             Ready to start growing?
           </h2>
           <p className="text-roots-gray mb-6 max-w-sm mx-auto">
-            Document your beds with photos, track what you plant, and watch it grow. You can also tell Sage what you planted and it&apos;ll add it here automatically!
+            Document your beds with photos, track what you plant, and watch
+            it grow. You can also tell Sage what you planted and it&apos;ll
+            add it here automatically — and you&apos;ll earn 🌱 Roots Points
+            for each plant added (and other gardening actions).
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
