@@ -132,13 +132,13 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     live: true,
   },
 
-  // ── Phase 2 verbs (declared, not yet live) ─────────────────────────
+  // ── Phase 2 verbs (sage-daily live as of May 15 2026) ──────────────
   'sage-daily': {
     id: 'sage-daily',
     rpAmount: 10,
     dailyCap: 1,
     label: 'Daily check-in with Sage',
-    live: false,
+    live: true,
   },
   'sage-depth-bonus': {
     id: 'sage-depth-bonus',

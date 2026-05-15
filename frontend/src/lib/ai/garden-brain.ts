@@ -429,6 +429,15 @@ function buildAppKnowledgeContext(): string {
   ctx += `- Buyers earn ${ak.rootsPoints.buyers}\n`
   ctx += `- Ambassadors earn ${ak.rootsPoints.ambassadors}\n`
   ctx += `- Early adopter bonus: ${ak.rootsPoints.earlyAdopter}\n`
+  if (ak.rootsPoints.gardenEngagement) {
+    ctx += `- Garden engagement: ${ak.rootsPoints.gardenEngagement}\n`
+  }
+  if (ak.rootsPoints.anonymousNote) {
+    ctx += `- Anonymous: ${ak.rootsPoints.anonymousNote}\n`
+  }
+  if (ak.rootsPoints.proposedAllocation) {
+    ctx += `- Proposed token allocation: ${ak.rootsPoints.proposedAllocation}\n`
+  }
   ctx += `- ${ak.rootsPoints.conversion}\n`
   ctx += `- Leaderboard: ${ak.rootsPoints.leaderboard}\n`
   if (ak.rootsPoints.tone) ctx += `- TONE: ${ak.rootsPoints.tone}\n`

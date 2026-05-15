@@ -170,7 +170,9 @@ describe('offchainRP — credit()', () => {
   })
 
   it('returns not-live for verbs that are declared but not yet wired', async () => {
-    const result = await credit('sage-daily', ADDR, `${ADDR}:2026-05-12`)
+    // plant-photo is Phase 2 — declared in the registry but live: false
+    // until the photo-upload surface is wired and verified.
+    const result = await credit('plant-photo', ADDR, 'photo-test')
     expect(result).toEqual({ ok: true, credited: false, reason: 'not-live' })
   })
 
@@ -268,11 +270,19 @@ describe('offchainRP — VERBS registry sanity', () => {
     }
   })
 
-  it('plant-added is the only live verb in Phase 1.0', () => {
-    expect(VERBS['plant-added'].live).toBe(true)
+  it('live verbs match the currently shipped set', () => {
+    // As of May 15 2026:
+    //   - plant-added: shipped Phase 1.0
+    //   - sage-daily: shipped Phase 1.5 (Doug-driven follow-up)
+    // Every other verb stays live: false until its emitting surface
+    // is wired and verified.
+    const expectedLive = new Set(['plant-added', 'sage-daily'])
     for (const [key, cfg] of Object.entries(VERBS)) {
-      if (key === 'plant-added') continue
-      expect(cfg.live, `${key} should be live=false in Phase 1.0`).toBe(false)
+      if (expectedLive.has(key)) {
+        expect(cfg.live, `${key} should be live=true`).toBe(true)
+      } else {
+        expect(cfg.live, `${key} should be live=false until its surface is wired`).toBe(false)
+      }
     }
   })
 

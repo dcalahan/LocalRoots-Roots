@@ -17,6 +17,7 @@ import { kv } from '@/lib/kv'
 import { streamSageChat, completeSagePrompt, type SageMessage } from '@/lib/ai/sageProvider'
 import { loadServerDismissals } from '@/lib/careDismissals'
 import { SAGE_BRAIN_VERSION } from '@/lib/ai/sageBrainVersion'
+import { credit as creditOffchainRP } from '@/lib/offchainRP'
 
 const brain = createGardenBrain()
 
@@ -233,6 +234,35 @@ export async function POST(request: NextRequest) {
         console.log('[Garden AI] Conv saved for:', effectiveUserId, 'msgs:', allMessages.length, 'v:', SAGE_BRAIN_VERSION)
       } catch (err) {
         console.error('[Garden AI] Conv save failed (non-critical):', String(err))
+      }
+
+      // ─── Credit daily Sage Roots Points ───────────────────────
+      // sage-daily verb: 10 RP for the first conversation of each UTC day
+      // (per-user, capped at 1/day in the verb config). Idempotent via
+      // setnx — multiple messages in the same day no-op after the first.
+      // Anonymous users return reason: 'anonymous' and earn nothing.
+      // Fire-and-forget; credit() never throws.
+      //
+      // The dedupe key uses the message's plain text length as a tiny quality
+      // floor (≥10 chars) — discourages "a" / "hi" spam-to-earn but doesn't
+      // block real first messages. The user-facing toast is wired through
+      // the existing app:rp-credited event bus (handled by RPCreditToaster).
+      try {
+        const userPlainText = typeof userContent === 'string'
+          ? userContent
+          : (Array.isArray(userContent) ? userContent.filter((b): b is { type: 'text'; text: string } => b.type === 'text').map(b => b.text).join(' ') : '')
+        if (effectiveUserId !== 'anonymous' && userPlainText.trim().length >= 10) {
+          const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD UTC
+          const dedupKey = `${effectiveUserId}:${today}`
+          const result = await creditOffchainRP('sage-daily', effectiveUserId, dedupKey)
+          if (result.ok && result.credited) {
+            console.log('[Garden AI] sage-daily +10 RP for', effectiveUserId)
+          }
+        }
+      } catch (err) {
+        // Hard rule: RP crediting must never break the response — already
+        // sent to the user. Log and swallow.
+        console.error('[Garden AI] sage-daily credit failed (non-critical):', String(err))
       }
 
       // ─── Extract and save memories ───
