@@ -21,7 +21,7 @@ import lowcountryData from '@/data/regional/lowcountry-8a.json'
 import appKnowledge from '@/data/app-knowledge.json'
 import { detectCareAlerts } from '@/lib/careAlerts'
 import { getCropsWithBoltingData, getCropsWithPruningData, getBoltingInfo, getPruningRules } from '@/lib/plantingCalendar'
-import type { GardenPlant } from '@/types/my-garden'
+import type { GardenPlant, GardenBed, MyGardenData } from '@/types/my-garden'
 
 // ─── KV Key Helpers ────────────────────────────────────────
 
@@ -90,6 +90,130 @@ NATURAL GROWING PRINCIPLES:
 - Companion planting: tomatoes + basil, carrots + onions, Three Sisters (corn + beans + squash)
 - Water at soil level to prevent disease, mulch to retain moisture
 `
+}
+
+// ─── User's My Garden Context Builder ────────────────────
+//
+// CRITICAL FIX (May 14 2026): Sage's loadContext() previously did NOT read
+// the user's actual My Garden inventory from KV. Every garden-specific
+// detail Sage gave came from extracted memory facts (chat history), not
+// from real plant data. Doug discovered this when Sage said "your
+// inventory is empty" — fabricated, since she had no read path at all.
+//
+// This builder fixes that gap. Reads `my-garden:{userId}` directly,
+// formats active plants (grouped by bed) with computed days-since-planting
+// and estimated harvest window, and adds strict prompt rules forbidding
+// fabrication.
+
+function formatPlantLine(p: GardenPlant, today: Date, crops: Record<string, any>): string {
+  const crop = crops[p.cropId]
+  const cropName = p.customVarietyName ?? crop?.name ?? p.cropId
+  const planted = new Date(p.plantingDate)
+  const daysSince = Math.max(0, Math.floor((today.getTime() - planted.getTime()) / (1000 * 60 * 60 * 24)))
+  const dtmMin = crop?.daysToMaturity?.min ?? 60
+  const dtmMax = crop?.daysToMaturity?.max ?? 80
+  const harvestMin = new Date(planted.getTime() + dtmMin * 86400000)
+  const harvestMax = new Date(planted.getTime() + dtmMax * 86400000)
+  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const plantedFmt = planted.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const harvestRange = `${fmt(harvestMin)}–${fmt(harvestMax)}`
+  const statusBits: string[] = []
+  if (p.manualStatus) statusBits.push(`status: ${p.manualStatus}`)
+  if (p.harvestedDate) statusBits.push(`harvested ${new Date(p.harvestedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`)
+  if (p.notes) statusBits.push(`note: ${p.notes}`)
+  const statusStr = statusBits.length > 0 ? ` — ${statusBits.join('; ')}` : ''
+  return `  - ${cropName} × ${p.quantity} — planted ${plantedFmt} (${daysSince} days ago) — estimated harvest window ${harvestRange}${statusStr}\n`
+}
+
+async function buildUserGardenContext(userId: string): Promise<string> {
+  if (!userId || userId === 'anonymous') {
+    // Anonymous users have no persistent garden. Make this explicit so Sage
+    // doesn't fabricate plant details based on prior conversation turns.
+    return `
+USER'S MY GARDEN — not signed in.
+
+The user is not signed in, so they have no persistent My Garden inventory the app can read. Don't claim to "see" any specific plants. If the user describes plants, take it at face value as conversational context only — do NOT invent plant counts, planting dates, or bed assignments.
+`
+  }
+
+  try {
+    const data = await kv.get<MyGardenData>(`my-garden:${userId}`)
+
+    if (!data || !data.plants || data.plants.length === 0) {
+      return `
+USER'S MY GARDEN — empty.
+
+The user's My Garden inventory is empty (no plants tracked yet). When they mention specific plants in chat ("my tomatoes", "my basil"), those plants are NOT tracked by the app. Offer to add them so they get care alerts, progress tracking, and accurate timing — but never claim to "see" plant details you don't actually have. Don't invent counts, varieties, planting dates, or bed assignments.
+`
+    }
+
+    const today = new Date()
+    const crops = (cropGrowingData as { crops: Record<string, any> }).crops
+    const activePlants = data.plants.filter(p => !p.removedDate)
+    const beds: GardenBed[] = data.beds || []
+
+    // Group plants by bed
+    const plantsByBed = new Map<string, GardenPlant[]>()
+    for (const p of activePlants) {
+      const key = p.bedId || '__unassigned__'
+      const arr = plantsByBed.get(key) || []
+      arr.push(p)
+      plantsByBed.set(key, arr)
+    }
+
+    let output = `
+USER'S MY GARDEN — actual plant inventory read DIRECTLY from the app at the time of this message. This is the source of truth, not chat history.
+
+`
+
+    // Beds with plants
+    for (const bed of beds) {
+      const plants = plantsByBed.get(bed.id) || []
+      if (plants.length === 0) {
+        output += `**${bed.name}** (${bed.type}): empty\n\n`
+        continue
+      }
+      output += `**${bed.name}** (${bed.type}, ${plants.length} plants):\n`
+      for (const p of plants) output += formatPlantLine(p, today, crops)
+      output += `\n`
+    }
+
+    // Plants without a bed assignment
+    const unassigned = plantsByBed.get('__unassigned__') || []
+    if (unassigned.length > 0) {
+      output += `**Plants not assigned to a bed** (${unassigned.length}):\n`
+      for (const p of unassigned) output += formatPlantLine(p, today, crops)
+      output += `\n`
+    }
+
+    // Beds with no plants (still report so user sees them)
+    const emptyBeds = beds.filter(b => (plantsByBed.get(b.id) || []).length === 0)
+    if (emptyBeds.length > 0 && beds.length > emptyBeds.length) {
+      // Already reported inline above
+    }
+
+    output += `
+CRITICAL RULES — read carefully:
+
+1. The plant list above is the GROUND TRUTH from the app's My Garden inventory, read directly from the database. It SUPERSEDES any plant-specific facts that may be in your memory list. If memories say "user has Anaheim peppers planted Apr 14" but the inventory above shows red bell peppers (or shows nothing), trust the inventory — memories may be stale or fabricated from older conversations.
+2. If the user asks about a plant NOT in this list (e.g., "what about my peppers?" when no peppers are listed), say honestly: "I don't see those in your My Garden — want to add them?" Then offer to add via the add_plant action. Do NOT fabricate a count, planting date, bed, or status for plants you can't see in this inventory.
+3. NEVER say "your inventory is empty" or "I can't see any plants" when plants ARE listed above. That contradicts the data the user can see in the app.
+4. NEVER invent details about how the app's backend works (e.g., "I'm pulling your zone from an IP-based estimate showing Florence, SC"). You don't have visibility into your own backend internals. Don't fabricate an explanation when the real answer is "I don't know why I gave that answer — let me try again."
+5. The days-since-planting and harvest window in the list are computed accurately — use these values, not chat-history estimates.
+6. Bed assignments are authoritative. If "Cherry Tomatoes" is listed in "Bed 2", don't say "you have them in Bed 3."
+7. Quantities are authoritative. If the list says "× 3", don't say "you have 5."
+8. If the user contradicts the list ("no, I have 4 Better Boys not 2"), DON'T argue — offer to update the inventory via update_plant or remove_plant + add_plant.
+`
+    return output
+  } catch (err) {
+    // KV read failed — degrade gracefully, but make it explicit Sage can't
+    // see the inventory so she doesn't fabricate.
+    return `
+USER'S MY GARDEN — temporarily unavailable.
+
+The My Garden inventory couldn't be read right now (transient app issue). Don't invent plant details. If the user references specific plants, take it conversationally — don't claim to "see" counts, dates, or bed assignments. Suggest they try refreshing the app if they want their inventory-driven advice back.
+`
+  }
 }
 
 // ─── Recipe Context Builder ───────────────────────────────
@@ -898,6 +1022,14 @@ If someone asks about something unrelated to gardening or LocalRoots, politely r
       context += buildEnhancedGeneralContext()
       context += buildCareDataContext()
       context += buildAppKnowledgeContext()
+
+      // PRIORITY: read the user's actual My Garden inventory and inject it
+      // into the prompt. This is the bug Doug found May 14 2026 — Sage
+      // had been fabricating plant details from chat history instead of
+      // reading from the real KV inventory. The userGardenContext block
+      // includes strict anti-fabrication rules.
+      const userGardenContext = await buildUserGardenContext(ctx.userId)
+      context += userGardenContext
 
       // Load regional knowledge if user's zone/location matches
       const uc = (ctx as BrainContext & { userContext?: Record<string, unknown> }).userContext || {}
