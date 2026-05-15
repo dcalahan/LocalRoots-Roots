@@ -271,12 +271,24 @@ describe('offchainRP — VERBS registry sanity', () => {
   })
 
   it('live verbs match the currently shipped set', () => {
-    // As of May 15 2026:
-    //   - plant-added: shipped Phase 1.0
-    //   - sage-daily: shipped Phase 1.5 (Doug-driven follow-up)
-    // Every other verb stays live: false until its emitting surface
-    // is wired and verified.
-    const expectedLive = new Set(['plant-added', 'sage-daily'])
+    // As of May 15 2026 (Batch A):
+    //   - plant-added (Phase 1.0)
+    //   - sage-daily (Phase 1.5)
+    //   - bed-created, plant-update, harvest-logged, plant-photo,
+    //     bed-photo (Batch A — all wired via /api/my-garden PUT diff)
+    // Coming next (Batch B+): plant-photo perceptual-hash defense,
+    // public-profile-published, care-alert-acted-on, share-card-sent,
+    // listing-created, recruited-gardener-activated, sage-depth-bonus.
+    const expectedLive = new Set([
+      'plant-added',
+      'sage-daily',
+      'bed-created',
+      'plant-update',
+      'harvest-logged',
+      'bed-photo',
+      // plant-photo stays declared but live: false until the
+      // GardenPlant type gets a photoIpfs field.
+    ])
     for (const [key, cfg] of Object.entries(VERBS)) {
       if (expectedLive.has(key)) {
         expect(cfg.live, `${key} should be live=true`).toBe(true)

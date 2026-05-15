@@ -52,13 +52,16 @@ export function RPCreditToaster() {
         return;
       }
 
-      // Pure cap rejection (no credits this PUT, but the user did add plants
-      // they expected to earn from). Surface a non-scolding heads-up so
-      // they aren't confused about why no RP was earned.
+      // Pure cap rejection (no credits this PUT, but the user did add/edit
+      // something they expected to earn from). Surface a non-scolding
+      // heads-up so they aren't confused about why no RP was earned.
+      // Generic message — could be plant-added cap, harvest cap, bed cap,
+      // etc. The /profile page shows per-verb breakdown if they want
+      // detail.
       if (detail.credited === 0 && detail.cappedCount > 0) {
         toast({
           title: 'Daily Roots Points cap reached',
-          description: 'You earn up to 100 RP/day from new plants. Try again tomorrow.',
+          description: 'You hit a daily earning cap for one of these actions. Caps reset at midnight UTC.',
         });
       }
       // detail.credited === 0 && cappedCount === 0 → silent (most common case:

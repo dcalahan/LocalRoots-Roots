@@ -132,7 +132,12 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     live: true,
   },
 
-  // ── Phase 2 verbs (sage-daily live as of May 15 2026) ──────────────
+  // ── Phase 2 verbs ───────────────────────────────────────────────
+  // Live as of:
+  //   - May 15 2026 (sage-daily)
+  //   - May 15 2026 (bed-created, plant-update, harvest-logged,
+  //     plant-photo, bed-photo — all wired via /api/my-garden PUT
+  //     diff)
   'sage-daily': {
     id: 'sage-daily',
     rpAmount: 10,
@@ -153,13 +158,16 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     dailyCap: 2,
     lifetimeCap: 10,
     label: 'Garden bed created',
-    live: false,
+    live: true,
   },
   'plant-photo': {
     id: 'plant-photo',
     rpAmount: 30,
     dailyCap: 3,
     label: 'Plant photo captured',
+    // Per-plant photos don't exist in the data model yet (GardenPlant has
+    // no photoIpfs field — only GardenBed does). Keeps the verb declared
+    // for when plant photos are added.
     live: false,
   },
   'bed-photo': {
@@ -167,21 +175,21 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     rpAmount: 50,
     dailyCap: 1,
     label: 'Garden bed photo captured',
-    live: false,
+    live: true,
   },
   'harvest-logged': {
     id: 'harvest-logged',
     rpAmount: 40,
     dailyCap: 5,
     label: 'Harvest logged',
-    live: false,
+    live: true,
   },
   'plant-update': {
     id: 'plant-update',
     rpAmount: 5,
     dailyCap: 5,
     label: 'Plant update logged',
-    live: false,
+    live: true,
   },
   'public-profile-published': {
     id: 'public-profile-published',
