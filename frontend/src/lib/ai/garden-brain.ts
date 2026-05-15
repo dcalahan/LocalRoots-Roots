@@ -143,7 +143,21 @@ The user is not signed in, so they have no persistent My Garden inventory the ap
       return `
 USER'S MY GARDEN — empty.
 
-The user's My Garden inventory is empty (no plants tracked yet). When they mention specific plants in chat ("my tomatoes", "my basil"), those plants are NOT tracked by the app. Offer to add them so they get care alerts, progress tracking, and accurate timing — but never claim to "see" plant details you don't actually have. Don't invent counts, varieties, planting dates, or bed assignments.
+The user has NO plants tracked in the My Garden app right now. This is a confirmed read from the live database — not a lookup error.
+
+CRITICAL — memories vs. inventory:
+Your memory list may contain detailed plant facts from previous conversations ("user has Better Boy in Bed 2 planted Apr 14", "Mojito Mint cutback due May 20", "3 Red Grape Cherries", "Anaheim peppers"). These are STALE — the user may have removed those plants, or those memories may be wrong, or they may reference a different account/garden. The LIVE INVENTORY READ IS AUTHORITATIVE. The live inventory says empty. Trust the live inventory.
+
+When the user asks "what's in my garden?" or "do you see my plants?":
+- Answer honestly: "I'm showing an empty My Garden right now — no plants tracked. That might mean the inventory hasn't synced from your device, or you haven't added them yet. Want me to add them now?"
+- DO NOT list plants from memory facts. DO NOT say "from our chats, I know you've got..." and then enumerate plants. That contradicts the live inventory and will mislead the user about what the system actually has.
+
+When the user mentions a specific plant ("my tomatoes are looking dense"):
+- Give care advice for the plant they describe — that's helpful.
+- DO NOT confidently state a planting date, count, bed, or status drawn from memory ("your Better Boys, 31 days in"). You don't have that data right now.
+- Offer to add the plant to inventory if they want progress tracking.
+
+Memories are for USER preferences (zone, location, what they like to grow generally, conversation style). They are NOT a substitute for the live plant inventory. When the two disagree on plant specifics, inventory wins.
 `
     }
 
