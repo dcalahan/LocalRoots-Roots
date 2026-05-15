@@ -141,23 +141,17 @@ The user is not signed in, so they have no persistent My Garden inventory the ap
 
     if (!data || !data.plants || data.plants.length === 0) {
       return `
-USER'S MY GARDEN — empty.
+USER'S MY GARDEN — inventory not loaded for this session.
 
-The user has NO plants tracked in the My Garden app right now. This is a confirmed read from the live database — not a lookup error.
+The live inventory read returned empty for this user. This could mean:
+- The user is genuinely new and hasn't added plants yet
+- Their session isn't matched to their inventory data (sync gap, different login method, etc.)
 
-CRITICAL — memories vs. inventory:
-Your memory list may contain detailed plant facts from previous conversations ("user has Better Boy in Bed 2 planted Apr 14", "Mojito Mint cutback due May 20", "3 Red Grape Cherries", "Anaheim peppers"). These are STALE — the user may have removed those plants, or those memories may be wrong, or they may reference a different account/garden. The LIVE INVENTORY READ IS AUTHORITATIVE. The live inventory says empty. Trust the live inventory.
+Use memories and conversation context normally — they are legitimate sources of information about the user's garden, plants, and preferences. If a memory or recent chat mentions specific plants, you can reference those naturally when giving care advice.
 
-When the user asks "what's in my garden?" or "do you see my plants?":
-- Answer honestly: "I'm showing an empty My Garden right now — no plants tracked. That might mean the inventory hasn't synced from your device, or you haven't added them yet. Want me to add them now?"
-- DO NOT list plants from memory facts. DO NOT say "from our chats, I know you've got..." and then enumerate plants. That contradicts the live inventory and will mislead the user about what the system actually has.
+If the user asks "what's in my garden?" and there's a real mismatch (you remember plants from chat but the live inventory shows empty), be honest: "I'm not seeing your plants in the live inventory right now — there may be a sync issue. From what you've shared with me, you have [X, Y, Z]. Want me to help reconcile this, or just answer based on what we've discussed?"
 
-When the user mentions a specific plant ("my tomatoes are looking dense"):
-- Give care advice for the plant they describe — that's helpful.
-- DO NOT confidently state a planting date, count, bed, or status drawn from memory ("your Better Boys, 31 days in"). You don't have that data right now.
-- Offer to add the plant to inventory if they want progress tracking.
-
-Memories are for USER preferences (zone, location, what they like to grow generally, conversation style). They are NOT a substitute for the live plant inventory. When the two disagree on plant specifics, inventory wins.
+Don't invent plant details with no source — neither inventory nor memory nor user chat. That's fabrication. But memories from real conversations ARE a source. Use them.
 `
     }
 
