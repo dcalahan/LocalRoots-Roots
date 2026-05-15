@@ -31,7 +31,15 @@ function isRateLimited(address: string): boolean {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { forwardRequest, signature } = body;
+    // forwardRequest typed loosely because downstream code accesses many
+    // dynamically-shaped fields (from, to, data, signature in some flows,
+    // gas/nonce/deadline in others). Strict typing here triggers cascading
+    // errors throughout. The validation just below catches missing fields.
+    // userId is the only new field — typed explicitly.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { forwardRequest, signature, userId } = body as any;
+    const privyUserId: string | undefined =
+      typeof userId === 'string' && userId.length > 0 ? userId : undefined;
 
     // Validate required fields
     if (!forwardRequest || !signature) {
@@ -233,6 +241,20 @@ export async function POST(request: NextRequest) {
       if (listingId !== undefined) {
         console.log('[Relay] New listing created, warming FB OG cache for listing', listingId.toString());
         warmFacebookOgCache(`/buy/listings/${listingId}`).catch(() => {});
+      }
+
+      // Credit off-chain Roots Points for the listing-created event.
+      // Fire-and-forget: failures must not affect the relay response.
+      // Requires the client to have sent its Privy userId.
+      if (listingId !== undefined && privyUserId) {
+        const stableListingId = listingId.toString();
+        import('@/lib/offchainRP').then(({ credit }) =>
+          credit('listing-created', privyUserId, `listing:${stableListingId}`),
+        ).then((result) => {
+          if (result?.ok && result.credited) {
+            console.log('[Relay] +100 RP listing-created for', privyUserId, 'listing', stableListingId);
+          }
+        }).catch(() => { /* fire-and-forget */ });
       }
     }
 

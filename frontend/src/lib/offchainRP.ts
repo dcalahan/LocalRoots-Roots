@@ -210,7 +210,7 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     rpAmount: 100,
     dailyCap: 5,
     label: 'Listing created',
-    live: false,
+    live: true,
   },
   'share-card-sent': {
     id: 'share-card-sent',
@@ -223,6 +223,10 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     id: 'recruited-gardener-activated',
     rpAmount: 1000,
     label: 'Recruited gardener activated',
+    // Requires subgraph SellerActivated event polling (cron or webhook).
+    // Easiest to apply at merkle-snapshot time as a one-time adjustment
+    // from on-chain activation data rather than streaming credits.
+    // Tracked separately in admin-rp-monitoring-plan.md.
     live: false,
   },
 }

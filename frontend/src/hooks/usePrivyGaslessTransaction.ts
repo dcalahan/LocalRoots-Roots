@@ -160,6 +160,12 @@ export function usePrivyGaslessTransaction(): GaslessTransactionResult {
               data: forwardRequest.data,
             },
             signature,
+            // Privy user DID — used by the relay to credit off-chain
+            // Roots Points under the same userId namespace the rest of
+            // the app uses (my-garden, gardener-profile, etc.).
+            // Server-side credit is fire-and-forget; client doesn't
+            // need to know the result.
+            userId: user?.id,
           }),
         });
 

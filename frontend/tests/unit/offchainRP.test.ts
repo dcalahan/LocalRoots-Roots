@@ -290,8 +290,13 @@ describe('offchainRP — VERBS registry sanity', () => {
       'public-profile-published',
       'care-alert-acted-on',
       'share-card-sent',
-      // plant-photo stays declared but live: false until the
-      // GardenPlant type gets a photoIpfs field.
+      // Batch C (May 15 2026):
+      'listing-created',
+      // Not yet live (need additional infrastructure):
+      // - plant-photo: GardenPlant lacks photoIpfs field
+      // - recruited-gardener-activated: needs subgraph poll or apply
+      //   at merkle-snapshot time
+      // - sage-depth-bonus: deferred pending real chat data
     ])
     for (const [key, cfg] of Object.entries(VERBS)) {
       if (expectedLive.has(key)) {
