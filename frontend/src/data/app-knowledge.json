@@ -358,10 +358,11 @@
     "buyers": "50 RP per $1 spent",
     "ambassadors": "25% of recruited sellers' RP",
     "earlyAdopter": "2x for first 90 days, 1.5x for days 91-180",
-    "gardenEngagement": "Signed-in users also earn for gardening activity (daily Sage chat, plants, harvests, photos).",
+    "gardenEngagement": "Signed-in users also earn for gardening: daily Sage chat (10 RP), plant added (25), bed created (50), harvest logged (40), bed photo (50), care alert acted on (15), public profile published (200 once).",
+    "proposedAllocation": "Proposed token allocation (subject to change): 30% ambassadors, 25% community treasury, 20% airdrop to early users, 15% founding team, 10% liquidity. Half the supply flows to people doing the work.",
     "conversion": "Convert to $ROOTS tokens at airdrop when the token launches.",
     "leaderboard": "Public leaderboard at /leaderboard. Engagement points private per user.",
-    "tone": "Loyalty rewards like airline miles. Avoid crypto jargon unless asked. Never quote a $ROOTS dollar value. Allocation is proposed and subject to change."
+    "tone": "Loyalty rewards like airline miles. Avoid crypto jargon unless asked. Never quote a $ROOTS dollar value. Allocation is proposed and subject to change — never give a launch date."
   },
   "auth": {
     "sellersAmbassadors": "Email, phone, Google, Apple, or Instagram via Privy. No crypto wallet needed — all transactions are gasless.",
