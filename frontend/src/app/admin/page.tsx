@@ -16,6 +16,7 @@ import { OperationsTab } from '@/components/admin/operations';
 import { DisputesTab } from '@/components/admin/DisputesTab';
 import { AmbassadorPaymentsTab } from '@/components/admin/AmbassadorPaymentsTab';
 import { SuggestionsTab } from '@/components/admin/SuggestionsTab';
+import { RPMonitorTab } from '@/components/admin/RPMonitorTab';
 
 interface ActivityEvent {
   type: 'seller_registered' | 'listing_created' | 'order_placed' | 'order_status' | 'funds_released';
@@ -25,7 +26,7 @@ interface ActivityEvent {
   details: Record<string, string | number>;
 }
 
-type Tab = 'activity' | 'registrations' | 'orders' | 'disputes' | 'suggestions' | 'payments' | 'admins' | 'operations';
+type Tab = 'activity' | 'registrations' | 'orders' | 'disputes' | 'suggestions' | 'payments' | 'admins' | 'operations' | 'rp';
 
 export default function AdminDashboard() {
   const { isAdmin, isLoading: checkingAdmin, isConnected, address } = useAdminStatus();
@@ -246,6 +247,7 @@ export default function AdminDashboard() {
       <div className="flex gap-1 mb-6 border-b overflow-x-auto">
         {([
           { id: 'activity', label: 'Live Activity' },
+          { id: 'rp', label: 'RP Monitor' },
           { id: 'registrations', label: 'Registrations' },
           { id: 'orders', label: 'Orders' },
           { id: 'disputes', label: 'Disputes' },
@@ -344,6 +346,7 @@ export default function AdminDashboard() {
           {activeTab === 'payments' && <AmbassadorPaymentsTab />}
           {activeTab === 'admins' && <AdminManagementTab />}
           {activeTab === 'operations' && <OperationsTab />}
+          {activeTab === 'rp' && <RPMonitorTab />}
         </CardContent>
       </Card>
 
