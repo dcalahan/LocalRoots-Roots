@@ -165,7 +165,20 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const recognitionRef = useRef<any>(null);
   const pendingVoiceResponse = useRef<string | null>(null);
 
-  // Get user ID from wallet, or generate a stable anonymous UUID
+  // Get user ID with this priority:
+  //   1. Privy user DID (did:privy:cm...) — consistent across phone +
+  //      laptop for the same Privy account, and ALIGNED with /api/my-garden
+  //      which keys plants by Privy DID. Before this fix (May 16 2026),
+  //      Sage keyed chats by wallet address which can differ between
+  //      devices when one has an active wagmi connector and the other
+  //      doesn't. Result: 2 unrelated conversations across devices.
+  //   2. Wallet address fallback for crypto buyers who aren't signed
+  //      into Privy at all.
+  //   3. Anon per-device UUID for unauthenticated visitors.
+  //
+  // Aligning Sage's userId with my-garden's also fixes the side effect
+  // that buildUserGardenContext couldn't find a signed-in user's plants
+  // (it queries by Privy DID; chat was sending wallet address).
   const { address: wagmiAddress } = useAccount();
   const { wallets } = useWallets();
   const privyAddress = wallets?.[0]?.address;
@@ -179,7 +192,7 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
     }
     return id;
   });
-  const userId = walletAddress || anonId;
+  const userId = privyUser?.id || walletAddress || anonId;
 
   // ─── localStorage helpers ─────────────────────────────
   const localConvKey = userId ? `garden:conv:${userId}` : null;
