@@ -18,6 +18,7 @@ import { streamSageChat, completeSagePrompt, type SageMessage } from '@/lib/ai/s
 import { loadServerDismissals } from '@/lib/careDismissals'
 import { SAGE_BRAIN_VERSION } from '@/lib/ai/sageBrainVersion'
 import { credit as creditOffchainRP } from '@/lib/offchainRP'
+import { getIpGeoFromRequest } from '@/lib/ipGeo'
 
 const brain = createGardenBrain()
 
@@ -29,6 +30,10 @@ export async function POST(request: NextRequest) {
   // production request with one curl call.
   const debug = request.nextUrl.searchParams.get('debug') === '1'
   const startMs = Date.now()
+  // Capture IP geo here at request start — after() runs after the
+  // response is sent and won't have access to the request headers.
+  // Used by the sage-daily credit below to record first-seen location.
+  const ipMeta = getIpGeoFromRequest(request)
   const timings: { label: string; ms: number; deltaMs: number }[] = []
   let lastMs = startMs
   const mark = (label: string) => {
@@ -301,7 +306,7 @@ export async function POST(request: NextRequest) {
         if (effectiveUserId !== 'anonymous' && userPlainText.trim().length >= 10) {
           const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD UTC
           const dedupKey = `${effectiveUserId}:${today}`
-          const result = await creditOffchainRP('sage-daily', effectiveUserId, dedupKey)
+          const result = await creditOffchainRP('sage-daily', effectiveUserId, dedupKey, { ipMeta })
           if (result.ok && result.credited) {
             console.log('[Garden AI] sage-daily +10 RP for', effectiveUserId)
           }

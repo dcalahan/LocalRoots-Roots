@@ -36,6 +36,7 @@
  */
 
 import { kv } from '@/lib/kv'
+import type { IpGeoMeta } from '@/lib/ipGeo'
 
 // ─── Types ─────────────────────────────────────────────────────────────
 
@@ -239,6 +240,26 @@ const dailyKey = (address: string, verbId: VerbId, isoDate: string) =>
   `rp:offchain:daily:${address.toLowerCase()}:${verbId}:${isoDate}`
 const lifetimeKey = (address: string, verbId: VerbId) =>
   `rp:offchain:lifetime:${address.toLowerCase()}:${verbId}`
+const userMetaKey = (address: string) => `rp:offchain:user-meta:${address.toLowerCase()}`
+
+/**
+ * Per-user metadata captured at first RP credit. Used by the admin RP
+ * Monitor to flag suspect cross-border activity (off-chain RP is the
+ * sybil-farm magnet; non-US first-seen is a high-signal heuristic for
+ * a US-focused platform).
+ *
+ * Retention: PURGE post-airdrop-snapshot per Doug's call (May 16 2026).
+ */
+export interface UserMeta {
+  /** ISO country code (e.g., 'US', 'CA', 'GB'). */
+  country?: string;
+  /** Region/state code (e.g., 'SC'). */
+  region?: string;
+  /** City name (decoded). */
+  city?: string;
+  /** ISO timestamp when this record was first written. */
+  firstSeenAt: string;
+}
 
 /** UTC date string for daily-cap keys. Stable across timezones. */
 function todayUTC(): string {
@@ -291,10 +312,26 @@ function computeEventId(verbId: VerbId, dedupKey: string): string {
  *                  `{userId}:{YYYY-MM-DD}`). Same key, same eventId, same
  *                  no-op behavior on retry.
  */
+export interface CreditOptions {
+  /**
+   * IP-derived geo metadata for this credit attempt. When provided AND
+   * this is the first time we've ever credited this user, we write a
+   * `rp:offchain:user-meta:{userId}` record with first-seen country/
+   * region/city. Subsequent credits don't overwrite (first-seen is
+   * the most useful signal for sybil detection — a US user later
+   * traveling to Italy isn't gaming, but a user whose first impression
+   * is from a country where we have no presence is suspect).
+   *
+   * Retention: purge post-airdrop-snapshot.
+   */
+  ipMeta?: IpGeoMeta;
+}
+
 export async function credit(
   verbId: VerbId,
   privyAddress: string | null | undefined,
   dedupKey: string,
+  options?: CreditOptions,
 ): Promise<CreditResult> {
   const verb = VERBS[verbId]
   if (!verb) {
@@ -383,6 +420,25 @@ export async function credit(
     }
     await kv.set(userKey(address), newSummary)
 
+    // ── 5. First-seen IP geo capture (anti-fraud) ──────────────────
+    // Write only if we have IP geo AND there's no existing record for
+    // this user. setnx semantics: first-seen wins, never overwritten.
+    // Failure here must not undo the credit — wrap in catch.
+    if (options?.ipMeta && (options.ipMeta.country || options.ipMeta.region || options.ipMeta.city)) {
+      try {
+        const meta: UserMeta = {
+          country: options.ipMeta.country,
+          region: options.ipMeta.region,
+          city: options.ipMeta.city,
+          firstSeenAt: new Date().toISOString(),
+        }
+        await kv.setnx(userMetaKey(address), meta)
+      } catch (err) {
+        // Non-blocking: the user already got their RP. Log only.
+        console.error('[offchainRP] user-meta write failed (non-critical)', { address, err })
+      }
+    }
+
     return {
       ok: true,
       credited: true,
@@ -397,6 +453,16 @@ export async function credit(
     console.error('[offchainRP] credit failed', { verbId, privyAddress, dedupKey, err })
     return { ok: false, error: err instanceof Error ? err.message : String(err) }
   }
+}
+
+/**
+ * Read a user's first-seen IP geo metadata. Returns null when the user
+ * has never been credited (or was credited before user-meta capture
+ * shipped — May 16 2026).
+ */
+export async function getUserMeta(privyAddress: string): Promise<UserMeta | null> {
+  if (!privyAddress) return null;
+  return await kv.get<UserMeta>(userMetaKey(privyAddress.toLowerCase()));
 }
 
 /**
@@ -421,6 +487,7 @@ export const __internal = {
   eventKey,
   dailyKey,
   lifetimeKey,
+  userMetaKey,
   computeEventId,
   todayUTC,
 }

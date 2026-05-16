@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { credit } from '@/lib/offchainRP';
+import { getIpGeoFromRequest } from '@/lib/ipGeo';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().slice(0, 10);
     const dedupKey = `${cardType}:${target || 'any'}:${today}`;
 
-    const result = await credit('share-card-sent', userId, dedupKey);
+    const result = await credit('share-card-sent', userId, dedupKey, {
+      ipMeta: getIpGeoFromRequest(request),
+    });
     return NextResponse.json({
       ok: true,
       credited: result.ok && result.credited,

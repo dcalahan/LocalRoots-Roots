@@ -248,13 +248,18 @@ export async function POST(request: NextRequest) {
       // Requires the client to have sent its Privy userId.
       if (listingId !== undefined && privyUserId) {
         const stableListingId = listingId.toString();
-        import('@/lib/offchainRP').then(({ credit }) =>
-          credit('listing-created', privyUserId, `listing:${stableListingId}`),
-        ).then((result) => {
-          if (result?.ok && result.credited) {
-            console.log('[Relay] +100 RP listing-created for', privyUserId, 'listing', stableListingId);
-          }
-        }).catch(() => { /* fire-and-forget */ });
+        Promise.all([import('@/lib/offchainRP'), import('@/lib/ipGeo')])
+          .then(([{ credit }, { getIpGeoFromRequest }]) =>
+            credit('listing-created', privyUserId, `listing:${stableListingId}`, {
+              ipMeta: getIpGeoFromRequest(request),
+            }),
+          )
+          .then((result) => {
+            if (result?.ok && result.credited) {
+              console.log('[Relay] +100 RP listing-created for', privyUserId, 'listing', stableListingId);
+            }
+          })
+          .catch(() => { /* fire-and-forget */ });
       }
     }
 

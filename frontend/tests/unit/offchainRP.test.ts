@@ -176,6 +176,41 @@ describe('offchainRP — credit()', () => {
     expect(result).toEqual({ ok: true, credited: false, reason: 'not-live' })
   })
 
+  it('captures first-seen IP geo on first credit and never overwrites', async () => {
+    // First credit with US location → user-meta gets written
+    await credit('plant-added', ADDR, 'p-1', {
+      ipMeta: { country: 'US', region: 'SC', city: 'Hilton Head Island' },
+    })
+    const metaKey = __internal.userMetaKey(ADDR)
+    const meta1 = await mockKv.get<{ country: string; region: string; city: string; firstSeenAt: string }>(metaKey)
+    expect(meta1).toMatchObject({
+      country: 'US',
+      region: 'SC',
+      city: 'Hilton Head Island',
+    })
+    expect(typeof meta1?.firstSeenAt).toBe('string')
+
+    // Second credit with DIFFERENT location → first-seen preserved
+    await credit('plant-added', ADDR, 'p-2', {
+      ipMeta: { country: 'IT', region: '21', city: 'Roma' },
+    })
+    const meta2 = await mockKv.get<{ country: string }>(metaKey)
+    expect(meta2?.country).toBe('US') // unchanged
+  })
+
+  it('skips user-meta write when ipMeta is absent', async () => {
+    await credit('plant-added', ADDR, 'no-meta-test')
+    const meta = await mockKv.get(__internal.userMetaKey(ADDR))
+    expect(meta).toBeNull()
+  })
+
+  it('skips user-meta write when ipMeta has no country/region/city', async () => {
+    // Empty ipMeta (Vercel headers missing) — don't write a placeholder record
+    await credit('plant-added', ADDR, 'empty-meta-test', { ipMeta: {} })
+    const meta = await mockKv.get(__internal.userMetaKey(ADDR))
+    expect(meta).toBeNull()
+  })
+
   it('normalizes mixed-case addresses to lowercase in storage keys', async () => {
     await credit('plant-added', ADDR, 'plant-mixed-case')
 

@@ -66,9 +66,13 @@ export async function POST(request: NextRequest) {
       return URGENT_TYPES.has(parts[1]);
     });
     if (urgentIds.length > 0) {
-      const { credit } = await import('@/lib/offchainRP');
+      const [{ credit }, { getIpGeoFromRequest }] = await Promise.all([
+        import('@/lib/offchainRP'),
+        import('@/lib/ipGeo'),
+      ]);
+      const ipMeta = getIpGeoFromRequest(request);
       for (const alertId of urgentIds) {
-        const result = await credit('care-alert-acted-on', userId, alertId);
+        const result = await credit('care-alert-acted-on', userId, alertId, { ipMeta });
         if (result.ok && result.credited) {
           console.log('[care-dismissals] +15 RP care-alert-acted-on for', userId, alertId);
         }

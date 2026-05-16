@@ -163,8 +163,13 @@ export async function POST(request: NextRequest) {
     if (wasUnpublished && hasMeaningfulContent) {
       // Dynamic import to avoid pulling RP deps into route module unless
       // we actually need them.
-      const { credit } = await import('@/lib/offchainRP');
-      const result = await credit('public-profile-published', userId, userId);
+      const [{ credit }, { getIpGeoFromRequest }] = await Promise.all([
+        import('@/lib/offchainRP'),
+        import('@/lib/ipGeo'),
+      ]);
+      const result = await credit('public-profile-published', userId, userId, {
+        ipMeta: getIpGeoFromRequest(request),
+      });
       if (result.ok && result.credited) {
         console.log('[garden-profile] +200 RP public-profile-published for', userId);
       }

@@ -3,6 +3,7 @@ import { kv } from '@/lib/kv';
 import type { GardenPlant, GardenBed, MyGardenData } from '@/types/my-garden';
 import { warmFacebookOgCache } from '@/lib/facebookOgScrape';
 import { credit, type VerbId, type CreditResult } from '@/lib/offchainRP';
+import { getIpGeoFromRequest } from '@/lib/ipGeo';
 
 function kvKey(userId: string): string {
   return `my-garden:${userId}`;
@@ -129,7 +130,11 @@ interface RpAggregator {
   byVerb: Partial<Record<VerbId, number>>;
 }
 
-async function applyCreditEvents(userId: string, events: DiffEvent[]): Promise<RpAggregator> {
+async function applyCreditEvents(
+  userId: string,
+  events: DiffEvent[],
+  ipMeta: import('@/lib/ipGeo').IpGeoMeta,
+): Promise<RpAggregator> {
   const agg: RpAggregator = {
     credited: 0,
     rpAmount: 0,
@@ -144,7 +149,7 @@ async function applyCreditEvents(userId: string, events: DiffEvent[]): Promise<R
   for (const evt of events) {
     let result: CreditResult;
     try {
-      result = await credit(evt.verbId, userId, evt.dedupKey);
+      result = await credit(evt.verbId, userId, evt.dedupKey, { ipMeta });
     } catch (err) {
       // Defensive: credit() shouldn't throw, but never let a credit error
       // break the response. Log and continue.
@@ -199,7 +204,7 @@ export async function PUT(request: NextRequest) {
 
     // Compute the diff and apply credit() for each event.
     const events = diffMyGarden(previousData, { plants: data.plants, beds: data.beds ?? [] });
-    const rp = await applyCreditEvents(userId, events);
+    const rp = await applyCreditEvents(userId, events, getIpGeoFromRequest(request));
 
     return NextResponse.json({
       ok: true,
