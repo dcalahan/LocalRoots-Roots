@@ -11,5 +11,11 @@
       "destination": "https://www.localroots.love/$1",
       "permanent": true
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/admin/rp-index",
+      "schedule": "*/5 * * * *"
+    }
   ]
 }
