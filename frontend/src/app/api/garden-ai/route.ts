@@ -22,6 +22,22 @@ import { credit as creditOffchainRP } from '@/lib/offchainRP'
 const brain = createGardenBrain()
 
 export async function POST(request: NextRequest) {
+  // ── Inline timing markers ───────────────────────────────────
+  // Enabled via ?debug=1. Captures wall-clock at each major
+  // checkpoint and emits them as the final SSE event before
+  // [DONE], so we can see exactly where the time goes per
+  // production request with one curl call.
+  const debug = request.nextUrl.searchParams.get('debug') === '1'
+  const startMs = Date.now()
+  const timings: { label: string; ms: number; deltaMs: number }[] = []
+  let lastMs = startMs
+  const mark = (label: string) => {
+    if (!debug) return
+    const now = Date.now()
+    timings.push({ label, ms: now - startMs, deltaMs: now - lastMs })
+    lastMs = now
+  }
+
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
@@ -31,6 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    mark('body-parsed')
     const { message, conversationHistory = [], userId, images, image, geohash, clientMemories, userContext: clientUserContext } = body
 
     // ─── Server-side IP geolocation fallback ───
@@ -106,6 +123,7 @@ export async function POST(request: NextRequest) {
       brain.loadMemories?.(effectiveUserId).catch(() => []) ?? [],
       loadServerDismissals(effectiveUserId).catch(() => ({})),
     ])
+    mark('parallel-kv-done')
 
     // Use cloud memories if available, otherwise fall back to client-sent memories
     const memories = (cloudMemories && (cloudMemories as MemoryFact[]).length > 0)
@@ -114,9 +132,12 @@ export async function POST(request: NextRequest) {
 
     const ctx = { userId: effectiveUserId, sessionId: effectiveUserId, messages, geohash: geohash || undefined, userContext, dismissals }
     const systemPrompt = await brain.getSystemPrompt(ctx)
+    mark('getSystemPrompt-done')
     const gardenContext = await brain.loadContext(ctx)
+    mark('loadContext-done')
     const memoryContext = formatMemoryContext(memories as MemoryFact[], soulText)
     const fullSystemPrompt = memoryContext + systemPrompt + gardenContext
+    mark('full-prompt-assembled')
 
     // Window messages to last 20
     const windowSize = 20
@@ -154,14 +175,21 @@ export async function POST(request: NextRequest) {
       async start(controller) {
         try {
           // streamSageChat picks Venice or Anthropic per env var, with fallback
+          mark('stream-start-pre-llm')
+          let firstToken = true
           for await (const text of streamSageChat({
             systemPrompt: finalSystemPrompt,
             messages: apiMessages,
             maxTokens: 2000,
           })) {
+            if (firstToken) {
+              mark('first-llm-token')
+              firstToken = false
+            }
             streamState.fullResponse += text
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
           }
+          mark('last-llm-token')
 
           streamState.done = true
 
@@ -182,6 +210,7 @@ export async function POST(request: NextRequest) {
                 prompt: extractionPrompt,
                 maxTokens: 500,
               })
+              mark('action-extraction-done')
               console.log('[Garden AI] Action extraction raw:', actionText.slice(0, 200))
               const actions = parseGardenActions(actionText)
               if (actions.length > 0) {
@@ -193,6 +222,24 @@ export async function POST(request: NextRequest) {
             } catch (err) {
               console.error('[Garden AI] Garden action extraction failed:', err)
             }
+          }
+
+          // Emit inline timings before [DONE] when debug=1.
+          // Shape: {"_debug": {"totalMs": N, "timings": [{label, ms, deltaMs}, ...], "promptBytes": N}}
+          if (debug) {
+            mark('pre-done')
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  _debug: {
+                    totalMs: Date.now() - startMs,
+                    timings,
+                    promptBytes: fullSystemPrompt.length,
+                    userId: effectiveUserId,
+                  },
+                })}\n\n`,
+              ),
+            )
           }
 
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`))

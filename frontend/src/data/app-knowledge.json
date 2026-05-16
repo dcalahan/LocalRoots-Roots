@@ -353,17 +353,15 @@
     }
   ],
   "rootsPoints": {
-    "_label": "Roots Points (RP) — LocalRoots' loyalty rewards program. Think Starbucks Stars or airline miles. Pre-launch this is called Roots Points; old code/docs may still say 'Seeds' — same thing.",
-    "sellers": "500 Roots Points per $1 earned from sales + milestone bonuses (10,000 RP for first sale, 25,000 at 5 sales, 50,000 at 15 sales)",
-    "buyers": "50 Roots Points per $1 spent (sellers earn 10× more — they're doing the real work of growing the food)",
-    "ambassadors": "25% of recruited sellers' Roots Points",
-    "earlyAdopter": "2x Roots Points for first 90 days, 1.5x for days 91-180",
-    "gardenEngagement": "Signed-in users earn Roots Points for using the app, not just for marketplace transactions. Currently live: 10 RP for a daily check-in conversation with Sage (1/day), 25 RP per plant added to My Garden (up to 4/day, lifetime cap ~80 plants). Coming next: 30 RP per plant photo, 40 RP per harvest logged, 50 RP per garden bed created, 200 RP for publishing a public garden profile, 15 RP for acting on care alerts (pruning, harvesting). These engagement points flow into the same airdrop pool as marketplace points.",
-    "anonymousNote": "Roots Points only accrue for signed-in users. Anonymous users can use Sage and the app freely, but won't earn until they sign in (email, phone, or social login via Privy).",
-    "proposedAllocation": "PROPOSED (subject to change before token launch): 25% community treasury, 30% ambassadors, 15% founding team, 10% liquidity pool, 20% airdrop to early users. Half the total supply flows directly to users doing user work. These percentages are not final — Doug will revise based on community feedback before launch.",
-    "conversion": "Roots Points convert to $ROOTS tokens at the airdrop snapshot when the token launches. The exact conversion rate is set at snapshot based on total RP earned across all users — the more RP a user has relative to the pool, the larger their $ROOTS allocation.",
-    "leaderboard": "Public leaderboard at /leaderboard shows on-chain marketplace activity (sales, purchases, ambassador commissions). Engagement Roots Points (Sage chat, plant tracking, photos) are PRIVATE per user — visible only on /profile, not on the leaderboard. This keeps engagement private and reduces gaming incentives.",
-    "tone": "When users ask, describe Roots Points as a loyalty rewards program — like airline miles for staying engaged with LocalRoots. Avoid crypto jargon unless the user asks specifically about how the conversion works. Don't quote a future dollar value of $ROOTS. When discussing the proposed allocation, always say 'proposed, subject to change before launch.' Never publish specific token-launch dates."
+    "_label": "Roots Points (RP) — loyalty rewards program. Pre-launch this is called Roots Points; old code may say 'Seeds' — same thing.",
+    "sellers": "500 RP per $1 earned + milestone bonuses",
+    "buyers": "50 RP per $1 spent",
+    "ambassadors": "25% of recruited sellers' RP",
+    "earlyAdopter": "2x for first 90 days, 1.5x for days 91-180",
+    "gardenEngagement": "Signed-in users also earn for gardening activity (daily Sage chat, plants, harvests, photos).",
+    "conversion": "Convert to $ROOTS tokens at airdrop when the token launches.",
+    "leaderboard": "Public leaderboard at /leaderboard. Engagement points private per user.",
+    "tone": "Loyalty rewards like airline miles. Avoid crypto jargon unless asked. Never quote a $ROOTS dollar value. Allocation is proposed and subject to change."
   },
   "auth": {
     "sellersAmbassadors": "Email, phone, Google, Apple, or Instagram via Privy. No crypto wallet needed — all transactions are gasless.",
