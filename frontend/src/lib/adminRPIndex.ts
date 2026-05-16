@@ -30,7 +30,7 @@
  */
 
 import { kv } from '@/lib/kv';
-import type { CreditEventRecord, UserRPSummary, VerbId } from '@/lib/offchainRP';
+import type { CreditEventRecord, UserMeta, UserRPSummary, VerbId } from '@/lib/offchainRP';
 
 // ─── Index shapes (read by /api/admin/rp/* routes) ──────────────────
 
@@ -49,6 +49,8 @@ export interface TopEarnerEntry {
   byVerb: UserRPSummary['byVerb'];
   lastUpdated: string;
   eventCount: number; // approximate, derived from byVerb counts
+  /** First-seen IP geo. Null when user pre-dates the May 16 capture commit. */
+  userMeta?: UserMeta | null;
 }
 
 export interface UserDetailEntry {
@@ -59,6 +61,8 @@ export interface UserDetailEntry {
   recentEvents: RecentEventEntry[]; // last 50 events for this user
   /** Per-verb daily-counter snapshot for the last 7 days */
   dailyCounters: Record<string, Record<VerbId, number>>;
+  /** First-seen IP geo. Null when user pre-dates the May 16 capture commit. */
+  userMeta?: UserMeta | null;
 }
 
 export interface IndexMeta {
@@ -102,18 +106,19 @@ export async function buildAdminRPIndexes(): Promise<IndexMeta> {
   // Sort newest first by timestamp.
   events.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
-  // ── Step 2: Read every user total ────────────────────────────────
+  // ── Step 2: Read every user total + first-seen IP geo metadata ───
   // `rp:offchain:{userId}` — note: KEYS pattern can't easily exclude
-  // sub-namespaces (event/daily/lifetime). We scan the full
+  // sub-namespaces (event/daily/lifetime/user-meta). We scan the full
   // `rp:offchain:*` namespace and filter to user-summary records.
   const allOffchainKeys = await kv.keys('rp:offchain:*');
-  const userSummaries: { userId: string; summary: UserRPSummary }[] = [];
+  const userSummaries: { userId: string; summary: UserRPSummary; meta: UserMeta | null }[] = [];
   for (const key of allOffchainKeys) {
-    // Exclude sub-namespaces: event:, daily:, lifetime:
+    // Exclude sub-namespaces: event:, daily:, lifetime:, user-meta:
     if (
       key.startsWith('rp:offchain:event:') ||
       key.startsWith('rp:offchain:daily:') ||
-      key.startsWith('rp:offchain:lifetime:')
+      key.startsWith('rp:offchain:lifetime:') ||
+      key.startsWith('rp:offchain:user-meta:')
     ) {
       continue;
     }
@@ -121,7 +126,10 @@ export async function buildAdminRPIndexes(): Promise<IndexMeta> {
     if (!userId) continue;
     const summary = await kv.get<UserRPSummary>(key);
     if (summary && typeof summary.total === 'number') {
-      userSummaries.push({ userId, summary });
+      // Fetch user-meta for first-seen IP geo (may not exist for users
+      // who pre-date the May 16 capture commit).
+      const meta = await kv.get<UserMeta>(`rp:offchain:user-meta:${userId.toLowerCase()}`);
+      userSummaries.push({ userId, summary, meta });
     }
   }
 
@@ -139,7 +147,7 @@ export async function buildAdminRPIndexes(): Promise<IndexMeta> {
 
   // ── Step 4: Write Top Earners index ──────────────────────────────
   const topEarners: TopEarnerEntry[] = userSummaries
-    .map(({ userId, summary }) => {
+    .map(({ userId, summary, meta }) => {
       let eventCount = 0;
       for (const verbRow of Object.values(summary.byVerb)) {
         if (verbRow && typeof verbRow.count === 'number') {
@@ -152,6 +160,7 @@ export async function buildAdminRPIndexes(): Promise<IndexMeta> {
         byVerb: summary.byVerb,
         lastUpdated: summary.lastUpdated,
         eventCount,
+        userMeta: meta,
       };
     })
     .sort((a, b) => b.total - a.total)
@@ -168,7 +177,7 @@ export async function buildAdminRPIndexes(): Promise<IndexMeta> {
     eventsByUser.set(e.privyAddress.toLowerCase(), list);
   }
 
-  for (const { userId, summary } of userSummaries) {
+  for (const { userId, summary, meta } of userSummaries) {
     const userIdLower = userId.toLowerCase();
     const userEvents = (eventsByUser.get(userIdLower) || []).slice(0, 50).map((e) => ({
       eventId: e.eventId,
@@ -207,20 +216,21 @@ export async function buildAdminRPIndexes(): Promise<IndexMeta> {
       lastUpdated: summary.lastUpdated,
       recentEvents: userEvents,
       dailyCounters,
+      userMeta: meta,
     };
     await kv.set(INDEX_KEY.userDetail(userId), detail);
   }
 
   // ── Step 6: Write meta record ────────────────────────────────────
-  const meta: IndexMeta = {
+  const indexMeta: IndexMeta = {
     lastRunAt: new Date().toISOString(),
     durationMs: Date.now() - startMs,
     eventCount: events.length,
     userCount: userSummaries.length,
   };
-  await kv.set(INDEX_KEY.meta, meta);
+  await kv.set(INDEX_KEY.meta, indexMeta);
 
-  return meta;
+  return indexMeta;
 }
 
 // ─── Reader helpers (used by /api/admin/rp/* routes) ───────────────

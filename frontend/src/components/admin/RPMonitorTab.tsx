@@ -56,6 +56,38 @@ function rpFmt(n: number): string {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
+/**
+ * Render a user's first-seen IP-derived location with a non-US warning
+ * badge when applicable. Returns "—" for users who pre-date the user-meta
+ * capture commit (no location data on file). The warning badge is the
+ * primary visual signal Doug scans for in Top Earners.
+ */
+function LocationCell({ userMeta }: { userMeta?: { country?: string; region?: string; city?: string } | null }) {
+  if (!userMeta || !userMeta.country) {
+    return <span className="text-roots-gray/50">—</span>;
+  }
+  const isNonUS = userMeta.country !== 'US';
+  const label =
+    userMeta.city && userMeta.region
+      ? `${userMeta.city}, ${userMeta.region}`
+      : userMeta.city || userMeta.region || userMeta.country;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={isNonUS ? 'text-amber-700 font-medium' : 'text-roots-gray'}>
+        {label}
+      </span>
+      {isNonUS && (
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded"
+          title="First-seen IP outside the US — possible gaming signal"
+        >
+          🌍 {userMeta.country}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function RPMonitorTab() {
   const { address } = useAdminStatus();
   const [subView, setSubView] = useState<SubView>('recent');
@@ -299,6 +331,7 @@ function TopEarnersSubView({
             <th className="text-right py-2 px-2">Total RP</th>
             <th className="text-right py-2 px-2">Events</th>
             <th className="text-left py-2 px-2">Top verb</th>
+            <th className="text-left py-2 px-2">First-seen location</th>
             <th className="text-left py-2 px-2">Last earned</th>
           </tr>
         </thead>
@@ -329,6 +362,9 @@ function TopEarnersSubView({
                 </td>
                 <td className="py-1.5 px-2 text-xs">
                   {topVerb ? (VERBS[topVerb]?.label ?? topVerb) : '—'}
+                </td>
+                <td className="py-1.5 px-2 text-xs whitespace-nowrap">
+                  <LocationCell userMeta={u.userMeta} />
                 </td>
                 <td className="py-1.5 px-2 text-xs text-roots-gray whitespace-nowrap">
                   {relativeTime(u.lastUpdated)}
@@ -440,6 +476,12 @@ function UserDetailSubView({
               <div>
                 <div className="text-xs uppercase tracking-wide text-roots-gray">Last earned</div>
                 <div className="text-sm">{relativeTime(detail.lastUpdated)}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-roots-gray">First-seen location</div>
+                <div className="text-sm">
+                  <LocationCell userMeta={detail.userMeta} />
+                </div>
               </div>
             </div>
           </div>
