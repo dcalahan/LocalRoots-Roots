@@ -12,6 +12,5 @@
       "permanent": true
     }
   ],
-  "_crons_paused_2026-05-15": "Paused after Sage 504s observed within hours of deploy. Cron scans rp:offchain:* namespace and may be blocking KV for concurrent Sage requests. Investigating; re-enable after redesigning lighter.",
   "crons": []
 }
