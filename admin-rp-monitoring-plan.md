@@ -3,7 +3,26 @@
 **Author:** planning agent
 **For review by:** Doug
 **Date:** May 15 2026
-**Status:** draft — review, comment, then a follow-up session implements
+**Status:** APPROVED by Doug May 15 2026. All 8 open questions answered (see below). Ready for implementation when scheduled.
+
+---
+
+## Doug's decisions (locked May 15 2026)
+
+Captured here as a single reference so future sessions don't re-litigate. Each answer is final unless Doug explicitly revisits.
+
+1. **Doug's admin wallet `0x30C4343A742F922Ea8cF10e2042919C873274879` — permanent test flag from day one of Phase 2?** ✅ **YES.** Apply the test flag as the first action on day one of Phase 2 implementation. Doug stops earning RP on test traffic going forward.
+2. **Verify what Privy Management API exposes (IP, fingerprint) before promising heuristics #1 and #2?** ✅ **Defer to Claude — accepting plan recommendation.** A 1-hour spike happens before Phase 3 implementation begins: pull a real `/users` response from Privy, document the fields, decide between webhook vs. client-side capture if Privy doesn't natively expose IP and fingerprint. Heuristics 3-10 ship in Phase 3 regardless; 1 and 2 ship only if the spike confirms the data path.
+3. **Auto-flag suspected sybils, or always require Doug's click?** ✅ **Doug wants to BE AWARE but must click.** Heuristic engine still computes and surfaces candidates prominently in Top Earners + Clusters views with a "High risk" badge. Doug always clicks to set the flag — no automatic state changes from the heuristic output. Matches the plan's "candidates vs. users" distinction.
+4. **When flagged as suspected sybil, zero out on-chain RP too, or only off-chain?** ✅ **Both.** Same flag, both pools zeroed at merkle snapshot.
+5. **Sage chat content persistence for cross-user lexical similarity (heuristic #7)?** ✅ **Defer to Phase 3.5.** Other heuristics ship in Phase 3 without it. Doug decides on chat persistence after seeing false-positive rates on the cheaper signals. Privacy implications get evaluated at that point.
+6. **Cron interval — 5 minutes, 1 minute, or 15 minutes?** ✅ **Plan recommendation.** 5 minutes for Phase 1. Drop to 1 minute starting Phase 2+ once Doug is actively using the surface and benefits from real-time feel.
+7. **Multi-admin confirmation for high-impact flags?** ✅ **NO** for v1. Audit log is the safeguard. Revisit if non-Doug admins ever join.
+8. **Public off-chain RP leaderboard, or admin-only forever?** ✅ **ADMIN ONLY** — strictly. The public `/leaderboard` stays on-chain marketplace activity only. Off-chain RP rankings live exclusively in the admin module's Top Earners view.
+
+**No section of this plan is open for revision** without explicit Doug sign-off. Implementation proceeds against the plan as written, with the answers above baked in.
+
+---
 
 ## TL;DR
 
