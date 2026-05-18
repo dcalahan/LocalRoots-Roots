@@ -211,6 +211,63 @@ This is controlled by `UnifiedWalletButton` in the header, which checks `usePath
 
 **Bridge offramp is the planned replacement for Cash Out** (already plugin-enabled in Doug's Privy dashboard). Not yet integrated. Tracked in `coinbase_blocked_stripe_migration.md`.
 
+**Stripe API does NOT accept a `return_url` / `success_url` parameter on Crypto Onramp sessions** (verified May 18 2026 against the Stripe API docs). The session lands the buyer inside `crypto.link.com` and Stripe does NOT auto-redirect them back to the merchant. The architectural consequence: any "after Stripe completes" UX (success screen, wallet-balance detection, etc.) requires the buyer to return to /buy/checkout themselves. The `walletCoversCart` probe (see below) is what makes this work — when they come back, we detect their new USDC and offer the gasless settlement path. The route still accepts a `returnUrl` field in the request body for forward-compat, but currently ignores it.
+
+### iOS Safari Pre-Mint Pattern for Stripe Onramp (CRITICAL)
+
+**Doug's iPhone test (May 18 2026):** loaded /buy/checkout in private Safari, completed the form, tapped "Pay $9.44 with Card." Stripe Link opened showing **"Buy Ethereum $10"** instead of "Buy 9.44 USDC."
+
+**Root cause:** iOS Safari's Intelligent Tracking Prevention strips query parameters from cross-origin navigations when the navigation pattern is `popup = window.open('about:blank')` → `popup.location.href = crypto.link.com?session_hash=...`. The `session_hash` is a long base64-style string that matches ITP's tracking-parameter heuristics. Without `session_hash`, Stripe Link falls back to its unconfigured default product ("Buy Ethereum $10").
+
+Curl-verified our session-mint endpoint produces a correct URL with `session_hash` intact (full URL recoverable from Vercel logs). Same wallet that lost the param on iPhone rendered correctly on desktop popup. The bug is specifically the about:blank → cross-origin-href pattern.
+
+**Fix architecture:** Pre-mint the session URL on the Pay-screen mount, then `window.open(url, ...)` synchronously inline on the button click — no about:blank intermediate, no cross-origin redirect, query string preserved.
+
+**Files (commit `3cd4ea9`):**
+- `frontend/src/lib/stripeOnramp.ts` — adds `mintStripeOnrampUrl()` (mint without opening), `openStripeOnrampWithUrl(url)` (sync open with cached URL), `shouldUseSameTabOnramp()` UA detection (matches `/iPhone|iPad|iPod/`).
+- `frontend/src/components/checkout/CreditCardCheckout.tsx` — pre-mint useEffect on step transition to 'pay'. Only fires on iOS Safari (other browsers keep the existing popup pattern, which works fine). Branches in `startPayment`: iOS path uses cached URL; everyone else uses the original `navigateStripeOnrampPopup`.
+
+**Anti-patterns to never reintroduce:**
+- Don't pre-mint on every render (expensive, hits Stripe rate limits). Only on `step === 'pay'` transition.
+- Don't pre-mint when there's no buyer intent (e.g. /buy/checkout in 'select' mode). The user might abandon the cart.
+- Don't reuse the cached URL across back-and-forth navigations — Stripe sessions expire (~15 min). Re-mint on every entry to 'pay'.
+- Don't try `popup.location.replace(url)` as an alternative — same ITP behavior as `.href = url`.
+- Don't try `window.location.assign(url)` (same-tab redirect) — Stripe doesn't accept a `return_url`, so the buyer is stranded.
+
+**Verification (when fix doesn't appear to work):** Mobile Safari aggressively caches JS bundles even in private mode within a session. Fully quit Safari (swipe up + away in app switcher) → reopen → fresh private window. If still broken, the fix is wrong; redesign.
+
+### Stripe Link Rejection Visibility (CRITICAL)
+
+**Doug's iPhone test (May 18 2026):** multiple Stripe Link sessions in one window all rejected with "We are unable to authenticate your payment method" — including a BoA debit card that worked 15 minutes earlier in a different incognito window. Almost certainly Stripe's documented velocity / fraud cooldown after the prior orphan-payment session (Stripe Crypto Onramp Terms: "Stripe may temporarily suspend access to the onramp services" on suspected unauthorized activity).
+
+**Problem:** Stripe's rejection error appears ONLY inside the Stripe iframe. Our /buy/checkout had zero visibility — the popup closed (or didn't) and the buyer was stuck on a "Waiting for payment" spinner that would never resolve. No recovery path.
+
+**Fix architecture (commit `d722bef`):**
+- `frontend/src/app/api/stripe-onramp-session-status/route.ts` — server-side GET, hits `https://api.stripe.com/v1/crypto/onramp_sessions/{id}`, returns the `status` enum. STRIPE_SECRET_KEY stays server-side.
+- Session ID threaded through `mintStripeOnrampUrl` and `navigateStripeOnrampPopup` return values, captured into `activeStripeSessionId` state in `CreditCardCheckout`.
+- 10-second polling effect during the `awaiting-funds` step. On `status === 'rejected'`, transitions to a new `'rejected'` step with an inline recovery panel.
+- Recovery panel offers two primary actions: retry with a different payment method (re-mints a fresh session), or back to /buy/checkout where the wallet-balance probe surfaces "Your Account Wallet" if leftover USDC is present.
+
+**What Stripe deliberately does NOT expose:** the sub-reason for a `rejected` status. Their docs say this is intentional fraud-mitigation — surfacing "velocity_rule" vs "kyc_failure" vs "fraud_signal" would give attackers feedback on which signal tripped. So our panel doesn't try to guess why; it names the failure mode honestly and offers paths forward.
+
+### Wallet-Balance Probe on /buy/checkout (Recovery for Orphan + Rejection Paths)
+
+**Strategic principle (Doug, May 18 2026):** any time the Privy embedded wallet ALREADY holds enough USDC to cover the cart — whether from an earlier orphan payment, a pre-funded wallet, or a card rejection that landed USDC despite poor UX — we should surface that as the obvious path instead of routing the buyer through another paid charge.
+
+**Implementation (commit `5c52657`):** On /buy/checkout mount (independent of mode selection), read the Privy wallet's USDC balance via `getBalance(USDC_ADDRESS)`. If balance ≥ `rootsToStablecoin(cartTotal)`, set `walletCoversCart = true`. The "Recommended" badge moves from "Card or Mobile Pay" to "Your Account Wallet" + the subtitle changes to "X.XX USDC available — enough for this purchase."
+
+This same `walletCoversCart` logic is the recovery primitive for two different failure modes:
+1. **Orphan payments** (Stripe settled USDC after our poll timed out — buyer reloads, balance probe finds it, wallet path is recommended)
+2. **Card rejections** (Stripe declined and recovery panel sends buyer back to /buy/checkout — balance probe finds any leftover USDC, wallet path is recommended)
+
+### Credit-Card Poll Timeout — 12 minutes (not 5)
+
+**Stripe Onramp confirmation email states "up to 10 minutes"** for the on-chain transfer to land in worst-case network-congestion scenarios. Previous 5-minute timeout was inherited from the Coinbase era (where settlement was 2-4 minutes in practice). Doug's May 18 2026 BoA debit card test orphaned a ~$4.87 USDC payment because Stripe settled AFTER our 5-min poll gave up.
+
+**Current:** `POLL_TIMEOUT_MS = 12 * 60 * 1_000` in `CreditCardCheckout.tsx` — 1.2× Stripe's stated worst-case ceiling. If Stripe's path gets faster, we can drop back; if it gets slower, raise to 15 min, NOT lower.
+
+When the timeout DOES fire, the error message tells the buyer the USDC may still be in flight and to refresh in a few minutes. Cart is preserved (NEVER cleared on timeout) so the wallet-balance probe can pick up late-arriving USDC and route them through gasless settlement on their next page load.
+
 ### Credit-Card Onramp: 2.5% Fee Pad + Reserve Top-off (Defense-in-Depth — legacy Coinbase logic, retained)
 
 **Doug's principle (Apr 28 2026):** "Sellers should never be paid more or less than the listed price. Local Roots should not take the hit for Coinbase charges."
@@ -310,6 +367,26 @@ USDC's `approve()` cannot be ERC-2771 forwarded — USDC doesn't inherit `ERC277
 **Adding more permit-supported tokens:** USDT permit support varies by deployment. Today only USDC is whitelisted. To add another token: (1) verify on-chain that it has `permit()` with the standard EIP-2612 typehash, (2) confirm the EIP-712 domain values (`name`, `version`), (3) add to `ALLOWED_PERMIT_TOKENS` in `relay-permit/route.ts` AND extend `USDC_PERMIT_DOMAIN` to a per-token map in `useTokenApproval.ts`. Both ends must change together.
 
 **Why this matters strategically:** preserves the zero-liability decentralization posture — no centralized "send users dust ETH" faucet on mainnet, no relayer drain attack surface beyond what `/api/relay` already has. The relayer pays for two transactions per first-time purchase (permit + purchase) but only one per subsequent purchase (allowance persists on USDC).
+
+### Gasless USDC Send (/wallet) — Permit + TransferFrom Relay
+
+**Same architectural pattern as the buyer-approve gasless path, applied to /wallet's Send flow** (commit `0f81322`, May 18 2026). Without this, the Send flow tried a direct `usdc.transfer()` from the Privy wallet and failed with `insufficient funds for gas * price + value: have 0 want 327160800000` — the wallet has no ETH by design (Doug's hard rule). Verified on Doug's incognito wallet (`dougcalahan@commonarea.ai`) holding $16.83 USDC.
+
+**Flow:**
+1. User signs an EIP-2612 permit off-chain naming the **RELAYER** as spender (NOT the marketplace — Send is not Buy; mixing them would be a security hole).
+2. `/api/relay-usdc-send` runs `permit()` + `transferFrom(owner, recipient, amount)` from the relayer, paying gas for both.
+3. USDC moves owner → recipient. Each Send costs the relayer ~$0.0005 in gas.
+
+**Files:**
+- `frontend/src/app/api/relay-usdc-send/route.ts` — new endpoint. Validates recipient against a FORBIDDEN list (LocalRoots contracts, USDC contract itself, zero address) so Send can't be used as a back-door into purchases or accidental burns. Hard cap $1000/tx, 10 sends per owner per UTC day.
+- `frontend/src/hooks/useGaslessSend.ts` — client hook. Privy-first address resolution (mirroring `useTokenApproval.ts`). EIP-712 signing with the same `USDC_PERMIT_DOMAIN` constants.
+- `frontend/src/components/wallet/SendTokenModal.tsx` — branches `handleSend`: Privy + USDC → gasless; everything else → existing direct-transfer path. Gas-estimate UI replaced with "Free — LocalRoots covers the network fee" on the gasless path.
+
+**Token allowlist:** USDC only. To add USDT or others, BOTH ends must change together (the endpoint's `ALLOWED_TOKENS` and the hook's `USDC_PERMIT_DOMAIN` — and the domain values vary per token). Don't relax this without verifying the new token's permit implementation on-chain.
+
+**Anti-pattern to never reintroduce:** don't add "infinite allowance to the relayer" as an optimization to skip the per-Send permit. Permits are cheap (~50k gas server-side); infinite allowance would be a permanent custody risk to all USDC in the wallet.
+
+**Cash Out / offramp note:** the same architectural gap exists for fiat offramp (`/wallet` → bank account), but Cash Out is intentionally disabled right now (`NEXT_PUBLIC_COINBASE_DISABLED=true`). Bridge integration is the planned replacement — when that ships, the offramp flow will mirror this same permit + relay pattern.
 
 ### Sellers & Ambassadors
 
@@ -898,6 +975,19 @@ Sage can capture user feedback (bugs, feature ideas, friction) during chat and f
 3. Vercel auto-deploys from the push
 
 This will change when we go into soft launch or launch. Until then, always deploy.
+
+**`tsc --noEmit` is necessary but NOT sufficient before pushing.** Vercel's build runs TypeScript in stricter mode than `tsc --noEmit` and catches things local typecheck misses — especially discriminated-union narrowing, RSC-vs-client boundary issues, and prerender-time errors. **Run `npx next build` locally before pushing any non-trivial change.** Verified the hard way on May 18 2026: commit `d722bef` passed `tsc --noEmit` cleanly but failed Vercel's build at the TS step, rolling back the deploy and leaving Workstream C dark for ~2 hours until I pushed a fix as `3c43b08`.
+
+Equivalent shortcut: if `npx next build` is too slow, at least scan the diff for the failure modes Vercel catches but `tsc` misses:
+- Discriminated-union narrowing where one branch has an optional field the other doesn't — narrow with explicit casts, not just `'field' in obj`
+- `useSearchParams` outside a Suspense boundary
+- Missing env vars referenced at build time (will fail prerender)
+
+**Verifying what's actually deployed.** When a fix "doesn't appear to work" in production:
+1. `npx vercel ls` (after `vercel link` to the right project — `local-roots-roots`, NOT `frontend`) lists recent deployments with Ready/Error status.
+2. `npx vercel inspect --logs <deployment-url>` shows the build logs including the source commit hash (`Cloning github.com/dcalahan/LocalRoots-Roots (Branch: main, Commit: <sha>)`).
+3. Mobile Safari aggressively caches JS bundles even in private mode within a session — if a fix landed but the user's browser still has the old bundle, fully quitting Safari and reopening private mode forces a fresh fetch.
+4. Don't waste time grepping deployed JS chunks for new code identifiers — Next.js code-splits aggressively, the chunk you care about might not be loaded by the initial SSR HTML.
 
 ## Development
 
