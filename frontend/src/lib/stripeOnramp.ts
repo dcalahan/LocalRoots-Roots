@@ -79,6 +79,13 @@ export interface OpenOnrampResult {
   ok: boolean;
   /** When ok=true, the popup window we opened. Caller polls + closes it. */
   popup?: Window | null;
+  /**
+   * Stripe Crypto Onramp session ID (e.g. "cos_..."). Available when this
+   * provider is Stripe (not Coinbase). Pass to /api/stripe-onramp-session-status
+   * to poll for rejection states. May be undefined if the mint endpoint
+   * didn't return an ID (older response shape or non-Stripe provider).
+   */
+  sessionId?: string;
   /** Set when ok=false. */
   error?: string;
 }
@@ -170,14 +177,14 @@ export async function navigateStripeOnrampPopup(
       return { ok: false, error: errMsg };
     }
 
-    const { url } = (await res.json()) as { url: string };
+    const { url, id } = (await res.json()) as { url: string; id?: string };
     if (!url) {
       popup.close();
       return { ok: false, error: 'No URL returned from session endpoint' };
     }
 
     popup.location.href = url;
-    return { ok: true, popup };
+    return { ok: true, popup, sessionId: id };
   } catch (err) {
     popup.close();
     return {
@@ -206,7 +213,7 @@ export async function navigateStripeOnrampPopup(
  */
 export async function mintStripeOnrampUrl(
   opts: OpenOnrampOptions,
-): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; url: string; sessionId?: string } | { ok: false; error: string }> {
   if (!opts.walletAddress) {
     return { ok: false, error: 'No wallet address' };
   }
@@ -235,12 +242,12 @@ export async function mintStripeOnrampUrl(
       return { ok: false, error: body.error || `HTTP ${res.status}` };
     }
 
-    const { url } = (await res.json()) as { url: string };
+    const { url, id } = (await res.json()) as { url: string; id?: string };
     if (!url) {
       return { ok: false, error: 'No URL returned from session endpoint' };
     }
 
-    return { ok: true, url };
+    return { ok: true, url, sessionId: id };
   } catch (err) {
     return {
       ok: false,

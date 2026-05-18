@@ -68,7 +68,7 @@ interface CreditCardCheckoutProps {
   onPaid: (info: { buyerAddress: Address; email: string; phone: string; deliveryAddress: string; deliveryNotes: string }) => void;
 }
 
-type Step = 'info' | 'auth' | 'pay' | 'awaiting-funds' | 'paid';
+type Step = 'info' | 'auth' | 'pay' | 'awaiting-funds' | 'paid' | 'rejected';
 
 // Polling cadence — 3 seconds is fast enough that a buyer who paid quickly
 // sees the success state without staring at a spinner.
@@ -117,6 +117,14 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
   const [preMintedStripeUrl, setPreMintedStripeUrl] = useState<string | null>(null);
   const [isMintingStripeUrl, setIsMintingStripeUrl] = useState(false);
   const [stripeMintError, setStripeMintError] = useState<string | null>(null);
+
+  // Stripe session ID currently in flight. Captured from the mint response
+  // (whether via pre-mint on iOS or inline-mint on desktop). Used to poll
+  // /api/stripe-onramp-session-status during awaiting-funds — if Stripe
+  // ends the session in `rejected` state, we show the recovery panel
+  // instead of stranding the buyer in an infinite "waiting for funds" UI.
+  const [activeStripeSessionId, setActiveStripeSessionId] = useState<string | null>(null);
+  const [rejectionMessage, setRejectionMessage] = useState<string | null>(null);
   const [usdcReceived, setUsdcReceived] = useState<bigint>(0n);
   const startingBalanceRef = useRef<bigint | null>(null);
   const pollStartedAtRef = useRef<number | null>(null);
@@ -247,6 +255,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         if (cancelled) return;
         if (result.ok) {
           setPreMintedStripeUrl(result.url);
+          if (result.sessionId) setActiveStripeSessionId(result.sessionId);
         } else {
           setStripeMintError(result.error);
         }
@@ -430,6 +439,66 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     return () => clearInterval(interval);
   }, [popupRef, step]);
 
+  // Poll Stripe session status to detect rejections. Stripe's session
+  // doesn't expose the rejection sub-reason (deliberate — they don't want
+  // attackers learning which fraud signal tripped) but it DOES tell us
+  // when the session ended in `rejected` vs. still-pending vs. complete.
+  // Without this poll, a rejected session would leave the buyer staring
+  // at "Waiting for payment" forever — the balance poll never resolves
+  // because the user's card was declined.
+  //
+  // Poll cadence: 10s. Quick enough that users see the rejection panel
+  // within seconds of Stripe deciding, slow enough we don't spam Stripe
+  // (and our session-status endpoint hits Stripe's API once per poll).
+  //
+  // Only runs when (a) we're in awaiting-funds AND (b) we have a Stripe
+  // session ID to query. Coinbase doesn't expose this; the Coinbase path
+  // continues to rely on the popup-close + balance-poll heuristics.
+  useEffect(() => {
+    if (step !== 'awaiting-funds' || !activeStripeSessionId) return;
+
+    let cancelled = false;
+
+    async function checkStatus() {
+      try {
+        const res = await fetch(
+          `/api/stripe-onramp-session-status?sessionId=${encodeURIComponent(
+            activeStripeSessionId!,
+          )}`,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { status: string };
+        if (cancelled) return;
+
+        // Terminal-rejected status: surface the recovery panel. We do NOT
+        // close the popup automatically — the buyer may still see useful
+        // info inside Stripe (e.g. a "try a different card" affordance).
+        if (data.status === 'rejected') {
+          setRejectionMessage(
+            "Stripe couldn't authenticate that payment method. This usually clears up after a short wait — try Apple Pay or a different card.",
+          );
+          setStep('rejected');
+        }
+        // Note: we don't intercept fulfillment_complete here. The balance-
+        // poll loop above is the source of truth for "USDC arrived." The
+        // session status can lag the actual on-chain delivery by seconds.
+      } catch (err) {
+        // Silently retry next tick. Don't surface transient network
+        // errors to the buyer — they're in the middle of a payment.
+        console.warn('[CreditCardCheckout] Session status check failed:', err);
+      }
+    }
+
+    // Fire immediately so we don't wait 10s on a session that's already
+    // been rejected by the time the buyer lands in awaiting-funds.
+    checkStatus();
+    const interval = setInterval(checkStatus, 10_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [step, activeStripeSessionId]);
+
   // Open Coinbase Onramp popup — but first check whether the buyer's
   // account already has enough USDC to settle (e.g. a previous attempt
   // left funds behind). If so, skip the popup entirely and go straight
@@ -522,6 +591,11 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     }
 
     setPopupRef(result.popup ?? null);
+    // Capture the session ID so the awaiting-funds step can poll for
+    // rejection. Only Stripe surfaces a session ID; Coinbase result won't.
+    if ('sessionId' in result && result.sessionId) {
+      setActiveStripeSessionId(result.sessionId);
+    }
     setStep('awaiting-funds');
   }, [buyerAddress, fiatToCharge, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes, preMintedStripeUrl, isMintingStripeUrl, stripeMintError]);
 
@@ -932,6 +1006,80 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         >
           Cancel and go back
         </button>
+      </div>
+    );
+  }
+
+  // Step 4b: rejected — Stripe terminated the session as rejected. Without
+  // this branch, the buyer would stare at "Waiting for payment" forever
+  // because their card was declined inside Stripe's iframe with no signal
+  // back to our UI. Recovery panel surfaces concrete next steps. Doug,
+  // May 18 2026 (BoA debit + AMEX both rejected during velocity cooldown).
+  if (step === 'rejected') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-3">⚠️</div>
+          <h1 className="text-2xl font-heading font-bold mb-2">
+            Payment couldn&apos;t be authenticated
+          </h1>
+          <p className="text-roots-gray max-w-md mx-auto">
+            {rejectionMessage ||
+              "Stripe couldn't authenticate that card. This usually clears up after a short wait."}
+          </p>
+        </div>
+
+        <div className="bg-roots-cream rounded-lg p-5 mb-6 max-w-md mx-auto">
+          <h2 className="font-semibold mb-3 text-sm uppercase tracking-wide text-roots-gray">
+            Try one of these
+          </h2>
+          <div className="space-y-3">
+            <Button
+              onClick={() => {
+                if (popupRef && !popupRef.closed) popupRef.close();
+                setPopupRef(null);
+                setActiveStripeSessionId(null);
+                setRejectionMessage(null);
+                // Force a fresh pre-mint so we don't reuse the rejected
+                // session ID. The pay-screen useEffect will re-run.
+                setPreMintedStripeUrl(null);
+                setStep('pay');
+              }}
+              className="w-full bg-roots-primary hover:bg-roots-primary/90"
+            >
+              Try Apple Pay, Google Pay, or another card
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (popupRef && !popupRef.closed) popupRef.close();
+                // Hand control back to the parent page — the wallet-balance
+                // probe on /buy/checkout will surface "Your Account Wallet"
+                // if the buyer already has enough USDC from a prior session.
+                // This is the orphan-recovery + rejection-recovery path
+                // doing double duty.
+                onBack();
+              }}
+              className="w-full"
+            >
+              Use my account wallet balance instead
+            </Button>
+          </div>
+        </div>
+
+        <p className="text-xs text-roots-gray text-center max-w-md mx-auto">
+          Still stuck? Your cart is saved. Tap{' '}
+          <button
+            className="underline hover:text-roots-primary"
+            onClick={() => {
+              if (popupRef && !popupRef.closed) popupRef.close();
+              onBack();
+            }}
+          >
+            back to cart
+          </button>{' '}
+          and try again in a few minutes.
+        </p>
       </div>
     );
   }
