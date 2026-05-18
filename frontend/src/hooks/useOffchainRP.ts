@@ -23,6 +23,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { UserRPSummary } from '@/lib/offchainRP';
 
+/**
+ * Per-verb counts + RP earned TODAY. Populated server-side from the
+ * existing `rp:offchain:daily:{addr}:{verbId}:{YYYY-MM-DD}` keys.
+ * Used by /profile's "Today's Earnings" panel to give users a quiet
+ * way to see what they've earned today without exposing cap arithmetic.
+ */
+export interface TodayByVerb {
+  [verbId: string]: { count: number; rp: number };
+}
+
+type OffchainRPResponse = UserRPSummary & { todayByVerb?: TodayByVerb };
+
 const EMPTY_SUMMARY: UserRPSummary = {
   total: 0,
   lastUpdated: new Date(0).toISOString(),
@@ -31,12 +43,14 @@ const EMPTY_SUMMARY: UserRPSummary = {
 
 export function useOffchainRP(userId: string | null | undefined) {
   const [summary, setSummary] = useState<UserRPSummary>(EMPTY_SUMMARY);
+  const [todayByVerb, setTodayByVerb] = useState<TodayByVerb>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     if (!userId) {
       setSummary(EMPTY_SUMMARY);
+      setTodayByVerb({});
       return;
     }
     setIsLoading(true);
@@ -44,8 +58,13 @@ export function useOffchainRP(userId: string | null | undefined) {
     try {
       const res = await fetch(`/api/offchain-rp?userId=${encodeURIComponent(userId)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as UserRPSummary;
-      setSummary(data);
+      const data = (await res.json()) as OffchainRPResponse;
+      setSummary({
+        total: data.total,
+        lastUpdated: data.lastUpdated,
+        byVerb: data.byVerb,
+      });
+      setTodayByVerb(data.todayByVerb ?? {});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load Roots Points');
       // Don't clobber the existing summary on a transient failure — keep
@@ -86,6 +105,7 @@ export function useOffchainRP(userId: string | null | undefined) {
     summary,
     total: summary.total,
     byVerb: summary.byVerb,
+    todayByVerb,
     isLoading,
     error,
     refetch,

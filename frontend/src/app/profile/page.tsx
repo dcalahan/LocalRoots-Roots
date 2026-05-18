@@ -254,7 +254,7 @@ function RootsPointsSection({
   userId: string | null;
   highlight: boolean;
 }) {
-  const { total, byVerb, isLoading } = useOffchainRP(userId);
+  const { total, byVerb, todayByVerb, isLoading } = useOffchainRP(userId);
 
   // Show all verbs that have ever been earned, sorted by descending RP.
   // Verbs the user has never earned are not shown — that would clutter the
@@ -262,6 +262,15 @@ function RootsPointsSection({
   const earnedRows = (Object.entries(byVerb) as [VerbId, { rp: number; count: number; lastEarnedAt: string }][])
     .filter(([, row]) => row && row.rp > 0)
     .sort((a, b) => b[1].rp - a[1].rp);
+
+  // "Today's Earnings" sub-panel (May 17 cap-confusion fix). Renders only
+  // when at least one verb has earned today. Shows count + RP earned;
+  // deliberately does NOT show caps (anti-gaming) so users see what they
+  // DID earn rather than what they have left.
+  const todayRows = (Object.entries(todayByVerb) as [VerbId, { count: number; rp: number }][])
+    .filter(([, row]) => row && row.rp > 0)
+    .sort((a, b) => b[1].rp - a[1].rp);
+  const todayTotal = todayRows.reduce((sum, [, row]) => sum + row.rp, 0);
 
   return (
     <SectionShell
@@ -271,7 +280,35 @@ function RootsPointsSection({
       highlight={highlight}
     >
       <div className="space-y-4">
-        {/* Total */}
+        {/* Today's earnings — only renders when something earned today */}
+        {todayRows.length > 0 && (
+          <div className="bg-roots-secondary/5 border border-roots-secondary/20 rounded-lg p-3">
+            <div className="flex items-baseline justify-between mb-2">
+              <h4 className="text-sm font-semibold text-roots-secondary">Today</h4>
+              <span className="text-sm font-bold text-roots-secondary">
+                {todayTotal.toLocaleString()} RP
+              </span>
+            </div>
+            <dl className="space-y-1 text-sm">
+              {todayRows.map(([verbId, row]) => {
+                const verbLabel = VERBS[verbId]?.label ?? verbId;
+                return (
+                  <div key={verbId} className="flex justify-between gap-4">
+                    <dt className="text-roots-gray">
+                      {verbLabel}{' '}
+                      <span className="text-xs text-roots-gray/70">× {row.count}</span>
+                    </dt>
+                    <dd className="font-medium text-roots-gray">
+                      {row.rp.toLocaleString()} RP
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          </div>
+        )}
+
+        {/* Total (all-time) */}
         <div className="flex items-baseline justify-between border-b border-gray-100 pb-4">
           <span className="text-sm text-roots-gray">Total Roots Points</span>
           <span className="font-heading text-3xl font-bold text-roots-secondary">
@@ -279,7 +316,7 @@ function RootsPointsSection({
           </span>
         </div>
 
-        {/* Per-verb breakdown */}
+        {/* All-time per-verb breakdown */}
         {earnedRows.length > 0 ? (
           <dl className="space-y-2 text-sm">
             {earnedRows.map(([verbId, row]) => {
