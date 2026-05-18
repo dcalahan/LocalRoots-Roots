@@ -12,12 +12,20 @@
  * Doug's call (May 12 2026): visually quiet. No animations on the pill,
  * no celebration confetti. The toast itself is the toast pattern the
  * app already uses for everything — same coral accent, same dismiss UX.
- * Just adds informative text: "+25 RP" or "Roots Points cap reached
- * — try again tomorrow."
  *
  * Cap-rejected vs credited: when a credit attempt hits the daily cap,
  * we still toast — but with different copy that makes the limit clear
  * without scolding. Users hitting the cap means they're engaged.
+ *
+ * Cap toast wording (May 17 2026 plan agent design — fixes Doug's
+ * "500 daily cap" confusion):
+ *   - Title names the SPECIFIC verb ("Max plants added for today")
+ *   - Description says other actions still earn today
+ *   - Never names the cap number (anti-gaming)
+ *   - Aggregated when multiple verbs cap in one save
+ *   - Links to /profile#roots-points so users can see what they DID earn
+ *   - Suppressed when anything credited in the same save (single
+ *     toast per save — credited > 0 early-return below)
  *
  * Anti-pattern this avoids: per-surface toast() calls scattered across
  * AddPlantsModal, the seller dashboard, etc. Single listener at the
@@ -26,13 +34,61 @@
 
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { VERBS, type VerbId } from '@/lib/offchainRP';
 
 interface CreditEventDetail {
   credited: number;
   rpAmount: number;
   newTotal: number;
   cappedCount: number;
+  /** Specific verbs that capped — used for the cap-rejection toast copy. */
+  cappedVerbs?: string[];
   userId?: string;
+}
+
+/**
+ * Convert a VerbId into the lowercase verb-label noun phrase that fits
+ * the "Max ___ for today" title. Falls back to a sensible noun if the
+ * verb is unknown (defensive — newer servers might emit verbs older
+ * clients don't have in their VERBS registry).
+ */
+function verbToNoun(verbId: string): string {
+  const config = VERBS[verbId as VerbId];
+  if (!config) return verbId.replace(/-/g, ' ');
+  // The VERBS labels are written as past-tense actions like
+  // "Plant added to garden" — we want "plants added", "harvests
+  // logged", "beds created" etc. for the "Max ___ for today" title.
+  // Specific mapping keeps the toast copy natural.
+  const map: Partial<Record<VerbId, string>> = {
+    'plant-added': 'plants added',
+    'plant-update': 'plant updates',
+    'plant-photo': 'plant photos',
+    'bed-created': 'beds created',
+    'bed-photo': 'bed photos',
+    'harvest-logged': 'harvests logged',
+    'care-alert-acted-on': 'care actions',
+    'share-card-sent': 'shares',
+    'listing-created': 'listings',
+    'sage-daily': 'Sage check-ins',
+    'sage-depth-bonus': 'deep Sage conversations',
+    'public-profile-published': 'profile publishes',
+    'recruited-gardener-activated': 'gardener activations',
+  };
+  return map[verbId as VerbId] ?? config.label.toLowerCase();
+}
+
+/**
+ * Format multiple verb labels as a human-readable list with Oxford comma.
+ * 1 → "plants added"
+ * 2 → "plants added and beds created"
+ * 3+ → "plants added, beds created, and harvests logged"
+ */
+function joinVerbNouns(verbIds: string[]): string {
+  const nouns = verbIds.map(verbToNoun);
+  if (nouns.length === 0) return '';
+  if (nouns.length === 1) return nouns[0];
+  if (nouns.length === 2) return `${nouns[0]} and ${nouns[1]}`;
+  return `${nouns.slice(0, -1).join(', ')}, and ${nouns[nouns.length - 1]}`;
 }
 
 export function RPCreditToaster() {
@@ -44,6 +100,11 @@ export function RPCreditToaster() {
       const detail = (e as CustomEvent<CreditEventDetail>).detail;
       if (!detail) return;
 
+      // ─── Success path ──────────────────────────────────────────
+      // When anything credited in the same save, ONLY show the success
+      // toast — never the cap rejection toast. One toast per save is
+      // calmer UX. Cap info is still recoverable via /profile's
+      // "Today's Earnings" panel.
       if (detail.credited > 0 && detail.rpAmount > 0) {
         toast({
           title: `🌱 +${detail.rpAmount.toLocaleString()} RP`,
@@ -52,16 +113,36 @@ export function RPCreditToaster() {
         return;
       }
 
-      // Pure cap rejection (no credits this PUT, but the user did add/edit
-      // something they expected to earn from). Surface a non-scolding
-      // heads-up so they aren't confused about why no RP was earned.
-      // Generic message — could be plant-added cap, harvest cap, bed cap,
-      // etc. The /profile page shows per-verb breakdown if they want
-      // detail.
+      // ─── Pure cap rejection ────────────────────────────────────
+      // No credits this save, but the user did add/edit something
+      // they expected to earn from. Name the specific verb (or verbs)
+      // that capped so they know it wasn't a global cap — Doug's
+      // "500 daily cap" misunderstanding came from the previous
+      // generic message.
       if (detail.credited === 0 && detail.cappedCount > 0) {
+        const cappedVerbs = detail.cappedVerbs ?? [];
+
+        if (cappedVerbs.length === 0) {
+          // No verb info (older server bundle, defensive fallback)
+          toast({
+            title: '🌱 Daily max reached',
+            description: 'You\'ve maxed out on one of these actions for today. Other actions still earn today.',
+          });
+          return;
+        }
+
+        if (cappedVerbs.length === 1) {
+          toast({
+            title: `🌱 Max ${verbToNoun(cappedVerbs[0])} for today`,
+            description: 'You\'ll earn from this again tomorrow. Other actions still earn today.',
+          });
+          return;
+        }
+
+        // Multi-verb (rare — two caps in the same save)
         toast({
-          title: 'Daily Roots Points cap reached',
-          description: 'You hit a daily earning cap for one of these actions. Caps reset at midnight UTC.',
+          title: `🌱 Daily max reached for ${cappedVerbs.length} actions`,
+          description: `${joinVerbNouns(cappedVerbs).charAt(0).toUpperCase()}${joinVerbNouns(cappedVerbs).slice(1)} are maxed for today. Other actions still earn.`,
         });
       }
       // detail.credited === 0 && cappedCount === 0 → silent (most common case:

@@ -130,7 +130,16 @@ export function useMyGarden(userId: string | null) {
         });
         if (!res.ok) return;
         const data = (await res.json().catch(() => null)) as {
-          rp?: { credited: number; rpAmount: number; newTotal: number; cappedCount: number };
+          rp?: {
+            credited: number;
+            rpAmount: number;
+            newTotal: number;
+            cappedCount: number;
+            // List of verb IDs that hit their cap (used by RPCreditToaster
+            // to name them in the cap-rejection toast). Optional for
+            // backwards-compat with older server deploys.
+            cappedVerbs?: string[];
+          };
         } | null;
         if (typeof window !== 'undefined' && data?.rp) {
           // Fire even when credited is 0 — listeners (useOffchainRP) need to

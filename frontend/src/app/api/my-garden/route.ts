@@ -127,6 +127,15 @@ interface RpAggregator {
   rpAmount: number;
   newTotal: number;
   cappedCount: number;
+  /**
+   * Which specific verbs hit their daily/lifetime cap in this save.
+   * Used by RPCreditToaster to name the verb in the cap-rejection
+   * toast ("Max plants added for today") instead of the previous
+   * generic "Daily Roots Points cap reached" which confused users
+   * about whether there was a global cap. De-duplicated — same verb
+   * capping multiple times in one save appears once.
+   */
+  cappedVerbs: VerbId[];
   byVerb: Partial<Record<VerbId, number>>;
 }
 
@@ -140,6 +149,7 @@ async function applyCreditEvents(
     rpAmount: 0,
     newTotal: 0,
     cappedCount: 0,
+    cappedVerbs: [],
     byVerb: {},
   };
 
@@ -164,6 +174,9 @@ async function applyCreditEvents(
     } else if (result.ok && !result.credited) {
       if (result.reason === 'daily-cap' || result.reason === 'lifetime-cap') {
         agg.cappedCount += 1;
+        if (!agg.cappedVerbs.includes(evt.verbId)) {
+          agg.cappedVerbs.push(evt.verbId);
+        }
       }
       // duplicate / not-live / anonymous → silent
     }
