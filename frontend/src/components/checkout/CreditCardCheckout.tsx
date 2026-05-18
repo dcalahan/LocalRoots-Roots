@@ -593,8 +593,13 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     setPopupRef(result.popup ?? null);
     // Capture the session ID so the awaiting-funds step can poll for
     // rejection. Only Stripe surfaces a session ID; Coinbase result won't.
-    if ('sessionId' in result && result.sessionId) {
-      setActiveStripeSessionId(result.sessionId);
+    // Cast to access the optional sessionId — TypeScript can't narrow
+    // through the discriminated union of Stripe vs Coinbase result shapes
+    // because both share `{ ok, popup, error }` and only Stripe adds
+    // `sessionId`.
+    const resultWithSession = result as typeof result & { sessionId?: string };
+    if (typeof resultWithSession.sessionId === 'string' && resultWithSession.sessionId.length > 0) {
+      setActiveStripeSessionId(resultWithSession.sessionId);
     }
     setStep('awaiting-funds');
   }, [buyerAddress, fiatToCharge, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes, preMintedStripeUrl, isMintingStripeUrl, stripeMintError]);
