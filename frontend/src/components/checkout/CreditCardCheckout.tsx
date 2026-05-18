@@ -68,15 +68,22 @@ interface CreditCardCheckoutProps {
 type Step = 'info' | 'auth' | 'pay' | 'awaiting-funds' | 'paid';
 
 // Polling cadence — 3 seconds is fast enough that a buyer who paid quickly
-// sees the success state without staring at a spinner. Coinbase advertises
-// "5-15 seconds" for guest-checkout settlement but in practice it can take
-// 2-4 minutes for the on-chain transfer to land (verified Apr 27 2026 —
-// Coinbase shows "Bought $5.00" on their side while their internal status
-// is still "Pending" and USDC hasn't arrived). 5-minute timeout covers the
-// realistic window; if it still hasn't arrived after that, something
-// went wrong and the buyer needs a recovery prompt.
+// sees the success state without staring at a spinner.
+//
+// Timeout: 12 minutes. Stripe's Crypto Onramp confirmation email states
+// "up to 10 minutes" for the on-chain transfer to land in worst-case
+// network-congestion scenarios; verified May 18 2026 after Doug's BoA
+// debit card test produced a payment that settled AFTER our previous
+// 5-minute timeout had already given up — orphaning ~4.87 USDC because
+// the buyer refreshed the page and lost the in-flight order state.
+// 12 minutes = 1.2× Stripe's stated worst case, giving slack for the
+// long tail without making the buyer stare at a spinner forever.
+//
+// Historical context: prior to Stripe (Coinbase Onramp era), 2-4 minutes
+// was the realistic window. 5 minutes covered that. Stripe's settlement
+// path is longer; 12 minutes is the new floor.
 const POLL_INTERVAL_MS = 3_000;
-const POLL_TIMEOUT_MS = 5 * 60 * 1_000;
+const POLL_TIMEOUT_MS = 12 * 60 * 1_000;
 
 export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardCheckoutProps) {
   const { ready, authenticated, login, user } = usePrivy();
@@ -315,13 +322,16 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
         return;
       }
 
-      // Timeout: 90 seconds without funds arriving. At this point either
+      // Timeout: 12 minutes without funds arriving (covers Stripe's stated
+      // "up to 10 minutes" worst case + 20% slack). At this point either
       // the buyer closed the popup without paying, the payment was
-      // declined, or something else went wrong. Stop polling and surface
-      // a clear recovery prompt.
+      // declined, or something went sideways in Stripe's settlement path.
+      // Stop polling and surface a clear recovery prompt — DO NOT clear
+      // the cart, the buyer needs the cart intact to retry without
+      // re-entering everything.
       if (elapsed > POLL_TIMEOUT_MS) {
         cancelled = true;
-        setError("We didn't see your payment arrive. If you completed it, refresh the page to retry — your order is still in the cart.");
+        setError("We didn't see your payment arrive after 12 minutes. If your card was charged, the USDC may still be in flight — refresh in a few minutes and your wallet balance will cover the order. Your cart is still here.");
       }
     }
 

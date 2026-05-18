@@ -125,6 +125,40 @@ export default function CheckoutPage() {
     check();
   }, [isConnected, isCorrectNetwork, getBalance, checkAllowance, tokenAddress, mode, paymentToken]);
 
+  // ─── Privy wallet USDC probe (runs in 'select' mode, before mode picked) ───
+  //
+  // Recover from the Stripe orphan-payment scenario: a buyer paid by card,
+  // Stripe's USDC arrived AFTER our 5-min poll timeout (settled in 6-10 min),
+  // the buyer refreshed and lost the in-flight order. The USDC is sitting in
+  // their Privy wallet but the cart UI was still pushing them to pay again.
+  //
+  // Solution: on /buy/checkout load, read the Privy wallet's USDC balance
+  // independently of the mode-selection flow. If it covers the cart, swap
+  // the "Recommended" badge from "Card or Mobile Pay" to "Your Account
+  // Wallet" — surfaces the leftover-balance shortcut as the obvious choice
+  // instead of routing them through another paid charge. Doug, May 18 2026.
+  const [privyUsdcBalance, setPrivyUsdcBalance] = useState<bigint>(0n);
+  const requiredUsdcUnits = useMemo(() => rootsToStablecoin(total), [total]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function probe() {
+      if (!privyAddress || !isCorrectNetwork) return;
+      try {
+        const bal = await getBalance(PAYMENT_TOKENS.USDC.address);
+        if (!cancelled) setPrivyUsdcBalance(bal);
+      } catch (err) {
+        console.error('[Checkout] Privy USDC probe failed:', err);
+      }
+    }
+    probe();
+    return () => {
+      cancelled = true;
+    };
+  }, [privyAddress, isCorrectNetwork, getBalance]);
+
+  const walletCoversCart = privyUsdcBalance >= requiredUsdcUnits && requiredUsdcUnits > 0n;
+
   const hasEnoughBalance = balance >= requiredAmount;
   const hasEnoughAllowance = allowance >= requiredAmount;
   const hasDeliveryAddress = !hasDeliveryItems || deliveryAddress.trim().length > 0;
@@ -402,9 +436,14 @@ export default function CheckoutPage() {
                     Debit card, Apple Pay, or Google Pay
                   </div>
                 </div>
-                <span className="text-xs bg-roots-primary/10 text-roots-primary px-2 py-1 rounded font-medium">
-                  Recommended
-                </span>
+                {/* "Recommended" badge moves to the wallet option when the
+                    buyer already has enough USDC on hand — see walletCoversCart.
+                    Otherwise Card stays the recommended path. Doug, May 18 2026. */}
+                {!walletCoversCart && (
+                  <span className="text-xs bg-roots-primary/10 text-roots-primary px-2 py-1 rounded font-medium">
+                    Recommended
+                  </span>
+                )}
               </div>
             </button>
           )}
@@ -424,14 +463,24 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {/* Privy Wallet Option - Show for authenticated Privy users */}
+          {/* Privy Wallet Option - Show for authenticated Privy users.
+              When the wallet's USDC balance covers the cart (walletCoversCart),
+              we promote this option to "Recommended" and surface the available
+              balance — recovers from the Stripe orphan-payment case where
+              USDC arrived after the credit-card flow timed out. Doug, May 18 2026. */}
           {privyAuthenticated && privyAddress && (
             <button
               onClick={() => setMode('privy')}
-              className="w-full p-4 rounded-lg border-2 border-purple-400 bg-purple-50 hover:bg-purple-100 transition-colors text-left"
+              className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
+                walletCoversCart
+                  ? 'border-roots-primary bg-roots-primary/5 hover:bg-roots-primary/10'
+                  : 'border-purple-400 bg-purple-50 hover:bg-purple-100'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  walletCoversCart ? 'bg-roots-primary' : 'bg-purple-500'
+                }`}>
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -439,12 +488,26 @@ export default function CheckoutPage() {
                 <div className="flex-1">
                   <div className="font-semibold">Your Account Wallet</div>
                   <div className="text-sm text-roots-gray">
-                    {privyAddress.slice(0, 6)}...{privyAddress.slice(-4)} • Pay with USDC, USDT, or $ROOTS
+                    {walletCoversCart ? (
+                      <>
+                        {(Number(privyUsdcBalance) / 1_000_000).toFixed(2)} USDC available — enough for this purchase
+                      </>
+                    ) : (
+                      <>
+                        {privyAddress.slice(0, 6)}...{privyAddress.slice(-4)} • Pay with USDC, USDT, or $ROOTS
+                      </>
+                    )}
                   </div>
                 </div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                  Connected
-                </span>
+                {walletCoversCart ? (
+                  <span className="text-xs bg-roots-primary/10 text-roots-primary px-2 py-1 rounded font-medium">
+                    Recommended
+                  </span>
+                ) : (
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                    Connected
+                  </span>
+                )}
               </div>
             </button>
           )}
