@@ -166,15 +166,17 @@ export default function TokenomicsPage() {
               <CardContent className="pt-6 text-center">
                 <div className="text-4xl mb-3">🌱</div>
                 <h3 className="text-lg font-bold mb-2">Garden With Sage</h3>
-                <div className="text-3xl font-bold text-roots-secondary mb-1">~500</div>
+                <div className="text-3xl font-bold text-roots-secondary mb-1">Hundreds</div>
                 <p className="text-sm text-roots-gray mb-4">Roots Points per engaged day</p>
                 <div className="border-t pt-3">
                   <p className="text-xs text-roots-gray">
-                    Earn for using the app: a daily check-in with Sage (10),
-                    adding a plant (25 each, up to 4/day), logging a harvest
-                    (40), photographing a bed (50). For people who garden
-                    every day, that&apos;s ~500 RP daily without a single
-                    marketplace transaction.
+                    Roots Points for using the app every day. A daily
+                    check-in with Sage, adding plants and beds, photographing
+                    your garden, logging harvests, acting on care alerts.
+                    Engaged gardeners earn hundreds of Roots Points each day
+                    — no marketplace transaction required. Each action has a
+                    daily limit so points reward real engagement, not
+                    repetition.
                   </p>
                 </div>
               </CardContent>
