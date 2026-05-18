@@ -13,6 +13,9 @@ import {
   isStripeOnrampEnabled,
   openBlankOnrampPopup as openBlankStripePopup,
   navigateStripeOnrampPopup,
+  mintStripeOnrampUrl,
+  openStripeOnrampWithUrl,
+  shouldUseSameTabOnramp,
 } from '@/lib/stripeOnramp';
 import { usePrivyContact } from '@/hooks/usePrivyContact';
 import { validateAddress, validateEmail } from '@/lib/addressValidation';
@@ -102,6 +105,18 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
   const [step, setStep] = useState<Step>('info');
   const [error, setError] = useState<string | null>(null);
   const [popupRef, setPopupRef] = useState<Window | null>(null);
+
+  // Pre-minted Stripe session URL for iOS Safari path. On iPhone we can't
+  // open about:blank and then redirect cross-origin — Safari's ITP strips
+  // the session_hash from the URL on that pattern, leaving the user at
+  // bare crypto.link.com showing default "Buy Ethereum $10." Fix: mint the
+  // session URL ahead of time on the "Confirm & Pay" screen, then on the
+  // Pay button click do `window.open(url, ...)` synchronously with the
+  // full URL inline — no cross-origin redirect intermediate.
+  // Doug, May 18 2026.
+  const [preMintedStripeUrl, setPreMintedStripeUrl] = useState<string | null>(null);
+  const [isMintingStripeUrl, setIsMintingStripeUrl] = useState(false);
+  const [stripeMintError, setStripeMintError] = useState<string | null>(null);
   const [usdcReceived, setUsdcReceived] = useState<bigint>(0n);
   const startingBalanceRef = useRef<bigint | null>(null);
   const pollStartedAtRef = useRef<number | null>(null);
@@ -201,6 +216,53 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
       setStep('pay');
     }
   }, [step, authenticated, buyerAddress]);
+
+  // Pre-mint the Stripe Onramp URL when the buyer lands on the Pay screen,
+  // but ONLY on iOS Safari where the standard popup+redirect pattern is
+  // broken by ITP. On all other browsers, the inline navigateStripeOnrampPopup
+  // call inside startPayment works fine — no pre-mint needed.
+  //
+  // Why this is structured carefully: we MUST NOT pre-mint on every render
+  // (expensive, hits Stripe rate limits), MUST NOT pre-mint before the user
+  // has shown intent (they may abandon the cart), and MUST handle the case
+  // where the user re-enters the Pay screen after a back-button (need a
+  // fresh URL because Stripe sessions expire). Strategy: mint when step
+  // transitions to 'pay' on iOS with no URL cached; refresh on every entry
+  // to 'pay' so a back-and-forth user doesn't try to reuse a stale session.
+  useEffect(() => {
+    if (step !== 'pay' || !buyerAddress) return;
+    if (!isStripeOnrampEnabled() || !shouldUseSameTabOnramp()) return;
+    if (isMintingStripeUrl) return;
+
+    let cancelled = false;
+    setIsMintingStripeUrl(true);
+    setStripeMintError(null);
+    mintStripeOnrampUrl({
+      walletAddress: buyerAddress,
+      presetFiatAmount: fiatToCharge,
+      email: email.trim() || undefined,
+      phone: phone.trim() || undefined,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.ok) {
+          setPreMintedStripeUrl(result.url);
+        } else {
+          setStripeMintError(result.error);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsMintingStripeUrl(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // We intentionally do NOT depend on `email`/`phone` here — the user can
+    // edit those on previous screens but they don't change the session
+    // params we care about (destination_currency, network, amount). A
+    // re-render from typing in the form shouldn't re-mint.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, buyerAddress, fiatToCharge]);
 
   // Poll Privy wallet's USDC balance once we're awaiting funds. Compares
   // against the starting balance so a buyer who already had some USDC
@@ -380,7 +442,41 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
     setError(null);
 
-    // ─── iOS Safari popup-blocker rule ──────────────────────────────────
+    // ─── iOS Safari Stripe path: pre-mint + sync window.open(url) ───────
+    // On iOS Safari the standard "open about:blank then redirect popup
+    // cross-origin" pattern fails — Safari's ITP strips the session_hash
+    // from the URL on the cross-origin redirect, leaving the buyer at a
+    // bare crypto.link.com page showing default "Buy Ethereum $10." Fix:
+    // pre-mint the session URL on Pay-screen mount (see the effect above)
+    // and synchronously open the popup with the URL inline. No about:blank
+    // intermediate, no cross-origin redirect — the popup loads Stripe Link
+    // directly with the session_hash intact.
+    // Doug, May 18 2026.
+    const useStripe = isStripeOnrampEnabled();
+    const iosPath = useStripe && shouldUseSameTabOnramp();
+
+    if (iosPath) {
+      if (!preMintedStripeUrl) {
+        setError(
+          stripeMintError
+            ? `Couldn't prepare the payment window: ${stripeMintError}. Please tap Pay again.`
+            : isMintingStripeUrl
+              ? 'Still preparing the payment window — tap Pay again in a second.'
+              : 'Payment window not ready. Please tap Pay again.',
+        );
+        return;
+      }
+      const popup = openStripeOnrampWithUrl(preMintedStripeUrl);
+      if (!popup) {
+        setError('Popup was blocked. Please allow popups for localroots.love and try again.');
+        return;
+      }
+      setPopupRef(popup);
+      setStep('awaiting-funds');
+      return;
+    }
+
+    // ─── Non-iOS popup path (Coinbase or desktop Stripe) ───────────────
     // window.open MUST be called synchronously inside the user gesture,
     // BEFORE any await. Any prior async work breaks the gesture context
     // on iOS Safari and the popup gets blocked. So: open the blank popup
@@ -389,7 +485,6 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
     //
     // Provider selection happens at popup-open time so the gesture context
     // is preserved regardless of which provider gets used.
-    const useStripe = isStripeOnrampEnabled();
     const popup = useStripe ? openBlankStripePopup() : openBlankCoinbasePopup();
 
     // ─── REMOVED Apr/May 2026: pre-payment balance auto-skip ──────────
@@ -428,7 +523,7 @@ export function CreditCardCheckout({ items, total, onBack, onPaid }: CreditCardC
 
     setPopupRef(result.popup ?? null);
     setStep('awaiting-funds');
-  }, [buyerAddress, fiatToCharge, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes]);
+  }, [buyerAddress, fiatToCharge, totalUsd, user?.id, onPaid, email, phone, deliveryAddress, deliveryNotes, preMintedStripeUrl, isMintingStripeUrl, stripeMintError]);
 
   // Manual override when Coinbase has revoked our app — set
   // NEXT_PUBLIC_COINBASE_DISABLED=true in Vercel. Better to surface a

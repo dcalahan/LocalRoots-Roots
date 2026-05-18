@@ -32,6 +32,47 @@ export interface OpenOnrampOptions {
   email?: string;
   /** Phone pre-fill (smooths Stripe Link signup). E.164 ideal but Stripe normalizes. */
   phone?: string;
+  /**
+   * URL Stripe Link redirects to when the session completes. Required for
+   * mobile same-tab flow (see `shouldUseSameTabOnramp` below) — without a
+   * return_url, the user gets stranded inside crypto.link.com. Optional for
+   * desktop popup flow but harmless to include.
+   */
+  returnUrl?: string;
+}
+
+/**
+ * iOS Safari (especially in private mode) strips query parameters from
+ * cross-origin popup navigations via the `popup.location.href = url`
+ * pattern. Stripe Link's session_hash is a long base64-style string that
+ * matches Safari ITP's tracking-parameter heuristics, so it gets dropped.
+ * The popup ends up at bare `crypto.link.com`, Stripe defaults to "Buy
+ * Ethereum $10," and the user has no way to complete their actual order.
+ *
+ * Fix: on mobile, replace the popup with a same-tab navigation. iOS Safari
+ * preserves query strings on normal in-tab navigations (only the popup
+ * cross-origin pattern triggers ITP stripping). The Stripe return_url then
+ * brings the user back to /buy/checkout, where the wallet-balance probe
+ * (commit 5c52657) auto-detects the new USDC and routes them through the
+ * gasless settlement path.
+ *
+ * Verified May 18 2026 against Doug's iPhone test: same wallet that earlier
+ * showed "Buy 9.44 USDC" on desktop popup showed "Buy Ethereum $10" inside
+ * the popup on mobile Safari private mode. Confirmed via curl that our
+ * session-mint endpoint produces a correct URL with session_hash — the
+ * query param disappears between popup-open and Stripe's render.
+ *
+ * Detection is intentionally narrow: iOS WebKit user-agents only. Android
+ * Chrome and other mobile browsers handle the popup pattern correctly and
+ * benefit from the more interactive popup UX.
+ */
+export function shouldUseSameTabOnramp(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  // iPhone/iPad/iPod cover all iOS Safari variants. WebKit on iPad
+  // sometimes reports as desktop Safari, but the popup-vs-same-tab choice
+  // is conservative — same-tab works everywhere; popup is the optimization.
+  return /iPhone|iPad|iPod/.test(ua);
 }
 
 export interface OpenOnrampResult {
@@ -118,6 +159,7 @@ export async function navigateStripeOnrampPopup(
         presetCryptoAmount: opts.presetCryptoAmount,
         email: opts.email,
         phone: opts.phone,
+        returnUrl: opts.returnUrl,
       }),
     });
 
@@ -143,6 +185,85 @@ export async function navigateStripeOnrampPopup(
       error: err instanceof Error ? err.message : 'Unknown error',
     };
   }
+}
+
+/**
+ * Mint a Stripe Crypto Onramp session and return the redirect URL — WITHOUT
+ * opening a popup. Used by the pre-mint pattern: call this when the buyer
+ * lands on the "Confirm & Pay" screen, cache the URL in state, then on the
+ * Pay button click do `window.open(url, ...)` synchronously inside the
+ * user gesture.
+ *
+ * This sidesteps the iOS Safari ITP bug entirely. The popup-then-redirect
+ * pattern (`popup.location.href = stripeUrl`) triggers cross-origin query-
+ * string stripping in Safari private mode — `session_hash` disappears,
+ * Stripe Link defaults to "Buy Ethereum $10." A direct `window.open(url, ...)`
+ * with the full URL inline is a normal navigation and preserves the params.
+ *
+ * Verified against Doug's iPhone test May 18 2026: same wallet that showed
+ * "Buy Ethereum $10" with the popup pattern now shows "Buy 9.44 USDC" with
+ * the pre-mint + sync-open pattern.
+ */
+export async function mintStripeOnrampUrl(
+  opts: OpenOnrampOptions,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  if (!opts.walletAddress) {
+    return { ok: false, error: 'No wallet address' };
+  }
+
+  const hasFiat = typeof opts.presetFiatAmount === 'number' && opts.presetFiatAmount > 0;
+  const hasCrypto = typeof opts.presetCryptoAmount === 'number' && opts.presetCryptoAmount > 0;
+  if (hasFiat && hasCrypto) {
+    return { ok: false, error: 'Specify only one of presetFiatAmount or presetCryptoAmount' };
+  }
+
+  try {
+    const res = await fetch('/api/stripe-onramp-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        walletAddress: opts.walletAddress,
+        presetFiatAmount: opts.presetFiatAmount,
+        presetCryptoAmount: opts.presetCryptoAmount,
+        email: opts.email,
+        phone: opts.phone,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { ok: false, error: body.error || `HTTP ${res.status}` };
+    }
+
+    const { url } = (await res.json()) as { url: string };
+    if (!url) {
+      return { ok: false, error: 'No URL returned from session endpoint' };
+    }
+
+    return { ok: true, url };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Synchronously open a Stripe Onramp URL in a new window/tab. MUST be called
+ * from inside a user gesture handler (button onClick) with NO prior await.
+ * The URL must be pre-minted via `mintStripeOnrampUrl` ahead of time.
+ *
+ * Returns the popup window so the caller can poll its `closed` state. On
+ * iOS Safari, this opens in a new tab rather than a true popup — that's
+ * fine, the polling logic doesn't care about window dimensions.
+ */
+export function openStripeOnrampWithUrl(url: string): Window | null {
+  return window.open(
+    url,
+    'stripe-onramp',
+    'width=500,height=750,scrollbars=yes,resizable=yes',
+  );
 }
 
 /**

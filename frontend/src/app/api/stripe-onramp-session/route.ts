@@ -42,6 +42,13 @@ interface SessionRequestBody {
   email?: string;
   /** Phone pre-fill (E.164 or local format) — passed as `kyc_details[phone]`. */
   phone?: string;
+  /**
+   * Where Stripe Link redirects the user after session completion. Required
+   * for the mobile same-tab flow — without it, the user is stranded inside
+   * crypto.link.com. The popup flow uses this less (popup just closes), but
+   * it's harmless to include either way. Must be a URL on our own origin.
+   */
+  returnUrl?: string;
 }
 
 /**
@@ -65,7 +72,7 @@ interface SessionRequestBody {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as SessionRequestBody;
-    const { walletAddress, presetFiatAmount, presetCryptoAmount, email, phone } = body;
+    const { walletAddress, presetFiatAmount, presetCryptoAmount, email, phone, returnUrl } = body;
 
     // Validation — mirror the Coinbase route's shape so callers don't have to learn a new contract.
     if (!walletAddress) {
@@ -160,6 +167,16 @@ export async function POST(req: NextRequest) {
     // Lock the wallet so the buyer can't redirect funds elsewhere inside
     // Stripe's UI. Top-level boolean per Stripe's API contract.
     params.append('lock_wallet_address', 'true');
+
+    // Stripe Crypto Onramp's create endpoint does NOT accept a return_url
+    // / success_url parameter (verified May 18 2026 against the API docs).
+    // The `returnUrl` field is accepted in our request body for forward-
+    // compatibility but currently ignored — Stripe doesn't auto-redirect
+    // users back to the merchant after a session completes. Mobile flow
+    // relies on the buyer returning to /buy/checkout manually; the
+    // wallet-balance probe (commit 5c52657) picks up the new USDC on
+    // their return and offers the gasless settlement path.
+    void returnUrl;
 
     // Pass client IP for fraud detection — Stripe's `customer_ip_address`
     // parameter mirrors the `clientIp` requirement Coinbase had. Same
