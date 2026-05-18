@@ -4,16 +4,18 @@ import { EXPLORER_URL } from '@/lib/chainConfig';
 
 import { useState, useEffect } from 'react';
 import { X, Loader2, Check, AlertCircle, ExternalLink } from 'lucide-react';
+import { useWallets } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSendToken } from '@/hooks/useSendToken';
+import { useGaslessSend } from '@/hooks/useGaslessSend';
 import {
   useWalletBalances,
   formatBalance,
   type TokenBalance,
   type TokenSymbol,
 } from '@/hooks/useWalletBalances';
-import { isAddress } from 'viem';
+import { isAddress, parseUnits, type Address } from 'viem';
 
 interface SendTokenModalProps {
   isOpen: boolean;
@@ -26,6 +28,18 @@ type ModalStep = 'form' | 'confirm' | 'pending' | 'success' | 'error';
 export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalProps) {
   const { balances, refetch: refetchBalances } = useWalletBalances();
   const { send, estimateGas, isPending, error, txHash, clearError } = useSendToken();
+  const {
+    sendUsdcGasless,
+    isSending: isSendingGasless,
+    error: gaslessError,
+    clearError: clearGaslessError,
+  } = useGaslessSend();
+
+  // Detect Privy embedded wallet — that's the gas-less population we built
+  // useGaslessSend for. External wallets (MetaMask etc.) take the direct
+  // useSendToken path; they have ETH.
+  const { wallets } = useWallets();
+  const isPrivyWallet = !!wallets.find((w) => w.walletClientType === 'privy');
 
   // Form state
   const [selectedToken, setSelectedToken] = useState<TokenSymbol>('ROOTS');
@@ -34,9 +48,19 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
   const [gasEstimate, setGasEstimate] = useState<string | null>(null);
   const [step, setStep] = useState<ModalStep>('form');
   const [validationError, setValidationError] = useState<string | null>(null);
+  // Tx hash captured from the gasless path — useSendToken's `txHash` is
+  // only populated by the direct path. We unify these in the render so
+  // both paths show a BaseScan link.
+  const [gaslessTxHash, setGaslessTxHash] = useState<`0x${string}` | null>(null);
 
   // Get selected token balance
   const selectedBalance = balances.find((b) => b.symbol === selectedToken);
+
+  // Use the gasless path for USDC sent from a Privy wallet. This is the
+  // architectural fix for "users hold no ETH" — see useGaslessSend.ts
+  // header comment. Other token types (ROOTS, ETH, USDT) still take the
+  // direct-transfer path because permit support varies.
+  const useGaslessPath = isPrivyWallet && selectedToken === 'USDC';
 
   // Reset when modal opens/closes
   useEffect(() => {
@@ -46,12 +70,19 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
       setAmount('');
       setGasEstimate(null);
       setValidationError(null);
+      setGaslessTxHash(null);
       clearError();
+      clearGaslessError();
     }
-  }, [isOpen, clearError]);
+  }, [isOpen, clearError, clearGaslessError]);
 
-  // Update gas estimate when form changes
+  // Update gas estimate when form changes. Skip the estimate entirely on
+  // the gasless path — the relayer pays gas, the user sees nothing.
   useEffect(() => {
+    if (useGaslessPath) {
+      setGasEstimate(null);
+      return;
+    }
     const updateGasEstimate = async () => {
       if (!recipient || !amount || !isAddress(recipient)) {
         setGasEstimate(null);
@@ -71,7 +102,7 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
 
     const timer = setTimeout(updateGasEstimate, 500);
     return () => clearTimeout(timer);
-  }, [selectedToken, recipient, amount, estimateGas]);
+  }, [selectedToken, recipient, amount, estimateGas, useGaslessPath]);
 
   // Handle MAX button
   const handleMax = () => {
@@ -123,9 +154,28 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
     }
   };
 
-  // Handle send
+  // Handle send. Branches between gasless (USDC + Privy) and direct paths.
   const handleSend = async () => {
     setStep('pending');
+
+    if (useGaslessPath) {
+      // USDC base units (6 decimals).
+      const amountBaseUnits = parseUnits(amount, 6);
+      const result = await sendUsdcGasless({
+        recipient: recipient as Address,
+        amount: amountBaseUnits,
+      });
+
+      if (result) {
+        setGaslessTxHash(result.transferHash);
+        setStep('success');
+        refetchBalances();
+        onSuccess?.();
+      } else {
+        setStep('error');
+      }
+      return;
+    }
 
     const result = await send({
       token: selectedToken,
@@ -142,9 +192,14 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
     }
   };
 
+  // Combined values that work across both send paths.
+  const effectiveTxHash = gaslessTxHash ?? txHash;
+  const effectiveError = gaslessError ?? error;
+  const effectiveIsPending = useGaslessPath ? isSendingGasless : isPending;
+
   // Handle close
   const handleClose = () => {
-    if (!isPending) {
+    if (!effectiveIsPending) {
       onClose();
     }
   };
@@ -171,7 +226,7 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
               {step === 'success' && 'Sent!'}
               {step === 'error' && 'Send Failed'}
             </h2>
-            {!isPending && (
+            {!effectiveIsPending && (
               <button
                 onClick={handleClose}
                 className="p-1 hover:bg-gray-100 rounded"
@@ -251,10 +306,19 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
                 )}
               </div>
 
-              {/* Gas Estimate */}
+              {/* Gas Estimate — direct path shows estimated ETH cost.
+                  Gasless path shows "Free — LocalRoots covers gas" so the
+                  buyer understands they're not paying gas (and shouldn't
+                  panic about not holding ETH). */}
               {gasEstimate && (
                 <div className="text-sm text-roots-gray">
                   Estimated gas: {gasEstimate}
+                </div>
+              )}
+              {useGaslessPath && recipient && amount && (
+                <div className="text-sm text-roots-secondary flex items-center gap-1">
+                  <Check className="w-4 h-4" />
+                  Free — LocalRoots covers the network fee
                 </div>
               )}
 
@@ -298,6 +362,14 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
                     <span className="text-sm">{gasEstimate}</span>
                   </div>
                 )}
+                {useGaslessPath && (
+                  <div className="flex justify-between">
+                    <span className="text-roots-gray">Network fee</span>
+                    <span className="text-sm text-roots-secondary">
+                      Free (gas paid by LocalRoots)
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">
@@ -323,11 +395,11 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
             <div className="py-8 text-center">
               <Loader2 className="w-12 h-12 animate-spin text-roots-primary mx-auto mb-4" />
               <p className="text-roots-gray">
-                {txHash ? 'Confirming transaction...' : 'Waiting for wallet approval...'}
+                {effectiveTxHash ? 'Confirming transaction...' : 'Waiting for wallet approval...'}
               </p>
-              {txHash && (
+              {effectiveTxHash && (
                 <a
-                  href={`${EXPLORER_URL}/tx/${txHash}`}
+                  href={`${EXPLORER_URL}/tx/${effectiveTxHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 text-sm text-roots-secondary hover:underline inline-flex items-center"
@@ -349,9 +421,9 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
               <p className="text-roots-gray mb-4">
                 {amount} {selectedToken} sent to {recipient.slice(0, 8)}...{recipient.slice(-6)}
               </p>
-              {txHash && (
+              {effectiveTxHash && (
                 <a
-                  href={`${EXPLORER_URL}/tx/${txHash}`}
+                  href={`${EXPLORER_URL}/tx/${effectiveTxHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-roots-secondary hover:underline inline-flex items-center mb-4"
@@ -373,7 +445,7 @@ export function SendTokenModal({ isOpen, onClose, onSuccess }: SendTokenModalPro
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Transaction Failed</h3>
-              <p className="text-roots-gray mb-4">{error || 'Something went wrong'}</p>
+              <p className="text-roots-gray mb-4">{effectiveError || 'Something went wrong'}</p>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={handleClose} className="flex-1">
                   Close
