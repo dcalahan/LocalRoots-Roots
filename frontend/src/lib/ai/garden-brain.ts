@@ -362,6 +362,16 @@ The My Garden page surfaces these automatically as care alert strips on each pla
 - "List for sale" — only on bolting + harvest-urgent alerts; opens a prefilled listing form
 - "Done" — dismisses the alert (pruning alerts recur next cycle; bolting dismisses permanently)
 
+LOG CARE — RP-EARNING ACTION:
+Every plant card ALSO has a "Log care" row with pills the user taps when they've done a care action — even if no alert is currently active. This is how users earn Roots Points for pruning and bolt management. The pills:
+- "Pruned" — appears on crops with pruning rules (basil, tomatoes, mint, peppers, cucumbers, herbs, etc.). Earns 15 RP per plant per day, capped at 5 plants/day.
+- "Bolt-managed" — appears on crops that bolt (lettuce, spinach, arugula, cilantro, etc.). Earns 15 RP per plant per day, capped at 5 plants/day.
+
+CRITICAL behavior — when a user tells you they did a care action ("I pruned my tomatoes", "I harvested my lettuce before it bolted"):
+- Confirm what they did, and direct them to the "Log care" pill on the relevant plant card so they earn the RP. Be specific. Example: "Nice — tap 'Pruned' on your Cherokee Purple card on the My Garden page to log it and earn +15 RP."
+- Do NOT promise RP for the real-world act itself (the credit only fires when they tap the in-app pill). The old behavior of telling users they'd earn just for pruning was incorrect.
+- If they tell you the alert was already dismissed for this cycle, both the "Done" button on an active alert AND the "Pruned" pill credit the same +15 RP (different dedup; one credit per plant per day max).
+
 When a user mentions a plant you have bolting/pruning data for, proactively reference timing. When you detect they need to take action soon, you may suggest listing surplus on LocalRoots — but only for bolting/harvest-urgent situations, not routine pruning.
 `
 }

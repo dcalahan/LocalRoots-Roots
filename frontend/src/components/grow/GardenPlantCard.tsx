@@ -8,6 +8,7 @@ import { computeStatus, getEstimatedHarvestDate, getProgressPercent, getCropDisp
 import { getCropEmoji } from '@/lib/cropEmoji';
 import { PlantProgressBar } from './PlantProgressBar';
 import { detectCareAlerts, dismissAlert, loadDismissals, alertColorClasses } from '@/lib/careAlerts';
+import { getPruningRules, getBoltingInfo } from '@/lib/plantingCalendar';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 
 interface GardenPlantCardProps {
@@ -36,6 +37,82 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
 
   const [dismissals, setDismissals] = useState<Record<string, string>>({});
   useEffect(() => { setDismissals(loadDismissals()); }, []);
+
+  // Per-plant per-day tracker for "Log care" pills. Persists in localStorage
+  // so the pill turns into "Logged ✓" after the user taps it, and survives
+  // a refresh. Server is still the source of truth for the credit dedup —
+  // this is just the UI affordance.
+  const [careLogToday, setCareLogToday] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `care-log:${plant.id}:${today}`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) setCareLogToday(JSON.parse(raw));
+    } catch {
+      // ignore — fresh state is fine
+    }
+  }, [plant.id]);
+
+  // Does this crop support pruning / bolting? Lookup is parent-crop-aware
+  // for custom varieties (e.g. "tomato-cherry-sungold" falls back to
+  // "tomato-cherry"). The server validates again, but we hide the pill
+  // entirely if no rule exists — fewer dead taps.
+  const parentCropId = useMemo(() => {
+    if (getPruningRules(plant.cropId).length > 0 || getBoltingInfo(plant.cropId)) {
+      return plant.cropId;
+    }
+    const stripped = plant.cropId.split('-').slice(0, 2).join('-');
+    return stripped;
+  }, [plant.cropId]);
+
+  const hasPruningRules = getPruningRules(parentCropId).length > 0;
+  const hasBoltingRules = !!getBoltingInfo(parentCropId);
+
+  const logCareAction = async (action: 'prune' | 'bolt-mgmt') => {
+    if (!userId || careLogToday[action]) return;
+    // Optimistically mark logged so the pill flips to "✓ Logged today".
+    // If the server returns a duplicate or cap, we keep the visual state —
+    // the user already tried this today, the pill should stay quiet.
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `care-log:${plant.id}:${today}`;
+    const next = { ...careLogToday, [action]: true };
+    setCareLogToday(next);
+    try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* quota */ }
+
+    try {
+      const res = await fetch(`/api/care-action?userId=${encodeURIComponent(userId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plantId: plant.id, cropId: plant.cropId, action }),
+      });
+      const data = await res.json().catch(() => null) as
+        | { credited?: number; rpAmount?: number; newTotal?: number; cappedCount?: number; cappedVerbs?: string[] }
+        | null;
+      if (typeof window !== 'undefined' && data) {
+        // Dispatch the existing event bus so RPCreditToaster fires the
+        // "+15 RP" or cap toast, and useOffchainRP refetches the header
+        // pill. Same payload shape every other surface uses.
+        window.dispatchEvent(
+          new CustomEvent('app:rp-credited', {
+            detail: {
+              credited: data.credited ?? 0,
+              rpAmount: data.rpAmount ?? 0,
+              newTotal: data.newTotal ?? 0,
+              cappedCount: data.cappedCount ?? 0,
+              cappedVerbs: data.cappedVerbs,
+              userId,
+            },
+          }),
+        );
+      }
+    } catch (err) {
+      // Don't undo the optimistic state — user can retry on a fresh day.
+      // Network errors are rare; the credit was already deduped server-side
+      // if it landed before the connection died.
+      console.error('[care-action] request failed:', err);
+    }
+  };
 
   const alerts = useMemo<CareAlert[]>(
     () => detectCareAlerts(plant, new Date(), { dismissals }),
@@ -344,6 +421,46 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
               </div>
             );
           })()}
+
+          {/* "Log care" pills — earn the same RP as alert dismissal, but
+              available even when no alert is currently active. Only shown
+              for actions the crop actually supports (pruning rules for
+              "Pruned", bolting rules for "Bolt-managed"). One credit per
+              plant per action per UTC day; the +15 RP toaster fires via
+              the existing app:rp-credited event. Doug, May 18 2026. */}
+          {status !== 'done' && userId && (hasPruningRules || hasBoltingRules) && (
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-roots-gray">Log care:</span>
+              {hasPruningRules && (
+                <button
+                  onClick={() => logCareAction('prune')}
+                  disabled={careLogToday['prune']}
+                  className={
+                    careLogToday['prune']
+                      ? 'text-xs px-2.5 py-1 rounded-full bg-roots-secondary/15 text-roots-secondary cursor-default'
+                      : 'text-xs px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-roots-gray hover:bg-roots-secondary/10 hover:text-roots-secondary hover:border-roots-secondary/30 transition-colors'
+                  }
+                  title={careLogToday['prune'] ? 'Logged today' : 'Tap when you\'ve pruned this plant'}
+                >
+                  {careLogToday['prune'] ? '✓ Pruned today' : 'Pruned'}
+                </button>
+              )}
+              {hasBoltingRules && (
+                <button
+                  onClick={() => logCareAction('bolt-mgmt')}
+                  disabled={careLogToday['bolt-mgmt']}
+                  className={
+                    careLogToday['bolt-mgmt']
+                      ? 'text-xs px-2.5 py-1 rounded-full bg-roots-secondary/15 text-roots-secondary cursor-default'
+                      : 'text-xs px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-roots-gray hover:bg-roots-secondary/10 hover:text-roots-secondary hover:border-roots-secondary/30 transition-colors'
+                  }
+                  title={careLogToday['bolt-mgmt'] ? 'Logged today' : 'Tap when you\'ve harvested early or removed flowers to prevent bolting'}
+                >
+                  {careLogToday['bolt-mgmt'] ? '✓ Bolt managed' : 'Bolt-managed'}
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
