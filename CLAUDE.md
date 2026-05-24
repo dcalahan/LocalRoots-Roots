@@ -1828,6 +1828,63 @@ See plan document for the full set.
 
 **Known leak fixed Apr 26 2026:** `/about/tokenomics` page (linked from Early Adopter Bonus banner's "Learn more") was still rendering "Seeds" in 40+ places. Now uses "Roots Points." If you find another page with user-facing "Seeds" copy, it's a bug — fix on sight.
 
+## Off-chain Roots Points — Earning Architecture
+
+**Strategic principle (Doug, May 18 2026):** the system mental model and the user mental model must agree. When Sage tells a user "you'll earn 15 RP for pruning," the credit must fire when the user prunes — NOT only when they happen to dismiss an in-app alert. If Sage promises an earning, the system must deliver it the way she described.
+
+### Verb registry — single source of truth
+
+`frontend/src/lib/offchainRP.ts` defines every off-chain RP verb in the `VERBS` constant. Each verb has:
+- `rpAmount` — RP per credit event
+- `dailyCap` — max credits per UTC day per user
+- `lifetimeCap` — optional all-time ceiling
+- `label` — user-facing string for toasts + admin
+- `live` — whether the verb is wired end-to-end (false = declared but no credit fires)
+
+**DO NOT adjust verb numbers without re-running the engaged-user-daily-max arithmetic Doug signed off on (~515 RP/day cap).** All values track the approved plan.
+
+### Credit flow
+
+1. Surface (server route or client-emitted event) calls `credit(verbId, userId, dedupKey, { ipMeta })` from `lib/offchainRP.ts`.
+2. `credit()` is the single chokepoint: validates verb is live, checks dedup, enforces daily cap and lifetime cap, writes the audit record, updates the user summary, captures IP geo on first-seen.
+3. Returns `{ ok: true, credited: 1, rpAmount, newTotal, eventId }` or `{ ok: true, credited: 0, reason: 'duplicate' | 'daily-cap' | ... }`.
+4. The CLIENT — not the server — dispatches `app:rp-credited` so `RPCreditToaster` fires the toast and `useOffchainRP` refetches the header pill. Standard payload shape: `{ credited, rpAmount, newTotal, cappedCount, cappedVerbs?, userId }`.
+
+Routes that trigger credits today: `/api/my-garden` (PUT diff → plant-added / bed-created / harvest-logged / plant-update / bed-photo), `/api/garden-ai` (sage-daily), `/api/care-dismissals` (care-alert-acted-on via alert dismissal), `/api/care-action` (care-alert-acted-on via manual logging — see below), `/api/share-card-sent`, etc.
+
+### Trigger-surface gaps and the "user mental model" rule
+
+The architectural failure pattern: a verb has only ONE trigger surface, and that surface doesn't match how users naturally do the action. The user does the action (in real life or via Sage), the verb doesn't fire, the user feels cheated.
+
+**Example fixed May 18 2026:** `care-alert-acted-on` (+15 RP) originally fired only when the user dismissed an urgent in-app alert (`prune-now`, `bolt-risk`, `harvest-urgent`, etc.). Doug pruned his tomatoes after Sage promised 15 RP — got nothing because he never tapped the alert. Fix: add `/api/care-action` as a second trigger surface, with inline "Log care" pills on the plant card. Same verb. Same dailyCap. Different dedup so they coexist.
+
+**When designing a new RP-earning surface, check:** can the user do the action through more than one path (UI button, Sage chat, IRL behavior they expect to be recognized)? If yes, every path needs a trigger. If you can't wire all of them, Sage's prompt MUST clarify which specific path earns the RP.
+
+### Anti-gaming model
+
+Two layers:
+1. **Per-event dedup** — every credit takes a dedup key. Same key = idempotent no-op. Keys typically encode plant/bed ID + action + UTC date (or alertId for cycle-based actions).
+2. **Verb-level `dailyCap`** — even if 20 different dedup keys fire in one day, the verb's `dailyCap` caps total credits. For `care-alert-acted-on`: 5/day = 75 RP/day ceiling per user.
+
+Don't relax dailyCap to accommodate a new trigger surface. If the new surface enables abuse, fix the surface (smaller per-plant cap, time-window cooldown, etc.) — not the verb.
+
+### "Log care" pills — the canonical example (May 18 2026)
+
+- `/api/care-action` accepts `{ plantId, cropId, action: 'prune' | 'bolt-mgmt' }` + `?userId=...`
+- Validates the crop actually supports the action via `getPruningRules` / `getBoltingInfo` from `lib/plantingCalendar.ts` (which reads `crop-growing-data.json`). Custom varieties fall back to parent crop ID.
+- Dedup key: `{plantId}:{action}:{YYYY-MM-DD}` — one credit per plant per action per UTC day.
+- Fires `care-alert-acted-on` (+15 RP). The verb's `dailyCap: 5` is the ceiling.
+- `GardenPlantCard.tsx` shows inline "Pruned" / "Bolt-managed" pills under the alert area, gated by the crop's rules. Pill flips to "✓ Pruned today" after tap; localStorage-persisted so it survives refresh.
+
+Coexists with `/api/care-dismissals`: a user with an active prune alert can EITHER tap "Done" (alertId dedup) or tap "Pruned" (date dedup) — both fire +15 RP. Worst case: double-earn 30 RP for one prune. Bounded by the verb's dailyCap.
+
+### Sage's role
+
+When you ship a new earning surface, Sage MUST be updated to match. Two files:
+- `frontend/src/lib/ai/garden-brain.ts` — system prompt sections like "CARE ALERTS FEATURE" or "LOG CARE — RP-EARNING ACTION". State the exact trigger ("tap the pill on the plant card") and the exact reward ("+15 RP"). Forbid promising RP for the action itself when the credit requires the UI tap.
+- `frontend/src/data/app-knowledge.json` — the `gardenEngagement` field that Sage reads when explaining earning. Keep verb names and trigger language aligned.
+- Bump `SAGE_BRAIN_VERSION` in `frontend/src/lib/ai/sageBrainVersion.ts` so existing conversations reset and pick up the new guidance.
+
 ## $ROOTS Token Launch — Distribution & Wallet
 
 ### Token Distribution Strategy
