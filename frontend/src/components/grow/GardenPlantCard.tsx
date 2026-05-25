@@ -219,15 +219,19 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
             </p>
           </div>
         </div>
-        {/* Quick actions */}
-        <div className="flex items-center gap-1">
+        {/* Quick actions. flex-wrap on a narrow viewport so the right-edge
+            buttons (✕ / ✏️) don't get pushed off-screen when the plant name
+            is long. flex-shrink-0 on each button prevents the tap area from
+            being squeezed below ~40px. Doug, May 25 2026 (couldn't tap ✕
+            on his Okra card on iPhone — too close to screen edge). */}
+        <div className="flex items-center gap-1 flex-wrap justify-end">
           {/* Sell — always available for active plants. Routes to listing
               creation if already a seller, or to seller registration with
               listing intent preserved if not. */}
           {status !== 'done' && (
             <button
               onClick={handleSell}
-              className="text-xs px-2.5 py-1 rounded-full bg-roots-primary text-white font-semibold hover:bg-roots-primary/90 transition-colors"
+              className="text-xs px-2.5 py-1.5 rounded-full bg-roots-primary text-white font-semibold hover:bg-roots-primary/90 transition-colors flex-shrink-0"
               title={isSeller ? 'List this for sale on LocalRoots' : 'Sign up to start selling'}
             >
               Sell
@@ -236,7 +240,7 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
           {(status === 'near-harvest' || status === 'ready-to-harvest' || status === 'harvesting') && onHarvest && (
             <button
               onClick={() => onHarvest(plant.id)}
-              className="text-xs px-2 py-1 rounded-full bg-roots-primary/10 text-roots-primary hover:bg-roots-primary/20 transition-colors"
+              className="text-xs px-2.5 py-1.5 rounded-full bg-roots-primary/10 text-roots-primary hover:bg-roots-primary/20 transition-colors flex-shrink-0"
             >
               Harvested
             </button>
@@ -244,7 +248,8 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
           {onUpdate && status !== 'done' && (
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="text-xs px-2 py-1 rounded-full text-roots-gray hover:bg-gray-100 transition-colors"
+              className="text-sm rounded-full text-roots-gray hover:bg-gray-100 transition-colors flex-shrink-0 inline-flex items-center justify-center min-w-[40px] min-h-[40px]"
+              aria-label={isEditing ? 'Cancel edit' : 'Edit plant'}
             >
               {isEditing ? 'Cancel' : '✏️'}
             </button>
@@ -252,24 +257,24 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
           {onRemove && status !== 'done' && !confirmingDelete && (
             <button
               onClick={() => setConfirmingDelete(true)}
-              className="text-xs px-2 py-1 rounded-full text-roots-gray hover:bg-gray-100 transition-colors"
+              className="text-sm rounded-full text-roots-gray hover:bg-gray-100 transition-colors flex-shrink-0 inline-flex items-center justify-center min-w-[40px] min-h-[40px]"
               aria-label="Remove plant"
             >
               ✕
             </button>
           )}
           {confirmingDelete && (
-            <div className="flex items-center gap-1 bg-red-50 border border-red-200 rounded-full pl-2 pr-1 py-0.5">
+            <div className="flex items-center gap-1 bg-red-50 border border-red-200 rounded-full pl-3 pr-1 py-1 flex-shrink-0">
               <span className="text-xs text-red-700">Delete?</span>
               <button
                 onClick={() => { onRemove?.(plant.id); setConfirmingDelete(false); }}
-                className="text-xs px-2 py-0.5 rounded-full bg-red-500 text-white font-semibold"
+                className="text-xs px-3 py-1.5 rounded-full bg-red-500 text-white font-semibold"
               >
                 Yes
               </button>
               <button
                 onClick={() => setConfirmingDelete(false)}
-                className="text-xs px-2 py-0.5 rounded-full text-roots-gray"
+                className="text-xs px-3 py-1.5 rounded-full text-roots-gray hover:bg-white/60"
               >
                 No
               </button>
