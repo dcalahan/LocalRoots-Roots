@@ -49,21 +49,31 @@ export async function POST(request: NextRequest) {
 
     // Credit care-alert-acted-on for any urgent-severity alerts dismissed.
     // AlertId format is `${plantId}:${type}:${cycle}` (see careAlerts.ts).
-    // Parse the type and credit only if it's in the urgent set. Dedup key
-    // is the alertId — re-dismissing same alert never re-credits.
-    const URGENT_TYPES = new Set([
+    //
+    // BUG FIXED May 25 2026: Earlier this filter expected exact-match types
+    // like `prune-now` / `harvest-urgent`. But the CLIENT alertId
+    // construction in careAlerts.ts uses different names:
+    //   - Pruning: `prune-${rule.type}` (e.g., prune-sucker, prune-pinch-top,
+    //     prune-cutback) — NEVER `prune-now`/`prune-overdue`
+    //   - Harvest: `harvest-ready` — NEVER `harvest-urgent`
+    //   - Bolting: `bolting` / `bolt-risk` ✓ (these matched)
+    // Net effect: pruning + ready-to-harvest dismissals NEVER credited RP.
+    // Doug surfaced this when his tomato sucker dismissal stayed at 470 RP.
+    // Fix: match against the actual alertId types the client emits.
+    const URGENT_EXACT = new Set([
       'bolting',
       'bolt-risk',
-      'prune-now',
-      'prune-overdue',
-      'harvest-urgent',
+      'harvest-ready',
       'frost-warning',
       'heat-wave',
     ]);
     const urgentIds = ids.filter(id => {
       const parts = id.split(':');
       if (parts.length < 2) return false;
-      return URGENT_TYPES.has(parts[1]);
+      const type = parts[1];
+      // Exact-match the known urgent types, OR any prune-* variant
+      // (prune-pinch-top, prune-sucker, prune-cutback, etc.).
+      return URGENT_EXACT.has(type) || type.startsWith('prune-');
     });
     if (urgentIds.length > 0) {
       const [{ credit }, { getIpGeoFromRequest }] = await Promise.all([
