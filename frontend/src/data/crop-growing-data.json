@@ -58,8 +58,8 @@
           "triggerDays": 30,
           "type": "sucker",
           "title": "Sucker your tomatoes",
-          "message": "Indeterminate tomatoes need weekly suckering to keep fruit size up.",
-          "actionHint": "Snap off side shoots below the first flower cluster. Keep 1\u20132 main stems.",
+          "message": "Indeterminate tomatoes (which beefsteaks are) need weekly suckering. A SUCKER is the shoot that grows UP from the 'V' where a side branch meets the main stem \u2014 pinch THAT off. The branch itself is the leafy growth going OUT to the side \u2014 don't pinch those, they make flowers and fruit.",
+          "actionHint": "Look at the V where each branch meets the main stem. The upward-pointing shoot growing in that V crotch is the sucker \u2014 snap it off. Keep 1-2 main stems total. Pinch suckers when they're under 4 inches; bigger ones can be rooted to make new plants.",
           "recurringDays": 10
         }
       ]
@@ -117,8 +117,8 @@
           "triggerDays": 30,
           "type": "sucker",
           "title": "Sucker your tomatoes",
-          "message": "Pinch out the small shoots in the crotch between stem and branches to focus energy on fruit.",
-          "actionHint": "Snap off suckers when they are under 4 inches. Larger suckers can be rooted into new plants.",
+          "message": "Find the V where each branch meets the main stem. The upward-pointing shoot growing in that V is the SUCKER — pinch it off. The branch itself (leafy growth going out to the side) is what makes fruit — leave those alone. Indeterminate cherry tomatoes branch a lot, so check weekly.",
+          "actionHint": "Snap off suckers when they're under 4 inches (clean break, no torn tissue). Larger suckers can be rooted into new plants — stick a 6-inch sucker in moist soil and it'll root in a couple weeks.",
           "recurringDays": 10
         }
       ]
@@ -177,8 +177,8 @@
           "recurringDays": 14,
           "type": "sucker",
           "title": "Sucker pruning time",
-          "message": "Heirloom tomatoes are usually indeterminate \u2014 pinch suckers (shoots between main stem and branches) to keep airflow and direct energy into fruit.",
-          "actionHint": "Pinch suckers under the first flower cluster. Repeat every 1-2 weeks."
+          "message": "Heirlooms are usually indeterminate \u2014 they need suckering. A SUCKER is the upward-pointing shoot in the V where a side branch meets the main stem. Pinch those. The side branches themselves (going horizontally out) make flowers and fruit \u2014 leave them. Heirlooms have thinner skin and are more disease-prone, so airflow from suckering matters more here than for hybrids.",
+          "actionHint": "Find each V crotch on the stem. Pinch off the upward-pointing shoots growing in those V's. Focus on suckers BELOW the first flower cluster. Repeat every 1-2 weeks. Use clean fingers/snips \u2014 torn tissue invites disease in humid weather."
         }
       ]
     },
@@ -232,12 +232,12 @@
       },
       "pruning": [
         {
-          "triggerDays": 30,
+          "triggerDays": 35,
           "recurringDays": 14,
           "type": "sucker",
-          "title": "Sucker pruning time",
-          "message": "Roma tomatoes can be semi-determinate \u2014 light suckering (bottom 6-12 inches) prevents disease and keeps the plant productive.",
-          "actionHint": "Remove suckers up to the first flower cluster. Light pruning only \u2014 don't over-thin."
+          "title": "Light suckering for Romas",
+          "message": "Check your Roma variety first \u2014 DETERMINATE Romas (Roma VF and many modern hybrids) should NOT be suckered at all because every shoot is a fruit cluster, and removing them removes your harvest. SEMI-DETERMINATE varieties tolerate light suckering of just the bottom 6-12 inches for airflow. If you don't know which you have, less is more.",
+          "actionHint": "If determinate: do nothing. If semi-determinate or unknown: remove only the very bottom suckers (the ones in the V's below the first flower cluster) for airflow. Light pruning only \u2014 don't over-thin or you'll lose fruit."
         }
       ]
     },
@@ -292,9 +292,9 @@
           "triggerDays": 30,
           "recurringDays": 21,
           "type": "pinch-top",
-          "title": "Top pinch for bushier plants",
-          "message": "Pinching the growing tip when the plant is 8-10 inches tall encourages a bushier, more productive plant.",
-          "actionHint": "Pinch the top growing point. The plant will branch into multiple stems."
+          "title": "Optional: pepper topping",
+          "message": "Pepper topping is OPTIONAL — extension experts are split. Some report 15-20% more total fruit; others find no yield benefit and a 2-3 week delay in first harvest. Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip topping this year.",
+          "actionHint": "Verify: 6-8 true leaves, no flower buds visible. If both true: pinch the central growing tip. The plant branches into 2-4 stems within 10-14 days. If buds are already showing, leave it — topping a flowering pepper removes your first fruit set."
         }
       ]
     },
@@ -348,9 +348,9 @@
         {
           "triggerDays": 21,
           "type": "pinch-top",
-          "title": "Top your pepper plants (optional)",
-          "message": "Pinching the growing tip early makes bushier plants with more peppers.",
-          "actionHint": "Pinch off the very top set of leaves once plant is ~8 inches tall.",
+          "title": "Optional: pepper topping",
+          "message": "Pepper topping is OPTIONAL — extension experts are split (some report ~15-20% more fruit; others find no benefit + a 2-3 week delay to first harvest). Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip this year.",
+          "actionHint": "Verify: 6-8 true leaves, no flower buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are showing, leave it alone — topping a flowering pepper removes the first fruit set.",
           "recurringDays": 999
         }
       ]
@@ -406,9 +406,9 @@
           "triggerDays": 30,
           "recurringDays": 21,
           "type": "pinch-top",
-          "title": "Top pinch for bushier plants",
-          "message": "Pinching the growing tip on a young jalapeno encourages branching and more pepper sites.",
-          "actionHint": "Pinch the top growing point at 8-10 inches tall."
+          "title": "Optional: pepper topping",
+          "message": "Topping a jalapeno is OPTIONAL — extension sources are split on whether it actually increases yield. If you want to try it, only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip this year.",
+          "actionHint": "Verify: 6-8 true leaves, no buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are already there, leave it alone."
         }
       ]
     },
@@ -462,9 +462,9 @@
           "triggerDays": 30,
           "recurringDays": 21,
           "type": "pinch-top",
-          "title": "Top pinch for bushier plants",
-          "message": "Habaneros are slow growers \u2014 an early top pinch helps them branch and set more fruit.",
-          "actionHint": "Pinch the top growing point at 8-10 inches tall."
+          "title": "Optional: habanero topping",
+          "message": "Topping a habanero is OPTIONAL \u2014 they're slow growers, so the 2-3 week delay to first harvest matters more here than for faster peppers. Extension sources are split on whether topping actually increases yield. Only top a plant with 6-8 true leaves and NO flower buds.",
+          "actionHint": "Verify: 6-8 true leaves, no buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are already showing, skip this year \u2014 topping a flowering habanero will cost you the early harvest you need for a slow-grower."
         }
       ]
     },
@@ -519,9 +519,9 @@
           "triggerDays": 30,
           "recurringDays": 21,
           "type": "pinch-top",
-          "title": "Top pinch for bushier plants",
-          "message": "Serrano peppers benefit from an early top pinch to encourage branching.",
-          "actionHint": "Pinch the top growing point at 8-10 inches tall."
+          "title": "Optional: serrano topping",
+          "message": "Topping a serrano is OPTIONAL — extension sources are split on yield benefit. Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip topping this year.",
+          "actionHint": "Verify: 6-8 true leaves, no buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are already showing, leave it alone — topping a flowering plant removes your first fruit set."
         }
       ]
     },
@@ -576,9 +576,9 @@
           "triggerDays": 35,
           "recurringDays": 21,
           "type": "pinch-top",
-          "title": "Top pinch for bushier plants",
-          "message": "Eggplants benefit from a top pinch when 12 inches tall to encourage branching and more fruit.",
-          "actionHint": "Pinch the main growing tip. Side shoots will produce more fruit."
+          "title": "Eggplant cleanup pruning",
+          "message": "Extension publications (UMD, Cornell) do NOT recommend topping eggplant — it branches naturally with adequate spacing. The more impactful prune is removing yellowing lower leaves for airflow and limiting fruit count per plant to 4-6 so they size up.",
+          "actionHint": "Remove yellowing or damaged lower leaves for airflow. Pinch any side shoots that emerge BELOW the first stem fork — those steal energy. Don't top the main stem; let it grow."
         }
       ]
     },
@@ -744,8 +744,9 @@
       "tips": [
         "Consistent watering prevents bitter taste",
         "Trellis vining types to save space and keep fruits clean",
-        "Harvest frequently to encourage more production",
-        "Morning harvest gives crispest cucumbers"
+        "Harvest frequently — every 1-2 days during peak. Fruit can go from ideal to over-ripe in 24 hours of hot weather.",
+        "Morning harvest gives crispest cucumbers",
+        "Yellowing = past prime. Once you see any yellow on a cucumber, harvest it IMMEDIATELY. Yellow means the plant has started developing seeds inside — flesh turns spongy and bitter, and the plant slows new fruit production to invest in seed maturation."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -757,9 +758,9 @@
         {
           "triggerDays": 30,
           "type": "pinch-top",
-          "title": "Pinch cucumber side shoots",
-          "message": "Pinching early side shoots on vining cukes keeps energy in the main vine.",
-          "actionHint": "Pinch any side shoots below the first 4\u20135 leaves.",
+          "title": "Pinch cucumber side shoots (vining varieties only)",
+          "message": "This applies ONLY to VINING cucumbers (Marketmore, Diva, English types, anything that climbs a trellis). If yours is a BUSH variety (Bush Champion, Spacemaster, Bush Pickle), do NOT prune side shoots \u2014 that's where most of your fruit comes from. If you bought transplants and the label said 'bush' or 'compact,' skip this.",
+          "actionHint": "VINING variety on a trellis: pinch any side shoots below the first 4\u20135 leaves to direct energy up the main vine. BUSH variety: do nothing \u2014 leave all the side shoots.",
           "recurringDays": 999
         }
       ]
@@ -803,10 +804,11 @@
         "sage"
       ],
       "tips": [
-        "Harvest at 2-4 inches for best pickles",
+        "Harvest at 3-5 inches for whole pickles/gherkins; 5-7 inches for spear-cut pickles. Check every 1-2 days during peak.",
         "Plants produce in waves - plan succession picklings",
         "Bumpy skin is normal and desirable",
-        "Process within 24 hours of harvest for crispest pickles"
+        "Process within 24 hours of harvest for crispest pickles",
+        "Yellowing = past prime. The moment a pickling cucumber starts turning yellow, harvest it IMMEDIATELY — flesh gets bitter and spongy fast, and the plant slows new fruit production to invest in seed maturation. Pickle the yellowed ones for sauce/relish if anything, but ideally pick BEFORE they yellow."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -875,12 +877,12 @@
       },
       "pruning": [
         {
-          "triggerDays": 45,
+          "triggerDays": 60,
           "recurringDays": 30,
           "type": "vine-train",
           "title": "Vine training time",
-          "message": "Train winter squash vines to keep them off other beds. Pinch growing tips after several fruits set to focus energy.",
-          "actionHint": "Direct vines, then pinch tips once 3-4 fruits are sizing up."
+          "message": "Train winter squash vines to keep them off other beds. Once 3-4 fruits are set (typically day 60-70), pinch the growing tips to focus the plant's energy on sizing those fruits up. Tip-pinching BEFORE fruit sets just shocks the plant.",
+          "actionHint": "First: direct vines along the trellis or path you want. Then ONLY after 3-4 fruits are visibly sizing up (golf-ball or larger): pinch the very tip of each main vine."
         }
       ]
     },
@@ -1032,12 +1034,12 @@
       },
       "pruning": [
         {
-          "triggerDays": 45,
+          "triggerDays": 60,
           "recurringDays": 30,
           "type": "vine-train",
           "title": "Vine training time",
-          "message": "Pumpkins sprawl wide. Direct vines, and after 2-3 pumpkins set, pinch growing tips to size them up.",
-          "actionHint": "Pinch growing tips of vines once 2-3 pumpkins are tennis-ball size."
+          "message": "Pumpkins sprawl wide and set fruit around day 60-70. Direct vines while they're growing; ONLY after 2-3 pumpkins are visibly sizing up should you pinch the growing tips. Tip-pinching before fruit set just shocks the plant.",
+          "actionHint": "First: lay vines where you want them (they self-root at leaf nodes, helping anchor). Then ONLY after 2-3 pumpkins are at least tennis-ball size: pinch the vine tip beyond the last good fruit."
         }
       ]
     },
@@ -1079,9 +1081,8 @@
       ],
       "tips": [
         "Needs long hot season - use black plastic mulch to warm soil",
-        "Thump test: ripe melons sound hollow",
-        "Tendril near fruit turns brown when ripe",
-        "Reduce watering as fruits ripen for sweeter flavor"
+        "Multiple ripeness signals (use 2+ together, not just one): (1) GROUND SPOT — the patch where the melon touches the ground turns from white to creamy yellow when ripe. This is the most reliable indicator. (2) TENDRIL — the curly tendril closest to the fruit dries up and turns brown. (3) THUMP TEST — ripe melon sounds dull/hollow, unripe sounds metallic/tight (use as confirmation, not primary).",
+        "Reduce watering during the last 2 weeks of ripening for sweeter flavor"
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -1091,12 +1092,12 @@
       },
       "pruning": [
         {
-          "triggerDays": 45,
+          "triggerDays": 60,
           "recurringDays": 30,
           "type": "vine-train",
           "title": "Vine training time",
-          "message": "Watermelon needs space. After 2-3 melons set, pinch growing tips to size them up rather than starting more.",
-          "actionHint": "Pinch growing tips once 2-3 melons are sizing up."
+          "message": "Watermelon sets fruit around day 60-70. After 2-3 melons are visibly sizing up, pinch growing tips to focus the plant's energy. Tip-pinching BEFORE fruit sets just shocks the plant and delays everything.",
+          "actionHint": "Wait until 2-3 melons are at least softball-sized. Then pinch the very tip of each main vine beyond the last fruit. This redirects sugar to the existing melons instead of starting new ones the season won't have time to ripen."
         }
       ]
     },
@@ -1151,12 +1152,12 @@
       },
       "pruning": [
         {
-          "triggerDays": 40,
-          "recurringDays": 21,
+          "triggerDays": 55,
+          "recurringDays": 30,
           "type": "vine-train",
           "title": "Vine training time",
-          "message": "Cantaloupe vines benefit from direction onto a trellis. Pinch tips after 4 melons set to size them.",
-          "actionHint": "Direct vines, then pinch tips when several melons are softball-sized."
+          "message": "Cantaloupe sets fruit around day 50-60. Direct vines onto a trellis while they grow. After 4 melons are visibly sizing up, pinch the growing tips so the plant focuses on the ones it has, not on starting new ones the season won't ripen.",
+          "actionHint": "First: direct vines onto trellis or path. Then ONLY after 4 melons are at least softball-sized: pinch the very tip of each main vine beyond the last fruit."
         }
       ]
     },
@@ -1198,9 +1199,9 @@
       ],
       "tips": [
         "Needs longer season than cantaloupe",
-        "Ripe when blossom end gives slightly to pressure",
-        "Skin turns creamy yellow when ready",
-        "Sweetest when left on vine until fully ripe"
+        "Ripe when blossom end gives slightly to pressure AND skin turns creamy yellow",
+        "Unlike cantaloupe, honeydew does NOT slip from the vine when ripe — you have to CUT it. Don't wait for it to drop or twist off; you'll miss the window.",
+        "Sweetest when left on vine until fully ripe (because it doesn't slip, it can stay on the vine longer than cantaloupe)"
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -1268,7 +1269,7 @@
         "daysToBoltMax": 75,
         "heatTriggerF": 80,
         "trigger": "heat",
-        "advice": "Harvest whole heads now. Leaves turn bitter within days once the stalk shoots up."
+        "advice": "Visible sign of bolting: a central flower stalk shoots STRAIGHT UP from the middle of the plant. Leaves may also start looking more pointed/elongated, and the plant gets taller and narrower. Once you see the stalk elongating, harvest the entire plant immediately — inner leaves may still be salvageable for a day or two, but outer leaves at the bottom are often already bitter. Sample a leaf: if it's bitter, time's up."
       }
     },
     "lettuce-butter": {
@@ -1322,7 +1323,7 @@
         "daysToBoltMin": 45,
         "daysToBoltMax": 60,
         "heatTriggerF": 75,
-        "advice": "Lettuce bolts fast in heat. Harvest outer leaves often, plant in shade for summer succession.",
+        "advice": "Visible sign of bolting: a central stalk shoots straight up from the middle of the rosette. Leaves get pointier and the head loses its compact butterhead shape. Once you see the stalk elongating, harvest immediately — bitterness sets in within days. Butter lettuce bolts faster than most in heat (75°F+ sustained), so plant in afternoon shade for summer succession.",
         "trigger": "heat"
       }
     },
@@ -1376,7 +1377,7 @@
         "daysToBoltMin": 35,
         "daysToBoltMax": 50,
         "heatTriggerF": 75,
-        "advice": "Mixed greens bolt quickly \u2014 succession-plant every 2 weeks for steady harvest.",
+        "advice": "Visible sign of bolting: any single leaf type in the mix shoots a central stalk straight up \u2014 pull that one and let the others keep going. Once half the bed is bolting, harvest the whole patch and reseed. Mixed greens bolt quickly; succession-plant every 2 weeks for steady harvest.",
         "trigger": "heat"
       }
     },
@@ -1495,10 +1496,10 @@
         "duration": 12
       },
       "bolting": {
-        "daysToBoltMin": 70,
-        "daysToBoltMax": 90,
-        "heatTriggerF": 80,
-        "advice": "Kale bolts in summer heat after a year. First-year flavor improves after light frost. Pick outer leaves.",
+        "daysToBoltMin": 320,
+        "daysToBoltMax": 380,
+        "heatTriggerF": 90,
+        "advice": "Kale is biennial — it normally only bolts in its SECOND year after going through winter (vernalization). First-year bolting is unusual and only happens under severe sustained heat (90°F+) or significant transplant shock. First-year flavor improves dramatically after light frost. Harvest outer leaves continuously.",
         "trigger": "age"
       }
     },
@@ -1549,10 +1550,10 @@
         "duration": 16
       },
       "bolting": {
-        "daysToBoltMin": 60,
-        "daysToBoltMax": 80,
-        "heatTriggerF": 85,
-        "advice": "Chard is heat-tolerant but bolts year 2. First-year leaves are tender; cut and come again.",
+        "daysToBoltMin": 320,
+        "daysToBoltMax": 380,
+        "heatTriggerF": 90,
+        "advice": "Swiss chard is biennial — first-year plants almost never bolt; the flower stalk appears in year 2 after overwintering. It's also more heat-tolerant than lettuce/spinach. If year-1 chard is shooting up, it's almost certainly transplant shock or extreme heat (90°F+). First-year leaves are tender; harvest outer stalks and the center keeps producing.",
         "trigger": "age"
       }
     },
@@ -1651,10 +1652,10 @@
         "duration": 12
       },
       "bolting": {
-        "daysToBoltMin": 75,
-        "daysToBoltMax": 95,
-        "heatTriggerF": 85,
-        "advice": "Collards tolerate more heat than lettuce, but will bolt in extended hot weather. Harvest outer leaves.",
+        "daysToBoltMin": 320,
+        "daysToBoltMax": 380,
+        "heatTriggerF": 90,
+        "advice": "Collards are biennial — they normally bolt in year 2 after winter. They tolerate heat much better than lettuce or kale, but extreme sustained heat (90°F+) plus stress can trigger first-year bolting. Harvest outer leaves continuously; the plant keeps producing from the center.",
         "trigger": "heat"
       }
     },
@@ -1948,8 +1949,8 @@
       "tips": [
         "Plant certified seed potatoes, not grocery store potatoes",
         "Hill soil around stems as plants grow",
-        "New potatoes ready when plants flower",
-        "Cure in dark for 2 weeks before storage"
+        "TWO harvest windows: (1) NEW POTATOES — small, tender, thin-skinned. Ready when plants FLOWER (~60-70 days). Dig gently from the side of the hill; take a few and leave the rest growing. Eat within a week; do NOT cure or store. (2) STORAGE POTATOES — full-sized, thick-skinned. Wait until the plant TOPS DIE BACK naturally (~90-120 days). THEN cure in a dark, dry spot at 50-60°F for 2 weeks before storing. Pre-cured potatoes spoil fast.",
+        "Don't expose harvested potatoes to light — they turn green and develop solanine, which is bitter and mildly toxic"
       ],
       "isPerennial": false,
       "tropicalSuitable": false,
@@ -2552,7 +2553,7 @@
         "daysToBoltMin": 80,
         "daysToBoltMax": 100,
         "heatTriggerF": 85,
-        "advice": "Cabbage heads split or bolt if heat hits before harvest. Harvest as soon as heads firm up.",
+        "advice": "Cabbage is biennial — it normally bolts in year 2 after winter. But the head can SPLIT in year 1 if heat hits before harvest, or if irrigation is uneven once heads are firm. That's not bolting, but the harvest signal is the same: cut at firmness, don't wait. If it does send up a year-1 flower stalk, that's heat-shock — harvest immediately, the head will be loose but edible.",
         "trigger": "age"
       }
     },
@@ -2606,7 +2607,7 @@
         "daysToBoltMin": 80,
         "daysToBoltMax": 100,
         "heatTriggerF": 85,
-        "advice": "Red cabbage heads split or bolt under heat \u2014 harvest at firmness, don't wait.",
+        "advice": "Red cabbage is biennial \u2014 it normally bolts in year 2 after winter. Year-1 heads can SPLIT under heat or uneven watering once firm. Harvest at firmness, don't wait. A year-1 flower stalk = heat shock; harvest immediately.",
         "trigger": "age"
       }
     },
@@ -3084,7 +3085,10 @@
         "Pinch flower buds to prolong leaf production",
         "Harvest from top to encourage bushy growth",
         "Classic partner for tomatoes in garden and kitchen",
-        "Many varieties: sweet, Thai, lemon, purple"
+        "Many varieties: sweet, Thai, lemon, purple",
+        "Basil roots easily in water — take a 4-inch cutting, strip lower leaves, put in a glass on the windowsill. Roots appear in 7-10 days; transplant when roots are 1 inch long. Free plants forever.",
+        "Leggy plant fix: if the basil is tall and sparse but still green, cut everything back by half (just above any leaf node). New shoots will emerge from every node below. If the lower stem is bare and brown, the plant won't recover — take tip cuttings instead and start fresh.",
+        "Storing harvested basil: stems in water like cut flowers, on the counter, NOT the fridge. Basil blackens below ~50°F. Use within 5 days fresh, or chop and freeze in olive oil for winter pesto base."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -3093,10 +3097,11 @@
         "duration": 12
       },
       "bolting": {
-        "daysToBoltMin": 75,
+        "daysToBoltMin": 60,
         "daysToBoltMax": 100,
-        "trigger": "age",
-        "advice": "Pinch flower buds as they form to keep leaves coming. Once fully bolted, harvest the whole plant."
+        "heatTriggerF": 90,
+        "trigger": "heat",
+        "advice": "Basil bolts mainly from heat stress (sustained 90°F+) and age, not just calendar days. Pinch flower spikes ½ inch below the lowest bud as they form to extend leaf production. Once half the plant is flowering, switch to harvesting the whole top — don't keep chasing individual flower stalks. In hot climates (zone 8+) it often bolts before day 75; in cooler zones it can hold till day 100."
       },
       "pruning": [
         {
@@ -3633,11 +3638,11 @@
       "pruning": [
         {
           "triggerDays": 60,
-          "recurringDays": 30,
+          "recurringDays": 365,
           "type": "pinch-top",
-          "title": "Cutback for bushier growth",
-          "message": "Lavender gets leggy without regular trimming. Cut back \u2153 after each bloom flush to keep it compact.",
-          "actionHint": "Trim spent flower spikes, take \u2153 off the foliage."
+          "title": "Annual lavender cutback",
+          "message": "Lavender should be cut back ONCE per year \u2014 after the main bloom finishes in late summer. Cutting more often weakens the plant. CRITICAL: never cut into the bare brown wood at the base \u2014 lavender rarely regenerates from old wood and you can kill the plant.",
+          "actionHint": "Wait until the year's bloom is done. Trim spent flower spikes and take up to \u2153 off the green foliage above. Stay in the green growth \u2014 if you can see bare brown stems, you've cut too deep. Stop and let it recover."
         }
       ]
     },
@@ -4296,8 +4301,9 @@
       "tips": [
         "Plant in blocks, not rows, for pollination",
         "Heavy feeder - needs nitrogen",
-        "Silks dry and brown when ready",
-        "Sugars convert to starch quickly - eat same day"
+        "Silks dry and brown when ready — this is the EARLIEST signal, not the only one",
+        "MILK STAGE TEST (most reliable): peel back a small section of husk on an ear that looks ready. Pierce a kernel with your thumbnail. CLEAR liquid = too early. MILKY liquid = perfect, pick now. DOUGHY/STARCHY (no liquid) = past prime, kernels will be tough. Check every 1-2 days once silks brown.",
+        "Sugars convert to starch quickly - eat or freeze same day"
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
