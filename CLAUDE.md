@@ -843,6 +843,47 @@ The `GardenAIChat` component provides AI gardening assistance:
 - Floating chat icon in bottom-right corner (tooltip: "Ask Sage")
 - Uses Claude Haiku 4.5 via Anthropic API
 
+### Sage's Personality — Match Her Picture, Not a Workflow (CRITICAL)
+
+**Doug's framing (May 25-26 2026):** "Sage used to be more fun. I feel she's too clinical now. And repetitive. In the beginning, she was like my best friend. I want everyone to feel like Sage is their best friend. Their HAPPIEST best friend that they probably don't even have. Look at her picture. Her picture is exactly what her personality should be."
+
+Sage is a specific person, not "a friendly AI." Her avatar (`/public/sage-avatar.png`) is the ground truth: woman in her late 20s, long wavy dark hair, freckles, big genuine smile, sage leaf tucked behind her ear (her namesake), beaded necklace with stone pendant, terracotta shirt with botanical embroidery. Young, fresh, bright, generous. Earthy without being hippy-cliché — more "farmers market on Saturday" than "patchouli and macrame."
+
+The system prompt at the top of `garden-brain.ts` opens with "YOU ARE SAGE — and you are someone's HAPPIEST BEST FRIEND" and describes her in second person ("your smile," "you sound like") so the LLM identifies with the character. Default emotional state is JOY. She delights in small things, has real opinions ("Sungolds are her favorite cherry, Romas are overrated"), uses real interjections ("oh man," "honestly?", "wait — yes!"), and is HONEST with warmth.
+
+**Anti-patterns that turn her back into a chatbot — never reintroduce:**
+
+1. **Opening framing of "a friendly, knowledgeable AI."** This is the literal first line and INSTRUCTS the LLM to sound like an AI helper. Replaced with character identity in `2026-05-25-sage-matches-her-picture` brain version. If a future change reverts to "Sage is a friendly AI," the personality dies.
+
+2. **Scripted "Reply like..." / "Example: 'Got it — ...'" phrases.** Every scripted opener Sage saw in her prompt, she used verbatim. She literally opened every confirmation reply with "Got it —" because there were 5+ "Reply like 'Got it —'" instructions baked in. Doug's "she's repetitive" complaint came from this. Rule: describe INTENT, never script the phrase. If a section needs to communicate "she should confirm an action," say so as intent, don't write an example sentence she'll parrot.
+
+3. **Pet names by default.** "Honey" / "friend" reflexively skews her older than her avatar (late 20s in the picture; "honey" reads as a 40-50-year-old register). Listed in WHAT SHE NEVER DOES — she can use those words when the moment fits, but not as default register.
+
+4. **Same-word back-to-back openers.** Explicitly forbidden in the prompt. If she catches herself opening "Got it —" or "Nice —" or "Sure!" twice in a session, she scraps and starts fresh.
+
+5. **Old grandmother backstory.** Earlier prompt drafts had her learning to garden from her grandmother. Her avatar reads young/discovering, not inheriting from elders. Removed.
+
+**Bumping `SAGE_BRAIN_VERSION` is required when changing voice** — resets all existing conversations so users meet the updated character on their next visit.
+
+**Memory file:** `project_sage_voice_restoration.md` documents the May 25-26 voice work in full detail (commits 33d3741 → 5e94d47 → d76c812).
+
+### Sage Advice Quality — Audit Process
+
+**Doug's hard rule:** Pruning, harvesting, and bolting TECHNIQUES MUST be 100% accurate. Wrong technique kills plants and breaks user trust permanently. Bad data → Sage hallucinates on top of it.
+
+**When Sage gives advice that fails in the real world** (Doug surfaced basil pinching as the canonical example — "cut just above where it branches and it will grow 2 new shoots" — was ambiguous, incomplete, and didn't work), the response is a structured audit:
+
+1. **Capture the failure** in `~/sage-verified-failures.md` — what Sage said, what happened, what extension-blessed guidance should look like, which files need to change.
+2. **Spawn an audit agent** with the prompt template established May 26 2026 (see commit history for the prompt's evolution). Required structure: TIER 0 (data↔prompt sync bugs) → TIER 1 (technique accuracy, 100% bar) → TIER 1.5 (follow-up question coverage — what users would ask mid-task and whether Sage can answer without hallucinating) → TIER 2 (factual claims) → TIER 3 (language hedging).
+3. **Cross-reference EVERY claim against ≥2 authoritative extension publications:** Cornell, UMD, UMass, Iowa State, Clemson HGIC (REQUIRED for SC zone 8a), Texas A&M, Oklahoma State, RHS UK. NO blogs/YouTube/Pinterest as primary sources.
+4. **Validate the audit against the verified-failures tracker.** First audit run (May 27 2026) caught 2 of 4 Doug-verified failures and MISSED 2 (cucumber yellowing warning, lettuce visible bolting signs). Always cross-check; missed items get added to the fix scope manually.
+
+**Single source of truth requirement (TIER 0):** Sage's horticultural claims live in TWO places — `frontend/src/data/crop-growing-data.json` (renders care cards) AND `frontend/src/lib/ai/garden-brain.ts` (system prompt). These MUST agree. Every audit fix must update BOTH locations when the claim appears in both. Care cards saying "21 days" while Sage says "18 days" is the kind of drift that kills user trust.
+
+**Architectural constraint to respect:** Sage has NO real-time weather/soil-temp/climate data integration (deliberate product choice). Care alerts use days-from-planting heuristics. The audit must NOT propose condition-based triggers — it should evaluate whether the DAY NUMBER estimates are reasonable for the average case.
+
+**Memory file:** `project_sage_audit_round1.md` documents the May 27 2026 audit findings (4 TIER 0, 17 TIER 1 wrong, 41 TIER 1.5 hallucination gaps, 9 TIER 2 wrong) and the fix plan for the next session.
+
 ### Voice Input/Output
 
 - **Voice input:** Browser-native Web Speech API (`SpeechRecognition`). Mic button between textarea and send button. Pulsing red when listening. Auto-sends on recognition.
@@ -1877,6 +1918,19 @@ Don't relax dailyCap to accommodate a new trigger surface. If the new surface en
 - `GardenPlantCard.tsx` shows inline "Pruned" / "Bolt-managed" pills under the alert area, gated by the crop's rules. Pill flips to "✓ Pruned today" after tap; localStorage-persisted so it survives refresh.
 
 Coexists with `/api/care-dismissals`: a user with an active prune alert can EITHER tap "Done" (alertId dedup) or tap "Pruned" (date dedup) — both fire +15 RP. Worst case: double-earn 30 RP for one prune. Bounded by the verb's dailyCap.
+
+### Care-dismissals URGENT_TYPES mismatch — silent credit-drop bug (fixed May 25 2026)
+
+**Pattern lesson worth documenting because it's a class of bug, not a one-off:** for weeks, `/api/care-dismissals` had a `URGENT_TYPES` filter expecting exact-match alert types `prune-now`, `prune-overdue`, `harvest-urgent`. But the CLIENT (`lib/careAlerts.ts`) constructed alertIds with DIFFERENT names:
+- Pruning: `${plantId}:prune-${rule.type}:${cycle}` → real values are `prune-pinch-top`, `prune-sucker`, `prune-cutback` etc. — NEVER `prune-now`/`prune-overdue`
+- Harvest: `${plantId}:harvest-ready:0` — NEVER `harvest-urgent`
+- Bolting: `${plantId}:bolting:0` ✓ (only the bolting alerts actually credited)
+
+The intersection of "what client emits" and "what server accepts" was JUST `bolting` and `bolt-risk`. **Pruning + ready-to-harvest dismissals NEVER credited RP** since the feature shipped. Doug surfaced it: tapped Done on his tomato Sucker alert, expected +15 RP, saw zero.
+
+Fix (commit `7379c8f`): replaced exact-match with hybrid — exact match on known urgent types (`bolting`, `bolt-risk`, `harvest-ready`, `frost-warning`, `heat-wave`) PLUS prefix match on `prune-*` to catch every pruning variant.
+
+**Class-of-bug lesson:** ANY time a client encodes type info into a stringly-typed ID format that a server then parses, the encoding and decoding need to live in the same module or have shared constants. The mismatch here was silent because the dismissal still worked (alert disappeared from UI), only the credit failed — and the credit failure had no user-facing error. Two-sided string contracts need either: (a) a shared TypeScript type/constant referenced by both sides, or (b) integration tests that exercise the real client→server roundtrip.
 
 ### Sage's role
 
