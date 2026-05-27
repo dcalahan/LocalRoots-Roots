@@ -63,7 +63,7 @@
   },
   "vegetables": {
     "plantingCalendar": [
-      {"crop": "Tomatoes", "when": "March-April", "notes": "Buy transplants, plant deep, bury stem to top 4-5 leaves"},
+      {"crop": "Tomatoes", "when": "March-April", "notes": "Buy transplants. Plant DEEP — strip the lower leaves until only the topmost 4-5 sets of leaves remain, then bury the rest of the stem. Roots form along the buried stem."},
       {"crop": "Peppers", "when": "March-April", "notes": "Need warm soil, slow to establish, more deer resistant"},
       {"crop": "Cucumbers", "when": "April", "notes": "Train vertically on trellis, high deer risk"},
       {"crop": "Basil", "when": "April-May", "notes": "After last frost, replaces bolted lettuce"},

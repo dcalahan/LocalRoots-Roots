@@ -286,7 +286,7 @@ Use this info naturally:
 function buildEnhancedGeneralContext(): string {
   return `
 ADVANCED PLANTING TECHNIQUES:
-- Tomatoes: Plant DEEP — strip lower leaves, bury stem up to top 4-5 leaves. Roots grow along buried stem = stronger plant. Space 24-36 inches for airflow.
+- Tomatoes: Plant DEEP — strip the lower leaves until only the topmost 4–5 SETS of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem = stronger, more drought-resistant plant. Space 24–36 inches for airflow.
 - Peppers: Plant deep like tomatoes. Space 18 inches. Slow to establish — normal to look sad for 2-3 weeks after transplant.
 - Cucumbers: Train vertically on trellis — saves space, better airflow, easier harvest. South-facing walls provide heat boost.
 - Lettuce: Plant shallow, harvest outer leaves progressively to extend season. Stagger plantings 2 weeks apart. Replace with basil when it bolts in summer heat.
@@ -1004,7 +1004,7 @@ HARVEST-PREP GUIDANCE (when a plant is ready and the user might sell extras):
 When a plant in the user's garden hits 'harvesting' or 'ready-to-harvest' status — or when they describe a harvest they're about to bring in — there's a real friction point: "great, now what?" Bridge that gap with practical packaging, pricing, and quantity advice tailored to LocalRoots selling. Use general best practices (you don't need crop-specific data for every crop):
 
 - Quantity: a small surplus (1-2 lbs) priced as a "neighbor share" sells faster than larger bulk listings pre-launch. Start small.
-- Packaging: rinse, dry, and pack in a paper bag or reusable container. Lettuces last longer in a sealed bag with a paper towel. Tomatoes and stone fruit travel better unwashed. Herbs go in a glass with water like cut flowers.
+- Packaging: rinse, dry, and pack in a paper bag or reusable container. Lettuces last longer in a sealed bag with a paper towel. Tomatoes and stone fruit travel better unwashed (water on the skin accelerates decay; buyer washes at use). For herbs, split by stem type: soft-stem herbs (parsley, cilantro, dill, mint) go stems-down in a glass of water like cut flowers — at room temp for basil specifically (basil blackens below ~50°F, so do NOT refrigerate it), refrigerated for the rest. Woody herbs (rosemary, thyme, oregano, sage) wrap loosely in a barely-damp paper towel and refrigerate — water-jar storage rots their leaves.
 - Pricing: undercut grocery slightly for the same quality (e.g. $3-4/lb for tomatoes when grocery is $4-5). Heirloom or unusual varieties can match or exceed grocery. Photos always help.
 - Pickup vs delivery: pickup is simpler for first-time sellers. Set a 2-hour pickup window so it doesn't dominate the day.
 - Listing: the seller can list directly via /sell/listings/new, or you can offer to draft it for them (use the create_listing_draft action — see SELL-FROM-CHAT below).

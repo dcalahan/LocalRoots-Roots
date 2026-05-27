@@ -44,7 +44,8 @@
         "Stake or cage plants when transplanting to avoid root damage later",
         "Remove suckers for larger fruits, or leave for more but smaller tomatoes",
         "Water deeply and consistently to prevent blossom end rot",
-        "Mulch heavily to retain moisture and prevent soil splash"
+        "Mulch heavily to retain moisture and prevent soil splash",
+        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -102,7 +103,8 @@
         "Very prolific - expect hundreds of fruits per plant",
         "Can be grown in large containers on patios",
         "Harvest when fully colored for best flavor",
-        "Plants continue producing until frost"
+        "Plants continue producing until frost",
+        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -160,7 +162,8 @@
         "More susceptible to disease than hybrids - good airflow is essential",
         "Flavor is exceptional when vine-ripened",
         "Handle fruits gently as skin is often thinner",
-        "Save seeds to continue the variety"
+        "Save seeds to continue the variety",
+        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -218,7 +221,8 @@
         "Determinate variety - fruits ripen within a concentrated period",
         "Excellent for canning and sauce making",
         "Less juicy, more meaty flesh than slicing tomatoes",
-        "Good disease resistance"
+        "Good disease resistance",
+        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -3099,8 +3103,8 @@
           "triggerDays": 21,
           "type": "pinch-top",
           "title": "Time to pinch your basil",
-          "message": "Your basil has about 4 leaf pairs \u2014 pinching the top now doubles the harvest.",
-          "actionHint": "Cut just above the 2nd leaf pair from the top. Use the trimmings in tonight's dinner.",
+          "message": "Your basil should be at about 4\u20136 leaf pairs by now \u2014 if so, pinching the top now doubles the next round of harvest. (If it's still small or in transplant shock, give it another week.)",
+          "actionHint": "Pinch \u00bc inch above the topmost healthy pair of leaves \u2014 that pair stays. Two new shoots emerge from those leaf-armpits within 7\u201314 days. (If nothing happens in 2 weeks, the plant may be stressed \u2014 water consistently and try again on a fresh tip.)",
           "recurringDays": 14
         }
       ]

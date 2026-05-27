@@ -22,4 +22,4 @@
  *
  * Format: YYYY-MM-DD-short-slug. Date is what matters; slug is for grep.
  */
-export const SAGE_BRAIN_VERSION = '2026-05-25-sage-matches-her-picture';
+export const SAGE_BRAIN_VERSION = '2026-05-27-tier0-sage-advice-fixes';
