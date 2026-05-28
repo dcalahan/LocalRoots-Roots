@@ -96,7 +96,12 @@ export function usePhase(): PhaseInfo {
  * Get the display label for rewards based on current phase
  */
 export function getRewardLabel(isPhase2: boolean): string {
-  return isPhase2 ? '$ROOTS' : 'Seeds';
+  // Pre-launch label is "Roots Points" (NOT "Seeds" — that's the old
+  // pre-rebrand term, see CLAUDE.md "Roots Points vs $ROOTS"). Kept in
+  // sync with the canonical PHASE1_LABEL in components/seeds/PhaseConfig.ts.
+  // All UI imports getRewardLabel from PhaseConfig; this copy exists for
+  // any hook-local callers and must NOT drift back to "Seeds".
+  return isPhase2 ? '$ROOTS' : 'Roots Points';
 }
 
 /**
