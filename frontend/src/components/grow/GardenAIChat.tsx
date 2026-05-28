@@ -13,6 +13,16 @@ import { computeStatus } from '@/lib/gardenStatus';
 import { useToast } from '@/hooks/use-toast';
 import { getCropDisplayName } from '@/lib/gardenStatus';
 import { SAGE_BRAIN_VERSION } from '@/lib/ai/sageBrainVersion';
+import { loadDismissals } from '@/lib/careAlerts';
+import {
+  type NudgeQueue,
+  NUDGE_QUEUE_VERSION,
+  loadLocalNudgeQueue,
+  saveLocalNudgeQueue,
+  pruneNudgeQueue,
+  pickDueNudges,
+  pendingNudgeCount,
+} from '@/lib/sageNudges';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -149,9 +159,19 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
   const { listings: sellerListings } = useSellerListings();
   const { user: privyUser } = usePrivy();
   const gardenUserId = privyUser?.id || null;
-  const { activePlants: gardenPlants, beds: gardenBeds, applyActions: applyGardenActions } = useMyGarden(gardenUserId);
+  const { activePlants: gardenPlants, beds: gardenBeds, applyActions: applyGardenActions, isLoading: gardenLoading } = useMyGarden(gardenUserId);
   const { toast } = useToast();
   const router = useRouter();
+
+  // ─── Proactive Sage: nudge queue ──────────────────────────
+  // Sage reaches out FIRST with care nudges. The queue lives OUTSIDE
+  // the conversation thread so a SAGE_BRAIN_VERSION bump (which wipes
+  // garden:conv) never wipes pending nudges. Hydrated on mount (so the
+  // badge shows even when the chat is closed), recomputed when the
+  // garden loads. See lib/sageNudges.ts. Doug-approved v1 (May 27 2026).
+  const [nudgeQueue, setNudgeQueue] = useState<NudgeQueue>({ version: NUDGE_QUEUE_VERSION, nudges: [] });
+  const [nudgesHydrated, setNudgesHydrated] = useState(false);
+  const nudgeComputedRef = useRef(false);
 
   // Voice state
   const [isListening, setIsListening] = useState(false);
@@ -215,6 +235,98 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
       localStorage.setItem(localMemKey, JSON.stringify(memories));
     } catch { /* quota exceeded — non-critical */ }
   }, [localMemKey]);
+
+  // ─── Proactive Sage: persist + hydrate + compute ──────────
+  // Persist the nudge queue to localStorage (instant) + KV (durable,
+  // cross-device). Fire-and-forget on the network side.
+  const persistNudgeQueue = useCallback((queue: NudgeQueue) => {
+    if (!userId) return;
+    saveLocalNudgeQueue(userId, queue);
+    fetch(`/api/garden-nudges?userId=${encodeURIComponent(userId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queue }),
+    }).catch(() => { /* non-critical — localStorage has it */ });
+  }, [userId]);
+
+  // Hydrate the nudge queue on mount (NOT gated on chat-open — the badge
+  // must show while the chat is closed). localStorage first, KV fallback.
+  useEffect(() => {
+    if (!userId || nudgesHydrated) return;
+    let cancelled = false;
+    const local = loadLocalNudgeQueue(userId);
+    if (local.nudges.length > 0) setNudgeQueue(local);
+    (async () => {
+      try {
+        const res = await fetch(`/api/garden-nudges?userId=${encodeURIComponent(userId)}`);
+        if (!res.ok) return;
+        const cloud = (await res.json()) as NudgeQueue;
+        if (cancelled) return;
+        if (cloud && Array.isArray(cloud.nudges) && cloud.nudges.length >= local.nudges.length) {
+          setNudgeQueue(cloud);
+          saveLocalNudgeQueue(userId, cloud);
+        }
+      } catch { /* KV down — localStorage copy is fine */ }
+      finally { if (!cancelled) setNudgesHydrated(true); }
+    })();
+    return () => { cancelled = true; };
+  }, [userId, nudgesHydrated]);
+
+  // Compute due nudges once the garden has actually loaded. Guarded so it
+  // runs ONCE per mount (nudgeComputedRef) and never against an empty
+  // mid-hydration garden (gardenLoading). Reuses detectCareAlerts via
+  // pickDueNudges, applies the anti-nag gates, enqueues any new nudges.
+  useEffect(() => {
+    if (!userId || !nudgesHydrated || gardenLoading || nudgeComputedRef.current) return;
+    nudgeComputedRef.current = true;
+
+    const dismissals = loadDismissals();
+    const pruned = pruneNudgeQueue(nudgeQueue, gardenPlants);
+    const newNudges = pickDueNudges({ plants: gardenPlants, dismissals, queue: pruned });
+
+    if (newNudges.length === 0 && pruned.nudges.length === nudgeQueue.nudges.length) {
+      return; // nothing changed
+    }
+    const next: NudgeQueue = {
+      version: NUDGE_QUEUE_VERSION,
+      nudges: [...pruned.nudges, ...newNudges],
+    };
+    setNudgeQueue(next);
+    persistNudgeQueue(next);
+  }, [userId, nudgesHydrated, gardenLoading, gardenPlants, nudgeQueue, persistNudgeQueue]);
+
+  // Deliver pending nudges when the chat OPENS (after the conversation
+  // has hydrated). Each pending nudge becomes an assistant message at the
+  // bottom of the thread — Sage "spoke first" — and is marked delivered
+  // so it isn't re-added and the badge clears. Because we append to
+  // `messages`, the nudge is in conversationHistory when the user replies,
+  // so Sage has context ("I just did it" → she knows what she nudged).
+  // Once delivered + the user engages, normal conversation persistence
+  // takes over. (Pending nudges live in the queue, which survives brain
+  // bumps; delivered ones living in garden:conv is fine — they've done
+  // their job.)
+  useEffect(() => {
+    if (!isOpen || !hydrated || !nudgesHydrated) return;
+    const pending = nudgeQueue.nudges.filter((n) => n.status === 'pending');
+    if (pending.length === 0) return;
+
+    setMessages((prev) => {
+      const additions: Message[] = pending.map((n) => ({ role: 'assistant', content: n.text }));
+      const next = [...prev, ...additions];
+      saveConvToLocal(next);
+      return next;
+    });
+
+    const now = new Date().toISOString();
+    const deliveredQueue: NudgeQueue = {
+      version: NUDGE_QUEUE_VERSION,
+      nudges: nudgeQueue.nudges.map((n) =>
+        n.status === 'pending' ? { ...n, status: 'delivered' as const, deliveredAt: now } : n,
+      ),
+    };
+    setNudgeQueue(deliveredQueue);
+    persistNudgeQueue(deliveredQueue);
+  }, [isOpen, hydrated, nudgesHydrated, nudgeQueue, saveConvToLocal, persistNudgeQueue]);
 
   // Hydrate conversation: localStorage first (instant), then cloud backup.
   // Also enforces brain-version reset — if the stored conversation was
@@ -758,6 +870,18 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
             <img src="/sage-avatar.png" alt="Ask Sage" className="w-14 h-14 rounded-full object-cover" />
           )}
         </button>
+
+        {/* Proactive Sage nudge badge — coral count bubble when Sage has
+            something waiting for the user. Only shown while the chat is
+            closed; opening delivers the nudges and clears the count. */}
+        {!isOpen && pendingNudgeCount(nudgeQueue) > 0 && (
+          <span
+            className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-roots-primary text-white text-xs font-bold flex items-center justify-center shadow ring-2 ring-white pointer-events-none"
+            aria-label={`${pendingNudgeCount(nudgeQueue)} message${pendingNudgeCount(nudgeQueue) === 1 ? '' : 's'} from Sage`}
+          >
+            {pendingNudgeCount(nudgeQueue)}
+          </span>
+        )}
       </div>
 
       {/* Chat window */}
