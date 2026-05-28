@@ -31,7 +31,7 @@
     },
     "winter": {
       "months": "December-February",
-      "activities": ["Protect citrus below 28F", "Plan spring vegetable garden", "Order seeds", "Soil test and amend beds", "Prune roses", "Don't prune azaleas — buds set in fall"]
+      "activities": ["Protect citrus below 28F", "Plan spring vegetable garden", "Order seeds", "Soil test and amend beds", "Prune roses", "Do NOT prune azaleas now — they bloom on old wood. The only safe pruning window is the 2 weeks right after they finish flowering (May–June); next year's buds set by mid-summer"]
     }
   },
   "soil": {
@@ -51,8 +51,8 @@
   "deer": {
     "severity": "Extremely bold on Hilton Head — accustomed to humans",
     "behavior": "Travel forest edges constantly, most active dawn/dusk but feed any time",
-    "resistantPlants": ["Wax Myrtle", "Yucca", "Rosemary", "Thyme", "Basil", "Salvia", "Lantana", "French Marigolds", "Sedum/Stonecrop", "Gardenias (mature)", "Azaleas", "Santolina", "Confederate Jasmine", "Physostegia", "Blackberry (thorns)", "Ornamental grasses"],
-    "vulnerablePlants": ["Cucumbers (high risk)", "Lettuce/greens (very high risk)", "Young fig trees", "Strawberries (very high risk)", "Young citrus (moderate)", "Tomatoes (somewhat resistant due to scent)"],
+    "resistantPlants": ["Wax Myrtle", "Yucca", "Rosemary", "Thyme", "Basil", "Salvia", "Lantana", "French Marigolds", "Sedum/Stonecrop", "Santolina", "Confederate Jasmine", "Physostegia", "Blackberry (thorns)", "Ornamental grasses"],
+    "vulnerablePlants": ["Cucumbers (high risk)", "Lettuce/greens (very high risk)", "Young fig trees", "Strawberries (very high risk)", "Young citrus (moderate)", "Tomatoes (somewhat resistant due to scent)", "Azaleas (eaten under high deer pressure — which HHI is; not deer-proof)", "Gardenias (mature plants resist most browsing, but new growth and flowers ARE eaten under high pressure)"],
     "protectionMethods": [
       "Liquid Fence spray — reapply after every rain, most effective when consistent",
       "Fishing line barrier at 2-3 ft height — deer dislike invisible barrier",
@@ -82,7 +82,7 @@
     },
     "techniques": {
       "tomatoes": "Space 24-36 inches for airflow. Plant DEEP — strip lower leaves, bury stem. Prune suckers aggressively. Use cages or stakes.",
-      "peppers": "Space 18 inches. Plant deep like tomatoes. Slow to establish — normal to look sad 2-3 weeks.",
+      "peppers": "Space 18 inches. Set transplants at the SAME depth they were in the pot — unlike tomatoes, peppers don't root along a buried stem, and deep planting can cause stem rot. Slow to establish — normal to look sad 2-3 weeks.",
       "cucumbers": "Train vertically on trellis. Against south-facing walls for heat. Use T-posts for freestanding trellis.",
       "lettuce": "Space 6-8 inches. Plant shallow. Harvest outer leaves progressively. Stagger plantings 2 weeks apart."
     },

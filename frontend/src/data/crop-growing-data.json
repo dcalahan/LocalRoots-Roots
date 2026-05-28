@@ -254,8 +254,8 @@
         "minSoilTempF": 65
       },
       "daysToMaturity": {
-        "min": 70,
-        "max": 85
+        "min": 85,
+        "max": 105
       },
       "requirements": {
         "sunlight": "full",
@@ -1484,7 +1484,7 @@
       ],
       "avoid": [],
       "tips": [
-        "Frost improves flavor - becomes sweeter",
+        "Light frost improves kale flavor — sugars rise as the plant defends against cold. But a hard freeze below ~25°F can still damage the leaves, so pick before a hard freeze hits.",
         "Harvest lower leaves first, plant keeps producing",
         "Can overwinter in many zones",
         "Multiple varieties: curly, lacinato, red Russian"
@@ -3061,8 +3061,8 @@
         "minSoilTempF": 60
       },
       "daysToMaturity": {
-        "min": 60,
-        "max": 90
+        "min": 50,
+        "max": 75
       },
       "requirements": {
         "sunlight": "full",
@@ -4165,8 +4165,8 @@
         "waterNeeds": "regular",
         "spacingInches": 120,
         "soilPH": {
-          "min": 5.5,
-          "max": 6.5
+          "min": 6.0,
+          "max": 7.0
         }
       },
       "frostTolerance": "none",

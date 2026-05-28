@@ -287,7 +287,7 @@ function buildEnhancedGeneralContext(): string {
   return `
 ADVANCED PLANTING TECHNIQUES:
 - Tomatoes: Plant DEEP — strip the lower leaves until only the topmost 4–5 SETS of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem = stronger, more drought-resistant plant. Space 24–36 inches for airflow.
-- Peppers: Plant deep like tomatoes. Space 18 inches. Slow to establish — normal to look sad for 2-3 weeks after transplant.
+- Peppers: Set transplants at the SAME depth they grew in the pot — unlike tomatoes, peppers don't form roots along a buried stem, and burying them deep can invite stem rot. Space 18 inches. Slow to establish — normal to look sad for 2-3 weeks after transplant.
 - Cucumbers: Train vertically on trellis — saves space, better airflow, easier harvest. South-facing walls provide heat boost.
 - Lettuce: Plant shallow, harvest outer leaves progressively to extend season. Stagger plantings 2 weeks apart. Replace with basil when it bolts in summer heat.
 - Mint: CONTAINER ONLY — will take over an entire bed in one season.
