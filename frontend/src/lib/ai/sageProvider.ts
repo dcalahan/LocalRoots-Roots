@@ -22,6 +22,7 @@
 
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { buildVeniceSnapshot, recordVeniceSuccess, recordVeniceFallback } from './sageHealth';
 
 // ─── Provider config ───────────────────────────────────────
 
@@ -158,11 +159,10 @@ export async function* streamSageChat(
       return;
     } catch (err) {
       const fallback = config.fallback;
+      const reason = err instanceof Error ? err.message : String(err);
+      // Tagged log + KV record. Fire-and-forget so we don't delay the fallback stream.
+      void recordVeniceFallback(reason, 'stream');
       if (!fallback) throw err;
-      console.warn(
-        '[Sage] Venice failed before streaming, falling back to Claude:',
-        err instanceof Error ? err.message : String(err),
-      );
       yield* streamFromAnthropic(fallback, opts);
       return;
     }
@@ -180,15 +180,24 @@ async function* streamFromVenice(
     baseURL: config.baseUrl,
   });
 
-  const stream = await client.chat.completions.create({
-    model: config.model,
-    max_tokens: opts.maxTokens ?? 2000,
-    stream: true,
-    messages: [
-      { role: 'system', content: opts.systemPrompt },
-      ...opts.messages.map(toOpenAIMessage),
-    ],
-  });
+  // .withResponse() exposes the raw fetch Response so we can read Venice's
+  // balance + rate-limit headers. If the call fails (4xx/5xx/network), the
+  // throw propagates to streamSageChat's catch which routes to the fallback.
+  const { data: stream, response } = await client.chat.completions
+    .create({
+      model: config.model,
+      max_tokens: opts.maxTokens ?? 2000,
+      stream: true,
+      messages: [
+        { role: 'system', content: opts.systemPrompt },
+        ...opts.messages.map(toOpenAIMessage),
+      ],
+    })
+    .withResponse();
+
+  // Fire-and-forget the snapshot record so we don't delay the first chunk.
+  const snapshot = buildVeniceSnapshot(response.headers, config.model, 'stream');
+  void recordVeniceSuccess(snapshot);
 
   for await (const chunk of stream) {
     const delta = chunk.choices[0]?.delta?.content;
@@ -296,11 +305,9 @@ export async function completeSagePrompt(opts: CompleteOptions): Promise<string>
       return await completeFromVenice(config, opts);
     } catch (err) {
       const fallback = config.fallback;
+      const reason = err instanceof Error ? err.message : String(err);
+      void recordVeniceFallback(reason, 'extract');
       if (!fallback) throw err;
-      console.warn(
-        '[Sage] Venice extraction failed, falling back to Claude:',
-        err instanceof Error ? err.message : String(err),
-      );
       return await completeFromAnthropic(fallback, opts);
     }
   }
@@ -314,11 +321,17 @@ async function completeFromVenice(config: VeniceConfig, opts: CompleteOptions): 
   if (opts.systemPrompt) messages.push({ role: 'system', content: opts.systemPrompt });
   messages.push({ role: 'user', content: opts.prompt });
 
-  const res = await client.chat.completions.create({
-    model: config.model,
-    max_tokens: opts.maxTokens ?? 500,
-    messages,
-  });
+  const { data: res, response } = await client.chat.completions
+    .create({
+      model: config.model,
+      max_tokens: opts.maxTokens ?? 500,
+      messages,
+    })
+    .withResponse();
+
+  const snapshot = buildVeniceSnapshot(response.headers, config.model, 'extract');
+  void recordVeniceSuccess(snapshot);
+
   return res.choices[0]?.message?.content || '';
 }
 

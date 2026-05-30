@@ -1366,6 +1366,8 @@ Vercel KV (Upstash Redis) is the single chokepoint for nearly all mutable user s
 | `seller:pickup:{ownerLower}` | Seller exact street address | **Sensitive (PII)** |
 | `sage:suggestion:{id}` + index | Bug reports / feature requests | Quasi-public |
 | `sage:soul` | Sage's persona evolution | App config |
+| `sage:venice:lastSuccess` / `lastFallback` / `fallbacks:{YYYYMMDD}` | Sage provider health (Venice balance + fallback observability) | App config |
+| `garden:nudges:{userId}` | Proactive Sage nudge queue (durable across brain bumps) | User-owned |
 | `collection:<slug>` + index | Common Area garden collections | Public |
 | `payment:*` | Ambassador cash payment tracking | TEMPORARY (deletes at $ROOTS launch) |
 
