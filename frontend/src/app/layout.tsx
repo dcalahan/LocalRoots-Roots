@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { RPCreditToaster } from '@/components/RPCreditToaster';
@@ -66,6 +67,14 @@ export default function RootLayout({
           <Toaster />
           <RPCreditToaster />
         </Providers>
+        {/* Common Area / NIF visitor analytics — first-party tracker
+            hosted on track.localroots.love. Loads after page is interactive
+            so it never blocks paint. */}
+        <Script
+          src="https://track.localroots.love/c.js"
+          data-compass-site="localroots"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
