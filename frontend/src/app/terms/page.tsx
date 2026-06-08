@@ -19,7 +19,7 @@ export default function TermsPage() {
           Terms & Privacy
         </h1>
         <p className="text-sm text-roots-gray mb-8">
-          Last updated April 26, 2026
+          Last updated June 4, 2026
         </p>
 
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-10 text-sm text-amber-900">
@@ -319,6 +319,45 @@ export default function TermsPage() {
               nature of public blockchains), but we can disconnect your
               wallet from your profile and remove off-chain data we hold
               about you.
+            </p>
+
+            <h3 className="font-heading text-xl font-bold mt-6 mb-3">
+              Site analytics
+            </h3>
+            <p>
+              We use a small, first-party script on localroots.love to
+              understand which pages help our gardeners and which emails
+              actually land. It stores two cookies in your browser (a
+              visitor ID and a session ID), and records anonymous things
+              like which pages you visited and how long you spent on each.
+              Your IP address is one-way hashed before storage — we never
+              write your raw IP to disk, and after about a day the hash
+              can no longer be reversed.
+            </p>
+            <p>
+              If you arrive at our site from one of our emails, the link
+              tells us you&apos;re the person we sent it to, so when you
+              say &ldquo;yes I&apos;d like more info&rdquo; later, we
+              already know who you are. Similarly, if you fill out a
+              contact form on this site, we associate your email with the
+              pages you visited so our follow-up conversation is actually
+              informed.
+            </p>
+            <p>
+              We don&apos;t sell this data, share it with advertisers, or
+              use it to follow you around the web. We use it for one
+              thing: making Local Roots better at helping gardens grow.
+            </p>
+            <p>
+              <strong>Don&apos;t want any of this?</strong> Visit our{' '}
+              <Link href="/privacy-preferences" className="underline">
+                privacy preferences page
+              </Link>{' '}
+              and toggle analytics off. You can also email us at{' '}
+              <a href="mailto:doug@localroots.love" className="underline">
+                doug@localroots.love
+              </a>{' '}
+              to request deletion of all data tied to your visits.
             </p>
           </section>
 

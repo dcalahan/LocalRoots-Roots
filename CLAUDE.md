@@ -65,6 +65,21 @@ LocalRoots is a **gardening companion first, marketplace inside.** The AI garden
 - Primary CTA is "Start Growing" not "Browse Produce" or "Start Selling"
 - The AI should feel like a knowledgeable friend, not a product feature
 
+### LocalRoots is independent in its public posture — STRATEGIC
+
+**Doug's framing (Jun 4 2026):** "LocalRoots is positioned as an independent project. The behavioral analytics infrastructure is shared across multiple products operated by Common Area LLC, but LR's public posture must never reveal that upstream relationship."
+
+LocalRoots is operated by Common Area LLC (the same legal entity behind the Stripe KYB, EIN 41-5376265, see "Credit-Card Onramp"). That fact stays internal. **The public-facing site, source code comments, commit messages, ToS copy, analytics disclosure, and any partner-facing letter from LR's voice must never name Common Area, NIF (Nightly Idea Factory), "Compass" (the shared analytics platform), or any other shared-infra brand.**
+
+Concrete rules:
+- **Site analytics disclosure says "our small first-party script,"** never names the underlying platform. See `/terms` "Site analytics" section and `/privacy-preferences`.
+- **The tracker script tag (`<Script src="https://track.localroots.love/c.js" data-compass-site="localroots">`)** uses `localroots.love` for the hostname and ships under LR's domain. The `data-compass-site` attribute name is a residual from the shared platform — DevTools shows it but it isn't branded; the script src, beacon endpoint, cookie names (`cmp_vid`, `cmp_sid`, `cmp_optout`), and disclosure copy are all independent-looking. **Don't expose the upstream platform name in code comments or commit messages** even though `cmp_*` and `data-compass-site` are technically visible. The cmp prefix is meaningless to anyone outside the infra team.
+- **Cookie opt-out cookie name is `cmp_optout` on the apex `.localroots.love` domain.** `/privacy-preferences` writes / clears it. The tracker script honors it. Don't rename it without a coordinated infrastructure change on the tracker side.
+- **Marketing copy and Common Area cross-promotion** lives in Common Area's surfaces, NEVER in LR copy. LocalRoots-the-product looks like a standalone gardening company.
+- **Commit messages** are publicly readable (the repo is open-source-roadmapped per the Decentralization Roadmap). Don't write "Add Common Area / NIF tracker" — write "Add first-party site analytics" or similar neutral framing.
+
+When in doubt, ask: would a regulator, journalist, or hostile competitor reading LocalRoots' git history alone conclude this is a standalone project? If not, fix the language.
+
 ## Zero Liability via Decentralization — STRATEGIC PRINCIPLE
 
 **Doug's North Star (Apr 26 2026):** "Host food listings (food-safety liability is real) is why this must be a decentralized application. I want zero liability."

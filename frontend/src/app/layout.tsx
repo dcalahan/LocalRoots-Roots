@@ -67,9 +67,10 @@ export default function RootLayout({
           <Toaster />
           <RPCreditToaster />
         </Providers>
-        {/* Common Area / NIF visitor analytics — first-party tracker
-            hosted on track.localroots.love. Loads after page is interactive
-            so it never blocks paint. */}
+        {/* First-party site analytics, hosted on track.localroots.love.
+            Loads after the page is interactive so it never blocks paint.
+            Users can opt out at /privacy-preferences (sets a cmp_optout
+            cookie that the script honors). */}
         <Script
           src="https://track.localroots.love/c.js"
           data-compass-site="localroots"

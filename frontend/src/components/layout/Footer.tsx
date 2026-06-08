@@ -37,6 +37,12 @@ export function Footer() {
             >
               Government
             </Link>
+            <Link
+              href="/privacy-preferences"
+              className="text-roots-gray hover:text-roots-primary transition-colors"
+            >
+              Privacy preferences
+            </Link>
             <a
               href="mailto:feedback@localroots.love?subject=LocalRoots Feedback"
               className="text-roots-primary hover:text-roots-primary/80 transition-colors font-medium"
