@@ -15,16 +15,38 @@
 
 const PRIVY_BASE_URL = 'https://auth.privy.io/api/v1';
 
-interface PrivyLinkedAccount {
-  type: string;
+/**
+ * Privy's REST API returns snake_case fields on user records
+ * (`linked_accounts`, `wallet_client_type`, `chain_type`). Some Privy
+ * SDKs / older docs camelCase them. We accept either to be safe — the
+ * distribution script's PrivyUser type assumed camelCase and silently
+ * mismatched the snake_case live API. Curl-verified June 10 2026.
+ */
+interface PrivyLinkedAccountRaw {
+  type?: string;
   address?: string;
+  chain_type?: string;
   chainType?: string;
+  wallet_client_type?: string;
   walletClientType?: string;
 }
 
-interface PrivyUser {
-  id: string;
-  linkedAccounts: PrivyLinkedAccount[];
+interface PrivyUserRaw {
+  id?: string;
+  linked_accounts?: PrivyLinkedAccountRaw[];
+  linkedAccounts?: PrivyLinkedAccountRaw[];
+}
+
+function getLinkedAccounts(user: PrivyUserRaw): PrivyLinkedAccountRaw[] {
+  return user.linked_accounts ?? user.linkedAccounts ?? [];
+}
+
+function getChainType(a: PrivyLinkedAccountRaw): string | undefined {
+  return a.chain_type ?? a.chainType;
+}
+
+function getWalletClientType(a: PrivyLinkedAccountRaw): string | undefined {
+  return a.wallet_client_type ?? a.walletClientType;
 }
 
 function basicAuth(): string | null {
@@ -71,17 +93,18 @@ export async function getPrivyEmbeddedWallet(
       );
       return null;
     }
-    const user = (await res.json()) as PrivyUser;
-    const embedded = user.linkedAccounts?.find(
+    const user = (await res.json()) as PrivyUserRaw;
+    const accounts = getLinkedAccounts(user);
+    const embedded = accounts.find(
       (a) =>
         a.type === 'wallet' &&
-        a.walletClientType === 'privy' &&
-        a.chainType === 'ethereum' &&
+        getWalletClientType(a) === 'privy' &&
+        getChainType(a) === 'ethereum' &&
         typeof a.address === 'string',
     );
     if (!embedded) {
       console.warn(
-        `[Privy] getPrivyEmbeddedWallet ${did.slice(0, 20)}... → no embedded ethereum wallet on user (linkedAccounts: ${user.linkedAccounts?.length ?? 0})`,
+        `[Privy] getPrivyEmbeddedWallet ${did.slice(0, 20)}... → no embedded ethereum wallet on user (linked_accounts: ${accounts.length})`,
       );
     }
     return (embedded?.address as `0x${string}`) || null;
