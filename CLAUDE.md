@@ -1735,6 +1735,75 @@ Autonomous server-to-server sync. Common Area NIF proposes gardens and resolves 
 
 **Deactivation sync (future):** v1 uses `?since=` polling, so deactivations propagate within 6h. When tighter sync is needed, expose `POST /api/localroots/garden-event` accepting `{ slug, event: 'deactivated' | 'reactivated' | 'updated' }` and Common Area pushes deltas. Parked until requested.
 
+## Partner Integrations
+
+Companion products that link back into LocalRoots get a stable contract surface. The first such partner is **Cypress Marsh Garden Supplies**, which sells personalized QR labels to LR gardeners — each label printed in the wild pulls a neighbor back into LocalRoots.
+
+### Identity bridge: Privy DID → wallet → sellerId
+
+LR has two identifiers for the same person:
+- **Privy DID** (`did:privy:cm...`) — Sage's user identity, gardener profile key in KV
+- **On-chain `sellerId`** (uint256) — marketplace contract's monotonic counter, used in storefront URL `/buy/sellers/{N}`
+
+The bridge: `did → Privy Management API (auth.privy.io) → embedded wallet → marketplace.sellerIdByOwner(wallet)`. Server-side helper at `frontend/src/lib/privyManagement.ts` does the DID→wallet half; the contract read does the rest. Requires `PRIVY_APP_ID` + `PRIVY_APP_SECRET` env vars (the script in `scripts/distribution/fetchPrivyUsers.ts` was the only prior runtime use — partner endpoints are the second).
+
+**Stable URLs for printing:** `/buy/sellers/{N}` is permanent and immutable forever once minted. `/gardeners/{userId}` is the fallback for gardeners not yet registered as sellers — stable as long as they remain opted in to the public garden directory.
+
+### Cypress Marsh contract (locked June 4 2026)
+
+**A. JWT signing — `POST /api/sage/label-link`**
+
+Body: `{ userId: "did:privy:..." }`. Returns `{ url, expiresAt, jti }`. URL points at `https://labels.cypressmarshgardensupplies.com/start?t=<JWT>`.
+
+JWT: HS256, `kid: "v1"`, `iss: "https://www.localroots.love"`, `aud: "cypress-marsh-labels"`, `sub: <privy-did>`, `iat`/`exp` (15-min TTL), `jti` (UUID, single-use enforced by label store). Shared secret in env `LABEL_STORE_JWT_SECRET` (≥32 bytes).
+
+Eligibility-gated: only mints for DIDs that are either a registered seller OR an opted-in public gardener. 404 `not_eligible` for both negatives — same error to prevent enumeration. 20 req/min/IP rate limit.
+
+**B. Partner profile — `GET /api/v1/partner/growers/{grower_id}`**
+
+`{grower_id}` = URL-encoded Privy DID. `Authorization: Bearer <PARTNER_API_KEY_CYPRESS_MARSH>` (≥16 chars, `timingSafeEqual`, fail-closed if env missing). 120 req/min/key.
+
+Response (`lr_profile_version: 1` — bump if shape changes):
+```json
+{
+  "grower_id": "did:privy:...",
+  "display_name": "...",
+  "garden_name": "...",         // === display_name (single-name principle)
+  "bio": "...",
+  "profile_slug": null,
+  "profile_url": "https://www.localroots.love/buy/sellers/42",
+  "profile_kind": "seller" | "gardener",
+  "city": "...",
+  "state": "SC",
+  "country": "US",
+  "avatar_url": "...",
+  "is_opted_in_public": true,
+  "lr_profile_version": 1
+}
+```
+
+404 `not_found` when neither seller nor opted-in gardener. 400 `invalid_grower_id` for malformed input. 429 `rate_limited` with `Retry-After`. No CORS — server-to-server only.
+
+### What's NOT built yet (deferred)
+
+- **Sage chat surface** — the `open_label_store` GardenActionType, the chat "Get personalized labels →" button rendering, the `garden-brain.ts` system-prompt teaching Sage when to offer it, and the `SAGE_BRAIN_VERSION` bump. Held for a dedicated Sage prompt task — the mint endpoint is ready and curl-testable on its own when that work begins.
+- **Order writeback** — `POST /api/v1/partner/label-orders` to surface "labels shipped" inside LR. Punted to v1.5 once real label shipping volume validates the surface is worth building.
+
+### Adding a new partner
+
+1. Generate two secrets (`openssl rand -hex 32` works for both): one Bearer key, one JWT secret. Add to Vercel env as `PARTNER_API_KEY_<PARTNER>` and `<PARTNER>_JWT_SECRET`.
+2. New mint route under `/api/sage/<partner>-link` reusing `lib/labelLinkJwt.ts`-shaped helper with the new audience claim.
+3. New partner route under `/api/v1/partner/<resource>/...` calling `requirePartnerAuth(req, '<env-var>')`.
+4. New section in this CLAUDE.md mirroring "Cypress Marsh contract" with locked claims, response shape, version field. Keep the contract permanent — bump version fields rather than mutating.
+
+### Files
+
+- `frontend/src/lib/partnerAuth.ts` — generic Bearer auth factory (reuse for any partner)
+- `frontend/src/lib/privyManagement.ts` — `getPrivyEmbeddedWallet(did)` server-side
+- `frontend/src/lib/labelLinkJwt.ts` — Cypress Marsh JWT mint (`MintedLabelLink`)
+- `frontend/src/app/api/sage/label-link/route.ts` — POST mint route
+- `frontend/src/app/api/v1/partner/growers/[grower_id]/route.ts` — GET partner endpoint
+
 ## Social Sharing
 
 **Reference:** Common Area's [Social Sharing Guide](https://github.com/dcalahan/nightly-idea-factory/blob/master/support/LOCALROOTS-SOCIAL-SHARING-GUIDE.md) — platform-specific rules for URL placement, hashtag counts, image dimensions, posting times.
