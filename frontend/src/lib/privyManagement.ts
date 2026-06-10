@@ -45,7 +45,10 @@ export async function getPrivyEmbeddedWallet(
 ): Promise<`0x${string}` | null> {
   if (!did.startsWith('did:privy:')) return null;
   const auth = basicAuth();
-  if (!auth) return null;
+  if (!auth) {
+    console.warn('[Privy] getPrivyEmbeddedWallet: missing PRIVY_APP_ID or PRIVY_APP_SECRET');
+    return null;
+  }
 
   const appId = process.env.PRIVY_APP_ID || process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
   const url = `${PRIVY_BASE_URL}/users/${encodeURIComponent(did)}`;
@@ -61,7 +64,13 @@ export async function getPrivyEmbeddedWallet(
       // Privy responds within ~200ms typically; cap at 5s.
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '<no body>');
+      console.warn(
+        `[Privy] getPrivyEmbeddedWallet ${did.slice(0, 20)}... → HTTP ${res.status}: ${errBody.slice(0, 200)}`,
+      );
+      return null;
+    }
     const user = (await res.json()) as PrivyUser;
     const embedded = user.linkedAccounts?.find(
       (a) =>
@@ -70,8 +79,16 @@ export async function getPrivyEmbeddedWallet(
         a.chainType === 'ethereum' &&
         typeof a.address === 'string',
     );
+    if (!embedded) {
+      console.warn(
+        `[Privy] getPrivyEmbeddedWallet ${did.slice(0, 20)}... → no embedded ethereum wallet on user (linkedAccounts: ${user.linkedAccounts?.length ?? 0})`,
+      );
+    }
     return (embedded?.address as `0x${string}`) || null;
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[Privy] getPrivyEmbeddedWallet ${did.slice(0, 20)}... → ${err instanceof Error ? err.message : String(err)}`,
+    );
     return null;
   }
 }

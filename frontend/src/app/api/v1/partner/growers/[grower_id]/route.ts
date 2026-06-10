@@ -50,12 +50,50 @@ interface SuccessResponse {
   lr_profile_version: 1;
 }
 
-/** Split `"Hilton Head, SC"` → `{ city: 'Hilton Head', state: 'SC' }`. */
+/**
+ * Map of US state names to 2-letter codes. Used by splitLocationLabel
+ * because reverse-geocoding via Nominatim returns full state names
+ * ("South Carolina") rather than codes ("SC").
+ */
+const US_STATE_NAMES: Record<string, string> = {
+  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
+  colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA',
+  hawaii: 'HI', idaho: 'ID', illinois: 'IL', indiana: 'IN', iowa: 'IA',
+  kansas: 'KS', kentucky: 'KY', louisiana: 'LA', maine: 'ME', maryland: 'MD',
+  massachusetts: 'MA', michigan: 'MI', minnesota: 'MN', mississippi: 'MS', missouri: 'MO',
+  montana: 'MT', nebraska: 'NE', nevada: 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND',
+  ohio: 'OH', oklahoma: 'OK', oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI',
+  'south carolina': 'SC', 'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT',
+  vermont: 'VT', virginia: 'VA', washington: 'WA', 'west virginia': 'WV',
+  wisconsin: 'WI', wyoming: 'WY', 'district of columbia': 'DC',
+};
+
+/**
+ * Split a locationLabel into `{ city, state }`.
+ *
+ * Handles three observed formats from LR's reverse-geocode flow:
+ *   "Hilton Head Island, South Carolina"  → city: "Hilton Head Island", state: "SC"
+ *   "Hilton Head, SC"                     → city: "Hilton Head", state: "SC"
+ *   "Location not shared"                 → city: null, state: null
+ */
 function splitLocationLabel(label: string | undefined): { city: string | null; state: string | null } {
   if (!label) return { city: null, state: null };
-  const m = label.match(/^(.+?),\s*([A-Z]{2})\b/);
-  if (!m) return { city: label, state: null };
-  return { city: m[1].trim(), state: m[2] };
+  if (!label.includes(',')) {
+    // "Location not shared" and similar — no real city/state info.
+    if (/not\s*shared/i.test(label)) return { city: null, state: null };
+    return { city: label, state: null };
+  }
+  const [cityRaw, stateRaw] = label.split(',', 2).map((s) => s.trim());
+  if (!cityRaw || !stateRaw) return { city: cityRaw || null, state: null };
+
+  // 2-letter code already
+  if (/^[A-Z]{2}$/.test(stateRaw)) return { city: cityRaw, state: stateRaw };
+  // Full name → look up code
+  const code = US_STATE_NAMES[stateRaw.toLowerCase()];
+  if (code) return { city: cityRaw, state: code };
+  // Unknown format — pass through what we have
+  return { city: cityRaw, state: null };
 }
 
 /** Per-key per-minute rate limit. KV read-modify-write — race-tolerant. */
@@ -161,7 +199,9 @@ export async function GET(
     profile_kind: profileKind,
     city,
     state,
-    country: state ? 'US' : null,
+    // LR is US-only today; default to "US" since locationLabel doesn't carry
+    // country info. If LR expands internationally, derive from the profile.
+    country: 'US',
     avatar_url: profile?.profilePhotoUrl ?? null,
     is_opted_in_public: optedInPublic,
     lr_profile_version: 1,
