@@ -68,10 +68,16 @@ function diffMyGarden(
     // 1) plant-added — plant.id not in previous
     if (!prev) {
       events.push({ verbId: 'plant-added', dedupKey: plant.id });
-      // A newly-added plant could include a harvest record on first
-      // save. Credit harvest-logged independently of plant-added.
+      // A newly-added plant could include harvest events on first save
+      // (rare, but possible if imported from another source).
+      for (const e of plant.harvestEvents ?? []) {
+        events.push({
+          verbId: 'harvest-logged',
+          dedupKey: `${plant.id}:harvest:${e.date.slice(0, 10)}`,
+        });
+      }
       if (plant.harvestedDate) {
-        events.push({ verbId: 'harvest-logged', dedupKey: `${plant.id}:${plant.harvestedDate}` });
+        events.push({ verbId: 'plant-finished', dedupKey: `${plant.id}:finished` });
       }
       // NOTE: plant-photo verb stays declared but live: false in the
       // registry until GardenPlant gets a photoIpfs field. When that
@@ -79,12 +85,29 @@ function diffMyGarden(
       continue;
     }
 
-    // 2) harvest-logged — harvestedDate transition from unset → set
-    if (plant.harvestedDate && !prev.harvestedDate) {
-      events.push({ verbId: 'harvest-logged', dedupKey: `${plant.id}:${plant.harvestedDate}` });
+    // 2) harvest-logged — fires PER new HarvestEvent (per-plant-per-day
+    //    dedup). Doug, Jun 15 2026: changed from "harvestedDate transition"
+    //    to event-based so RP credits every harvest of a continuous-bearing
+    //    crop, not just the close-out. Multiple picks of the same plant on
+    //    the same UTC day collapse to one credit (setnx in the verb layer).
+    const prevDates = new Set(
+      (prev.harvestEvents ?? []).map((e) => e.date.slice(0, 10)),
+    );
+    for (const e of plant.harvestEvents ?? []) {
+      const day = e.date.slice(0, 10);
+      if (!prevDates.has(day)) {
+        events.push({ verbId: 'harvest-logged', dedupKey: `${plant.id}:harvest:${day}` });
+      }
     }
 
-    // 3) plant-update — notes / quantity / manualStatus changed.
+    // 3) plant-finished — harvestedDate transition unset → set. Small bonus
+    //    on the explicit close-out; lifetime-deduped by plantId so it
+    //    can't double-credit even across re-saves.
+    if (plant.harvestedDate && !prev.harvestedDate) {
+      events.push({ verbId: 'plant-finished', dedupKey: `${plant.id}:finished` });
+    }
+
+    // 4) plant-update — notes / quantity / manualStatus changed.
     //    Dedupe key is a hash of the new content so identical re-saves
     //    don't re-credit.
     const noteChange = (plant.notes ?? '') !== (prev.notes ?? '');

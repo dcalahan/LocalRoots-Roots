@@ -1,10 +1,11 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2026-01-01",
+  "lastUpdated": "2026-06-15",
   "description": "Growing data for all crops with timing relative to frost dates",
   "crops": {
     "tomato-beefsteak": {
       "name": "Beefsteak Tomato",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -45,7 +46,7 @@
         "Remove suckers for larger fruits, or leave for more but smaller tomatoes",
         "Water deeply and consistently to prevent blossom end rot",
         "Mulch heavily to retain moisture and prevent soil splash",
-        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
+        "Plant DEEP at transplant \u2014 strip the lower leaves until only the topmost 4\u20135 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -66,6 +67,7 @@
     },
     "tomato-cherry": {
       "name": "Cherry Tomatoes",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -104,7 +106,7 @@
         "Can be grown in large containers on patios",
         "Harvest when fully colored for best flavor",
         "Plants continue producing until frost",
-        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
+        "Plant DEEP at transplant \u2014 strip the lower leaves until only the topmost 4\u20135 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -117,14 +119,15 @@
           "triggerDays": 30,
           "type": "sucker",
           "title": "Sucker your tomatoes",
-          "message": "Find the V where each branch meets the main stem. The upward-pointing shoot growing in that V is the SUCKER — pinch it off. The branch itself (leafy growth going out to the side) is what makes fruit — leave those alone. Indeterminate cherry tomatoes branch a lot, so check weekly.",
-          "actionHint": "Snap off suckers when they're under 4 inches (clean break, no torn tissue). Larger suckers can be rooted into new plants — stick a 6-inch sucker in moist soil and it'll root in a couple weeks.",
+          "message": "Find the V where each branch meets the main stem. The upward-pointing shoot growing in that V is the SUCKER \u2014 pinch it off. The branch itself (leafy growth going out to the side) is what makes fruit \u2014 leave those alone. Indeterminate cherry tomatoes branch a lot, so check weekly.",
+          "actionHint": "Snap off suckers when they're under 4 inches (clean break, no torn tissue). Larger suckers can be rooted into new plants \u2014 stick a 6-inch sucker in moist soil and it'll root in a couple weeks.",
           "recurringDays": 10
         }
       ]
     },
     "tomato-heirloom": {
       "name": "Heirloom Tomato",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -163,7 +166,7 @@
         "Flavor is exceptional when vine-ripened",
         "Handle fruits gently as skin is often thinner",
         "Save seeds to continue the variety",
-        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
+        "Plant DEEP at transplant \u2014 strip the lower leaves until only the topmost 4\u20135 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -184,6 +187,7 @@
     },
     "tomato-roma": {
       "name": "Roma Tomato",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -222,7 +226,7 @@
         "Excellent for canning and sauce making",
         "Less juicy, more meaty flesh than slicing tomatoes",
         "Good disease resistance",
-        "Plant DEEP at transplant — strip the lower leaves until only the topmost 4–5 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
+        "Plant DEEP at transplant \u2014 strip the lower leaves until only the topmost 4\u20135 sets of leaves are left, then bury the rest of the stem underground. Roots form along the buried stem and make the plant much more drought-resistant."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -243,6 +247,7 @@
     },
     "pepper-bell-red": {
       "name": "Red Bell Pepper",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -293,13 +298,14 @@
           "recurringDays": 21,
           "type": "pinch-top",
           "title": "Optional: pepper topping",
-          "message": "Pepper topping is OPTIONAL — extension experts are split. Some report 15-20% more total fruit; others find no yield benefit and a 2-3 week delay in first harvest. Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip topping this year.",
-          "actionHint": "Verify: 6-8 true leaves, no flower buds visible. If both true: pinch the central growing tip. The plant branches into 2-4 stems within 10-14 days. If buds are already showing, leave it — topping a flowering pepper removes your first fruit set."
+          "message": "Pepper topping is OPTIONAL \u2014 extension experts are split. Some report 15-20% more total fruit; others find no yield benefit and a 2-3 week delay in first harvest. Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip topping this year.",
+          "actionHint": "Verify: 6-8 true leaves, no flower buds visible. If both true: pinch the central growing tip. The plant branches into 2-4 stems within 10-14 days. If buds are already showing, leave it \u2014 topping a flowering pepper removes your first fruit set."
         }
       ]
     },
     "pepper-bell-green": {
       "name": "Green Bell Pepper",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -349,14 +355,15 @@
           "triggerDays": 21,
           "type": "pinch-top",
           "title": "Optional: pepper topping",
-          "message": "Pepper topping is OPTIONAL — extension experts are split (some report ~15-20% more fruit; others find no benefit + a 2-3 week delay to first harvest). Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip this year.",
-          "actionHint": "Verify: 6-8 true leaves, no flower buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are showing, leave it alone — topping a flowering pepper removes the first fruit set.",
+          "message": "Pepper topping is OPTIONAL \u2014 extension experts are split (some report ~15-20% more fruit; others find no benefit + a 2-3 week delay to first harvest). Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip this year.",
+          "actionHint": "Verify: 6-8 true leaves, no flower buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are showing, leave it alone \u2014 topping a flowering pepper removes the first fruit set.",
           "recurringDays": 999
         }
       ]
     },
     "pepper-jalapeno": {
       "name": "Jalapeno Pepper",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -407,13 +414,14 @@
           "recurringDays": 21,
           "type": "pinch-top",
           "title": "Optional: pepper topping",
-          "message": "Topping a jalapeno is OPTIONAL — extension sources are split on whether it actually increases yield. If you want to try it, only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip this year.",
+          "message": "Topping a jalapeno is OPTIONAL \u2014 extension sources are split on whether it actually increases yield. If you want to try it, only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip this year.",
           "actionHint": "Verify: 6-8 true leaves, no buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are already there, leave it alone."
         }
       ]
     },
     "pepper-habanero": {
       "name": "Habanero Pepper",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 10,
@@ -470,6 +478,7 @@
     },
     "pepper-serrano": {
       "name": "Serrano Pepper",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -520,13 +529,14 @@
           "recurringDays": 21,
           "type": "pinch-top",
           "title": "Optional: serrano topping",
-          "message": "Topping a serrano is OPTIONAL — extension sources are split on yield benefit. Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip topping this year.",
-          "actionHint": "Verify: 6-8 true leaves, no buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are already showing, leave it alone — topping a flowering plant removes your first fruit set."
+          "message": "Topping a serrano is OPTIONAL \u2014 extension sources are split on yield benefit. Only top a plant that has 6-8 true leaves and NO flower buds yet. If yours is already flowering, skip topping this year.",
+          "actionHint": "Verify: 6-8 true leaves, no buds visible. If both true: pinch the central growing tip. Plant branches into 2-4 stems within 10-14 days. If buds are already showing, leave it alone \u2014 topping a flowering plant removes your first fruit set."
         }
       ]
     },
     "eggplant": {
       "name": "Eggplant",
+      "harvestPattern": "continuous",
       "category": "nightshades",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -577,13 +587,14 @@
           "recurringDays": 21,
           "type": "pinch-top",
           "title": "Eggplant cleanup pruning",
-          "message": "Extension publications (UMD, Cornell) do NOT recommend topping eggplant — it branches naturally with adequate spacing. The more impactful prune is removing yellowing lower leaves for airflow and limiting fruit count per plant to 4-6 so they size up.",
-          "actionHint": "Remove yellowing or damaged lower leaves for airflow. Pinch any side shoots that emerge BELOW the first stem fork — those steal energy. Don't top the main stem; let it grow."
+          "message": "Extension publications (UMD, Cornell) do NOT recommend topping eggplant \u2014 it branches naturally with adequate spacing. The more impactful prune is removing yellowing lower leaves for airflow and limiting fruit count per plant to 4-6 so they size up.",
+          "actionHint": "Remove yellowing or damaged lower leaves for airflow. Pinch any side shoots that emerge BELOW the first stem fork \u2014 those steal energy. Don't top the main stem; let it grow."
         }
       ]
     },
     "zucchini": {
       "name": "Zucchini",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -644,6 +655,7 @@
     },
     "yellow-squash": {
       "name": "Yellow Squash",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -704,6 +716,7 @@
     },
     "cucumber": {
       "name": "Cucumber",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -744,9 +757,9 @@
       "tips": [
         "Consistent watering prevents bitter taste",
         "Trellis vining types to save space and keep fruits clean",
-        "Harvest frequently — every 1-2 days during peak. Fruit can go from ideal to over-ripe in 24 hours of hot weather.",
+        "Harvest frequently \u2014 every 1-2 days during peak. Fruit can go from ideal to over-ripe in 24 hours of hot weather.",
         "Morning harvest gives crispest cucumbers",
-        "Yellowing = past prime. Once you see any yellow on a cucumber, harvest it IMMEDIATELY. Yellow means the plant has started developing seeds inside — flesh turns spongy and bitter, and the plant slows new fruit production to invest in seed maturation."
+        "Yellowing = past prime. Once you see any yellow on a cucumber, harvest it IMMEDIATELY. Yellow means the plant has started developing seeds inside \u2014 flesh turns spongy and bitter, and the plant slows new fruit production to invest in seed maturation."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -767,6 +780,7 @@
     },
     "cucumber-pickling": {
       "name": "Pickling Cucumber",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -808,7 +822,7 @@
         "Plants produce in waves - plan succession picklings",
         "Bumpy skin is normal and desirable",
         "Process within 24 hours of harvest for crispest pickles",
-        "Yellowing = past prime. The moment a pickling cucumber starts turning yellow, harvest it IMMEDIATELY — flesh gets bitter and spongy fast, and the plant slows new fruit production to invest in seed maturation. Pickle the yellowed ones for sauce/relish if anything, but ideally pick BEFORE they yellow."
+        "Yellowing = past prime. The moment a pickling cucumber starts turning yellow, harvest it IMMEDIATELY \u2014 flesh gets bitter and spongy fast, and the plant slows new fruit production to invest in seed maturation. Pickle the yellowed ones for sauce/relish if anything, but ideally pick BEFORE they yellow."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -829,6 +843,7 @@
     },
     "butternut-squash": {
       "name": "Butternut Squash",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -888,6 +903,7 @@
     },
     "acorn-squash": {
       "name": "Acorn Squash",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -937,6 +953,7 @@
     },
     "spaghetti-squash": {
       "name": "Spaghetti Squash",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -986,6 +1003,7 @@
     },
     "pumpkin": {
       "name": "Pumpkin",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -1045,6 +1063,7 @@
     },
     "watermelon": {
       "name": "Watermelon",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -1081,7 +1100,7 @@
       ],
       "tips": [
         "Needs long hot season - use black plastic mulch to warm soil",
-        "Multiple ripeness signals (use 2+ together, not just one): (1) GROUND SPOT — the patch where the melon touches the ground turns from white to creamy yellow when ripe. This is the most reliable indicator. (2) TENDRIL — the curly tendril closest to the fruit dries up and turns brown. (3) THUMP TEST — ripe melon sounds dull/hollow, unripe sounds metallic/tight (use as confirmation, not primary).",
+        "Multiple ripeness signals (use 2+ together, not just one): (1) GROUND SPOT \u2014 the patch where the melon touches the ground turns from white to creamy yellow when ripe. This is the most reliable indicator. (2) TENDRIL \u2014 the curly tendril closest to the fruit dries up and turns brown. (3) THUMP TEST \u2014 ripe melon sounds dull/hollow, unripe sounds metallic/tight (use as confirmation, not primary).",
         "Reduce watering during the last 2 weeks of ripening for sweeter flavor"
       ],
       "isPerennial": false,
@@ -1103,6 +1122,7 @@
     },
     "cantaloupe": {
       "name": "Cantaloupe",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -1163,6 +1183,7 @@
     },
     "honeydew": {
       "name": "Honeydew Melon",
+      "harvestPattern": "continuous",
       "category": "squash",
       "startIndoors": {
         "weeksBeforeLastFrost": 3,
@@ -1200,7 +1221,7 @@
       "tips": [
         "Needs longer season than cantaloupe",
         "Ripe when blossom end gives slightly to pressure AND skin turns creamy yellow",
-        "Unlike cantaloupe, honeydew does NOT slip from the vine when ripe — you have to CUT it. Don't wait for it to drop or twist off; you'll miss the window.",
+        "Unlike cantaloupe, honeydew does NOT slip from the vine when ripe \u2014 you have to CUT it. Don't wait for it to drop or twist off; you'll miss the window.",
         "Sweetest when left on vine until fully ripe (because it doesn't slip, it can stay on the vine longer than cantaloupe)"
       ],
       "isPerennial": false,
@@ -1212,6 +1233,7 @@
     },
     "lettuce-romaine": {
       "name": "Romaine Lettuce",
+      "harvestPattern": "single",
       "category": "leafy-greens",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1269,11 +1291,12 @@
         "daysToBoltMax": 75,
         "heatTriggerF": 80,
         "trigger": "heat",
-        "advice": "Visible sign of bolting: a central flower stalk shoots STRAIGHT UP from the middle of the plant. Leaves may also start looking more pointed/elongated, and the plant gets taller and narrower. Once you see the stalk elongating, harvest the entire plant immediately — inner leaves may still be salvageable for a day or two, but outer leaves at the bottom are often already bitter. Sample a leaf: if it's bitter, time's up."
+        "advice": "Visible sign of bolting: a central flower stalk shoots STRAIGHT UP from the middle of the plant. Leaves may also start looking more pointed/elongated, and the plant gets taller and narrower. Once you see the stalk elongating, harvest the entire plant immediately \u2014 inner leaves may still be salvageable for a day or two, but outer leaves at the bottom are often already bitter. Sample a leaf: if it's bitter, time's up."
       }
     },
     "lettuce-butter": {
       "name": "Butter Lettuce",
+      "harvestPattern": "single",
       "category": "leafy-greens",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1323,12 +1346,13 @@
         "daysToBoltMin": 45,
         "daysToBoltMax": 60,
         "heatTriggerF": 75,
-        "advice": "Visible sign of bolting: a central stalk shoots straight up from the middle of the rosette. Leaves get pointier and the head loses its compact butterhead shape. Once you see the stalk elongating, harvest immediately — bitterness sets in within days. Butter lettuce bolts faster than most in heat (75°F+ sustained), so plant in afternoon shade for summer succession.",
+        "advice": "Visible sign of bolting: a central stalk shoots straight up from the middle of the rosette. Leaves get pointier and the head loses its compact butterhead shape. Once you see the stalk elongating, harvest immediately \u2014 bitterness sets in within days. Butter lettuce bolts faster than most in heat (75\u00b0F+ sustained), so plant in afternoon shade for summer succession.",
         "trigger": "heat"
       }
     },
     "lettuce-mixed": {
       "name": "Mixed Salad Greens",
+      "harvestPattern": "cut-and-come-again",
       "category": "leafy-greens",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1383,6 +1407,7 @@
     },
     "spinach": {
       "name": "Spinach",
+      "harvestPattern": "cut-and-come-again",
       "category": "leafy-greens",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1444,6 +1469,7 @@
     },
     "kale": {
       "name": "Kale",
+      "harvestPattern": "cut-and-come-again",
       "category": "leafy-greens",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1484,7 +1510,7 @@
       ],
       "avoid": [],
       "tips": [
-        "Light frost improves kale flavor — sugars rise as the plant defends against cold. But a hard freeze below ~25°F can still damage the leaves, so pick before a hard freeze hits.",
+        "Light frost improves kale flavor \u2014 sugars rise as the plant defends against cold. But a hard freeze below ~25\u00b0F can still damage the leaves, so pick before a hard freeze hits.",
         "Harvest lower leaves first, plant keeps producing",
         "Can overwinter in many zones",
         "Multiple varieties: curly, lacinato, red Russian"
@@ -1499,12 +1525,13 @@
         "daysToBoltMin": 320,
         "daysToBoltMax": 380,
         "heatTriggerF": 90,
-        "advice": "Kale is biennial — it normally only bolts in its SECOND year after going through winter (vernalization). First-year bolting is unusual and only happens under severe sustained heat (90°F+) or significant transplant shock. First-year flavor improves dramatically after light frost. Harvest outer leaves continuously.",
+        "advice": "Kale is biennial \u2014 it normally only bolts in its SECOND year after going through winter (vernalization). First-year bolting is unusual and only happens under severe sustained heat (90\u00b0F+) or significant transplant shock. First-year flavor improves dramatically after light frost. Harvest outer leaves continuously.",
         "trigger": "age"
       }
     },
     "swiss-chard": {
       "name": "Swiss Chard",
+      "harvestPattern": "cut-and-come-again",
       "category": "leafy-greens",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1553,12 +1580,13 @@
         "daysToBoltMin": 320,
         "daysToBoltMax": 380,
         "heatTriggerF": 90,
-        "advice": "Swiss chard is biennial — first-year plants almost never bolt; the flower stalk appears in year 2 after overwintering. It's also more heat-tolerant than lettuce/spinach. If year-1 chard is shooting up, it's almost certainly transplant shock or extreme heat (90°F+). First-year leaves are tender; harvest outer stalks and the center keeps producing.",
+        "advice": "Swiss chard is biennial \u2014 first-year plants almost never bolt; the flower stalk appears in year 2 after overwintering. It's also more heat-tolerant than lettuce/spinach. If year-1 chard is shooting up, it's almost certainly transplant shock or extreme heat (90\u00b0F+). First-year leaves are tender; harvest outer stalks and the center keeps producing.",
         "trigger": "age"
       }
     },
     "arugula": {
       "name": "Arugula",
+      "harvestPattern": "cut-and-come-again",
       "category": "leafy-greens",
       "startIndoors": null,
       "directSow": {
@@ -1607,6 +1635,7 @@
     },
     "collard-greens": {
       "name": "Collard Greens",
+      "harvestPattern": "cut-and-come-again",
       "category": "leafy-greens",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1655,12 +1684,13 @@
         "daysToBoltMin": 320,
         "daysToBoltMax": 380,
         "heatTriggerF": 90,
-        "advice": "Collards are biennial — they normally bolt in year 2 after winter. They tolerate heat much better than lettuce or kale, but extreme sustained heat (90°F+) plus stress can trigger first-year bolting. Harvest outer leaves continuously; the plant keeps producing from the center.",
+        "advice": "Collards are biennial \u2014 they normally bolt in year 2 after winter. They tolerate heat much better than lettuce or kale, but extreme sustained heat (90\u00b0F+) plus stress can trigger first-year bolting. Harvest outer leaves continuously; the plant keeps producing from the center.",
         "trigger": "heat"
       }
     },
     "mustard-greens": {
       "name": "Mustard Greens",
+      "harvestPattern": "cut-and-come-again",
       "category": "leafy-greens",
       "startIndoors": null,
       "directSow": {
@@ -1709,6 +1739,7 @@
     },
     "microgreens": {
       "name": "Microgreens",
+      "harvestPattern": "single",
       "category": "leafy-greens",
       "startIndoors": {
         "yearRound": true
@@ -1747,6 +1778,7 @@
     },
     "carrot": {
       "name": "Carrots",
+      "harvestPattern": "single",
       "category": "root-vegetables",
       "startIndoors": null,
       "directSow": {
@@ -1797,6 +1829,7 @@
     },
     "beet": {
       "name": "Beets",
+      "harvestPattern": "single",
       "category": "root-vegetables",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -1860,6 +1893,7 @@
     },
     "radish": {
       "name": "Radishes",
+      "harvestPattern": "single",
       "category": "root-vegetables",
       "startIndoors": null,
       "directSow": {
@@ -1915,6 +1949,7 @@
     },
     "potato": {
       "name": "Potatoes",
+      "harvestPattern": "single",
       "category": "root-vegetables",
       "startIndoors": null,
       "directSow": {
@@ -1949,8 +1984,8 @@
       "tips": [
         "Plant certified seed potatoes, not grocery store potatoes",
         "Hill soil around stems as plants grow",
-        "TWO harvest windows: (1) NEW POTATOES — small, tender, thin-skinned. Ready when plants FLOWER (~60-70 days). Dig gently from the side of the hill; take a few and leave the rest growing. Eat within a week; do NOT cure or store. (2) STORAGE POTATOES — full-sized, thick-skinned. Wait until the plant TOPS DIE BACK naturally (~90-120 days). THEN cure in a dark, dry spot at 50-60°F for 2 weeks before storing. Pre-cured potatoes spoil fast.",
-        "Don't expose harvested potatoes to light — they turn green and develop solanine, which is bitter and mildly toxic"
+        "TWO harvest windows: (1) NEW POTATOES \u2014 small, tender, thin-skinned. Ready when plants FLOWER (~60-70 days). Dig gently from the side of the hill; take a few and leave the rest growing. Eat within a week; do NOT cure or store. (2) STORAGE POTATOES \u2014 full-sized, thick-skinned. Wait until the plant TOPS DIE BACK naturally (~90-120 days). THEN cure in a dark, dry spot at 50-60\u00b0F for 2 weeks before storing. Pre-cured potatoes spoil fast.",
+        "Don't expose harvested potatoes to light \u2014 they turn green and develop solanine, which is bitter and mildly toxic"
       ],
       "isPerennial": false,
       "tropicalSuitable": false,
@@ -1961,6 +1996,7 @@
     },
     "sweet-potato": {
       "name": "Sweet Potatoes",
+      "harvestPattern": "single",
       "category": "root-vegetables",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -2006,6 +2042,7 @@
     },
     "turnip": {
       "name": "Turnips",
+      "harvestPattern": "single",
       "category": "root-vegetables",
       "startIndoors": null,
       "directSow": {
@@ -2054,6 +2091,7 @@
     },
     "parsnip": {
       "name": "Parsnips",
+      "harvestPattern": "single",
       "category": "root-vegetables",
       "startIndoors": null,
       "directSow": {
@@ -2095,6 +2133,7 @@
     },
     "onion-yellow": {
       "name": "Yellow Onion",
+      "harvestPattern": "single",
       "category": "alliums",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -2152,6 +2191,7 @@
     },
     "onion-red": {
       "name": "Red Onion",
+      "harvestPattern": "single",
       "category": "alliums",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -2203,6 +2243,7 @@
     },
     "green-onion": {
       "name": "Green Onions / Scallions",
+      "harvestPattern": "single",
       "category": "alliums",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -2252,6 +2293,7 @@
     },
     "garlic": {
       "name": "Garlic",
+      "harvestPattern": "single",
       "category": "alliums",
       "startIndoors": null,
       "directSow": {
@@ -2299,6 +2341,7 @@
     },
     "leek": {
       "name": "Leeks",
+      "harvestPattern": "single",
       "category": "alliums",
       "startIndoors": {
         "weeksBeforeLastFrost": 10,
@@ -2345,6 +2388,7 @@
     },
     "shallot": {
       "name": "Shallots",
+      "harvestPattern": "single",
       "category": "alliums",
       "startIndoors": null,
       "directSow": {
@@ -2388,6 +2432,7 @@
     },
     "broccoli": {
       "name": "Broccoli",
+      "harvestPattern": "ambiguous",
       "category": "brassicas",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -2449,6 +2494,7 @@
     },
     "cauliflower": {
       "name": "Cauliflower",
+      "harvestPattern": "ambiguous",
       "category": "brassicas",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -2504,6 +2550,7 @@
     },
     "cabbage-green": {
       "name": "Green Cabbage",
+      "harvestPattern": "ambiguous",
       "category": "brassicas",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -2553,12 +2600,13 @@
         "daysToBoltMin": 80,
         "daysToBoltMax": 100,
         "heatTriggerF": 85,
-        "advice": "Cabbage is biennial — it normally bolts in year 2 after winter. But the head can SPLIT in year 1 if heat hits before harvest, or if irrigation is uneven once heads are firm. That's not bolting, but the harvest signal is the same: cut at firmness, don't wait. If it does send up a year-1 flower stalk, that's heat-shock — harvest immediately, the head will be loose but edible.",
+        "advice": "Cabbage is biennial \u2014 it normally bolts in year 2 after winter. But the head can SPLIT in year 1 if heat hits before harvest, or if irrigation is uneven once heads are firm. That's not bolting, but the harvest signal is the same: cut at firmness, don't wait. If it does send up a year-1 flower stalk, that's heat-shock \u2014 harvest immediately, the head will be loose but edible.",
         "trigger": "age"
       }
     },
     "cabbage-red": {
       "name": "Red Cabbage",
+      "harvestPattern": "ambiguous",
       "category": "brassicas",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -2613,6 +2661,7 @@
     },
     "brussels-sprouts": {
       "name": "Brussels Sprouts",
+      "harvestPattern": "continuous",
       "category": "brassicas",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -2667,6 +2716,7 @@
     },
     "kohlrabi": {
       "name": "Kohlrabi",
+      "harvestPattern": "single",
       "category": "brassicas",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -2723,6 +2773,7 @@
     },
     "bok-choy": {
       "name": "Bok Choy",
+      "harvestPattern": "cut-and-come-again",
       "category": "brassicas",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -2779,6 +2830,7 @@
     },
     "green-beans": {
       "name": "Green Beans",
+      "harvestPattern": "continuous",
       "category": "legumes",
       "startIndoors": null,
       "directSow": {
@@ -2824,6 +2876,7 @@
     },
     "snap-peas": {
       "name": "Sugar Snap Peas",
+      "harvestPattern": "continuous",
       "category": "legumes",
       "startIndoors": null,
       "directSow": {
@@ -2869,6 +2922,7 @@
     },
     "snow-peas": {
       "name": "Snow Peas",
+      "harvestPattern": "continuous",
       "category": "legumes",
       "startIndoors": null,
       "directSow": {
@@ -2914,6 +2968,7 @@
     },
     "shell-peas": {
       "name": "Garden Peas",
+      "harvestPattern": "continuous",
       "category": "legumes",
       "startIndoors": null,
       "directSow": {
@@ -2959,6 +3014,7 @@
     },
     "lima-beans": {
       "name": "Lima Beans",
+      "harvestPattern": "continuous",
       "category": "legumes",
       "startIndoors": null,
       "directSow": {
@@ -3003,6 +3059,7 @@
     },
     "edamame": {
       "name": "Edamame",
+      "harvestPattern": "continuous",
       "category": "legumes",
       "startIndoors": null,
       "directSow": {
@@ -3047,6 +3104,7 @@
     },
     "basil": {
       "name": "Basil",
+      "harvestPattern": "pinch",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -3086,9 +3144,9 @@
         "Harvest from top to encourage bushy growth",
         "Classic partner for tomatoes in garden and kitchen",
         "Many varieties: sweet, Thai, lemon, purple",
-        "Basil roots easily in water — take a 4-inch cutting, strip lower leaves, put in a glass on the windowsill. Roots appear in 7-10 days; transplant when roots are 1 inch long. Free plants forever.",
-        "Leggy plant fix: if the basil is tall and sparse but still green, cut everything back by half (just above any leaf node). New shoots will emerge from every node below. If the lower stem is bare and brown, the plant won't recover — take tip cuttings instead and start fresh.",
-        "Storing harvested basil: stems in water like cut flowers, on the counter, NOT the fridge. Basil blackens below ~50°F. Use within 5 days fresh, or chop and freeze in olive oil for winter pesto base."
+        "Basil roots easily in water \u2014 take a 4-inch cutting, strip lower leaves, put in a glass on the windowsill. Roots appear in 7-10 days; transplant when roots are 1 inch long. Free plants forever.",
+        "Leggy plant fix: if the basil is tall and sparse but still green, cut everything back by half (just above any leaf node). New shoots will emerge from every node below. If the lower stem is bare and brown, the plant won't recover \u2014 take tip cuttings instead and start fresh.",
+        "Storing harvested basil: stems in water like cut flowers, on the counter, NOT the fridge. Basil blackens below ~50\u00b0F. Use within 5 days fresh, or chop and freeze in olive oil for winter pesto base."
       ],
       "isPerennial": false,
       "tropicalSuitable": true,
@@ -3101,7 +3159,7 @@
         "daysToBoltMax": 100,
         "heatTriggerF": 90,
         "trigger": "heat",
-        "advice": "Basil bolts mainly from heat stress (sustained 90°F+) and age, not just calendar days. Pinch flower spikes ½ inch below the lowest bud as they form to extend leaf production. Once half the plant is flowering, switch to harvesting the whole top — don't keep chasing individual flower stalks. In hot climates (zone 8+) it often bolts before day 75; in cooler zones it can hold till day 100."
+        "advice": "Basil bolts mainly from heat stress (sustained 90\u00b0F+) and age, not just calendar days. Pinch flower spikes \u00bd inch below the lowest bud as they form to extend leaf production. Once half the plant is flowering, switch to harvesting the whole top \u2014 don't keep chasing individual flower stalks. In hot climates (zone 8+) it often bolts before day 75; in cooler zones it can hold till day 100."
       },
       "pruning": [
         {
@@ -3116,6 +3174,7 @@
     },
     "cilantro": {
       "name": "Cilantro",
+      "harvestPattern": "cut-and-come-again",
       "category": "herbs",
       "startIndoors": null,
       "directSow": {
@@ -3166,6 +3225,7 @@
     },
     "parsley": {
       "name": "Parsley",
+      "harvestPattern": "cut-and-come-again",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -3223,6 +3283,7 @@
     },
     "mint": {
       "name": "Mint",
+      "harvestPattern": "pinch",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -3277,6 +3338,7 @@
     },
     "rosemary": {
       "name": "Rosemary",
+      "harvestPattern": "pinch",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 10,
@@ -3332,6 +3394,7 @@
     },
     "thyme": {
       "name": "Thyme",
+      "harvestPattern": "pinch",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -3387,6 +3450,7 @@
     },
     "oregano": {
       "name": "Oregano",
+      "harvestPattern": "pinch",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -3441,6 +3505,7 @@
     },
     "sage": {
       "name": "Sage",
+      "harvestPattern": "pinch",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -3498,6 +3563,7 @@
     },
     "dill": {
       "name": "Dill",
+      "harvestPattern": "cut-and-come-again",
       "category": "herbs",
       "startIndoors": null,
       "directSow": {
@@ -3548,6 +3614,7 @@
     },
     "chives": {
       "name": "Chives",
+      "harvestPattern": "cut-and-come-again",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -3597,6 +3664,7 @@
     },
     "lavender": {
       "name": "Lavender",
+      "harvestPattern": "pinch",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 10,
@@ -3648,6 +3716,7 @@
     },
     "lemongrass": {
       "name": "Lemongrass",
+      "harvestPattern": "cut-and-come-again",
       "category": "herbs",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,
@@ -3689,6 +3758,7 @@
     },
     "strawberry": {
       "name": "Strawberries",
+      "harvestPattern": "continuous",
       "category": "berries",
       "startIndoors": null,
       "directSow": null,
@@ -3734,6 +3804,7 @@
     },
     "blueberry": {
       "name": "Blueberries",
+      "harvestPattern": "continuous",
       "category": "berries",
       "startIndoors": null,
       "directSow": null,
@@ -3772,6 +3843,7 @@
     },
     "raspberry": {
       "name": "Raspberries",
+      "harvestPattern": "continuous",
       "category": "berries",
       "startIndoors": null,
       "directSow": null,
@@ -3825,6 +3897,7 @@
     },
     "blackberry": {
       "name": "Blackberries",
+      "harvestPattern": "continuous",
       "category": "berries",
       "startIndoors": null,
       "directSow": null,
@@ -3876,6 +3949,7 @@
     },
     "grape": {
       "name": "Grapes",
+      "harvestPattern": "continuous",
       "category": "berries",
       "startIndoors": null,
       "directSow": null,
@@ -3914,6 +3988,7 @@
     },
     "apple": {
       "name": "Apples",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -3955,6 +4030,7 @@
     },
     "pear": {
       "name": "Pears",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -3995,6 +4071,7 @@
     },
     "peach": {
       "name": "Peaches",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -4035,6 +4112,7 @@
     },
     "plum": {
       "name": "Plums",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -4073,6 +4151,7 @@
     },
     "cherry": {
       "name": "Cherries",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -4111,6 +4190,7 @@
     },
     "fig": {
       "name": "Figs",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -4149,6 +4229,7 @@
     },
     "lemon": {
       "name": "Lemons",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -4189,6 +4270,7 @@
     },
     "lime": {
       "name": "Limes",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -4229,6 +4311,7 @@
     },
     "orange": {
       "name": "Oranges",
+      "harvestPattern": "continuous",
       "category": "tree-fruits",
       "startIndoors": null,
       "directSow": null,
@@ -4269,6 +4352,7 @@
     },
     "corn": {
       "name": "Sweet Corn",
+      "harvestPattern": "single",
       "category": "other",
       "startIndoors": null,
       "directSow": {
@@ -4301,7 +4385,7 @@
       "tips": [
         "Plant in blocks, not rows, for pollination",
         "Heavy feeder - needs nitrogen",
-        "Silks dry and brown when ready — this is the EARLIEST signal, not the only one",
+        "Silks dry and brown when ready \u2014 this is the EARLIEST signal, not the only one",
         "MILK STAGE TEST (most reliable): peel back a small section of husk on an ear that looks ready. Pierce a kernel with your thumbnail. CLEAR liquid = too early. MILKY liquid = perfect, pick now. DOUGHY/STARCHY (no liquid) = past prime, kernels will be tough. Check every 1-2 days once silks brown.",
         "Sugars convert to starch quickly - eat or freeze same day"
       ],
@@ -4314,6 +4398,7 @@
     },
     "asparagus": {
       "name": "Asparagus",
+      "harvestPattern": "continuous",
       "category": "other",
       "startIndoors": null,
       "directSow": null,
@@ -4359,6 +4444,7 @@
     },
     "rhubarb": {
       "name": "Rhubarb",
+      "harvestPattern": "continuous",
       "category": "other",
       "startIndoors": null,
       "directSow": null,
@@ -4398,6 +4484,7 @@
     },
     "artichoke": {
       "name": "Artichokes",
+      "harvestPattern": "continuous",
       "category": "other",
       "startIndoors": {
         "weeksBeforeLastFrost": 8,
@@ -4439,6 +4526,7 @@
     },
     "celery": {
       "name": "Celery",
+      "harvestPattern": "cut-and-come-again",
       "category": "other",
       "startIndoors": {
         "weeksBeforeLastFrost": 10,
@@ -4485,6 +4573,7 @@
     },
     "fennel": {
       "name": "Fennel",
+      "harvestPattern": "single",
       "category": "other",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -4540,6 +4629,7 @@
     },
     "okra": {
       "name": "Okra",
+      "harvestPattern": "continuous",
       "category": "other",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -4587,6 +4677,7 @@
     },
     "sprouts": {
       "name": "Sprouts",
+      "harvestPattern": "single",
       "category": "other",
       "startIndoors": {
         "yearRound": true
@@ -4622,6 +4713,7 @@
     },
     "flowers-edible": {
       "name": "Edible Flowers",
+      "harvestPattern": "continuous",
       "category": "other",
       "startIndoors": {
         "weeksBeforeLastFrost": 4,
@@ -4666,6 +4758,7 @@
     },
     "flowers-cut": {
       "name": "Cut Flowers",
+      "harvestPattern": "continuous",
       "category": "other",
       "startIndoors": {
         "weeksBeforeLastFrost": 6,

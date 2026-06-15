@@ -49,6 +49,7 @@ export type VerbId =
   | 'plant-photo'
   | 'bed-photo'
   | 'harvest-logged'
+  | 'plant-finished'
   | 'plant-update'
   | 'public-profile-published'
   | 'care-alert-acted-on'
@@ -183,6 +184,17 @@ export const VERBS: Record<VerbId, VerbConfig> = {
     rpAmount: 40,
     dailyCap: 5,
     label: 'Harvest logged',
+    live: true,
+  },
+  // Doug greenlit for v1 (Jun 15 2026): small bonus on the explicit close-out
+  // ("I'm done with this plant" → mark_plant_finished). Encourages clean
+  // garden management and end-of-season closure logging. Lifetime-deduped
+  // by plantId in the credit handler, so it can only fire once per plant.
+  'plant-finished': {
+    id: 'plant-finished',
+    rpAmount: 10,
+    dailyCap: 5,
+    label: 'Plant retired (end of season)',
     live: true,
   },
   'plant-update': {

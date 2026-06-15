@@ -18,7 +18,8 @@ interface MyGardenViewProps {
   beds: GardenBed[];
   onAddPlants: (plants: { cropId: string; customVarietyName?: string; quantity: number; plantingDate: string; plantingMethod: PlantingMethod; location?: string; isPerennial: boolean; bedId?: string }[]) => void;
   onRemove: (plantId: string) => void;
-  onHarvest: (plantId: string) => void;
+  onHarvest: (plantId: string, opts?: { quantity?: number; date?: string }) => void;
+  onFinishPlant?: (plantId: string) => void;
   onUpdatePlant?: (plantId: string, updates: Partial<GardenPlant>) => void;
   onAddBed: (bed: Omit<GardenBed, 'id' | 'createdAt' | 'order'>) => void;
   onUpdateBed: (bedId: string, updates: Partial<GardenBed>) => void;
@@ -44,6 +45,7 @@ export function MyGardenView({
   onAddPlants,
   onRemove,
   onHarvest,
+  onFinishPlant,
   onUpdatePlant,
   onAddBed,
   onUpdateBed,
@@ -297,6 +299,7 @@ export function MyGardenView({
               onAddPlant={handleAddPlantToBed}
               onRemovePlant={onRemove}
               onHarvestPlant={onHarvest}
+              onFinishPlant={onFinishPlant}
               onUpdatePlant={onUpdatePlant}
               onReorderPlant={onReorderPlant}
               isReordering={isReordering}
@@ -318,6 +321,7 @@ export function MyGardenView({
                     firstFallFrost={firstFallFrost}
                     onRemove={onRemove}
                     onHarvest={onHarvest}
+                    onFinish={onFinishPlant}
                     onUpdate={onUpdatePlant}
                   />
                 ))}

@@ -513,6 +513,7 @@ export default function SellerDashboard() {
     addPlants: addGardenPlants,
     removePlant: removeGardenPlant,
     markHarvested: markGardenHarvested,
+    finishPlant: finishGardenPlant,
     updatePlant: updateGardenPlant,
     addBed: addGardenBed,
     updateBed: updateGardenBed,
@@ -1284,6 +1285,7 @@ export default function SellerDashboard() {
                     onAddPlants={addGardenPlants}
                     onRemove={removeGardenPlant}
                     onHarvest={markGardenHarvested}
+                    onFinishPlant={finishGardenPlant}
                     onUpdatePlant={updateGardenPlant}
                     onAddBed={addGardenBed}
                     onUpdateBed={updateGardenBed}

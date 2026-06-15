@@ -8,20 +8,23 @@ import { computeStatus, getEstimatedHarvestDate, getProgressPercent, getCropDisp
 import { getCropEmoji } from '@/lib/cropEmoji';
 import { PlantProgressBar } from './PlantProgressBar';
 import { detectCareAlerts, dismissAlert, loadDismissals, alertColorClasses } from '@/lib/careAlerts';
-import { getPruningRules, getBoltingInfo } from '@/lib/plantingCalendar';
+import { getPruningRules, getBoltingInfo, getHarvestPattern } from '@/lib/plantingCalendar';
 import { useSellerStatus } from '@/hooks/useSellerStatus';
 
 interface GardenPlantCardProps {
   plant: GardenPlant;
   firstFallFrost?: Date;
   onRemove?: (plantId: string) => void;
-  onHarvest?: (plantId: string) => void;
+  /** Log a harvest event. Plant stays active unless crop is single-harvest. */
+  onHarvest?: (plantId: string, opts?: { quantity?: number; date?: string }) => void;
+  /** Explicit "I'm done with this plant" — terminal regardless of pattern. */
+  onFinish?: (plantId: string) => void;
   onUpdate?: (plantId: string, updates: Partial<GardenPlant>) => void;
   /** Beds available for re-assignment in edit mode. */
   beds?: GardenBed[];
 }
 
-export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, onUpdate, beds = [] }: GardenPlantCardProps) {
+export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, onFinish, onUpdate, beds = [] }: GardenPlantCardProps) {
   const { user: privyUser } = usePrivy();
   const userId = privyUser?.id || null;
   const { isSeller } = useSellerStatus();
@@ -33,6 +36,8 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
   const [editNotes, setEditNotes] = useState(plant.notes || '');
   const [editBedId, setEditBedId] = useState<string | ''>(plant.bedId || '');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
+  const [harvestLoggedToday, setHarvestLoggedToday] = useState(false);
   const qtyRef = useRef<HTMLInputElement>(null);
 
   const [dismissals, setDismissals] = useState<Record<string, string>>({});
@@ -68,6 +73,16 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
 
   const hasPruningRules = getPruningRules(parentCropId).length > 0;
   const hasBoltingRules = !!getBoltingInfo(parentCropId);
+
+  const harvestPattern = useMemo(() => getHarvestPattern(plant.cropId), [plant.cropId]);
+  const harvestEvents = plant.harvestEvents ?? [];
+  // Detect if today already has a logged harvest — drives the pill's
+  // "✓ Logged today" state so taps are idempotent and the user has signal.
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const alreadyToday = harvestEvents.some(e => e.date.slice(0, 10) === today);
+    setHarvestLoggedToday(alreadyToday);
+  }, [harvestEvents]);
 
   const logCareAction = async (action: 'prune' | 'bolt-mgmt') => {
     if (!userId || careLogToday[action]) return;
@@ -111,6 +126,44 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
       // Network errors are rare; the credit was already deduped server-side
       // if it landed before the connection died.
       console.error('[care-action] request failed:', err);
+    }
+  };
+
+  /** Log a harvest event on this plant. Same pattern as logCareAction:
+   *  optimistic UI flip, server-side dedup is the source of truth. */
+  const logHarvest = async () => {
+    if (!userId || harvestLoggedToday) return;
+    setHarvestLoggedToday(true);
+    // Append the event in client state immediately so the history strip
+    // updates without waiting for the round trip. The next garden save
+    // will reach /api/my-garden which re-fires the credit (same dedup
+    // key) and the server collapses it.
+    onHarvest?.(plant.id);
+    try {
+      const res = await fetch('/api/harvest-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, plantId: plant.id }),
+      });
+      const data = await res.json().catch(() => null) as
+        | { credited?: number; rpAmount?: number; newTotal?: number; cappedCount?: number; cappedVerbs?: string[] }
+        | null;
+      if (typeof window !== 'undefined' && data) {
+        window.dispatchEvent(
+          new CustomEvent('app:rp-credited', {
+            detail: {
+              credited: data.credited ?? 0,
+              rpAmount: data.rpAmount ?? 0,
+              newTotal: data.newTotal ?? 0,
+              cappedCount: data.cappedCount ?? 0,
+              cappedVerbs: data.cappedVerbs,
+              userId,
+            },
+          }),
+        );
+      }
+    } catch (err) {
+      console.error('[harvest-log] request failed:', err);
     }
   };
 
@@ -237,12 +290,21 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
               Sell
             </button>
           )}
-          {(status === 'near-harvest' || status === 'ready-to-harvest' || status === 'harvesting') && onHarvest && (
+          {/* Log harvest pill — appends a HarvestEvent. Plant STAYS active
+              for continuous/cut-and-come-again/pinch/ambiguous patterns;
+              only single-harvest crops end on this. Doug, Jun 15 2026. */}
+          {status !== 'done' && onHarvest && userId && (
             <button
-              onClick={() => onHarvest(plant.id)}
-              className="text-xs px-2.5 py-1.5 rounded-full bg-roots-primary/10 text-roots-primary hover:bg-roots-primary/20 transition-colors flex-shrink-0"
+              onClick={logHarvest}
+              disabled={harvestLoggedToday}
+              className={
+                harvestLoggedToday
+                  ? 'text-xs px-2.5 py-1.5 rounded-full bg-roots-primary/15 text-roots-primary cursor-default flex-shrink-0'
+                  : 'text-xs px-2.5 py-1.5 rounded-full bg-roots-primary/10 text-roots-primary hover:bg-roots-primary/20 transition-colors flex-shrink-0'
+              }
+              title={harvestLoggedToday ? 'Already logged today' : 'Log a harvest event for this plant'}
             >
-              Harvested
+              {harvestLoggedToday ? '✓ Harvested today' : '🧺 Log harvest'}
             </button>
           )}
           {onUpdate && status !== 'done' && (
@@ -254,7 +316,38 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
               {isEditing ? 'Cancel' : '✏️'}
             </button>
           )}
-          {onRemove && status !== 'done' && !confirmingDelete && (
+          {/* "End plant" — explicit close-out. Use this when the plant is
+              done for the season (e.g. tomato vine spent, lettuce all
+              picked). Distinct from ✕ remove which means "plant died /
+              gone entirely." Sets harvestedDate (terminal) and earns the
+              plant-finished RP credit (+10). */}
+          {onFinish && status !== 'done' && !confirmingFinish && !confirmingDelete && (
+            <button
+              onClick={() => setConfirmingFinish(true)}
+              className="text-xs px-2.5 py-1.5 rounded-full bg-gray-50 border border-gray-200 text-roots-gray hover:bg-roots-secondary/10 hover:text-roots-secondary hover:border-roots-secondary/30 transition-colors flex-shrink-0"
+              title="End this plant for the season — it stays in your history"
+            >
+              End plant
+            </button>
+          )}
+          {confirmingFinish && (
+            <div className="flex items-center gap-1 bg-roots-secondary/10 border border-roots-secondary/30 rounded-full pl-3 pr-1 py-1 flex-shrink-0">
+              <span className="text-xs text-roots-secondary">End for season?</span>
+              <button
+                onClick={() => { onFinish?.(plant.id); setConfirmingFinish(false); }}
+                className="text-xs px-3 py-1.5 rounded-full bg-roots-secondary text-white font-semibold"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setConfirmingFinish(false)}
+                className="text-xs px-3 py-1.5 rounded-full text-roots-gray hover:bg-white/60"
+              >
+                No
+              </button>
+            </div>
+          )}
+          {onRemove && status !== 'done' && !confirmingDelete && !confirmingFinish && (
             <button
               onClick={() => setConfirmingDelete(true)}
               className="text-sm rounded-full text-roots-gray hover:bg-gray-100 transition-colors flex-shrink-0 inline-flex items-center justify-center min-w-[40px] min-h-[40px]"
@@ -426,6 +519,17 @@ export function GardenPlantCard({ plant, firstFallFrost, onRemove, onHarvest, on
               </div>
             );
           })()}
+
+          {/* Harvest history strip — compact count of logged harvests on
+              this plant. Doug, Jun 15 2026. */}
+          {status !== 'done' && harvestEvents.length > 0 && (
+            <div className="mt-2 text-xs text-roots-gray">
+              🧺 {harvestEvents.length} harvest{harvestEvents.length > 1 ? 's' : ''} logged
+              {harvestPattern === 'continuous' || harvestPattern === 'cut-and-come-again' || harvestPattern === 'pinch'
+                ? ' — keep picking, plant keeps producing'
+                : ''}
+            </div>
+          )}
 
           {/* "Log care" pills — earn the same RP as alert dismissal, but
               available even when no alert is currently active. Only shown

@@ -117,11 +117,19 @@ function formatPlantLine(p: GardenPlant, today: Date, crops: Record<string, any>
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const plantedFmt = planted.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const harvestRange = `${fmt(harvestMin)}–${fmt(harvestMax)}`
-  const statusBits: string[] = []
+  // Harvest pattern tag — drives Sage's HARVEST CYCLE behavior. Default
+  // to 'ambiguous' for any crop missing the tag so she asks instead of
+  // guessing wrong.
+  const pattern = (crop?.harvestPattern ?? 'ambiguous') as string
+  const statusBits: string[] = [`harvest:${pattern}`]
   if (p.manualStatus) statusBits.push(`status: ${p.manualStatus}`)
   if (p.harvestedDate) statusBits.push(`harvested ${new Date(p.harvestedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`)
+  const harvestCount = p.harvestEvents?.length ?? 0
+  if (harvestCount > 0 && !p.harvestedDate) {
+    statusBits.push(`${harvestCount} harvest${harvestCount > 1 ? 's' : ''} logged`)
+  }
   if (p.notes) statusBits.push(`note: ${p.notes}`)
-  const statusStr = statusBits.length > 0 ? ` — ${statusBits.join('; ')}` : ''
+  const statusStr = ` — [${statusBits.join('; ')}]`
   return `  - ${cropName} × ${p.quantity} — planted ${plantedFmt} (${daysSince} days ago) — estimated harvest window ${harvestRange}${statusStr}\n`
 }
 
@@ -893,6 +901,23 @@ When the user tells you they did a care action, ACT on it — don't just acknowl
 - They tell you they pruned / pinched / suckered: react like a friend who's glad they took care of it, then mention that you've marked the alert done so it stops nagging — and let them know roughly when the next cycle is.
 - They tell you a plant is bolting (basil, cilantro, lettuce shot up): react with appropriate urgency (this is a time-sensitive situation!), confirm you've marked it bolting, and offer next steps — harvest the leaves before they get bitter, and maybe list the surplus on LocalRoots.
 - They tell you to stop reminding them about something: confirm you'll drop the alert for this cycle, but tell them they can ping you when they want fresh reminders.
+
+HARVEST CYCLE — CRITICAL:
+Harvesting and ending a plant are DIFFERENT actions. Most crops keep producing for weeks after you pick the first fruit/leaf — tomatoes give you tomatoes all season, basil gets bushier when you pinch it, kale regrows the leaves you cut. DO NOT remove a plant on harvest unless the user explicitly said they're done.
+
+Each plant in the USER'S GARDEN context line carries a [harvest:pattern] tag. Use it:
+- continuous (tomato, pepper, cucumber, squash, eggplant, peas, beans, berries, fruit trees, brussels sprouts): user picks → log the harvest, plant STAYS. Celebrate the harvest like a friend ("Nice — what'd you make?", "Oh man, that's the good stuff"). DO NOT say "removed your tomato" or "marked it harvested." She picked some; the plant keeps producing.
+- cut-and-come-again (kale, chard, spinach, arugula, lettuce-mixed, parsley, dill, cilantro, chives, celery): same as continuous. The plant regrows.
+- pinch (basil, mint, oregano, sage, thyme, rosemary, lavender): same — picking actually makes the plant bushier. React with the bonus info ("Great — pinching there makes it bushier, you'll get twice the leaves").
+- single (head lettuce, radish, garlic, onions, full carrots, potato, corn): one harvest = plant done. Confirm the close-out warmly ("That's a wrap on the lettuce! Want me to suggest what to put in the bed next?").
+- ambiguous (cabbage, broccoli, cauliflower, brussels): YOU MUST ASK. Log the harvest, then ask: "Was that the main head, or are you still working through it? If side-shoots come in, the plant keeps going for weeks." Based on their reply, either leave the plant active or fire mark_plant_finished.
+
+When the user clearly says they're DONE with a plant ("pulled the tomato", "yanked the basil — it's done", "ripped out the lettuce bed", "the cucumber's spent", "calling it on the peppers"), use mark_plant_finished. That's terminal.
+
+WHAT YOU NEVER DO ON HARVEST:
+- "Removed your tomato plant" after the user picked some fruit (it's still growing)
+- "Was that your final harvest?" for a tomato/pepper/basil mid-season (obviously not — annoying question, makes you sound like a chatbot)
+- Treat picking and ending as the same action — they aren't
 
 Write these confirmations in your own voice, fresh each time. Do NOT use the same opener every time. If you find yourself starting with "Got it" or "Marked" for the third time in a session, find a different way in.
 

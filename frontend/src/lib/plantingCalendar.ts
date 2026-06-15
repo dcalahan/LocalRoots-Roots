@@ -5,6 +5,7 @@
 
 import cropGrowingData from '@/data/crop-growing-data.json';
 import { GrowingProfile, calculatePlantingDate } from './growingZones';
+import type { HarvestPattern } from '@/types/my-garden';
 
 // Types
 export type PlantingAction = 'start-indoors' | 'direct-sow' | 'transplant' | 'harvest';
@@ -60,6 +61,9 @@ export interface PruningRule {
 interface CropGrowingInfo {
   name: string;
   category: string;
+  /** How the crop is harvested — drives Sage's mark_harvested behavior.
+   *  Optional; absent → treated as 'ambiguous' so Sage asks instead of guessing. */
+  harvestPattern?: HarvestPattern;
   bolting?: BoltingInfo;
   pruning?: PruningRule[];
   startIndoors: { weeksBeforeLastFrost?: number; weeksBeforeLastFrostMax?: number; yearRound?: boolean } | null;
@@ -500,6 +504,12 @@ export function getBoltingInfo(cropId: string): BoltingInfo | null {
 /** Get pruning rules for a crop — always an array, empty if none defined. */
 export function getPruningRules(cropId: string): PruningRule[] {
   return crops[cropId]?.pruning || [];
+}
+
+/** Get the crop's harvest pattern. Defaults to 'ambiguous' for untagged crops
+ *  so Sage asks the user rather than guessing wrong. */
+export function getHarvestPattern(cropId: string): HarvestPattern {
+  return crops[cropId]?.harvestPattern ?? 'ambiguous';
 }
 
 /** All crop IDs that have bolting data — used by Sage to list her care knowledge. */

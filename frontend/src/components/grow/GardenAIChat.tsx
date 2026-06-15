@@ -721,7 +721,9 @@ export function GardenAIChat({ className = '' }: GardenAIChatProps) {
                       if (action.action === 'add_plant') {
                         toast({ title: `Added ${action.quantity || 1} ${name} to your garden 🌱` });
                       } else if (action.action === 'mark_harvested') {
-                        toast({ title: `Marked ${name} as harvested 🎉` });
+                        toast({ title: `Logged a harvest for ${name} 🧺` });
+                      } else if (action.action === 'mark_plant_finished') {
+                        toast({ title: `${name} — done for the season 🌾`, description: 'Stays in your harvest history.' });
                       } else if (action.action === 'remove_plant') {
                         toast({ title: `Removed ${name} from your garden` });
                       } else if (action.action === 'add_bed') {

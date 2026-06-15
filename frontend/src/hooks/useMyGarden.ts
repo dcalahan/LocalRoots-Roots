@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GardenPlant, GardenBed, GardenAction, MyGardenData, BedType, PlantStatus } from '@/types/my-garden';
-import { getCropGrowingInfo, isValidCrop } from '@/lib/plantingCalendar';
+import { getCropGrowingInfo, isValidCrop, getHarvestPattern } from '@/lib/plantingCalendar';
 import { getDismissibleAlertIds, type CareCategory } from '@/lib/careDismissals';
 
 const STORAGE_VERSION = 2;
@@ -194,13 +194,51 @@ export function useMyGarden(userId: string | null) {
     }));
   }, [updateState]);
 
-  // Mark a plant as harvested
-  const markHarvested = useCallback((plantId: string) => {
+  // Log a harvest event on a plant. Plant stays active UNLESS the crop's
+  // harvestPattern is 'single' (head lettuce, radish, garlic) — then we also
+  // set harvestedDate (terminal). Continuous-bearing crops keep producing.
+  // Optional quantity captured when provided. Doug, Jun 15 2026.
+  const markHarvested = useCallback(
+    (plantId: string, opts?: { quantity?: number; date?: string }) => {
+      const now = opts?.date || new Date().toISOString();
+      updateState(prev => ({
+        ...prev,
+        plants: prev.plants.map(p => {
+          if (p.id !== plantId) return p;
+          const pattern = getHarvestPattern(p.cropId);
+          const event = {
+            date: now,
+            ...(opts?.quantity ? { quantity: opts.quantity } : {}),
+          };
+          const nextEvents = [...(p.harvestEvents ?? []), event];
+          const terminal = pattern === 'single';
+          return {
+            ...p,
+            harvestEvents: nextEvents,
+            ...(terminal ? { harvestedDate: now } : {}),
+          };
+        }),
+      }));
+    },
+    [updateState],
+  );
+
+  // Explicit "I'm done with this plant" — terminal regardless of pattern.
+  // Use this for the "End this plant" UI button + Sage's mark_plant_finished.
+  const finishPlant = useCallback((plantId: string) => {
+    const now = new Date().toISOString();
+    const today = now.slice(0, 10);
     updateState(prev => ({
       ...prev,
-      plants: prev.plants.map(p =>
-        p.id === plantId ? { ...p, harvestedDate: new Date().toISOString() } : p
-      ),
+      plants: prev.plants.map(p => {
+        if (p.id !== plantId) return p;
+        const hasToday = (p.harvestEvents ?? []).some(e => e.date.slice(0, 10) === today);
+        return {
+          ...p,
+          harvestedDate: now,
+          harvestEvents: hasToday ? p.harvestEvents : [...(p.harvestEvents ?? []), { date: now }],
+        };
+      }),
     }));
   }, [updateState]);
 
@@ -349,13 +387,53 @@ export function useMyGarden(userId: string | null) {
             break;
           }
           case 'mark_harvested': {
+            // Logs a HarvestEvent. Plant stays active for continuous /
+            // cut-and-come-again / pinch / ambiguous patterns; only
+            // 'single' crops (head lettuce, radish, garlic) get terminal
+            // harvestedDate set. Doug, Jun 15 2026.
             if (!action.cropId) break;
             const plant = updatedPlants.find(p => p.cropId === action.cropId && !p.harvestedDate && !p.removedDate);
-            if (plant) {
-              updatedPlants = updatedPlants.map(p =>
-                p.id === plant.id ? { ...p, harvestedDate: now } : p
-              );
-            }
+            if (!plant) break;
+            const pattern = getHarvestPattern(plant.cropId);
+            const event = {
+              date: now,
+              ...(action.quantity ? { quantity: action.quantity } : {}),
+              ...(action.notes ? { notes: action.notes } : {}),
+            };
+            updatedPlants = updatedPlants.map(p => {
+              if (p.id !== plant.id) return p;
+              const nextEvents = [...(p.harvestEvents ?? []), event];
+              // Single-harvest crops end on this harvest; others stay active.
+              const terminal = pattern === 'single';
+              return {
+                ...p,
+                harvestEvents: nextEvents,
+                ...(terminal ? { harvestedDate: now } : {}),
+              };
+            });
+            break;
+          }
+          case 'mark_plant_finished': {
+            // Explicit close-out — terminal regardless of crop pattern.
+            // If today's harvest wasn't already logged, append a final event
+            // so the harvest history reflects the close-out moment.
+            if (!action.cropId) break;
+            const plant = updatedPlants.find(p => p.cropId === action.cropId && !p.harvestedDate && !p.removedDate);
+            if (!plant) break;
+            const today = now.slice(0, 10);
+            const hasToday = (plant.harvestEvents ?? []).some(e => e.date.slice(0, 10) === today);
+            const finalEvent = { date: now, ...(action.notes ? { notes: action.notes } : {}) };
+            updatedPlants = updatedPlants.map(p =>
+              p.id === plant.id
+                ? {
+                    ...p,
+                    harvestedDate: now,
+                    harvestEvents: hasToday
+                      ? p.harvestEvents
+                      : [...(p.harvestEvents ?? []), finalEvent],
+                  }
+                : p,
+            );
             break;
           }
           case 'update_plant': {
@@ -499,6 +577,7 @@ export function useMyGarden(userId: string | null) {
     addPlants,
     removePlant,
     markHarvested,
+    finishPlant,
     updatePlant,
     assignPlantToBed,
     reorderPlant,

@@ -67,6 +67,31 @@ export interface GardenBed {
   order: number;         // display order
 }
 
+/**
+ * How a crop is harvested — drives whether `mark_harvested` ends the plant
+ * or just logs an event. Tagged per-crop in crop-growing-data.json.
+ *
+ *  - single              one harvest = plant done (head lettuce, radish, garlic)
+ *  - continuous          pick one fruit/pod at a time, plant keeps producing (tomato, pepper)
+ *  - cut-and-come-again  cut leaves/stems, plant regrows (kale, chard, loose-leaf lettuce)
+ *  - pinch               pinch growing tips, plant gets bushier (basil, mint, oregano)
+ *  - ambiguous           Sage asks ("was that the last of it?") — cabbage, broccoli
+ */
+export type HarvestPattern =
+  | 'single'
+  | 'continuous'
+  | 'cut-and-come-again'
+  | 'pinch'
+  | 'ambiguous';
+
+/** A single harvest event on a plant. Plants accumulate these in `harvestEvents`. */
+export interface HarvestEvent {
+  date: string;        // ISO date (when picked)
+  quantity?: number;   // optional — Sage extracts when natural, UI offers but doesn't enforce
+  unit?: 'count' | 'lb' | 'oz' | 'bunch';
+  notes?: string;
+}
+
 export interface GardenPlant {
   id: string;                    // uuid
   cropId: string;                // key into crop-growing-data.json (e.g. "tomato-cherry")
@@ -80,7 +105,14 @@ export interface GardenPlant {
   isPerennial: boolean;          // copied from crop data at add time
   orderInBed?: number;            // custom display order within a bed
   manualStatus?: PlantStatus;    // user override (died, harvested early, etc.)
-  harvestedDate?: string;        // when user marked as harvested
+  /** Running log of every harvest event. Plant stays active while populated;
+   *  `harvestedDate` is only set when the plant is truly finished (single-
+   *  harvest crops, or the user explicitly ends a continuous-bearing plant). */
+  harvestEvents?: HarvestEvent[];
+  /** Set when the plant is FINISHED — terminal state. For single-harvest
+   *  crops this is set on the first harvest; for continuous crops it's set
+   *  only via the explicit "end this plant" action. */
+  harvestedDate?: string;
   removedDate?: string;          // when user removed from garden
   createdAt: string;             // ISO date
   year: number;                  // growing season year
@@ -96,7 +128,16 @@ export interface MyGardenData {
 export type GardenActionType =
   | 'add_plant'
   | 'remove_plant'
+  // mark_harvested logs a HarvestEvent. The plant stays active UNLESS the
+  // crop's harvestPattern is 'single' (head lettuce, radish, garlic, etc.),
+  // in which case harvestedDate is also set. Continuous-bearing crops
+  // (tomato, pepper, basil, kale) keep producing — only mark_plant_finished
+  // ends them.
   | 'mark_harvested'
+  // Explicit "I'm done with this plant" — sets harvestedDate regardless of
+  // crop pattern. Triggered by user intent ("I pulled the tomatoes",
+  // "the basil is done for the season") OR the "End this plant" UI button.
+  | 'mark_plant_finished'
   | 'update_plant'
   | 'add_bed'
   | 'update_bed'

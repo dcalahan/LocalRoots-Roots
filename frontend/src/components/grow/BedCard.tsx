@@ -47,7 +47,8 @@ interface BedCardProps {
   onDelete: (bedId: string) => void;
   onAddPlant: (bedId: string) => void;
   onRemovePlant: (plantId: string) => void;
-  onHarvestPlant: (plantId: string) => void;
+  onHarvestPlant: (plantId: string, opts?: { quantity?: number; date?: string }) => void;
+  onFinishPlant?: (plantId: string) => void;
   onUpdatePlant?: (plantId: string, updates: Partial<import('@/types/my-garden').GardenPlant>) => void;
   onReorderPlant?: (plantId: string, direction: 'up' | 'down') => void;
   isReordering?: boolean;
@@ -63,6 +64,7 @@ export function BedCard({
   onAddPlant,
   onRemovePlant,
   onHarvestPlant,
+  onFinishPlant,
   onUpdatePlant,
   onReorderPlant,
   isReordering,
@@ -185,6 +187,7 @@ export function BedCard({
                     firstFallFrost={firstFallFrost}
                     onRemove={onRemovePlant}
                     onHarvest={onHarvestPlant}
+                    onFinish={onFinishPlant}
                     onUpdate={onUpdatePlant}
                   />
                 </div>

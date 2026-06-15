@@ -32,7 +32,8 @@ export function buildGardenActionExtractionPrompt(recentMessages: AIMessage[]): 
 VALID ACTIONS:
 - add_plant: User says they planted, started, or put in a crop. May include bedName.
 - remove_plant: User says a plant died, they pulled it, or removed it
-- mark_harvested: User says they harvested or picked a crop
+- mark_harvested: User says they harvested or picked a crop ("I picked tomatoes today", "harvested some basil", "grabbed a few cucumbers"). This logs a harvest EVENT — for most crops (tomato, pepper, basil, kale, etc.) the plant STAYS active and keeps producing. Only single-harvest crops (head lettuce, radish, garlic) end on harvest. May include quantity if user gave one ("3 tomatoes", "a handful of basil"). NOT for "I'm done with this plant entirely" — that's mark_plant_finished.
+- mark_plant_finished: User says they're DONE with this plant for the season ("pulled out the tomato plant", "yanked the basil — it's done", "the cucumber's spent", "ripped out the lettuce bed", "calling it on the peppers"). This is the explicit close-out — sets harvestedDate. Use ONLY when the user is clearly ending the plant, not just harvesting from it. When in doubt, prefer mark_harvested and let Sage's reply ask if it was the final harvest.
 - update_plant: User says they moved a plant or changed something about it
 - add_bed: User says they built/added a new bed/tower/container ("I built a new raised bed", "I added a tower")
 - update_bed: User renamed a bed or changed its notes
@@ -70,6 +71,8 @@ Return ONLY a JSON array of actions. Examples:
 [{"action":"add_bed","bedName":"Tower","bedType":"tower"}]
 [{"action":"remove_plant","cropId":"basil","reason":"died"}]
 [{"action":"mark_harvested","cropId":"cucumber"}]
+[{"action":"mark_harvested","cropId":"tomato-cherry","quantity":5}]
+[{"action":"mark_plant_finished","cropId":"basil","reason":"end of season"}]
 [{"action":"assign_plant_to_bed","cropId":"basil","bedName":"Bed 2"}]
 [{"action":"mark_pruned","cropId":"tomato-cherry"}]
 [{"action":"mark_bolting","cropId":"basil"}]
