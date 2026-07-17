@@ -80,9 +80,24 @@ export async function GET(request: NextRequest) {
   const since = new Date(Date.now() - sinceHours * 3600 * 1000).toISOString()
 
   // ── Gather ──────────────────────────────────────────────────────────
-  const bundles = await gatherConversations(since)
+  const allBundles = await gatherConversations(since)
+
+  // Idempotency: skip conversations already reviewed today, so a re-run (manual
+  // or a retried cron) doesn't re-analyze the same transcript and duplicate its
+  // findings / repro cases / proposals / memory writes. An admin run can force
+  // a re-review with ?fresh=true (testing / after a code fix).
+  const fresh = authPath === 'admin' && searchParams.get('fresh') === 'true'
+  const reviewedKey = `sage:coach:reviewed:${digestDate}`
+  const alreadyReviewed = fresh ? [] : (await kv.get<string[]>(reviewedKey)) ?? []
+  const reviewedSet = new Set(alreadyReviewed)
+  const bundles = fresh ? allBundles : allBundles.filter((b) => !reviewedSet.has(b.ref))
+
   if (bundles.length === 0) {
-    return NextResponse.json({ reviewed: 0, findings: 0, note: 'no conversations in window' })
+    return NextResponse.json({
+      reviewed: 0,
+      findings: 0,
+      note: allBundles.length ? 'all conversations in window already reviewed today' : 'no conversations in window',
+    })
   }
 
   // ── Review (tolerate individual failures) ───────────────────────────
@@ -100,6 +115,14 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       console.error(`[Sage Coach] review failed for ${b.ref}:`, err instanceof Error ? err.message : err)
     }
+  }
+
+  // Mark these conversations reviewed for today (idempotency guard above).
+  try {
+    const merged = Array.from(new Set([...alreadyReviewed, ...bundles.map((b) => b.ref)]))
+    await kv.set(reviewedKey, merged)
+  } catch (err) {
+    console.error('[Sage Coach] reviewed-set write failed:', err instanceof Error ? err.message : err)
   }
 
   // Store the day's findings (append — a manual re-run adds, dedup by content above)

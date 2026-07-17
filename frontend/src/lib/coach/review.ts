@@ -100,6 +100,39 @@ async function coachAnalyze(systemPrompt: string, userContent: string): Promise<
   return data.content?.[0]?.text || '[]'
 }
 
+/**
+ * Flatten one message's content to plain text for the transcript.
+ *
+ * CRITICAL: image content blocks carry base64 payloads that can be hundreds
+ * of KB each. JSON.stringify-ing them floods the analyst's window and pushes
+ * the real conversation out of view — which produced false-positive
+ * "fabrication" findings (Sage's correct callback to something the user said
+ * looked invented because the user's message had been shoved out by an image
+ * blob). Replace any non-text block with a compact [image] marker, mirroring
+ * what the main garden-ai extraction path already does.
+ */
+function flattenContent(content: unknown): string {
+  if (typeof content === 'string') return content
+  if (Array.isArray(content)) {
+    return content
+      .map((block) => {
+        if (block && typeof block === 'object') {
+          const b = block as { type?: string; text?: string }
+          if (b.type === 'text' && typeof b.text === 'string') return b.text
+          return '[image]'
+        }
+        return typeof block === 'string' ? block : '[image]'
+      })
+      .join(' ')
+  }
+  if (content && typeof content === 'object') {
+    const b = content as { type?: string; text?: string }
+    if (b.type === 'text' && typeof b.text === 'string') return b.text
+    return '[image]'
+  }
+  return ''
+}
+
 /** Render a conversation's messages into a compact transcript for review. */
 export function renderTranscript(
   messages: Array<{ role: string; content: unknown }>,
@@ -107,8 +140,7 @@ export function renderTranscript(
 ): string {
   const lines = messages.map((m) => {
     const who = m.role === 'user' ? 'USER' : 'SAGE'
-    const text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
-    return `${who}: ${text}`
+    return `${who}: ${flattenContent(m.content)}`
   })
   let out = lines.join('\n')
   if (out.length > maxChars) out = '…' + out.slice(-maxChars)

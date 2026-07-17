@@ -32,7 +32,11 @@ const PROPOSALS_KEY = 'sage:coach:proposals'
 const PROPOSALS_CAP = 200
 const MEMWRITES_KEY = (date: string) => `sage:coach:memwrites:${date}`
 const MAX_MEMORY_WRITES_PER_USER_PER_NIGHT = 3
-const MEMORY_CAP = 100
+/** Coach-applied memories get their OWN small budget so they never evict the
+ *  user's real garden facts. A handful of suppressions is plenty; the prompt
+ *  cost of ≤15 short facts is trivial. */
+const MAX_COACH_MEMORIES_PER_USER = 15
+const COACH_PREFIX = 'Coach-applied:'
 
 // Facts about what the app can/cannot do belong in the prompt's capability
 // docs, never in per-user memories — filter them even if the analyst slips.
@@ -129,9 +133,21 @@ export async function applyAutonomyLadder(
   if (newProposals.length > 0) {
     try {
       const existing = (await kv.get<StoredBrainProposal[]>(PROPOSALS_KEY)) ?? []
-      const merged = [...newProposals, ...existing].slice(0, PROPOSALS_CAP)
-      await kv.set(PROPOSALS_KEY, merged)
-      proposalsQueued = newProposals.length
+      // Dedup by normalized rule text so the review queue doesn't accumulate
+      // the same proposed rule from multiple conversations or re-runs.
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+      const seenRules = new Set(existing.map((p) => norm(p.proposed_rule)))
+      const deduped: StoredBrainProposal[] = []
+      for (const p of newProposals) {
+        const key = norm(p.proposed_rule)
+        if (seenRules.has(key)) continue
+        seenRules.add(key)
+        deduped.push(p)
+      }
+      if (deduped.length > 0) {
+        await kv.set(PROPOSALS_KEY, [...deduped, ...existing].slice(0, PROPOSALS_CAP))
+      }
+      proposalsQueued = deduped.length
     } catch (err) {
       console.error('[Sage Coach] proposals write failed:', err instanceof Error ? err.message : err)
     }
@@ -161,8 +177,14 @@ export async function applyAutonomyLadder(
       ) {
         continue
       }
-      const merged = [...memories, { fact, category: 'preference', created_at: nowISO }].slice(-MEMORY_CAP)
-      await kv.set(memoriesKey, merged)
+      // Preserve the user's garden facts. Coach memories get their own capped
+      // budget — appending here NEVER evicts a non-coach (garden) fact. Only
+      // the oldest Coach-applied memory is dropped if the coach budget is full.
+      const nonCoach = memories.filter((m) => !m.fact.startsWith(COACH_PREFIX))
+      const coach = memories.filter((m) => m.fact.startsWith(COACH_PREFIX))
+      coach.push({ fact, category: 'preference', created_at: nowISO })
+      const cappedCoach = coach.slice(-MAX_COACH_MEMORIES_PER_USER)
+      await kv.set(memoriesKey, [...nonCoach, ...cappedCoach])
       perUserCount.set(f.userId, (perUserCount.get(f.userId) ?? 0) + 1)
       memWrites.push({ userId: f.userId, userLabel: f.userLabel, fact, createdAt: nowISO, revertedAt: null })
     } catch (err) {
