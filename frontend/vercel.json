@@ -12,5 +12,10 @@
       "permanent": true
     }
   ],
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron/sage-coach",
+      "schedule": "0 10 * * *"
+    }
+  ]
 }
