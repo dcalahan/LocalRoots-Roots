@@ -69,7 +69,15 @@ export async function GET(request: NextRequest) {
   }
 
   const digestDate = todayUTC()
-  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+  // Window: 24h for the nightly cron. A manual admin run may widen it via
+  // ?sinceHours=N (backfill / testing) — clamped to 90 days. Cron never
+  // passes it, so the nightly behavior is always exactly 24h.
+  const sinceHoursRaw = Number(searchParams.get('sinceHours'))
+  const sinceHours =
+    authPath === 'admin' && Number.isFinite(sinceHoursRaw) && sinceHoursRaw > 0
+      ? Math.min(sinceHoursRaw, 2160)
+      : 24
+  const since = new Date(Date.now() - sinceHours * 3600 * 1000).toISOString()
 
   // ── Gather ──────────────────────────────────────────────────────────
   const bundles = await gatherConversations(since)
