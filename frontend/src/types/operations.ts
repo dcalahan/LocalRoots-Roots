@@ -51,10 +51,6 @@ export interface UsageMetrics {
   transactionCount?: number;
   totalFees?: number;
 
-  // thirdweb
-  thirdwebApiCalls?: number;
-  gasSponsoredTx?: number;
-
   // Privy
   monthlyActiveUsers?: number;
   authEvents?: number;
@@ -77,7 +73,6 @@ export const SERVICE_IDS = {
   anthropic: '0x' + Buffer.from('anthropic').toString('hex').padStart(64, '0') as `0x${string}`,
   pinata: '0x' + Buffer.from('pinata').toString('hex').padStart(64, '0') as `0x${string}`,
   crossmint: '0x' + Buffer.from('crossmint').toString('hex').padStart(64, '0') as `0x${string}`,
-  thirdweb: '0x' + Buffer.from('thirdweb').toString('hex').padStart(64, '0') as `0x${string}`,
   privy: '0x' + Buffer.from('privy').toString('hex').padStart(64, '0') as `0x${string}`,
 } as const;
 
@@ -97,11 +92,6 @@ export const SERVICE_INFO: Record<string, { name: string; icon: string; descript
     name: 'Crossmint',
     icon: '💳',
     description: 'Credit card payment processing',
-  },
-  thirdweb: {
-    name: 'thirdweb',
-    icon: '🌐',
-    description: 'Payment widget and gas sponsorship',
   },
   privy: {
     name: 'Privy',
