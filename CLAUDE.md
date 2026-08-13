@@ -143,25 +143,15 @@ LocalRoots's growth model lives or dies on ambassadors. They are not a side feat
 
 **Track in:** `project_ambassador_prominence_push.md` (next session — full UX/copy plan for elevating ambassador prominence across the app).
 
-## Session Startup - DO THIS FIRST
+## Reporting & Communication — ROUTING LAW (ratified Aug 13 2026)
 
-**Start a Background Slack Listener** at the beginning of every session.
+**Slack is DEAD as an operational channel** (since ~March 2026). Do NOT start Slack listeners, poll `mcp__slack-bridge__*`, or post reports to any Slack channel — a Slack 200 into a dead room manufactures the belief that someone was told. (The old "Session Startup: Background Slack Listener" instruction that lived here is retired.)
 
-**If MCP tools are available** (check for `mcp__slack-bridge__check_replies`):
-- Use a background agent that polls `mcp__slack-bridge__check_replies` every ~60 seconds
-- Respond to new messages via `mcp__slack-bridge__send_message`
-- The listener should be silent (no status messages) and only act when there are new messages
+**How to reach Doug instead:**
+- **Cross-session messaging** — `mcp__ccd_session_mgmt__send_message` to an active session, or a task notification.
+- **Ops email** — `notifyOps` (`nightly-idea-factory/packages/intelligence/notify.ts`): Resend email to dougcalahan@gmail.com with `[PASS]/[PARTIAL]/[FAIL]` subject prefixes. Any automated/cron report belongs here.
 
-**If MCP tools are NOT available** (fallback):
-```bash
-# Start bash-based Slack poller for #claude-localroots (C0AELQC8GDV)
-rm -f /tmp/slack-localroots-messages /tmp/slack-localroots-last-ts
-nohup /tmp/slack-poll-localroots.sh > /tmp/slack-poll-localroots.log 2>&1 &
-```
-Check for messages: `cat /tmp/slack-localroots-messages`
-Send message: Use curl with Slack API (token in script)
-
-This allows Doug to communicate via Slack while Claude works on tasks.
+Any code path that "reports" via Slack is a bug — retire or re-route it on sight.
 
 ## Color Palette - ALWAYS USE THESE
 
@@ -1720,7 +1710,7 @@ Autonomous server-to-server sync. Common Area NIF proposes gardens and resolves 
 | GET | `/api/collections/resolve?slugs=a,b,c` | Resolve specific slugs → `{ slug, name, city, state, buyer_url, poster_url, active, added_date, source }` |
 | GET | `/api/collections/resolve?since=ISO8601` | Delta fetch of all collections added on/after date. Accepts full ISO8601 or `YYYY-MM-DD` |
 
-**Common Area cadence:** slug-sync cron every 6h. First fire re-posts the 85 qualified gardens (idempotent backfill), steady trickle after. Weekly digest to `#claude-localroots` (`C0AELQC8GDV`) Monday 9am ET.
+**Common Area cadence:** slug-sync cron every 6h. First fire re-posts the 85 qualified gardens (idempotent backfill), steady trickle after. Weekly digest emailed to Doug via notifyOps, Monday 9am ET (formerly posted to `#claude-localroots` — Slack is dead as an ops channel; re-routed Aug 13 2026).
 
 **Env vars required (Vercel Production):**
 - `COLLECTIONS_SYNC_TOKEN` — shared secret with Common Area, ≥16 chars. Fail-closed if missing.
