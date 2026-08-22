@@ -107,11 +107,23 @@ LocalRoots is **infrastructure, not an operator.** The decentralized architectur
 
 **Doug's framing (Apr 27 2026):** "Maybe make the tokenomics a proposed or probable tokenomics? The treasury feels and reads large to me."
 
-The allocation chart on `/about/tokenomics` (40% community treasury, 25% ambassadors, 15% founders, 10% liquidity, 10% airdrop) is **PROPOSED, not final.** Until contracts deploy at $ROOTS launch, every percentage in that chart should be treated as a working draft and labeled as such in user-facing copy.
+**Current proposed allocation (revised — live on `/about/tokenomics` as of the treasury reduction):**
+
+| Allocation | Share |
+|---|---:|
+| Ambassador Rewards | 30% |
+| Community Treasury | 25% |
+| Airdrop to Early Users | 20% |
+| Founding Team | 15% |
+| Liquidity | 10% |
+
+This is **PROPOSED, not final.** Until contracts deploy at $ROOTS launch, every percentage should be treated as a working draft and labeled as such in user-facing copy.
+
+**The revision (from the original 40/25/15/10/10):** Doug's "treasury reads large" concern was acted on — Community Treasury cut **40% → 25%**, with the 15 points reallocated **+5 to Ambassador Rewards (25→30%)** and **+10 to the Airdrop (10→20%)**. The framing: half the total supply (Ambassador Rewards 30% + Airdrop 20% = 50%) now flows directly to the people doing the work, aligning with the "ambassadors are critical infrastructure" principle. Ambassador Rewards is now the single largest category.
 
 **Rules:**
 - Any time the allocation chart is rendered, it must include a "Proposed Allocation (Subject to Change)" header or equivalent qualifier. Never present allocations as locked in.
-- The 40% treasury figure is under active review — Doug feels it reads as too large a slice. Proposals to reduce the treasury and reallocate (likely to ambassadors and/or airdrop) should be evaluated as ambassador prominence increases.
+- The treasury reduction is done; further tuning stays open until launch. Any new reallocation proposals should still favor the people doing the work (ambassadors, airdrop) over the treasury.
 - Pre-launch, never publish a final number anywhere (page, marketing email, Slack post) without flagging it as proposed.
 - Specific dates ("spring 2027 launch", etc.) should not appear in user-facing copy. The marketplace is live; the token launch is "later" — that's all.
 
